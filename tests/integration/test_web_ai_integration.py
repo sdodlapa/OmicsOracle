@@ -12,7 +12,6 @@ from pathlib import Path
 import aiohttp
 
 # Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 
 async def test_web_ai_integration():
@@ -32,14 +31,10 @@ async def test_web_ai_integration():
                 "include_sra": False,
             }
 
-            async with session.post(
-                f"{base_url}/api/search", json=search_data
-            ) as resp:
+            async with session.post(f"{base_url}/api/search", json=search_data) as resp:
                 if resp.status == 200:
                     result = await resp.json()
-                    print(
-                        f"✅ Basic search successful: {len(result.get('geo_ids', []))} results"
-                    )
+                    print(f"✅ Basic search successful: {len(result.get('geo_ids', []))} results")
                 else:
                     print(f"❌ Basic search failed: {resp.status}")
                     return False
@@ -53,9 +48,7 @@ async def test_web_ai_integration():
                 "include_individual_summaries": True,
             }
 
-            async with session.post(
-                f"{base_url}/api/ai/summarize", json=ai_data
-            ) as resp:
+            async with session.post(f"{base_url}/api/ai/summarize", json=ai_data) as resp:
                 if resp.status == 200:
                     result = await resp.json()
                     print("✅ AI summarization successful!")
@@ -63,9 +56,7 @@ async def test_web_ai_integration():
                     # Check if we have AI summaries
                     if "ai_summaries" in result:
                         summaries = result["ai_summaries"]
-                        print(
-                            f"   📊 Batch summary: {'✓' if 'batch_summary' in summaries else '✗'}"
-                        )
+                        print(f"   📊 Batch summary: {'✓' if 'batch_summary' in summaries else '✗'}")
                         print(
                             f"   📚 Individual summaries: {'✓' if 'individual_summaries' in summaries else '✗'}"
                         )
@@ -73,9 +64,7 @@ async def test_web_ai_integration():
                         # Show a bit of the batch summary
                         if "batch_summary" in summaries:
                             batch = summaries["batch_summary"]
-                            print(
-                                f"   🔬 Overview: {batch.get('overview', 'N/A')[:100]}..."
-                            )
+                            print(f"   🔬 Overview: {batch.get('overview', 'N/A')[:100]}...")
                     else:
                         print("   ⚠️  No AI summaries in response")
                 else:
@@ -92,9 +81,7 @@ async def test_web_ai_integration():
                     if "AI Summarization" in html_content:
                         print("✅ Web interface includes AI features")
                     else:
-                        print(
-                            "⚠️  Web interface may not have AI features enabled"
-                        )
+                        print("⚠️  Web interface may not have AI features enabled")
                 else:
                     print(f"❌ Web interface failed: {resp.status}")
                     return False

@@ -13,7 +13,6 @@ This test validates the entire pipeline from server startup to frontend result d
 
 import asyncio
 import json
-import sys
 import time
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -22,9 +21,6 @@ import pytest
 import requests
 
 # Add project root to path
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
-
 from src.omics_oracle.core.config import Config
 from src.omics_oracle.pipeline.pipeline import OmicsOracle
 
@@ -38,9 +34,7 @@ class TestCompleteSearchJourney:
         config = MagicMock()
         config.logging = MagicMock()
         config.logging.level = "INFO"
-        config.logging.format = (
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
+        config.logging.format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         config.ncbi = MagicMock()
         config.ncbi.email = "test@omicsoracle.com"
         config.openai = MagicMock()
@@ -61,9 +55,7 @@ class TestCompleteSearchJourney:
 
     def test_pipeline_initialization_complete(self, test_config):
         """Test complete pipeline initialization with all components."""
-        with patch(
-            "src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"
-        ) as mock_geo, patch(
+        with patch("src.omics_oracle.pipeline.pipeline.UnifiedGEOClient") as mock_geo, patch(
             "src.omics_oracle.pipeline.pipeline.SummarizationService"
         ) as mock_summarizer, patch(
             "src.omics_oracle.pipeline.pipeline.PromptInterpreter"
@@ -113,9 +105,7 @@ class TestCompleteSearchJourney:
     @pytest.mark.asyncio
     async def test_search_pipeline_flow(self, test_config, sample_search_query):
         """Test complete search flow from query to results."""
-        with patch(
-            "src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"
-        ) as mock_geo, patch(
+        with patch("src.omics_oracle.pipeline.pipeline.UnifiedGEOClient") as mock_geo, patch(
             "src.omics_oracle.pipeline.pipeline.SummarizationService"
         ) as mock_summarizer, patch(
             "src.omics_oracle.pipeline.pipeline.PromptInterpreter"
@@ -142,9 +132,7 @@ class TestCompleteSearchJourney:
 
             # Setup mock instances
             mock_search_instance = MagicMock()
-            mock_search_instance.search_datasets.return_value = (
-                mock_search_results
-            )
+            mock_search_instance.search_datasets.return_value = mock_search_results
             mock_search.return_value = mock_search_instance
 
             mock_summarizer_instance = MagicMock()
@@ -178,9 +166,7 @@ class TestCompleteSearchJourney:
 
     def test_error_handling_pipeline(self, test_config):
         """Test error handling throughout the pipeline."""
-        with patch(
-            "src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"
-        ) as mock_geo, patch(
+        with patch("src.omics_oracle.pipeline.pipeline.UnifiedGEOClient") as mock_geo, patch(
             "src.omics_oracle.pipeline.pipeline.SummarizationService"
         ) as mock_summarizer, patch(
             "src.omics_oracle.pipeline.pipeline.PromptInterpreter"
@@ -193,9 +179,7 @@ class TestCompleteSearchJourney:
         ) as mock_search:
             # Setup mocks that will raise exceptions
             mock_search_instance = MagicMock()
-            mock_search_instance.search_datasets.side_effect = Exception(
-                "Search service error"
-            )
+            mock_search_instance.search_datasets.side_effect = Exception("Search service error")
             mock_search.return_value = mock_search_instance
 
             # Setup other mocks
@@ -212,9 +196,7 @@ class TestCompleteSearchJourney:
             import asyncio
 
             try:
-                result = asyncio.run(
-                    pipeline.process_query(query="test query", max_results=5)
-                )
+                result = asyncio.run(pipeline.process_query(query="test query", max_results=5))
                 # If no exception, should return error state
                 assert hasattr(result, "status")
             except Exception as e:
@@ -227,19 +209,13 @@ class TestCompleteSearchJourney:
         config = MagicMock()
         config.logging = MagicMock()
         config.logging.level = "INFO"
-        config.logging.format = (
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
+        config.logging.format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         config.ncbi = MagicMock()
         config.ncbi.email = "test@example.com"
 
-        with patch(
-            "src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"
-        ), patch(
+        with patch("src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"), patch(
             "src.omics_oracle.pipeline.pipeline.SummarizationService"
-        ), patch(
-            "src.omics_oracle.pipeline.pipeline.PromptInterpreter"
-        ), patch(
+        ), patch("src.omics_oracle.pipeline.pipeline.PromptInterpreter"), patch(
             "src.omics_oracle.pipeline.pipeline.BiomedicalNER"
         ), patch(
             "src.omics_oracle.pipeline.pipeline.EnhancedBiologicalSynonymMapper"
@@ -252,13 +228,9 @@ class TestCompleteSearchJourney:
 
     def test_cache_consistency(self, test_config):
         """Test that cache disabling is consistent across all components."""
-        with patch(
-            "src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"
-        ) as mock_geo, patch(
+        with patch("src.omics_oracle.pipeline.pipeline.UnifiedGEOClient") as mock_geo, patch(
             "src.omics_oracle.pipeline.pipeline.SummarizationService"
-        ) as mock_summarizer, patch(
-            "src.omics_oracle.pipeline.pipeline.PromptInterpreter"
-        ), patch(
+        ) as mock_summarizer, patch("src.omics_oracle.pipeline.pipeline.PromptInterpreter"), patch(
             "src.omics_oracle.pipeline.pipeline.BiomedicalNER"
         ), patch(
             "src.omics_oracle.pipeline.pipeline.EnhancedBiologicalSynonymMapper"
@@ -286,13 +258,9 @@ class TestCompleteSearchJourney:
         def test_callback(stage, event):
             progress_events.append((stage, event))
 
-        with patch(
-            "src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"
-        ), patch(
+        with patch("src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"), patch(
             "src.omics_oracle.pipeline.pipeline.SummarizationService"
-        ), patch(
-            "src.omics_oracle.pipeline.pipeline.PromptInterpreter"
-        ), patch(
+        ), patch("src.omics_oracle.pipeline.pipeline.PromptInterpreter"), patch(
             "src.omics_oracle.pipeline.pipeline.BiomedicalNER"
         ), patch(
             "src.omics_oracle.pipeline.pipeline.EnhancedBiologicalSynonymMapper"
@@ -309,13 +277,9 @@ class TestCompleteSearchJourney:
 
     def test_monitoring_integration(self, test_config):
         """Test that monitoring systems can observe pipeline state."""
-        with patch(
-            "src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"
-        ), patch(
+        with patch("src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"), patch(
             "src.omics_oracle.pipeline.pipeline.SummarizationService"
-        ), patch(
-            "src.omics_oracle.pipeline.pipeline.PromptInterpreter"
-        ), patch(
+        ), patch("src.omics_oracle.pipeline.pipeline.PromptInterpreter"), patch(
             "src.omics_oracle.pipeline.pipeline.BiomedicalNER"
         ), patch(
             "src.omics_oracle.pipeline.pipeline.EnhancedBiologicalSynonymMapper"
@@ -331,17 +295,11 @@ class TestCompleteSearchJourney:
             assert isinstance(pipeline._query_counter, int)
 
     @pytest.mark.asyncio
-    async def test_search_results_structure(
-        self, test_config, sample_search_query
-    ):
+    async def test_search_results_structure(self, test_config, sample_search_query):
         """Test that search results have expected structure for frontend rendering."""
-        with patch(
-            "src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"
-        ), patch(
+        with patch("src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"), patch(
             "src.omics_oracle.pipeline.pipeline.SummarizationService"
-        ), patch(
-            "src.omics_oracle.pipeline.pipeline.PromptInterpreter"
-        ), patch(
+        ), patch("src.omics_oracle.pipeline.pipeline.PromptInterpreter"), patch(
             "src.omics_oracle.pipeline.pipeline.BiomedicalNER"
         ), patch(
             "src.omics_oracle.pipeline.pipeline.EnhancedBiologicalSynonymMapper"
@@ -362,17 +320,13 @@ class TestCompleteSearchJourney:
             }
 
             mock_search_instance = MagicMock()
-            mock_search_instance.search_datasets.return_value = [
-                expected_result
-            ]
+            mock_search_instance.search_datasets.return_value = [expected_result]
             mock_search.return_value = mock_search_instance
 
             pipeline = OmicsOracle(config=test_config, disable_cache=True)
 
             # Perform search using async method
-            result = await pipeline.process_query(
-                query=sample_search_query["query"], max_results=1
-            )
+            result = await pipeline.process_query(query=sample_search_query["query"], max_results=1)
 
             # Validate result structure for frontend
             assert result is not None

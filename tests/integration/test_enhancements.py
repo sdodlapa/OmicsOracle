@@ -14,8 +14,6 @@ import time
 from pathlib import Path
 
 # Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 from omics_oracle.services.batch_processor import BatchProcessor
 from omics_oracle.services.cache import SummaryCache
 from omics_oracle.services.summarizer import SummarizationService
@@ -97,9 +95,7 @@ async def test_batch_processing():
 
         # Note: We won't actually process the batch job in this test
         # as it would take too long and consume API credits
-        print(
-            "   (Batch processing test completed - actual processing skipped for demo)"
-        )
+        print("   (Batch processing test completed - actual processing skipped for demo)")
 
         return True
 
@@ -132,9 +128,7 @@ async def test_performance_improvements():
     print("🔄 First summarization call (fresh)...")
     start_time = time.time()
 
-    summary1 = summarizer.summarize_dataset(
-        test_metadata, query_context=query_context, summary_type="brief"
-    )
+    summary1 = summarizer.summarize_dataset(test_metadata, query_context=query_context, summary_type="brief")
 
     first_call_time = time.time() - start_time
     print(f"   Time: {first_call_time:.3f}s")
@@ -144,23 +138,17 @@ async def test_performance_improvements():
     print("\n🔄 Second summarization call (cached)...")
     start_time = time.time()
 
-    summary2 = summarizer.summarize_dataset(
-        test_metadata, query_context=query_context, summary_type="brief"
-    )
+    summary2 = summarizer.summarize_dataset(test_metadata, query_context=query_context, summary_type="brief")
 
     second_call_time = time.time() - start_time
     print(f"   Time: {second_call_time:.3f}s")
 
     # Calculate improvement
     if second_call_time < first_call_time:
-        improvement = (
-            (first_call_time - second_call_time) / first_call_time
-        ) * 100
+        improvement = ((first_call_time - second_call_time) / first_call_time) * 100
         print(f"✅ Performance improvement: {improvement:.1f}% faster")
     else:
-        print(
-            "   (No significant performance difference - normal for fallback mode)"
-        )
+        print("   (No significant performance difference - normal for fallback mode)")
 
     return True
 
@@ -190,9 +178,7 @@ async def test_cache_management():
     updated_stats = cache.get_stats()
     print(f"\n📈 After adding test entries:")
     print(f"   Total entries: {updated_stats['total_entries']}")
-    print(
-        f"   Entries added: {updated_stats['total_entries'] - initial_stats['total_entries']}"
-    )
+    print(f"   Entries added: {updated_stats['total_entries'] - initial_stats['total_entries']}")
 
     # Test cleanup (won't find expired entries in this quick test)
     expired_count = cache.cleanup_expired()

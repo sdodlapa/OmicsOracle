@@ -9,14 +9,11 @@ and provides a unified testing interface with comprehensive reporting.
 import argparse
 import json
 import os
-import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, List
 
 # Add tests directory to path for imports
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
 try:
     from performance.test_load_testing import LoadTestSuite
 except ImportError:

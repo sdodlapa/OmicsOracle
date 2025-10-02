@@ -14,16 +14,11 @@ functionality in OmicsOracle, including SciSpaCy integration and
 comprehensive biomedical entity recognition.
 """
 
-import sys
 from pathlib import Path
 
-from omics_oracle.nlp.biomedical_ner import (
-    BiomedicalNER,
-    EnhancedBiologicalSynonymMapper,
-)
+from omics_oracle.nlp.biomedical_ner import BiomedicalNER, EnhancedBiologicalSynonymMapper
 
 # Add src to path for direct execution
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 
 def main():
@@ -42,8 +37,7 @@ def main():
     # Sample biomedical texts
     sample_texts = [
         "BRCA1 mutations are associated with breast cancer in humans.",
-        "RNA-seq analysis revealed differential expression of TP53 in "
-        "lung carcinoma samples.",
+        "RNA-seq analysis revealed differential expression of TP53 in " "lung carcinoma samples.",
         "Flow cytometry analysis of T cells from mouse spleen tissue.",
         "Western blot analysis confirmed EGFR protein levels in HeLa cells.",
         "Alzheimer's disease patients showed reduced hippocampal volume.",

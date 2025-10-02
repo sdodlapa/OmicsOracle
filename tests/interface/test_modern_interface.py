@@ -8,7 +8,6 @@ from pathlib import Path
 
 # Add the modern interface to Python path
 modern_path = Path(__file__).parent / "interfaces" / "modern"
-sys.path.insert(0, str(modern_path))
 
 
 def test_imports() -> bool:
@@ -61,9 +60,7 @@ def test_models() -> bool:
 
         # Create a test search query
         query = SearchQuery(query="test search", page=1, page_size=20)
-        print(
-            f"[PASS] SearchQuery created: '{query.query}' (page {query.page})"
-        )
+        print(f"[PASS] SearchQuery created: '{query.query}' (page {query.page})")
 
         # Create a test search result
         result = SearchResult(

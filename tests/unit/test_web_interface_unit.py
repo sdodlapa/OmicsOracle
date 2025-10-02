@@ -6,14 +6,12 @@ These tests can run without a live server and focus on testing
 the application structure and basic functionality.
 """
 
-import sys
 from pathlib import Path
 from unittest.mock import patch
 
 import pytest
 
 # Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 
 class TestWebInterfaceStructure:
@@ -50,18 +48,14 @@ class TestWebInterfaceStructure:
             from omics_oracle.web.models import SearchRequest
 
             # Test valid request
-            valid_request = SearchRequest(
-                query="diabetes", max_results=10, include_sra=False
-            )
+            valid_request = SearchRequest(query="diabetes", max_results=10, include_sra=False)
             assert valid_request.query == "diabetes"
             assert valid_request.max_results == 10
             assert not valid_request.include_sra
 
             # Test default values
             minimal_request = SearchRequest(query="cancer")
-            assert (
-                minimal_request.max_results == 10
-            )  # actual default from model
+            assert minimal_request.max_results == 10  # actual default from model
 
         except ImportError as e:
             pytest.skip(f"Pydantic models not available: {e}")
@@ -83,12 +77,8 @@ class TestWebInterfaceStructure:
             ]
 
             for pattern in expected_patterns:
-                matching_routes = [
-                    path for path in route_paths if pattern in path
-                ]
-                assert (
-                    len(matching_routes) > 0
-                ), f"No routes found matching {pattern}"
+                matching_routes = [path for path in route_paths if pattern in path]
+                assert len(matching_routes) > 0, f"No routes found matching {pattern}"
 
         except ImportError as e:
             pytest.skip(f"FastAPI app not available: {e}")
@@ -100,15 +90,11 @@ class TestWebInterfaceStructure:
 
             # Check if static files are mounted
             static_mounts = [
-                route
-                for route in app.routes
-                if hasattr(route, "path") and "static" in route.path.lower()
+                route for route in app.routes if hasattr(route, "path") and "static" in route.path.lower()
             ]
 
             # Should have some static file configuration
-            assert (
-                len(static_mounts) >= 0
-            )  # May be 0 if using different static file serving
+            assert len(static_mounts) >= 0  # May be 0 if using different static file serving
 
         except ImportError as e:
             pytest.skip(f"FastAPI app not available: {e}")
@@ -123,19 +109,12 @@ class TestWebInterfaceConfig:
             from omics_oracle.web.main import app
 
             # Check if CORS middleware is configured
-            middleware_types = [
-                type(middleware).__name__ for middleware in app.user_middleware
-            ]
+            middleware_types = [type(middleware).__name__ for middleware in app.user_middleware]
 
             # CORS should be configured for web interface
-            cors_configured = any(
-                "CORS" in middleware_type
-                for middleware_type in middleware_types
-            )
+            cors_configured = any("CORS" in middleware_type for middleware_type in middleware_types)
             # Note: This might be False if CORS is configured differently
-            assert isinstance(
-                cors_configured, bool
-            )  # Just check it's a boolean
+            assert isinstance(cors_configured, bool)  # Just check it's a boolean
 
         except ImportError as e:
             pytest.skip(f"FastAPI app not available: {e}")
@@ -146,9 +125,7 @@ class TestWebInterfaceConfig:
             from omics_oracle.web.models import ErrorResponse
 
             # Test error response model
-            error_response = ErrorResponse(
-                error="Test error", message="Test error detail"
-            )
+            error_response = ErrorResponse(error="Test error", message="Test error detail")
 
             assert error_response.error == "Test error"
             assert error_response.message == "Test error detail"

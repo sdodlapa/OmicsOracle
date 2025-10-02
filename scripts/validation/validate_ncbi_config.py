@@ -20,7 +20,6 @@ logging.basicConfig(
 logger = logging.getLogger("ncbi_validator")
 
 # Add project root to path and import modules
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 from src.omics_oracle.core.config import Config
 from src.omics_oracle.geo_tools.geo_client import UnifiedGEOClient
 

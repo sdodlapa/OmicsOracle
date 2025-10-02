@@ -11,7 +11,6 @@ import asyncio
 import json
 import logging
 import os
-import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
@@ -23,8 +22,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Add project root to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
 
 
 class AdvancedSearchEnhancer:
@@ -52,9 +49,7 @@ class AdvancedSearchEnhancer:
             "max_reformulations": 3,
         }
 
-    def add_semantic_ranking(
-        self, search_results: List[Dict[str, Any]], query: str
-    ) -> List[Dict[str, Any]]:
+    def add_semantic_ranking(self, search_results: List[Dict[str, Any]], query: str) -> List[Dict[str, Any]]:
         """
         Enhance search results with semantic ranking based on biomedical context.
 
@@ -76,18 +71,14 @@ class AdvancedSearchEnhancer:
             result_text = self._get_result_text(result)
 
             # Calculate semantic similarity
-            similarity_score = self._calculate_semantic_similarity(
-                query_concepts, result_text
-            )
+            similarity_score = self._calculate_semantic_similarity(query_concepts, result_text)
 
             # Add semantic score to the result
             result["semantic_score"] = similarity_score
 
         # Re-rank results based on semantic score
         if search_results:
-            search_results.sort(
-                key=lambda x: x.get("semantic_score", 0), reverse=True
-            )
+            search_results.sort(key=lambda x: x.get("semantic_score", 0), reverse=True)
 
         return search_results
 
@@ -179,9 +170,7 @@ class AdvancedSearchEnhancer:
         # Combine all text parts
         return " ".join(text_parts)
 
-    def _calculate_semantic_similarity(
-        self, query_concepts: List[Dict[str, Any]], result_text: str
-    ) -> float:
+    def _calculate_semantic_similarity(self, query_concepts: List[Dict[str, Any]], result_text: str) -> float:
         """
         Calculate semantic similarity between query concepts and result text.
 
@@ -202,9 +191,7 @@ class AdvancedSearchEnhancer:
         result_text_lower = result_text.lower()
 
         # Calculate weighted concept matches
-        total_importance = sum(
-            concept["importance"] for concept in query_concepts
-        )
+        total_importance = sum(concept["importance"] for concept in query_concepts)
         if total_importance == 0:
             return 0.0
 
@@ -218,9 +205,7 @@ class AdvancedSearchEnhancer:
 
         return similarity
 
-    def cluster_results(
-        self, search_results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def cluster_results(self, search_results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Cluster search results into meaningful categories.
 
@@ -242,15 +227,11 @@ class AdvancedSearchEnhancer:
         clusters = self._identify_clusters(result_features)
 
         # Assign results to clusters
-        clustered_results = self._assign_results_to_clusters(
-            search_results, result_features, clusters
-        )
+        clustered_results = self._assign_results_to_clusters(search_results, result_features, clusters)
 
         return clustered_results
 
-    def _extract_clustering_features(
-        self, results: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _extract_clustering_features(self, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Extract features for clustering from search results.
 
@@ -288,9 +269,7 @@ class AdvancedSearchEnhancer:
 
         return features
 
-    def _identify_clusters(
-        self, features: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
+    def _identify_clusters(self, features: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """
         Identify meaningful clusters from result features.
 
@@ -321,9 +300,7 @@ class AdvancedSearchEnhancer:
 
         for feature_key, value_counts in feature_counts.items():
             # Sort values by frequency
-            sorted_values = sorted(
-                value_counts.items(), key=lambda x: x[1], reverse=True
-            )
+            sorted_values = sorted(value_counts.items(), key=lambda x: x[1], reverse=True)
 
             # Consider only frequent values (occurring in at least 10% of results)
             min_count = max(2, len(features) * 0.1)
@@ -389,9 +366,7 @@ class AdvancedSearchEnhancer:
 
                 if feature in feature_dict and feature_dict[feature] == value:
                     # Add result index to this cluster
-                    clustered_results["clusters"][cluster_idx][
-                        "results"
-                    ].append(i)
+                    clustered_results["clusters"][cluster_idx]["results"].append(i)
                     clustered_results["clusters"][cluster_idx]["count"] += 1
                     result_assigned = True
 
@@ -399,9 +374,7 @@ class AdvancedSearchEnhancer:
 
         return clustered_results
 
-    def generate_query_reformulations(
-        self, original_query: str
-    ) -> List[Dict[str, Any]]:
+    def generate_query_reformulations(self, original_query: str) -> List[Dict[str, Any]]:
         """
         Generate alternative query formulations to suggest to the user.
 
@@ -429,9 +402,7 @@ class AdvancedSearchEnhancer:
                 "proteomics",
                 "single cell",
             ]
-            for data_type in data_types[
-                :2
-            ]:  # Limit to avoid too many suggestions
+            for data_type in data_types[:2]:  # Limit to avoid too many suggestions
                 new_query = f"{original_query} {data_type}"
                 reformulations.append(
                     {
@@ -464,14 +435,9 @@ class AdvancedSearchEnhancer:
         }
 
         for concept in query_concepts:
-            if (
-                concept["type"] == "disease"
-                and concept["text"] in disease_specializations
-            ):
+            if concept["type"] == "disease" and concept["text"] in disease_specializations:
                 specializations = disease_specializations[concept["text"]]
-                for spec in specializations[
-                    :1
-                ]:  # Limit to avoid too many suggestions
+                for spec in specializations[:1]:  # Limit to avoid too many suggestions
                     new_query = original_query.replace(concept["text"], spec)
                     reformulations.append(
                         {
@@ -481,14 +447,9 @@ class AdvancedSearchEnhancer:
                         }
                     )
 
-            elif (
-                concept["type"] == "tissue"
-                and concept["text"] in tissue_specializations
-            ):
+            elif concept["type"] == "tissue" and concept["text"] in tissue_specializations:
                 specializations = tissue_specializations[concept["text"]]
-                for spec in specializations[
-                    :1
-                ]:  # Limit to avoid too many suggestions
+                for spec in specializations[:1]:  # Limit to avoid too many suggestions
                     new_query = original_query.replace(concept["text"], spec)
                     reformulations.append(
                         {
@@ -531,26 +492,17 @@ class AdvancedSearchEnhancer:
 
         # Apply semantic ranking if enabled
         if apply_semantic_ranking and self.config["enable_semantic_ranking"]:
-            enhanced_results["results"] = self.add_semantic_ranking(
-                results, query
-            )
+            enhanced_results["results"] = self.add_semantic_ranking(results, query)
             enhanced_results["enhancements"].append("semantic_ranking")
 
         # Apply clustering if enabled
-        if (
-            apply_clustering
-            and self.config["enable_result_clustering"]
-            and len(results) >= 3
-        ):
+        if apply_clustering and self.config["enable_result_clustering"] and len(results) >= 3:
             clustering = self.cluster_results(enhanced_results["results"])
             enhanced_results["clusters"] = clustering["clusters"]
             enhanced_results["enhancements"].append("clustering")
 
         # Generate query reformulations if enabled
-        if (
-            generate_reformulations
-            and self.config["enable_query_reformulation"]
-        ):
+        if generate_reformulations and self.config["enable_query_reformulation"]:
             reformulations = self.generate_query_reformulations(query)
             if reformulations:
                 enhanced_results["query_reformulations"] = reformulations
@@ -600,13 +552,8 @@ class AdvancedSearchEnhancer:
 
         # Validate semantic ranking
         try:
-            ranked_results = self.add_semantic_ranking(
-                test_results.copy(), test_query
-            )
-            if (
-                len(ranked_results) == len(test_results)
-                and "semantic_score" in ranked_results[0]
-            ):
+            ranked_results = self.add_semantic_ranking(test_results.copy(), test_query)
+            if len(ranked_results) == len(test_results) and "semantic_score" in ranked_results[0]:
                 validation_results["semantic_ranking"] = True
         except Exception as e:
             logger.error(f"Semantic ranking validation failed: {str(e)}")
@@ -697,12 +644,8 @@ async def enhanced_search(request):
 
 def main():
     """Main function to validate and demonstrate the search enhancer."""
-    parser = argparse.ArgumentParser(
-        description="OmicsOracle Advanced Search Feature Enhancer"
-    )
-    parser.add_argument(
-        "--validate", action="store_true", help="Validate feature integration"
-    )
+    parser = argparse.ArgumentParser(description="OmicsOracle Advanced Search Feature Enhancer")
+    parser.add_argument("--validate", action="store_true", help="Validate feature integration")
     parser.add_argument(
         "--save-example",
         action="store_true",

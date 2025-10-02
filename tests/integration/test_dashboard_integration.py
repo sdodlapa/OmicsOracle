@@ -8,8 +8,6 @@ import sys
 from pathlib import Path
 
 # Add the source directory to the path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 try:
     from omics_oracle.web.main import app
 
@@ -42,9 +40,7 @@ async def test_visualization_endpoints():
         # Create request object
         request = SearchVisualizationRequest(**test_request)
 
-        print(
-            f"🔍 Testing with query: '{request.query}' (max {request.max_results} results)"
-        )
+        print(f"🔍 Testing with query: '{request.query}' (max {request.max_results} results)")
 
         # Test each endpoint
         endpoints = [
@@ -77,9 +73,7 @@ async def test_visualization_endpoints():
 def validate_dashboard_html():
     """Validate the dashboard HTML file is properly configured."""
 
-    dashboard_file = (
-        Path(__file__).parent / "src/omics_oracle/web/static/dashboard.html"
-    )
+    dashboard_file = Path(__file__).parent / "src/omics_oracle/web/static/dashboard.html"
 
     print("\n🌐 Validating Dashboard HTML:")
     print("=" * 50)
@@ -186,13 +180,9 @@ async def main():
         print("❌ Some API routes are missing")
 
     if endpoint_results:
-        success_count = sum(
-            1 for r in endpoint_results.values() if "error" not in r
-        )
+        success_count = sum(1 for r in endpoint_results.values() if "error" not in r)
         total_count = len(endpoint_results)
-        print(
-            f"✅ Visualization endpoints: {success_count}/{total_count} working"
-        )
+        print(f"✅ Visualization endpoints: {success_count}/{total_count} working")
 
         if success_count == total_count:
             print("\n🎉 DASHBOARD INTEGRATION COMPLETE!")

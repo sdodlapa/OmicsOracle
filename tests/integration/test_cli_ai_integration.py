@@ -11,8 +11,6 @@ import time
 from pathlib import Path
 
 # Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 from omics_oracle.pipeline.pipeline import OmicsOracle, ResultFormat
 
 
@@ -102,24 +100,16 @@ async def test_cli_integration():
                         )
 
                     if "individual_summaries" in result.ai_summaries:
-                        individual_count = len(
-                            result.ai_summaries["individual_summaries"]
-                        )
-                        print(
-                            f"   🔬 Individual Summaries: {individual_count} datasets"
-                        )
+                        individual_count = len(result.ai_summaries["individual_summaries"])
+                        print(f"   🔬 Individual Summaries: {individual_count} datasets")
 
                         # Show a sample summary
                         if individual_count > 0:
-                            sample = result.ai_summaries[
-                                "individual_summaries"
-                            ][0]
+                            sample = result.ai_summaries["individual_summaries"][0]
                             sample_summary = sample.get("summary", {})
                             if "overview" in sample_summary:
                                 overview = sample_summary["overview"]
-                                print(
-                                    f"   💡 Sample Overview: {overview[:150]}..."
-                                )
+                                print(f"   💡 Sample Overview: {overview[:150]}...")
                 else:
                     print("\n🤖 AI Summaries Generated: ❌")
 
@@ -137,9 +127,7 @@ async def test_cli_integration():
 
             # Add delay between queries to respect API limits
             if i < len(test_queries):
-                print(
-                    "\n⏳ Waiting 30 seconds before next query to respect API limits..."
-                )
+                print("\n⏳ Waiting 30 seconds before next query to respect API limits...")
                 await asyncio.sleep(30)
 
     finally:
@@ -162,9 +150,7 @@ async def test_cli_integration():
         if result.get("success", False):
             print(f"   Time: {result.get('processing_time', 0):.2f}s")
             print(f"   Datasets: {result.get('datasets', 0)}")
-            print(
-                f"   AI Summaries: {'Yes' if result.get('ai_summaries', False) else 'No'}"
-            )
+            print(f"   AI Summaries: {'Yes' if result.get('ai_summaries', False) else 'No'}")
         else:
             print(f"   Error: {result.get('error', 'Unknown error')}")
 
@@ -172,9 +158,7 @@ async def test_cli_integration():
     print_separator("💡 RECOMMENDATIONS", "=")
 
     if successful_tests == total_tests:
-        print(
-            "🎉 All tests passed! Your OmicsOracle AI integration is working perfectly."
-        )
+        print("🎉 All tests passed! Your OmicsOracle AI integration is working perfectly.")
         print("\n🚀 Ready for production use:")
         print("   • Web interface integration")
         print("   • CLI deployment")
@@ -201,9 +185,7 @@ async def main():
             print("\n🎊 All tests completed successfully!")
             sys.exit(0)
         else:
-            print(
-                "\n⚠️  Some tests failed. Check the output above for details."
-            )
+            print("\n⚠️  Some tests failed. Check the output above for details.")
             sys.exit(1)
     except KeyboardInterrupt:
         print("\n\n⏹️  Test interrupted by user.")

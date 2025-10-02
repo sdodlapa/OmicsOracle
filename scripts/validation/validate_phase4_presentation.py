@@ -11,9 +11,6 @@ import sys
 from pathlib import Path
 
 # Add project root to path
-project_root = Path(__file__).parent.absolute()
-sys.path.insert(0, str(project_root))
-
 from src.omics_oracle.application.dto.search_dto import SearchRequestDTO
 from src.omics_oracle.infrastructure.dependencies.container import Container
 from src.omics_oracle.presentation.web.main import create_app

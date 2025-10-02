@@ -5,19 +5,14 @@ Tests the BiomedicalNER and EnhancedBiologicalSynonymMapper classes
 with mock data to avoid requiring actual model downloads.
 """
 
-import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
-from omics_oracle.nlp.biomedical_ner import (
-    BiomedicalNER,
-    EnhancedBiologicalSynonymMapper,
-)
+from omics_oracle.nlp.biomedical_ner import BiomedicalNER, EnhancedBiologicalSynonymMapper
 
 # Add src to path for testing if needed
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 
 class TestBiomedicalNER:
@@ -70,9 +65,7 @@ class TestBiomedicalNER:
         assert entities["genes"][0]["text"] == "BRCA1"
         assert entities["genes"][0]["label"] == "GENE"
 
-    def test_extract_biomedical_entities_with_linking(
-        self, mock_biomedical_ner
-    ):
+    def test_extract_biomedical_entities_with_linking(self, mock_biomedical_ner):
         """Test entity extraction with entity linking."""
         # Mock entity with linking information
         mock_entity = Mock()
@@ -89,9 +82,7 @@ class TestBiomedicalNER:
         mock_biomedical_ner.nlp_model.return_value = mock_doc
 
         text = "diabetes mellitus"
-        entities = mock_biomedical_ner.extract_biomedical_entities(
-            text, include_entity_linking=True
-        )
+        entities = mock_biomedical_ner.extract_biomedical_entities(text, include_entity_linking=True)
 
         assert "diseases" in entities
         assert len(entities["diseases"]) == 1
@@ -125,32 +116,18 @@ class TestBiomedicalNER:
 
         assert mock_biomedical_ner._is_organism_entity(mock_entity, "human")
         assert mock_biomedical_ner._is_organism_entity(mock_entity, "mouse")
-        assert mock_biomedical_ner._is_organism_entity(
-            mock_entity, "homo sapiens"
-        )
-        assert not mock_biomedical_ner._is_organism_entity(
-            mock_entity, "cancer"
-        )
+        assert mock_biomedical_ner._is_organism_entity(mock_entity, "homo sapiens")
+        assert not mock_biomedical_ner._is_organism_entity(mock_entity, "cancer")
 
     def test_is_experimental_technique(self, mock_biomedical_ner):
         """Test experimental technique classification."""
         mock_entity = Mock()
 
-        assert mock_biomedical_ner._is_experimental_technique(
-            mock_entity, "rna-seq"
-        )
-        assert mock_biomedical_ner._is_experimental_technique(
-            mock_entity, "chip-seq"
-        )
-        assert mock_biomedical_ner._is_experimental_technique(
-            mock_entity, "pcr"
-        )
-        assert mock_biomedical_ner._is_experimental_technique(
-            mock_entity, "western blot"
-        )
-        assert not mock_biomedical_ner._is_experimental_technique(
-            mock_entity, "cancer"
-        )
+        assert mock_biomedical_ner._is_experimental_technique(mock_entity, "rna-seq")
+        assert mock_biomedical_ner._is_experimental_technique(mock_entity, "chip-seq")
+        assert mock_biomedical_ner._is_experimental_technique(mock_entity, "pcr")
+        assert mock_biomedical_ner._is_experimental_technique(mock_entity, "western blot")
+        assert not mock_biomedical_ner._is_experimental_technique(mock_entity, "cancer")
 
     def test_get_model_info(self, mock_biomedical_ner):
         """Test model information retrieval."""
@@ -254,15 +231,10 @@ class TestEnhancedBiologicalSynonymMapper:
         assert synonym_mapper.normalize_term("p53", "gene") == "TP53"
 
         # Test disease normalization
-        assert (
-            synonym_mapper.normalize_term("breast carcinoma", "disease")
-            == "Breast Cancer"
-        )
+        assert synonym_mapper.normalize_term("breast carcinoma", "disease") == "Breast Cancer"
 
         # Test organism normalization
-        assert (
-            synonym_mapper.normalize_term("homo sapiens", "organism") == "Human"
-        )
+        assert synonym_mapper.normalize_term("homo sapiens", "organism") == "Human"
 
     def test_unknown_term(self, synonym_mapper):
         """Test handling of unknown terms."""

@@ -11,8 +11,6 @@ import sys
 from pathlib import Path
 
 # Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 from omics_oracle.pipeline.pipeline import OmicsOracle
 from omics_oracle.services.summarizer import SummarizationService
 
@@ -73,9 +71,7 @@ async def test_summarization_service():
         # Test batch summary
         print("\n📊 Testing batch summarization...")
         batch_results = [{"metadata": sample_metadata}]
-        batch_summary = summarizer.summarize_batch_results(
-            batch_results, "diabetes pancreatic cells"
-        )
+        batch_summary = summarizer.summarize_batch_results(batch_results, "diabetes pancreatic cells")
 
         print("🗂️  BATCH SUMMARY:")
         print("-" * 30)

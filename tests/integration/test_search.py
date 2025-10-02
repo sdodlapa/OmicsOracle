@@ -5,7 +5,6 @@ Test NCBI search with proper email configuration
 import asyncio
 import logging
 import os
-import sys
 import time
 from pathlib import Path
 
@@ -21,7 +20,6 @@ logger = logging.getLogger("test_search")
 
 # Add project root to path and import patched Entrez
 project_root = Path.cwd()
-sys.path.insert(0, str(project_root))
 import entrez_patch
 
 
@@ -29,8 +27,6 @@ async def test_search(query="dna methylation immune cells"):
     """Test GEO search with the OmicsOracle pipeline."""
     # Add project root to path
     project_root = Path.cwd()
-    sys.path.insert(0, str(project_root))
-
     try:
         # Import OmicsOracle components
         from src.omics_oracle.core.config import Config

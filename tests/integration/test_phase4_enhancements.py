@@ -17,8 +17,6 @@ from datetime import datetime
 from pathlib import Path
 
 # Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 from omics_oracle.pipeline.pipeline import OmicsOracle, ResultFormat
 
 
@@ -41,9 +39,7 @@ async def test_phase4_enhancements():
         # First run - should hit OpenAI API
         print("📡 First run (API call)...")
         start_time = datetime.now()
-        result1 = await oracle.process_query(
-            query, max_results=2, result_format=ResultFormat.JSON
-        )
+        result1 = await oracle.process_query(query, max_results=2, result_format=ResultFormat.JSON)
         duration1 = (datetime.now() - start_time).total_seconds()
 
         print(f"✅ First run completed in {duration1:.2f}s")
@@ -53,9 +49,7 @@ async def test_phase4_enhancements():
         # Second run - should use cache
         print("\n📡 Second run (cached)...")
         start_time = datetime.now()
-        result2 = await oracle.process_query(
-            query, max_results=2, result_format=ResultFormat.JSON
-        )
+        result2 = await oracle.process_query(query, max_results=2, result_format=ResultFormat.JSON)
         duration2 = (datetime.now() - start_time).total_seconds()
 
         print(f"✅ Second run completed in {duration2:.2f}s")
@@ -112,18 +106,13 @@ async def test_phase4_enhancements():
             exports_dir.mkdir(parents=True, exist_ok=True)
 
             # JSON export
-            json_path = (
-                exports_dir
-                / f"test_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-            )
+            json_path = exports_dir / f"test_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
             with open(json_path, "w", encoding="utf-8") as f:
                 export_data = {
                     "query": query,
                     "results": len(result1.metadata),
                     "ai_summaries": result1.ai_summaries,
-                    "metadata": result1.metadata[:2]
-                    if result1.metadata
-                    else [],
+                    "metadata": result1.metadata[:2] if result1.metadata else [],
                 }
                 json.dump(export_data, f, indent=2, ensure_ascii=False)
             print(f"✅ JSON export: {json_path}")
@@ -158,9 +147,7 @@ async def test_phase4_enhancements():
 
             for i, query in enumerate(queries, 1):
                 print(f"   {i}/{len(queries)}: {query[:30]}...")
-                result = await oracle.process_query(
-                    query, max_results=1, result_format=ResultFormat.JSON
-                )
+                result = await oracle.process_query(query, max_results=1, result_format=ResultFormat.JSON)
                 batch_results.append(
                     {
                         "query": query,
@@ -183,22 +170,14 @@ async def test_phase4_enhancements():
         print("\n6️⃣  Performance Summary")
         print("-" * 40)
 
-        total_datasets = sum(
-            len(r.metadata)
-            for r in [result1]
-            if hasattr(r, "metadata") and r.metadata
-        )
+        total_datasets = sum(len(r.metadata) for r in [result1] if hasattr(r, "metadata") and r.metadata)
         total_ai_summaries = 1 if result1.ai_summaries else 0
 
         print(f"📊 Total datasets processed: {total_datasets}")
         print(f"🤖 AI summaries generated: {total_ai_summaries}")
         print(f"⚡ Average processing time: {duration1:.2f}s")
-        print(
-            f"🗄️  Caching enabled: {'✅' if 'summary_cache' in sys.modules else '❌'}"
-        )
-        print(
-            f"💰 Cost tracking enabled: {'✅' if 'cost_manager' in locals() else '❌'}"
-        )
+        print(f"🗄️  Caching enabled: {'✅' if 'summary_cache' in sys.modules else '❌'}")
+        print(f"💰 Cost tracking enabled: {'✅' if 'cost_manager' in locals() else '❌'}")
         print(f"📄 Export features: {'✅' if 'pdf_service' in locals() else '❌'}")
 
         return True

@@ -18,8 +18,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 # Set up logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

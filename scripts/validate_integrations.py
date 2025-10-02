@@ -6,11 +6,7 @@ import asyncio
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
-
-from omics_oracle.integrations.citation_managers import (
-    CitationManagerIntegration,
-)
+from omics_oracle.integrations.citation_managers import CitationManagerIntegration
 from omics_oracle.integrations.pubmed import PubMedIntegration
 from omics_oracle.integrations.service import IntegrationService
 
@@ -42,20 +38,14 @@ async def test_integrations():
     try:
         async with PubMedIntegration() as pubmed:
             # Try a simple search with timeout
-            papers = await asyncio.wait_for(
-                pubmed.search_papers("GSE30611", max_results=2), timeout=10.0
-            )
+            papers = await asyncio.wait_for(pubmed.search_papers("GSE30611", max_results=2), timeout=10.0)
             print(f"✅ PubMed search successful: Found {len(papers)} paper IDs")
 
             if papers:
                 # Try to fetch details for first paper
-                details = await asyncio.wait_for(
-                    pubmed.fetch_paper_details(papers[:1]), timeout=10.0
-                )
+                details = await asyncio.wait_for(pubmed.fetch_paper_details(papers[:1]), timeout=10.0)
                 if details:
-                    print(
-                        f"✅ Paper details fetched: {details[0].get('title', 'No title')[:50]}..."
-                    )
+                    print(f"✅ Paper details fetched: {details[0].get('title', 'No title')[:50]}...")
                 else:
                     print("⚠️  No paper details returned")
 
@@ -70,9 +60,7 @@ async def test_integrations():
 
     # Test citation export without network calls
     mock_datasets = [mock_geo_data]
-    citations = service.export_citations(
-        mock_datasets, "bibtex", include_papers=False
-    )
+    citations = service.export_citations(mock_datasets, "bibtex", include_papers=False)
     print(f"✅ Integration service citations: {len(citations)} characters")
 
     print("\n🎉 Integration validation completed!")

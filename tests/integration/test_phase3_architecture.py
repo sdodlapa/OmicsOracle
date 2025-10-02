@@ -8,20 +8,14 @@ and infrastructure components.
 import asyncio
 
 # Add project root to Python path
-import sys
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-project_root = Path(__file__).parent.parent.parent.parent
-sys.path.insert(0, str(project_root))
-
 from src.omics_oracle.application.dto.search_dto import SearchRequestDTO
-from src.omics_oracle.application.use_cases.enhanced_search_datasets import (
-    EnhancedSearchDatasetsUseCase,
-)
+from src.omics_oracle.application.use_cases.enhanced_search_datasets import EnhancedSearchDatasetsUseCase
 from src.omics_oracle.domain.entities.dataset import Dataset
 from src.omics_oracle.domain.value_objects.search_query import SearchType
 from src.omics_oracle.infrastructure.caching.memory_cache import MemoryCache
@@ -32,9 +26,7 @@ from src.omics_oracle.infrastructure.messaging.search_events import (
     SearchFailedEvent,
     SearchStartedEvent,
 )
-from src.omics_oracle.infrastructure.repositories.geo_search_repository import (
-    GEOSearchRepository,
-)
+from src.omics_oracle.infrastructure.repositories.geo_search_repository import GEOSearchRepository
 from src.omics_oracle.shared.exceptions.domain_exceptions import ValidationError
 
 
@@ -143,9 +135,7 @@ class TestPhase3Architecture:
 
     async def test_geo_repository_search(self, geo_repository, mock_geo_client):
         """Test GEO repository search functionality."""
-        from src.omics_oracle.domain.value_objects.search_query import (
-            SearchQuery,
-        )
+        from src.omics_oracle.domain.value_objects.search_query import SearchQuery
 
         # Create search query
         query = SearchQuery(
@@ -170,9 +160,7 @@ class TestPhase3Architecture:
             search_type="all",
         )
 
-    async def test_enhanced_search_use_case_success(
-        self, search_use_case, event_bus
-    ):
+    async def test_enhanced_search_use_case_success(self, search_use_case, event_bus):
         """Test successful search execution with event publishing."""
         received_events = []
 
@@ -209,9 +197,7 @@ class TestPhase3Architecture:
         assert received_events[0].query == "cancer research"
         assert received_events[1].results_count == 2
 
-    async def test_enhanced_search_use_case_validation_error(
-        self, search_use_case, event_bus
-    ):
+    async def test_enhanced_search_use_case_validation_error(self, search_use_case, event_bus):
         """Test search use case with validation error."""
         received_events = []
 
@@ -228,9 +214,7 @@ class TestPhase3Architecture:
         )
 
         # Execute search and expect validation error
-        with pytest.raises(
-            ValidationError, match="Search query cannot be empty"
-        ):
+        with pytest.raises(ValidationError, match="Search query cannot be empty"):
             await search_use_case.execute(request)
 
         # Wait for async event processing
@@ -324,9 +308,7 @@ class TestPhase3Architecture:
         assert stats["total_keys"] >= 1
         assert stats["active_keys"] >= 1
 
-    async def test_error_handling_and_recovery(
-        self, event_bus, mock_geo_client
-    ):
+    async def test_error_handling_and_recovery(self, event_bus, mock_geo_client):
         """Test error handling and recovery mechanisms."""
         # Configure mock to raise an exception
         mock_geo_client.search_datasets.side_effect = Exception("API Error")
@@ -368,10 +350,7 @@ class TestPhase3Architecture:
         await event_bus.subscribe(SearchCompletedEvent, track_all_events)
 
         # Create multiple search requests
-        requests = [
-            SearchRequestDTO(query=f"query_{i}", max_results=5)
-            for i in range(3)
-        ]
+        requests = [SearchRequestDTO(query=f"query_{i}", max_results=5) for i in range(3)]
 
         # Execute searches concurrently
         tasks = [search_use_case.execute(request) for request in requests]

@@ -18,9 +18,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Add project root to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-
 # Set NCBI email environment variable
 os.environ["NCBI_EMAIL"] = "omicsoracle@example.com"
 

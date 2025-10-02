@@ -21,9 +21,6 @@ os.environ["NCBI_EMAIL"] = "omicsoracle@example.com"
 logger.info(f"Set NCBI_EMAIL environment variable to: {os.environ['NCBI_EMAIL']}")
 
 # Add project root to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-
 # Try to import Bio.Entrez directly and set email
 try:
     from Bio import Entrez

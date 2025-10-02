@@ -14,7 +14,6 @@ from pathlib import Path
 
 # Add src to path for testing
 src_path = Path(__file__).parent.parent.parent / "src"
-sys.path.insert(0, str(src_path))
 
 
 def test_configuration() -> bool:
@@ -45,10 +44,7 @@ def test_exceptions() -> bool:
     print("Testing exception system...")
 
     try:
-        from omics_oracle.core.exceptions import (
-            ConfigurationError,
-            OmicsOracleException,
-        )
+        from omics_oracle.core.exceptions import ConfigurationError, OmicsOracleException
 
         # Test base exception
         try:
@@ -80,9 +76,7 @@ def test_models():
         print(f"  [SQRT] AssayType enum: {assay}")
 
         # Test dataclass
-        sample = GEOSample(
-            accession="GSM123456", title="Test sample", organism="Homo sapiens"
-        )
+        sample = GEOSample(accession="GSM123456", title="Test sample", organism="Homo sapiens")
         print(f"  [SQRT] GEOSample created: {sample.accession}")
 
         # Test Pydantic model

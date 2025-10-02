@@ -8,16 +8,12 @@ including OpenAI API integration, fallback behavior, and caching.
 
 import asyncio
 import json
-import sys
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
 # Add project root to path
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
-
 from src.omics_oracle.core.config import Config
 from src.omics_oracle.services.summarizer import SummarizationService
 
@@ -58,9 +54,7 @@ class TestAISummarizationIntegration:
         with patch.dict("os.environ", {"OPENAI_API_KEY": "test_key"}):
             summarizer = SummarizationService(mock_config, disable_cache=True)
             assert summarizer is not None
-            assert (
-                summarizer.cache is None
-            )  # Fix: check cache attribute instead
+            assert summarizer.cache is None  # Fix: check cache attribute instead
 
     def test_summarizer_initialization_without_api_key(self, mock_config):
         """Test summarizer initialization without API key (fallback mode)."""
@@ -70,9 +64,7 @@ class TestAISummarizationIntegration:
             assert summarizer is not None
             # Should initialize in fallback mode
 
-    def test_openai_api_integration_success(
-        self, mock_config, sample_geo_metadata
-    ):
+    def test_openai_api_integration_success(self, mock_config, sample_geo_metadata):
         """Test successful OpenAI API integration."""
         mock_response = {
             "choices": [
@@ -88,25 +80,19 @@ class TestAISummarizationIntegration:
             mock_openai.return_value = mock_response
 
             summarizer = SummarizationService(mock_config, disable_cache=True)
-            result = summarizer.summarize_dataset(
-                sample_geo_metadata
-            )  # Fix: remove await
+            result = summarizer.summarize_dataset(sample_geo_metadata)  # Fix: remove await
 
             assert result is not None
             assert isinstance(result, dict)
             assert "overview" in result
 
-    def test_openai_api_integration_failure(
-        self, mock_config, sample_geo_metadata
-    ):
+    def test_openai_api_integration_failure(self, mock_config, sample_geo_metadata):
         """Test OpenAI API failure and fallback behavior."""
         with patch("openai.ChatCompletion.create") as mock_openai:
             mock_openai.side_effect = Exception("API Error")
 
             summarizer = SummarizationService(mock_config, disable_cache=True)
-            result = summarizer.summarize_dataset(
-                sample_geo_metadata
-            )  # Fix: remove await
+            result = summarizer.summarize_dataset(sample_geo_metadata)  # Fix: remove await
 
             # Should fallback to basic summarization
             assert result is not None
@@ -116,33 +102,23 @@ class TestAISummarizationIntegration:
     def test_cache_disabling_behavior(self, mock_config, sample_geo_metadata):
         """Test that cache is properly disabled when requested."""
         with patch("openai.ChatCompletion.create") as mock_openai:
-            mock_openai.return_value = {
-                "choices": [{"message": {"content": "Test summary"}}]
-            }
+            mock_openai.return_value = {"choices": [{"message": {"content": "Test summary"}}]}
 
             summarizer = SummarizationService(mock_config, disable_cache=True)
 
             # Call summarize twice with same data
-            result1 = summarizer.summarize_dataset(
-                sample_geo_metadata
-            )  # Fix: remove await
-            result2 = summarizer.summarize_dataset(
-                sample_geo_metadata
-            )  # Fix: remove await
+            result1 = summarizer.summarize_dataset(sample_geo_metadata)  # Fix: remove await
+            result2 = summarizer.summarize_dataset(sample_geo_metadata)  # Fix: remove await
 
             # Verify cache is disabled
             assert summarizer.cache is None
             assert result1 is not None
             assert result2 is not None
 
-    def test_summarization_quality_validation(
-        self, mock_config, sample_geo_metadata
-    ):
+    def test_summarization_quality_validation(self, mock_config, sample_geo_metadata):
         """Test that summarization results meet quality standards."""
         summarizer = SummarizationService(mock_config, disable_cache=True)
-        result = summarizer.summarize_dataset(
-            sample_geo_metadata
-        )  # Fix: remove await
+        result = summarizer.summarize_dataset(sample_geo_metadata)  # Fix: remove await
 
         # Validate result structure
         assert isinstance(result, dict)
@@ -205,9 +181,7 @@ class TestAISummarizationIntegration:
             # If exception is raised, it should be a known type
             assert isinstance(e, (ValueError, KeyError, TypeError))
 
-    def test_summarization_with_progress_callback(
-        self, mock_config, sample_geo_metadata
-    ):
+    def test_summarization_with_progress_callback(self, mock_config, sample_geo_metadata):
         """Test summarization with progress callback integration."""
         summarizer = SummarizationService(mock_config, disable_cache=True)
 
@@ -229,9 +203,7 @@ def test_summarization_integration_in_pipeline():
     config = MagicMock()
     config.logging = MagicMock()
     config.logging.level = "INFO"  # Fix: provide proper string value
-    config.logging.format = (
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    config.logging.format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     config.ncbi = MagicMock()
     config.ncbi.email = "test@example.com"
     config.openai = MagicMock()
@@ -239,9 +211,7 @@ def test_summarization_integration_in_pipeline():
 
     with patch("src.omics_oracle.pipeline.pipeline.UnifiedGEOClient"), patch(
         "src.omics_oracle.pipeline.pipeline.SummarizationService"
-    ) as mock_summarizer, patch(
-        "src.omics_oracle.pipeline.pipeline.PromptInterpreter"
-    ), patch(
+    ) as mock_summarizer, patch("src.omics_oracle.pipeline.pipeline.PromptInterpreter"), patch(
         "src.omics_oracle.pipeline.pipeline.BiomedicalNER"
     ), patch(
         "src.omics_oracle.pipeline.pipeline.EnhancedBiologicalSynonymMapper"

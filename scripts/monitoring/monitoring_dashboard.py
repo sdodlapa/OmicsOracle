@@ -40,8 +40,6 @@ logger = logging.getLogger("monitoring_dashboard")
 script_path = Path(__file__).resolve()
 project_root = script_path.parent
 logger.info(f"Project root: {project_root}")
-sys.path.insert(0, str(project_root))
-
 # Default API URL to monitor
 DEFAULT_API_URL = "http://localhost:8001"
 

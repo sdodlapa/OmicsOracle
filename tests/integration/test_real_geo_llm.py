@@ -10,8 +10,6 @@ import sys
 from pathlib import Path
 
 # Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 from omics_oracle.pipeline.pipeline import OmicsOracle, ResultFormat
 
 
@@ -30,15 +28,11 @@ async def test_real_geo_query():
         print("📡 Searching GEO database...")
 
         # Process the query
-        result = await oracle.process_query(
-            query, max_results=3, result_format=ResultFormat.JSON
-        )
+        result = await oracle.process_query(query, max_results=3, result_format=ResultFormat.JSON)
 
         print(f"\n📊 Query Status: {result.status.value}")
         print(
-            f"⏱️  Processing Time: {result.duration:.2f}s"
-            if result.duration
-            else "⏱️  Processing Time: N/A"
+            f"⏱️  Processing Time: {result.duration:.2f}s" if result.duration else "⏱️  Processing Time: N/A"
         )
 
         if result.is_failed:
@@ -84,23 +78,15 @@ async def test_real_geo_query():
             # Individual summaries
             if "individual_summaries" in result.ai_summaries:
                 print("📚 Top Dataset Summaries:")
-                for i, summary_data in enumerate(
-                    result.ai_summaries["individual_summaries"][:2], 1
-                ):
-                    print(
-                        f"\n   🔬 Dataset {i}: {summary_data.get('accession', 'Unknown')}"
-                    )
+                for i, summary_data in enumerate(result.ai_summaries["individual_summaries"][:2], 1):
+                    print(f"\n   🔬 Dataset {i}: {summary_data.get('accession', 'Unknown')}")
                     dataset_summaries = summary_data.get("summary", {})
 
                     if "overview" in dataset_summaries:
-                        print(
-                            f"      Overview: {dataset_summaries['overview'][:200]}..."
-                        )
+                        print(f"      Overview: {dataset_summaries['overview'][:200]}...")
 
                     if "technical_details" in dataset_summaries:
-                        print(
-                            f"      Technical: {dataset_summaries['technical_details']}"
-                        )
+                        print(f"      Technical: {dataset_summaries['technical_details']}")
         else:
             print("\n⚠️  No AI summaries generated")
 
