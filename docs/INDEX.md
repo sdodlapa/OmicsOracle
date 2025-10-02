@@ -1,6 +1,62 @@
 # OmicsOracle Documentation Index
 
+## Quick Links
+
+### Essential Documentation
+- **[README.md](../README.md)** - Project overview and quick start
+- **[ARCHITECTURE.md](../ARCHITECTURE.md)** - System architecture
+- **[PHASE_0_CLEANUP_SUMMARY.md](PHASE_0_CLEANUP_SUMMARY.md)** - Phase 0 cleanup details and migration guide
+
+### Phase 0 Documentation (October 2025)
+- **[PHASE_0_CLEANUP_SUMMARY.md](PHASE_0_CLEANUP_SUMMARY.md)** - Complete Phase 0 cleanup summary
+- **[PACKAGE_STRUCTURE.md](PACKAGE_STRUCTURE.md)** - Package organization and type checking
+- **[ROUTE_CONSOLIDATION.md](ROUTE_CONSOLIDATION.md)** - API route consolidation and versioning
+- **[TEST_ORGANIZATION.md](TEST_ORGANIZATION.md)** - Test structure and fixtures guide
+
+### Developer Guides
+- **[DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md)** - Development setup and guidelines
+- **[STARTUP_GUIDE.md](STARTUP_GUIDE.md)** - Application startup guide
+- **[CODE_QUALITY_GUIDE.md](CODE_QUALITY_GUIDE.md)** - Code quality standards
+
+### Architecture & Design
+- **[SYSTEM_ARCHITECTURE.md](SYSTEM_ARCHITECTURE.md)** - System architecture overview
+- **[ARCHITECTURE_IMPROVEMENT_PLAN.md](ARCHITECTURE_IMPROVEMENT_PLAN.md)** - Architecture improvement roadmap
+- **[ARCHITECTURAL_ANALYSIS.md](ARCHITECTURAL_ANALYSIS.md)** - Architecture analysis
+- **[CRITICAL_ARCHITECTURE_EVALUATION.md](CRITICAL_ARCHITECTURE_EVALUATION.md)** - Architecture evaluation
+
+### Search System
+- **[SEARCH_SYSTEM_TECHNICAL_DOCUMENTATION.md](SEARCH_SYSTEM_TECHNICAL_DOCUMENTATION.md)** - Search system technical details
+- **[SEARCH_SYSTEM_CASE_STUDY.md](SEARCH_SYSTEM_CASE_STUDY.md)** - Real-world search examples
+- **[ADVANCED_SEARCH_FEATURES.md](ADVANCED_SEARCH_FEATURES.md)** - Advanced search capabilities
+
+### Testing
+- **[TEST_ORGANIZATION.md](TEST_ORGANIZATION.md)** - Test structure, fixtures, and markers
+- **[TESTING_HIERARCHY.md](TESTING_HIERARCHY.md)** - Testing hierarchy and strategy
+- **[TEST_TEMPLATES.md](TEST_TEMPLATES.md)** - Test templates and examples
+
+### Event Flow & Validation
+- **[EVENT_FLOW_README.md](EVENT_FLOW_README.md)** - Event flow visualization
+- **[EVENT_FLOW_VALIDATION_MAP.md](EVENT_FLOW_VALIDATION_MAP.md)** - Event to test mapping
+- **[EVENT_FLOW_CHART.md](EVENT_FLOW_CHART.md)** - Event flow diagrams
+- **[COMPREHENSIVE_EVENT_FLOW_IMPLEMENTATION.md](COMPREHENSIVE_EVENT_FLOW_IMPLEMENTATION.md)** - Complete event flow
+
+### Deployment & Operations
+- **[DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)** - Deployment instructions
+- **[WEB_INTERFACE_DEMO_GUIDE.md](WEB_INTERFACE_DEMO_GUIDE.md)** - Web interface guide
+
+### API Documentation
+- **[API_REFERENCE.md](API_REFERENCE.md)** - API reference documentation
+- **Interactive API Docs**: http://localhost:8000/docs (when server is running)
+
+---
+
 ## Directory Structure
+
+### Phase 0 Documentation (`docs/`)
+- **PHASE_0_CLEANUP_SUMMARY.md** - ✨ NEW: Complete Phase 0 cleanup summary
+- **PACKAGE_STRUCTURE.md** - ✨ NEW: Package organization details
+- **ROUTE_CONSOLIDATION.md** - ✨ NEW: Route consolidation guide
+- **TEST_ORGANIZATION.md** - ✨ NEW: Test organization guide
 
 ### Planning Documents (`docs/planning/`)
 - Phase development plans and completion summaries
@@ -19,11 +75,20 @@
 - Advanced cleanup analysis
 - System analysis documents
 
-### Guides (`docs/`)
-- STARTUP_GUIDE.md - Guide for starting the application
-- This index file
+### Architecture (`docs/architecture/`)
+- Architecture decision records
+- Design documentation
+
+### Testing (`docs/testing/`)
+- Test documentation and guides
 
 ## Scripts Directory Structure
+
+### Phase 0 Cleanup Scripts (`scripts/`) ✨ NEW
+- **fix_imports_phase0.py** - Automated sys.path removal (Task 2)
+- **consolidate_routes_phase0.py** - Route consolidation verification (Task 3)
+- **organize_tests_phase0.py** - Test structure analysis (Task 5)
+- **fix_test_imports.py** - Test import fixing (Task 5)
 
 ### Debug Scripts (`scripts/debug/`)
 - debug_*.py - Pipeline and route debugging
@@ -53,16 +118,43 @@
 - cleanup_codebase.sh - Codebase cleanup script
 - start_futuristic_enhanced.sh - Enhanced startup script
 
-## Tests Directory Structure
+## Tests Directory Structure (Phase 0 Enhanced) ✨
 
-### Integration Tests (`tests/integration/`)
-- test_*.py - All integration test files
-- comprehensive_test_runner.py - Main test runner
-- run_*.py - Test execution scripts
-- run_all_tests.sh - Shell script for running all tests
+### Test Configuration
+- **conftest.py** - ✨ ENHANCED: Comprehensive shared fixtures and markers
+  - test_config, mock_env_vars
+  - mock_nlp_service, mock_cache, mock_geo_client
+  - Pytest markers: unit, integration, e2e, slow, requires_api_key, requires_network
 
 ### Unit Tests (`tests/unit/`)
-- Ready for unit test files (currently empty)
+- 20+ unit test files - Fast, isolated tests with no external dependencies
+- Run with: `pytest -m unit`
+
+### Integration Tests (`tests/integration/`)
+- 42+ integration test files - Component interaction tests
+- comprehensive_test_runner.py - Main test runner
+- run_*.py - Test execution scripts
+- Run with: `pytest -m integration`
+
+### End-to-End Tests (`tests/e2e/`)
+- 2 e2e test files - Full system tests
+- Run with: `pytest -m e2e`
+
+### Performance Tests (`tests/performance/`)
+- 3 performance test files
+- Run with: `pytest -m slow`
+
+### Security Tests (`tests/security/`)
+- 6 security test files
+
+### Other Test Categories
+- tests/geo_tools/ - GEO client tests
+- tests/pipeline/ - Pipeline tests
+- tests/interface/ - Interface tests
+- tests/validation/ - Validation tests
+- tests/browser/ - Browser tests
+- tests/mobile/ - Mobile tests
+- tests/system/ - System tests
 
 ## Configuration Files (Root)
 - .env.* - Environment configuration files
