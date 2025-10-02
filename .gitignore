@@ -189,6 +189,7 @@ test-results/
 
 # Archive and legacy files
 archive/
+backups/
 
 # Node.js and frontend dependencies
 node_modules/
