@@ -1,21 +1,88 @@
 """
-Analysis API routes.
+API v1 Routes - Legacy and Compatibility Endpoints
 
-This module provides API endpoints for data analysis functionality.
-Currently provides placeholder endpoints for future analysis features.
+This module provides v1 API endpoints for backward compatibility.
+Includes basic search and analysis functionality.
+
+Version: 1.0.0
+Status: Stable (maintenance mode)
+Deprecation: Planned for 6 months from now
 """
 
 import logging
 from datetime import datetime
 from typing import Any, Dict, List
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 logger = logging.getLogger(__name__)
-router = APIRouter()
+
+# Create v1 router
+router = APIRouter(prefix="/v1", tags=["v1-api"])
 
 
-@router.get("/capabilities")
+# ============================================================================
+# HEALTH & STATUS ENDPOINTS
+# ============================================================================
+
+
+@router.get("/health", summary="V1 Health Check")
+async def health_check() -> Dict[str, str]:
+    """V1 API health check endpoint."""
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "api": "v1",
+        "message": "V1 API is operational (legacy mode)",
+    }
+
+
+# ============================================================================
+# SEARCH ENDPOINTS
+# ============================================================================
+
+
+@router.get("/search", summary="Basic Search")
+async def basic_search(
+    query: str = Query(..., description="Search query"),
+    limit: int = Query(20, ge=1, le=100, description="Maximum results"),
+) -> Dict[str, Any]:
+    """
+    Basic search endpoint (v1 compatibility).
+
+    This is a simplified endpoint for backward compatibility.
+    For advanced features, use v2 API.
+    """
+    logger.info(f"V1 search: query='{query}', limit={limit}")
+
+    return {
+        "status": "success",
+        "query": query,
+        "limit": limit,
+        "results": [],
+        "total": 0,
+        "message": "V1 search is deprecated. Please migrate to v2 API for enhanced features.",
+        "migration_guide": "/api/v2/docs",
+    }
+
+
+@router.get("/search/health", summary="Search Service Health")
+async def search_health() -> Dict[str, Any]:
+    """Check search service health."""
+    return {
+        "status": "healthy",
+        "service": "search",
+        "version": "1.0.0",
+        "endpoints": ["search", "analysis"],
+    }
+
+
+# ============================================================================
+# ANALYSIS ENDPOINTS
+# ============================================================================
+
+
+@router.get("/analysis/capabilities", summary="Get Analysis Capabilities")
 async def get_analysis_capabilities() -> Dict[str, Any]:
     """Get available analysis capabilities."""
     return {
@@ -30,19 +97,20 @@ async def get_analysis_capabilities() -> Dict[str, Any]:
         "max_file_size": "100MB",
         "estimated_processing_time": "5-30 minutes",
         "status": "available",
+        "api_version": "v1",
     }
 
 
-@router.post("/differential-expression")
+@router.post("/analysis/differential-expression", summary="Run Differential Expression Analysis")
 async def run_differential_expression(
-    dataset_id: str, conditions: List[str]
+    dataset_id: str,
+    conditions: List[str],
 ) -> Dict[str, Any]:
     """
     Run differential expression analysis (placeholder).
 
     This is a placeholder endpoint for future implementation.
     """
-    # This would integrate with bioinformatics analysis pipeline
     return {
         "analysis_id": f"de_{dataset_id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}",
         "status": "queued",
@@ -53,9 +121,10 @@ async def run_differential_expression(
     }
 
 
-@router.post("/pathway-enrichment")
+@router.post("/analysis/pathway-enrichment", summary="Run Pathway Enrichment Analysis")
 async def run_pathway_enrichment(
-    gene_list: List[str], database: str = "KEGG"
+    gene_list: List[str],
+    database: str = "KEGG",
 ) -> Dict[str, Any]:
     """
     Run pathway enrichment analysis (placeholder).
@@ -78,14 +147,13 @@ async def run_pathway_enrichment(
     }
 
 
-@router.get("/status/{analysis_id}")
+@router.get("/analysis/status/{analysis_id}", summary="Get Analysis Status")
 async def get_analysis_status(analysis_id: str) -> Dict[str, Any]:
     """
     Get analysis status (placeholder).
 
     This is a placeholder endpoint for future implementation.
     """
-    # This would check actual analysis status from processing queue
     return {
         "analysis_id": analysis_id,
         "status": "processing",
@@ -96,14 +164,13 @@ async def get_analysis_status(analysis_id: str) -> Dict[str, Any]:
     }
 
 
-@router.get("/results/{analysis_id}")
+@router.get("/analysis/results/{analysis_id}", summary="Get Analysis Results")
 async def get_analysis_results(analysis_id: str) -> Dict[str, Any]:
     """
     Get analysis results (placeholder).
 
     This is a placeholder endpoint for future implementation.
     """
-    # This would return actual analysis results
     return {
         "analysis_id": analysis_id,
         "status": "completed",
@@ -122,7 +189,7 @@ async def get_analysis_results(analysis_id: str) -> Dict[str, Any]:
     }
 
 
-@router.get("/download/{analysis_id}")
+@router.get("/analysis/download/{analysis_id}", summary="Download Analysis Results")
 async def download_analysis_results(analysis_id: str):
     """
     Download analysis results (placeholder).
@@ -135,7 +202,7 @@ async def download_analysis_results(analysis_id: str):
     )
 
 
-@router.get("/plot/{analysis_id}/{plot_type}")
+@router.get("/analysis/plot/{analysis_id}/{plot_type}", summary="Get Analysis Plot")
 async def get_analysis_plot(analysis_id: str, plot_type: str):
     """
     Get analysis visualization (placeholder).
