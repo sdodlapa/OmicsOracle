@@ -80,8 +80,14 @@ Issues = "https://github.com/your-org/OmicsOracle/issues"
 omics-oracle = "omics_oracle.cli:main"
 
 [tool.setuptools]
-packages = ["omics_oracle"]
 package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["omics_oracle*"]
+
+[tool.setuptools.package-data]
+omics_oracle = ["py.typed"]
 
 [tool.setuptools_scm]
 write_to = "src/omics_oracle/_version.py"
