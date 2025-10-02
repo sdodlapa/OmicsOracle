@@ -16,6 +16,7 @@ eggs/
 .eggs/
 lib/
 lib64/
+!omics_oracle_v2/lib/
 parts/
 sdist/
 var/
