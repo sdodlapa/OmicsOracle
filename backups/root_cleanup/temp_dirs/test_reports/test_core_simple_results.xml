@@ -1,1 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="0.154" timestamp="2025-06-27T04:21:12.455768-04:00" hostname="Sanjeevas-iMac.local"><testcase classname="tests.unit.test_core_simple.TestCoreModules" name="test_import_modules" time="0.123" /></testsuite></testsuites>
