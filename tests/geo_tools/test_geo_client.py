@@ -28,8 +28,8 @@ os.environ["NCBI_EMAIL"] = "omicsoracle@example.com"
 
 from Bio import Entrez
 
-from src.omics_oracle.core.config import Config
-from src.omics_oracle.geo_tools.geo_client import GEOClient
+from omics_oracle.core.config import Config
+from omics_oracle.geo_tools.geo_client import GEOClient
 
 
 @pytest.fixture

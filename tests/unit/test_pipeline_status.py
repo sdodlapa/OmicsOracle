@@ -6,9 +6,9 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
-
 from interfaces.futuristic.main import app, pipeline
-from src.omics_oracle.pipeline.pipeline import OmicsOracle
+
+from omics_oracle.pipeline.pipeline import OmicsOracle
 
 
 class TestPipelineStatus:
@@ -37,14 +37,10 @@ class TestPipelineStatus:
         if not mock_pipeline:
             # Should raise HTTPException
             with pytest.raises(HTTPException) as exc_info:
-                raise HTTPException(
-                    status_code=503, detail="OmicsOracle pipeline not available"
-                )
+                raise HTTPException(status_code=503, detail="OmicsOracle pipeline not available")
 
             assert exc_info.value.status_code == 503
-            assert (
-                "pipeline not available" in str(exc_info.value.detail).lower()
-            )
+            assert "pipeline not available" in str(exc_info.value.detail).lower()
 
     def test_pipeline_initialization_status(self):
         """Test checking if pipeline is properly initialized."""
@@ -87,9 +83,7 @@ class TestPipelineStatus:
             return {
                 "geo_client_available": hasattr(mock_pipeline, "geo_client")
                 and mock_pipeline.geo_client is not None,
-                "cache_disabled": getattr(
-                    mock_pipeline, "disable_cache", False
-                ),
+                "cache_disabled": getattr(mock_pipeline, "disable_cache", False),
                 "summarizer_available": hasattr(mock_pipeline, "summarizer")
                 and mock_pipeline.summarizer is not None,
             }
@@ -163,10 +157,7 @@ class TestPipelineStatus:
             ]
 
             for component in required_components:
-                if (
-                    not hasattr(pipeline, component)
-                    or getattr(pipeline, component) is None
-                ):
+                if not hasattr(pipeline, component) or getattr(pipeline, component) is None:
                     return False
 
             return True

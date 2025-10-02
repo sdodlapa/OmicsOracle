@@ -51,8 +51,8 @@ def setup_ncbi_email():
 async def test_geo_search(query, max_results=5):
     """Test GEO search functionality"""
     try:
-        from src.omics_oracle.core.config import Config
-        from src.omics_oracle.geo_tools.geo_client import GEOClient
+        from omics_oracle.core.config import Config
+        from omics_oracle.geo_tools.geo_client import GEOClient
 
         logger.info(f"Testing GEO search with query: '{query}'")
 
@@ -92,8 +92,8 @@ async def test_fetch_metadata(geo_ids):
         return False
 
     try:
-        from src.omics_oracle.core.config import Config
-        from src.omics_oracle.geo_tools.geo_client import GEOClient
+        from omics_oracle.core.config import Config
+        from omics_oracle.geo_tools.geo_client import GEOClient
 
         logger.info(f"Testing metadata fetch for {len(geo_ids)} GEO IDs")
 
@@ -137,8 +137,8 @@ async def test_fetch_metadata(geo_ids):
 async def test_rate_limiting_and_retries():
     """Test rate limiting and retry mechanism"""
     try:
-        from src.omics_oracle.core.config import Config
-        from src.omics_oracle.geo_tools.geo_client import GEOClient
+        from omics_oracle.core.config import Config
+        from omics_oracle.geo_tools.geo_client import GEOClient
 
         logger.info("Testing rate limiting and retry mechanism")
 

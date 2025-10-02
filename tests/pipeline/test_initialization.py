@@ -26,8 +26,8 @@ os.environ["NCBI_EMAIL"] = "omicsoracle@example.com"
 
 from Bio import Entrez
 
-from src.omics_oracle.core.config import Config
-from src.omics_oracle.pipeline.pipeline import OmicsOracle
+from omics_oracle.core.config import Config
+from omics_oracle.pipeline.pipeline import OmicsOracle
 
 
 @pytest.fixture

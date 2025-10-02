@@ -29,8 +29,8 @@ async def test_search(query="dna methylation immune cells"):
     project_root = Path.cwd()
     try:
         # Import OmicsOracle components
-        from src.omics_oracle.core.config import Config
-        from src.omics_oracle.pipeline.pipeline import OmicsOracle
+        from omics_oracle.core.config import Config
+        from omics_oracle.pipeline.pipeline import OmicsOracle
 
         # Check Bio.Entrez email
         try:

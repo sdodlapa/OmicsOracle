@@ -1,29 +1,91 @@
 """
-Test configuration and fixtures for OmicsOracle tests.
+Test Configuration and Fixtures for OmicsOracle
+
+This module provides shared fixtures and test configuration for all test suites.
+
+Fixtures:
+    - temp_dir: Temporary directory for test files
+    - sample_data_dir: Path to test data files
+    - mock_geo_response: Mock GEO API response
+    - sample_fasta_content: Sample FASTA sequences
+    - sample_metadata: Sample metadata structure
+    - test_config: Test configuration with safe defaults
+    - mock_nlp_service: Mocked NLP service for testing
+    - mock_cache: Mocked cache service for testing
+
+Usage:
+    def test_something(temp_dir, mock_geo_response):
+        # temp_dir and mock_geo_response are automatically provided
+        pass
 """
 
+import os
 import tempfile
 from pathlib import Path
+from typing import Any, Dict
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+
+# ============================================================================
+# Directory and Path Fixtures
+# ============================================================================
 
 
 @pytest.fixture
 def temp_dir():
-    """Create a temporary directory for tests."""
+    """
+    Create a temporary directory for tests.
+
+    The directory is automatically cleaned up after the test.
+
+    Returns:
+        Path: Path object pointing to temporary directory
+    """
     with tempfile.TemporaryDirectory() as tmpdir:
         yield Path(tmpdir)
 
 
 @pytest.fixture
 def sample_data_dir():
-    """Path to sample data directory."""
+    """
+    Path to sample data directory.
+
+    Returns:
+        Path: Path to tests/data directory
+    """
     return Path(__file__).parent / "data"
 
 
 @pytest.fixture
-def mock_geo_response():
-    """Mock GEO API response."""
+def test_data_dir(temp_dir: Path) -> Path:
+    """
+    Create a test data directory with sample files.
+
+    Args:
+        temp_dir: Temporary directory fixture
+
+    Returns:
+        Path: Path to test data directory
+    """
+    data_dir = temp_dir / "data"
+    data_dir.mkdir()
+    return data_dir
+
+
+# ============================================================================
+# Mock Data Fixtures
+# ============================================================================
+
+
+@pytest.fixture
+def mock_geo_response() -> Dict[str, Any]:
+    """
+    Mock GEO API response for testing.
+
+    Returns:
+        dict: Sample GEO series metadata
+    """
     return {
         "accession": "GSE12345",
         "title": "Test Dataset",
@@ -31,12 +93,19 @@ def mock_geo_response():
         "organism": "Homo sapiens",
         "samples": 24,
         "platform": "GPL1234",
+        "type": "Expression profiling by array",
+        "pubmed_id": "12345678",
     }
 
 
 @pytest.fixture
-def sample_fasta_content():
-    """Sample FASTA content for testing."""
+def sample_fasta_content() -> str:
+    """
+    Sample FASTA content for testing.
+
+    Returns:
+        str: Multi-sequence FASTA format data
+    """
     return """>seq1
 ATCGATCGATCGATCG
 >seq2
@@ -47,8 +116,13 @@ TTTTAAAACCCCGGGG
 
 
 @pytest.fixture
-def sample_metadata():
-    """Sample metadata for testing."""
+def sample_metadata() -> Dict[str, Any]:
+    """
+    Sample metadata for testing.
+
+    Returns:
+        dict: Sample genomics dataset metadata
+    """
     return {
         "dataset_id": "TEST001",
         "title": "Sample Genomics Dataset",
@@ -60,3 +134,152 @@ def sample_metadata():
         "platform": "Illumina HiSeq",
         "date_created": "2024-01-01",
     }
+
+
+# ============================================================================
+# Configuration Fixtures
+# ============================================================================
+
+
+@pytest.fixture
+def test_config() -> Dict[str, Any]:
+    """
+    Test configuration with safe defaults.
+
+    Provides configuration that doesn't require external services
+    or API keys. Safe for CI/CD environments.
+
+    Returns:
+        dict: Test configuration settings
+    """
+    return {
+        "environment": "testing",
+        "debug": True,
+        "ncbi": {
+            "api_key": "test_api_key",
+            "email": "test@example.com",
+            "tool": "omics_oracle_test",
+        },
+        "cache": {
+            "enabled": False,  # Disable cache for tests
+            "ttl": 300,
+        },
+        "database": {
+            "url": "sqlite:///:memory:",  # In-memory database for tests
+        },
+        "api": {
+            "host": "127.0.0.1",
+            "port": 8000,
+            "workers": 1,
+        },
+    }
+
+
+@pytest.fixture
+def mock_env_vars(monkeypatch):
+    """
+    Set up mock environment variables for testing.
+
+    Args:
+        monkeypatch: pytest monkeypatch fixture
+    """
+    env_vars = {
+        "OMICS_ORACLE_ENV": "testing",
+        "NCBI_API_KEY": "test_api_key",
+        "NCBI_EMAIL": "test@example.com",
+        "OPENAI_API_KEY": "test_openai_key",
+    }
+    for key, value in env_vars.items():
+        monkeypatch.setenv(key, value)
+
+
+# ============================================================================
+# Service Mock Fixtures
+# ============================================================================
+
+
+@pytest.fixture
+def mock_nlp_service():
+    """
+    Mocked NLP service for testing.
+
+    Returns:
+        MagicMock: Mock NLP service with common methods
+    """
+    mock = MagicMock()
+    mock.process_query = AsyncMock(
+        return_value={
+            "entities": ["BRCA1", "breast cancer"],
+            "intent": "search",
+            "normalized_query": "BRCA1 breast cancer expression",
+        }
+    )
+    mock.extract_terms = MagicMock(return_value=["BRCA1", "breast cancer"])
+    return mock
+
+
+@pytest.fixture
+def mock_cache():
+    """
+    Mocked cache service for testing.
+
+    Returns:
+        MagicMock: Mock cache with get/set methods
+    """
+    cache = MagicMock()
+    cache.get = AsyncMock(return_value=None)
+    cache.set = AsyncMock(return_value=True)
+    cache.delete = AsyncMock(return_value=True)
+    cache.clear = AsyncMock(return_value=True)
+    return cache
+
+
+@pytest.fixture
+def mock_geo_client():
+    """
+    Mocked GEO client for testing.
+
+    Returns:
+        MagicMock: Mock GEO client with search methods
+    """
+    client = MagicMock()
+    client.search = AsyncMock(
+        return_value={
+            "count": 1,
+            "results": [
+                {
+                    "accession": "GSE12345",
+                    "title": "Test Dataset",
+                    "organism": "Homo sapiens",
+                }
+            ],
+        }
+    )
+    client.fetch = AsyncMock(
+        return_value={
+            "accession": "GSE12345",
+            "title": "Test Dataset",
+            "summary": "Test summary",
+        }
+    )
+    return client
+
+
+# ============================================================================
+# Test Markers Configuration
+# ============================================================================
+
+
+def pytest_configure(config):
+    """
+    Configure custom pytest markers.
+
+    Args:
+        config: pytest config object
+    """
+    config.addinivalue_line("markers", "unit: Unit tests (fast, no external dependencies)")
+    config.addinivalue_line("markers", "integration: Integration tests (may require services)")
+    config.addinivalue_line("markers", "e2e: End-to-end tests (full system)")
+    config.addinivalue_line("markers", "slow: Slow-running tests")
+    config.addinivalue_line("markers", "requires_api_key: Tests requiring API keys")
+    config.addinivalue_line("markers", "requires_network: Tests requiring network access")

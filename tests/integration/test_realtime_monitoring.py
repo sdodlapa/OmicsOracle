@@ -19,9 +19,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 # Add project root to path
-from src.omics_oracle.monitoring.api_monitor import APIMonitoringMiddleware
-from src.omics_oracle.monitoring.pipeline_monitor import PipelineMonitor
-from src.omics_oracle.monitoring.websocket_monitor import WebSocketMonitor
+from omics_oracle.monitoring.api_monitor import APIMonitoringMiddleware
+from omics_oracle.monitoring.pipeline_monitor import PipelineMonitor
+from omics_oracle.monitoring.websocket_monitor import WebSocketMonitor
 
 
 class TestRealTimeMonitoring:

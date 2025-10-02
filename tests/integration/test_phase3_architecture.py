@@ -14,20 +14,20 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from src.omics_oracle.application.dto.search_dto import SearchRequestDTO
-from src.omics_oracle.application.use_cases.enhanced_search_datasets import EnhancedSearchDatasetsUseCase
-from src.omics_oracle.domain.entities.dataset import Dataset
-from src.omics_oracle.domain.value_objects.search_query import SearchType
-from src.omics_oracle.infrastructure.caching.memory_cache import MemoryCache
-from src.omics_oracle.infrastructure.dependencies.container import Container
-from src.omics_oracle.infrastructure.messaging.event_bus import EventBus
-from src.omics_oracle.infrastructure.messaging.search_events import (
+from omics_oracle.application.dto.search_dto import SearchRequestDTO
+from omics_oracle.application.use_cases.enhanced_search_datasets import EnhancedSearchDatasetsUseCase
+from omics_oracle.domain.entities.dataset import Dataset
+from omics_oracle.domain.value_objects.search_query import SearchType
+from omics_oracle.infrastructure.caching.memory_cache import MemoryCache
+from omics_oracle.infrastructure.dependencies.container import Container
+from omics_oracle.infrastructure.messaging.event_bus import EventBus
+from omics_oracle.infrastructure.messaging.search_events import (
     SearchCompletedEvent,
     SearchFailedEvent,
     SearchStartedEvent,
 )
-from src.omics_oracle.infrastructure.repositories.geo_search_repository import GEOSearchRepository
-from src.omics_oracle.shared.exceptions.domain_exceptions import ValidationError
+from omics_oracle.infrastructure.repositories.geo_search_repository import GEOSearchRepository
+from omics_oracle.shared.exceptions.domain_exceptions import ValidationError
 
 
 class TestPhase3Architecture:
@@ -135,7 +135,7 @@ class TestPhase3Architecture:
 
     async def test_geo_repository_search(self, geo_repository, mock_geo_client):
         """Test GEO repository search functionality."""
-        from src.omics_oracle.domain.value_objects.search_query import SearchQuery
+        from omics_oracle.domain.value_objects.search_query import SearchQuery
 
         # Create search query
         query = SearchQuery(

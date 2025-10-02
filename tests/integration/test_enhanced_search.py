@@ -23,9 +23,9 @@ os.environ["NCBI_EMAIL"] = "omicsoracle@example.com"
 
 # Import required modules
 try:
-    from src.omics_oracle.core.config import Config
-    from src.omics_oracle.pipeline.pipeline import OmicsOracle
-    from src.omics_oracle.search.enhanced_query_handler import QueryParser, perform_multi_strategy_search
+    from omics_oracle.core.config import Config
+    from omics_oracle.pipeline.pipeline import OmicsOracle
+    from omics_oracle.search.enhanced_query_handler import QueryParser, perform_multi_strategy_search
 except ImportError as e:
     logger.error(f"Failed to import required modules: {e}")
     sys.exit(1)

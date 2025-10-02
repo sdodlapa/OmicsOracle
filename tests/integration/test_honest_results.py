@@ -33,8 +33,8 @@ try:
 except ImportError:
     logger.warning("Bio.Entrez module not available")
 
-from src.omics_oracle.core.config import Config
-from src.omics_oracle.pipeline.pipeline import OmicsOracle
+from omics_oracle.core.config import Config
+from omics_oracle.pipeline.pipeline import OmicsOracle
 
 
 async def test_honest_results():

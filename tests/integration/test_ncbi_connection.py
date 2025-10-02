@@ -29,7 +29,7 @@ except ImportError:
     logger.warning("Bio.Entrez not available")
 
 # Import our GEO client
-from src.omics_oracle.geo_tools.geo_client import NCBIDirectClient
+from omics_oracle.geo_tools.geo_client import NCBIDirectClient
 
 
 def test_ncbi_connection():

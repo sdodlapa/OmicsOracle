@@ -14,8 +14,8 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 # Add project root to path
-from src.omics_oracle.core.config import Config
-from src.omics_oracle.services.summarizer import SummarizationService
+from omics_oracle.core.config import Config
+from omics_oracle.services.summarizer import SummarizationService
 
 
 class TestAISummarizationIntegration:
@@ -198,7 +198,7 @@ def test_summarization_integration_in_pipeline():
     # This would test the summarizer as part of the complete search pipeline
     # For now, we'll test the interface contract
 
-    from src.omics_oracle.pipeline.pipeline import OmicsOracle
+    from omics_oracle.pipeline.pipeline import OmicsOracle
 
     config = MagicMock()
     config.logging = MagicMock()
