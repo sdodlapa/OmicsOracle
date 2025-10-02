@@ -15,17 +15,23 @@ Example:
     >>> print(settings.nlp.model_name)
     en_core_web_sm
 
-Status: Phase 1 Task 2 (In Progress)
+Status: Phase 1 Task 2 (Complete)
 """
 
-# Exports will be added as modules are implemented
-# from .config import Settings, NLPSettings, GEOSettings, AISettings
-# from .exceptions import (
-#     OmicsOracleError,
-#     ConfigurationError,
-#     NLPError,
-#     GEOError,
-#     AIError,
-# )
+from .config import AISettings, GEOSettings, NLPSettings, Settings, get_settings
+from .exceptions import AIError, ConfigurationError, GEOError, NLPError, OmicsOracleError
 
-__all__ = []
+__all__ = [
+    # Config
+    "Settings",
+    "NLPSettings",
+    "GEOSettings",
+    "AISettings",
+    "get_settings",
+    # Exceptions
+    "OmicsOracleError",
+    "ConfigurationError",
+    "NLPError",
+    "GEOError",
+    "AIError",
+]
