@@ -58,11 +58,19 @@ class NLPSettings(BaseSettings):
 class GEOSettings(BaseSettings):
     """Configuration for GEO data access."""
 
-    api_key: Optional[str] = Field(default=None, description="Optional NCBI API key")
+    ncbi_email: Optional[str] = Field(default=None, description="Email for NCBI API (required)")
+    ncbi_api_key: Optional[str] = Field(
+        default=None, description="Optional NCBI API key for higher rate limits"
+    )
     cache_dir: Path = Field(default=Path(".cache/geo"), description="Directory for cached responses")
     cache_ttl: int = Field(default=3600, ge=0, description="Cache time-to-live in seconds")
+    use_cache: bool = Field(default=True, description="Enable caching of API responses")
+    rate_limit: int = Field(
+        default=3, ge=1, le=10, description="Requests per second (NCBI guideline: 3 without API key)"
+    )
     max_retries: int = Field(default=3, ge=0, le=10, description="Maximum retry attempts for API calls")
     timeout: int = Field(default=30, ge=1, le=300, description="Request timeout in seconds")
+    verify_ssl: bool = Field(default=True, description="Verify SSL certificates for API calls")
 
     class Config:
         env_prefix = "OMICS_GEO_"
