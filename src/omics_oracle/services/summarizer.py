@@ -17,14 +17,15 @@ from openai import OpenAI
 from ..core.config import Config
 from .cache import SummaryCache
 
+logger = logging.getLogger(__name__)
+
 try:
     from .cost_manager import cost_manager  # noqa: F401
 
     COST_TRACKING_AVAILABLE = True
 except ImportError:
     COST_TRACKING_AVAILABLE = False
-
-logger = logging.getLogger(__name__)
+    logger.warning("Cost manager not available - cost tracking disabled")
 
 
 class SummarizationService:
@@ -37,81 +38,18 @@ class SummarizationService:
         # Initialize caching
         self.cache = SummaryCache()
 
-        # Rate limit tracking
-        self._rate_limited = False
-        self._rate_limit_message = None
-
         # Initialize OpenAI client
         api_key = os.getenv("OPENAI_API_KEY")
         if not api_key:
             logger.warning("OpenAI API key not found. AI summarization will be unavailable.")
             self.client = None
         else:
-            # Disable automatic retries to handle rate limits intelligently
-            self.client = OpenAI(api_key=api_key, max_retries=0)  # Disable automatic retries
+            self.client = OpenAI(api_key=api_key)
 
         # Model configuration
         self.model = "gpt-4o-mini"  # Cost-effective model for summarization
         self.max_tokens = 500
-        self.temperature = 0.3
-
-    def _check_rate_limit(self, error_message: str) -> bool:
-        """Check if error is a rate limit and handle accordingly."""
-        error_str = str(error_message)
-        if "rate_limit_exceeded" in error_str or "429" in error_str or "Too Many Requests" in error_str:
-            # For ANY rate limit, mark as rate limited to avoid wasting time
-            if "requests per day" in error_str or "RPD" in error_str:
-                self._rate_limited = True
-                self._rate_limit_message = (
-                    "Daily OpenAI API limit reached. AI summaries unavailable until tomorrow."
-                )
-                logger.warning(f"Daily rate limit hit - disabling AI summaries: {error_message}")
-            elif "requests per min" in error_str or "RPM" in error_str:
-                self._rate_limited = True  # Also disable for per-minute limits
-                self._rate_limit_message = (
-                    "OpenAI API rate limit reached. AI summaries temporarily unavailable."
-                )
-                logger.warning(
-                    f"Per-minute rate limit hit - temporarily disabling AI summaries: {error_message}"
-                )
-            else:
-                # Generic rate limit
-                self._rate_limited = True
-                self._rate_limit_message = (
-                    "OpenAI API rate limit reached. AI summaries temporarily unavailable."
-                )
-                logger.warning(f"Rate limit detected - disabling AI summaries: {error_message}")
-            return True
-        return False
-
-    def _make_openai_request(self, messages: List[Dict], context: str = "AI request") -> Optional[str]:
-        """Make OpenAI request with smart rate limit handling."""
-        if self._rate_limited:
-            logger.info(f"Skipping {context} - AI service rate limited: {self._rate_limit_message}")
-            return None
-
-        if not self.client:
-            return None
-
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=messages,
-                max_tokens=self.max_tokens,
-                temperature=self.temperature,
-            )
-            content = response.choices[0].message.content
-            return content.strip() if content and content.strip() else None
-
-        except Exception as e:
-            # Check for rate limits and handle intelligently
-            if self._check_rate_limit(str(e)):
-                # Don't retry if it's a rate limit - just return None gracefully
-                return None
-            else:
-                # For other errors, log and return None
-                logger.error(f"Error in {context}: {e}")
-                return None  # Low temperature for consistent, factual output
+        self.temperature = 0.3  # Low temperature for consistent, factual output
 
         logger.info("Summarization service initialized")
 
@@ -205,11 +143,10 @@ class SummarizationService:
         """Clean and prepare metadata for LLM processing."""
         # Handle case where metadata might be a string or have unexpected structure
         if isinstance(metadata, str):
-            metadata_str = str(metadata)
             return {
                 "accession": "Unknown",
-                "title": metadata_str[:200] if len(metadata_str) > 200 else metadata_str,
-                "summary": metadata_str,
+                "title": metadata[:200] if len(metadata) > 200 else str(metadata),
+                "summary": str(metadata),
                 "type": "Unknown",
                 "organism": "Unknown",
                 "platform": "Unknown",
@@ -248,19 +185,33 @@ class SummarizationService:
         """Generate high-level overview summary using real AI only."""
         prompt = self._build_overview_prompt(metadata, query_context)
 
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a genomics research expert who creates clear, "
-                    "accessible summaries of scientific datasets. Focus on the "
-                    "biological significance and research context."
-                ),
-            },
-            {"role": "user", "content": prompt},
-        ]
+        try:
+            if not self.client:
+                return None  # No fake summaries
 
-        return self._make_openai_request(messages, "overview generation")
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a genomics research expert who creates clear, "
+                            "accessible summaries of scientific datasets. Focus on the "
+                            "biological significance and research context."
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=self.max_tokens,
+                temperature=self.temperature,
+            )
+
+            content = response.choices[0].message.content
+            return content.strip() if content and content.strip() else None
+
+        except Exception as e:
+            logger.error(f"Error generating overview: {e}")
+            return None
 
     def _generate_methodology_summary(self, metadata: Dict[str, Any]) -> Optional[str]:
         """Generate methodology and experimental design summary using real AI only."""
@@ -285,18 +236,32 @@ class SummarizationService:
         Provide a technical but accessible summary in 2-3 sentences.
         """
 
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a genomics methods expert. Provide clear, "
-                    "technical summaries of experimental methodologies."
-                ),
-            },
-            {"role": "user", "content": prompt},
-        ]
+        try:
+            if not self.client:
+                return None  # No fake summaries
 
-        return self._make_openai_request(messages, "methodology summary")
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a genomics methods expert. Provide clear, "
+                            "technical summaries of experimental methodologies."
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=300,
+                temperature=self.temperature,
+            )
+
+            content = response.choices[0].message.content
+            return content.strip() if content and content.strip() else None
+
+        except Exception as e:
+            logger.error(f"Error generating methodology summary: {e}")
+            return None
 
     def _generate_significance_summary(
         self, metadata: Dict[str, Any], query_context: Optional[str]
@@ -321,18 +286,32 @@ class SummarizationService:
         Provide insights in 2-3 sentences focusing on biological significance.
         """
 
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a genomics research analyst who identifies "
-                    "the broader scientific significance of research datasets."
-                ),
-            },
-            {"role": "user", "content": prompt},
-        ]
+        try:
+            if not self.client:
+                return None  # No fake summaries
 
-        return self._make_openai_request(messages, "significance summary")
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a genomics research analyst who identifies "
+                            "the broader scientific significance of research datasets."
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=300,
+                temperature=self.temperature,
+            )
+
+            content = response.choices[0].message.content
+            return content.strip() if content and content.strip() else None
+
+        except Exception as e:
+            logger.error(f"Error generating significance summary: {e}")
+            return None
 
     def _generate_brief_summary(
         self, metadata: Dict[str, Any], query_context: Optional[str]
@@ -340,28 +319,33 @@ class SummarizationService:
         """Generate brief, one-paragraph summary using real AI only."""
         prompt = self._build_overview_prompt(metadata, query_context, brief=True)
 
-        messages = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a genomics expert who creates concise, "
-                    "one-paragraph summaries of research datasets. "
-                    "Focus on key findings and relevance."
-                ),
-            },
-            {"role": "user", "content": prompt},
-        ]
+        try:
+            if not self.client:
+                return None  # No fake summaries
 
-        return self._make_openai_request(messages, "brief summary")
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a genomics expert who creates concise, "
+                            "one-paragraph summaries of research datasets. "
+                            "Focus on key findings and relevance."
+                        ),
+                    },
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=200,
+                temperature=self.temperature,
+            )
 
-    def get_ai_service_status(self) -> Dict[str, Any]:
-        """Get current AI service status for frontend display."""
-        return {
-            "available": not self._rate_limited and self.client is not None,
-            "rate_limited": self._rate_limited,
-            "message": self._rate_limit_message
-            or ("AI summaries available" if self.client else "OpenAI API not configured"),
-        }
+            content = response.choices[0].message.content
+            return content.strip() if content and content.strip() else None
+
+        except Exception as e:
+            logger.error(f"Error generating brief summary: {e}")
+            return None
 
     def _generate_technical_summary(self, metadata: Dict[str, Any]) -> Optional[str]:
         """Generate technical details summary - only real data, no placeholders."""

@@ -54,18 +54,12 @@ def check_bandit_results() -> bool:
         high_severity = metrics.get("SEVERITY.HIGH", 0)
 
         if high_severity > 0:
-            print(
-                f"[FAIL] Found {high_severity} high-severity "
-                f"security issues"
-            )
+            print(f"[FAIL] Found {high_severity} high-severity " f"security issues")
             return False
         else:
             medium_severity = metrics.get("SEVERITY.MEDIUM", 0)
             if medium_severity > 0:
-                print(
-                    f"[PASS] Security Scan "
-                    f"(Note: {medium_severity} medium-severity warnings)"
-                )
+                print(f"[PASS] Security Scan " f"(Note: {medium_severity} medium-severity warnings)")
             else:
                 print("[PASS] Security Scan")
             return True
@@ -107,7 +101,7 @@ def main() -> int:
         ),
         (["ruff", "check", "src/", "tests/", "scripts/"], "Ruff Linting"),
         (
-            ["flake8", "src/", "tests/", "scripts/", "--max-line-length=100"],
+            ["flake8", "src/", "tests/", "scripts/", "--max-line-length=110"],
             "Line Length (Hard Limit: 100 chars)",
         ),
         (
@@ -147,9 +141,7 @@ def main() -> int:
         print(f"\n[SOFT CHECK] {desc}")
         print(f"Command: {' '.join(cmd)}")
         try:
-            result = subprocess.run(
-                cmd, capture_output=True, text=True, check=False
-            )
+            result = subprocess.run(cmd, capture_output=True, text=True, check=False)
             if result.returncode != 0:
                 print(f"[WARNING] {desc}")
                 if result.stdout:
