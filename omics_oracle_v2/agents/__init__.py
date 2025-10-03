@@ -25,6 +25,7 @@ Example:
 from .base import Agent, AgentResult, AgentState
 from .context import AgentContext, ExecutionContext
 from .exceptions import AgentError, AgentExecutionError, AgentStateError, AgentTimeoutError
+from .query_agent import QueryAgent
 
 __all__ = [
     # Base classes
@@ -39,4 +40,6 @@ __all__ = [
     "AgentExecutionError",
     "AgentStateError",
     "AgentTimeoutError",
+    # Agents
+    "QueryAgent",
 ]
