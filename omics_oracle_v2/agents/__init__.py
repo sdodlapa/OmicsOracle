@@ -27,6 +27,7 @@ from .context import AgentContext, ExecutionContext
 from .data_agent import DataAgent
 from .exceptions import AgentError, AgentExecutionError, AgentStateError, AgentTimeoutError
 from .query_agent import QueryAgent
+from .report_agent import ReportAgent
 from .search_agent import SearchAgent
 
 __all__ = [
@@ -46,4 +47,5 @@ __all__ = [
     "QueryAgent",
     "SearchAgent",
     "DataAgent",
+    "ReportAgent",
 ]
