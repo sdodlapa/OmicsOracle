@@ -1,31 +1,68 @@
 """
 AI services library.
 
-Provides AI-powered text summarization and analysis using large language models.
-Designed for biomedical and scientific content with domain-specific prompts.
+Provides AI-powered text summarization using OpenAI GPT models.
+Designed for genomics and biomedical dataset analysis with domain-specific prompts.
 
 Key Components:
-    - SummarizationService: Main summarization engine
-    - PromptManager: Domain-specific prompt templates
+    - SummarizationClient: Main AI summarization client
+    - PromptBuilder: Genomics-specific prompt templates
     - Summary models: Type-safe request/response models
+    - Utilities: Token estimation and metadata preparation
 
 Example:
-    >>> from omics_oracle_v2.lib.ai import SummarizationService
-    >>> from omics_oracle_v2.lib.ai.models import SummaryRequest, SummaryType
+    >>> from omics_oracle_v2.lib.ai import SummarizationClient, SummaryType
+    >>> from omics_oracle_v2.core import Settings
     >>>
-    >>> summarizer = SummarizationService()
-    >>> request = SummaryRequest(
-    ...     text="Long biomedical text...",
-    ...     summary_type=SummaryType.CONCISE
+    >>> settings = Settings()
+    >>> client = SummarizationClient(settings)
+    >>>
+    >>> # Generate comprehensive summary
+    >>> metadata = {
+    ...     "title": "RNA-seq analysis of cancer cells",
+    ...     "summary": "Gene expression profiling...",
+    ...     "organism": "Homo sapiens",
+    ...     "platform": "Illumina HiSeq",
+    ...     "samples_count": 24
+    ... }
+    >>> response = client.summarize(
+    ...     metadata=metadata,
+    ...     summary_type=SummaryType.COMPREHENSIVE
     ... )
-    >>> response = summarizer.summarize(request)
-    >>> print(response.summary)
+    >>> print(response.overview)
+    >>> print(response.methodology)
+    >>> print(response.significance)
+    >>>
+    >>> # Batch summarization for search results
+    >>> batch_response = client.summarize_batch(
+    ...     query="cancer genomics",
+    ...     results=[{"id": "GSE123", "metadata": {...}}, ...]
+    ... )
 
-Status: Phase 1 Task 5 (In Progress)
+Status: Phase 1 Task 5
 """
 
-# Exports will be added as modules are implemented
-# from .summarizer import SummarizationService
-# from .models import SummaryRequest, SummaryResponse, SummaryType
+from .client import SummarizationClient
+from .models import (
+    BatchSummaryRequest,
+    BatchSummaryResponse,
+    ModelInfo,
+    SummaryRequest,
+    SummaryResponse,
+    SummaryType,
+)
+from .prompts import PromptBuilder
 
-__all__ = []
+__all__ = [
+    # Client
+    "SummarizationClient",
+    # Models
+    "SummaryType",
+    "SummaryRequest",
+    "SummaryResponse",
+    "BatchSummaryRequest",
+    "BatchSummaryResponse",
+    "ModelInfo",
+    # Prompts
+    "PromptBuilder",
+]
