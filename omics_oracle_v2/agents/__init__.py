@@ -24,6 +24,7 @@ Example:
 
 from .base import Agent, AgentResult, AgentState
 from .context import AgentContext, ExecutionContext
+from .data_agent import DataAgent
 from .exceptions import AgentError, AgentExecutionError, AgentStateError, AgentTimeoutError
 from .query_agent import QueryAgent
 from .search_agent import SearchAgent
@@ -44,4 +45,5 @@ __all__ = [
     # Agents
     "QueryAgent",
     "SearchAgent",
+    "DataAgent",
 ]
