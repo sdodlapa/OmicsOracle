@@ -65,6 +65,7 @@ class NERResult(BaseModel):
     text: str
     model_name: Optional[str] = None
     model_version: Optional[str] = None
+    processing_time_ms: Optional[float] = Field(None, description="Processing time in milliseconds")
 
     def get_entities_by_type(self, entity_type: EntityType) -> List[Entity]:
         """

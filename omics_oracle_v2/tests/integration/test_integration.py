@@ -22,6 +22,7 @@ from omics_oracle_v2.core.exceptions import AIError, ConfigurationError, GEOErro
 from omics_oracle_v2.lib.ai import SummarizationClient, SummaryType
 from omics_oracle_v2.lib.geo import GEOClient
 from omics_oracle_v2.lib.nlp import BiomedicalNER
+from omics_oracle_v2.lib.nlp.models import EntityType
 
 # ============================================================================
 # Configuration Integration Tests
@@ -60,8 +61,8 @@ class TestConfigurationIntegration:
         ai_client = SummarizationClient(settings)  # Takes full Settings
 
         assert ner.settings == settings.nlp
-        assert geo_client.settings == settings
-        assert ai_client.settings == settings
+        assert geo_client.settings == settings.geo  # GEOClient extracts settings.geo internally
+        assert ai_client.settings == settings.ai  # AIClient extracts settings.ai internally
 
     def test_default_settings(self):
         """Test default settings work for all services."""
@@ -109,14 +110,15 @@ class TestErrorHandling:
         result = ner.extract_entities(long_text)
         assert result is not None
 
-    def test_geo_error_handling(self):
+    @pytest.mark.asyncio
+    async def test_geo_error_handling(self):
         """Test GEO errors are raised correctly."""
         settings = Settings(geo=GEOSettings(ncbi_email="test@example.com"))
         client = GEOClient(settings)
 
         # Invalid series ID should raise GEOError or return None
         with pytest.raises(GEOError):
-            client.get_series("INVALID_ID_12345")
+            await client.get_metadata("INVALID_ID_12345")
 
     def test_ai_error_handling(self):
         """Test AI errors are raised correctly."""
@@ -150,8 +152,8 @@ class TestLibraryIntegration:
         ner_result = ner.extract_entities(query)
 
         # Should extract gene and disease entities
-        genes = [e for e in ner_result.entities if e.entity_type == "GENE"]
-        diseases = [e for e in ner_result.entities if e.entity_type == "DISEASE"]
+        genes = [e for e in ner_result.entities if e.entity_type == EntityType.GENE]
+        diseases = [e for e in ner_result.entities if e.entity_type == EntityType.DISEASE]
 
         assert len(genes) > 0 or len(diseases) > 0
 

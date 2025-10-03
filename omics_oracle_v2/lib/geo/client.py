@@ -9,12 +9,16 @@ import asyncio
 import logging
 import ssl
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import aiohttp
 
 from ...core.config import GEOSettings
 from ...core.exceptions import GEOError
+
+if TYPE_CHECKING:
+    from ...core.config import Settings
+
 from .cache import SimpleCache
 from .models import ClientInfo, GEOSeriesMetadata, SearchResult, SRAInfo
 from .utils import RateLimiter, retry_with_backoff
@@ -192,23 +196,27 @@ class GEOClient:
     - Caching and rate limiting
     """
 
-    def __init__(self, settings: Optional[GEOSettings] = None):
+    def __init__(self, settings: Optional[Union[GEOSettings, "Settings"]] = None):
         """
         Initialize GEO client.
 
         Args:
-            settings: GEO configuration settings
+            settings: GEO configuration settings or full Settings object
         """
+        from ...core.config import Settings as FullSettings
         from ...core.config import get_settings
 
         if settings is None:
             all_settings = get_settings()
             settings = all_settings.geo
+        elif isinstance(settings, FullSettings):
+            # Extract GEO settings from full Settings object
+            settings = settings.geo
 
         self.settings = settings
 
         # Initialize rate limiter (NCBI guidelines: 3 requests/sec without API key)
-        self.rate_limiter = RateLimiter(max_calls=self.settings.rate_limit, time_window=1.0)
+        self.rate_limiter = RateLimiter(max_calls=settings.rate_limit, time_window=1.0)
 
         # Initialize cache
         self.cache = SimpleCache(cache_dir=Path(self.settings.cache_dir), default_ttl=self.settings.cache_ttl)

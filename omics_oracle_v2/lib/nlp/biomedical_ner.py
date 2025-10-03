@@ -7,7 +7,7 @@ specifically designed for biomedical text processing.
 
 import logging
 import time
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 from ...core.config import NLPSettings
 from ...core.exceptions import NLPError
@@ -133,17 +133,17 @@ class BiomedicalNER:
 
         try:
             doc = self._nlp(text)
-            entities_by_type: Dict[EntityType, List[Entity]] = {etype: [] for etype in EntityType}
+            entities: List[Entity] = []
 
             for ent in doc.ents:
                 entity = self._process_entity(ent, include_entity_linking)
-                entities_by_type[entity.entity_type].append(entity)
+                entities.append(entity)
 
             processing_time = (time.time() - start_time) * 1000
 
             return NERResult(
                 text=text,
-                entities=entities_by_type,
+                entities=entities,
                 processing_time_ms=processing_time,
                 model_name=self._model_name or "unknown",
                 model_version=self._nlp.meta.get("version", "unknown"),

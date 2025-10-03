@@ -6,10 +6,14 @@ support for different summary types and batch processing.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 from ...core.config import AISettings
 from ...core.exceptions import AIError
+
+if TYPE_CHECKING:
+    from ...core.config import Settings
+
 from .models import BatchSummaryResponse, ModelInfo, SummaryResponse, SummaryType
 from .prompts import PromptBuilder
 from .utils import aggregate_batch_statistics, estimate_tokens, extract_technical_details, prepare_metadata
@@ -37,27 +41,31 @@ class SummarizationClient:
     - Configurable models and parameters
     """
 
-    def __init__(self, settings: Optional[AISettings] = None):
+    def __init__(self, settings: Optional[Union[AISettings, "Settings"]] = None):
         """
         Initialize summarization client.
 
         Args:
-            settings: AI configuration settings
+            settings: AI configuration settings or full Settings object
         """
+        from ...core.config import Settings as FullSettings
         from ...core.config import get_settings
 
         if settings is None:
             all_settings = get_settings()
             settings = all_settings.ai
+        elif isinstance(settings, FullSettings):
+            # Extract AI settings from full Settings object
+            settings = settings.ai
 
         self.settings = settings
 
         # Initialize OpenAI client
         self.client: Optional[Any] = None
-        if HAS_OPENAI and self.settings.ai.openai_api_key:
+        if HAS_OPENAI and self.settings.openai_api_key:
             try:
-                self.client = OpenAI(api_key=self.settings.ai.openai_api_key)
-                logger.info(f"OpenAI client initialized with model: {self.settings.ai.model}")
+                self.client = OpenAI(api_key=self.settings.openai_api_key)
+                logger.info(f"OpenAI client initialized with model: {self.settings.model}")
             except Exception as e:
                 logger.error(f"Failed to initialize OpenAI client: {e}")
         else:
@@ -112,7 +120,7 @@ class SummarizationClient:
             response = SummaryResponse(
                 dataset_id=actual_dataset_id,
                 summary_type=summary_type,
-                model_used=self.settings.ai.model,
+                model_used=self.settings.model,
             )
 
             # Generate different components based on summary type
@@ -159,7 +167,7 @@ class SummarizationClient:
         prompt = self.prompt_builder.build_overview_prompt(metadata, query_context)
         system_message = self.prompt_builder.get_system_message("overview")
 
-        return self._call_llm(prompt, system_message, max_tokens=self.settings.ai.max_tokens)
+        return self._call_llm(prompt, system_message, max_tokens=self.settings.max_tokens)
 
     def _generate_methodology(self, metadata: Dict[str, Any]) -> Optional[str]:
         """Generate methodology summary."""
@@ -201,14 +209,14 @@ class SummarizationClient:
 
         try:
             response = self.client.chat.completions.create(
-                model=self.settings.ai.model,
+                model=self.settings.model,
                 messages=[
                     {"role": "system", "content": system_message},
                     {"role": "user", "content": prompt},
                 ],
                 max_tokens=max_tokens,
-                temperature=self.settings.ai.temperature,
-                timeout=self.settings.ai.timeout,
+                temperature=self.settings.temperature,
+                timeout=self.settings.timeout,
             )
 
             content = response.choices[0].message.content
@@ -268,9 +276,9 @@ class SummarizationClient:
     def get_model_info(self) -> ModelInfo:
         """Get information about the configured model."""
         return ModelInfo(
-            model_name=self.settings.ai.model,
+            model_name=self.settings.model,
             provider="openai",
-            max_tokens=self.settings.ai.max_tokens,
-            temperature=self.settings.ai.temperature,
+            max_tokens=self.settings.max_tokens,
+            temperature=self.settings.temperature,
             available=self.client is not None,
         )
