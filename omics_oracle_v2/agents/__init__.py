@@ -26,6 +26,7 @@ from .base import Agent, AgentResult, AgentState
 from .context import AgentContext, ExecutionContext
 from .exceptions import AgentError, AgentExecutionError, AgentStateError, AgentTimeoutError
 from .query_agent import QueryAgent
+from .search_agent import SearchAgent
 
 __all__ = [
     # Base classes
@@ -42,4 +43,5 @@ __all__ = [
     "AgentTimeoutError",
     # Agents
     "QueryAgent",
+    "SearchAgent",
 ]
