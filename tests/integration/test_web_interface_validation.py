@@ -13,8 +13,6 @@ import sys
 from pathlib import Path
 
 # Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
-
 import aiohttp
 
 # Configure logging
@@ -33,19 +31,13 @@ class WebInterfaceValidator:
         """Test the health check endpoint."""
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    f"{self.base_url}/api/status/health"
-                ) as resp:
+                async with session.get(f"{self.base_url}/api/status/health") as resp:
                     success = resp.status == 200
                     if success:
                         data = await resp.json()
-                        logger.info(
-                            f"✅ Health check passed: {data.get('status', 'OK')}"
-                        )
+                        logger.info(f"✅ Health check passed: {data.get('status', 'OK')}")
                     else:
-                        logger.warning(
-                            f"⚠️  Health check returned: {resp.status}"
-                        )
+                        logger.warning(f"⚠️  Health check returned: {resp.status}")
                     return success
         except Exception as e:
             logger.error(f"❌ Health check failed: {e}")
@@ -61,21 +53,15 @@ class WebInterfaceValidator:
                     "include_sra": False,
                 }
 
-                async with session.post(
-                    f"{self.base_url}/api/search", json=search_data
-                ) as resp:
+                async with session.post(f"{self.base_url}/api/search", json=search_data) as resp:
                     if resp.status == 200:
                         result = await resp.json()
                         geo_ids = result.get("geo_ids", [])
-                        logger.info(
-                            f"✅ Search API working - found {len(geo_ids)} results"
-                        )
+                        logger.info(f"✅ Search API working - found {len(geo_ids)} results")
                         self.results["search_result"] = result
                         return True
                     else:
-                        logger.warning(
-                            f"⚠️  Search API returned: {resp.status}"
-                        )
+                        logger.warning(f"⚠️  Search API returned: {resp.status}")
                         return False
         except Exception as e:
             logger.error(f"❌ Search API failed: {e}")
@@ -92,15 +78,11 @@ class WebInterfaceValidator:
                     "include_individual_summaries": False,
                 }
 
-                async with session.post(
-                    f"{self.base_url}/api/ai/summarize", json=ai_data
-                ) as resp:
+                async with session.post(f"{self.base_url}/api/ai/summarize", json=ai_data) as resp:
                     if resp.status == 200:
                         result = await resp.json()
                         has_ai_summaries = "ai_summaries" in result
-                        logger.info(
-                            f"✅ AI API working - AI summaries: {has_ai_summaries}"
-                        )
+                        logger.info(f"✅ AI API working - AI summaries: {has_ai_summaries}")
                         return True
                     else:
                         logger.warning(f"⚠️  AI API returned: {resp.status}")
@@ -118,9 +100,7 @@ class WebInterfaceValidator:
                     if resp.status == 200:
                         content = await resp.text()
                         has_content = len(content) > 100
-                        logger.info(
-                            f"✅ Main page served - has content: {has_content}"
-                        )
+                        logger.info(f"✅ Main page served - has content: {has_content}")
                         return has_content
                     else:
                         logger.warning(f"⚠️  Main page returned: {resp.status}")
@@ -145,9 +125,7 @@ class WebInterfaceValidator:
                         logger.info("✅ Visualization API working")
                         return True
                     else:
-                        logger.warning(
-                            f"⚠️  Visualization API returned: {resp.status}"
-                        )
+                        logger.warning(f"⚠️  Visualization API returned: {resp.status}")
                         return False
         except Exception as e:
             logger.error(f"❌ Visualization API failed: {e}")
@@ -209,18 +187,14 @@ async def main() -> int:
     print("🚀 OmicsOracle Web Interface Validation")
     print("=" * 50)
     print("⚠️  Make sure the web server is running on localhost:8000")
-    print(
-        "   Start with: python -m uvicorn src.omics_oracle.web.main:app --reload"
-    )
+    print("   Start with: python -m uvicorn src.omics_oracle.web.main:app --reload")
     print()
 
     validator = WebInterfaceValidator()
     results = await validator.run_validation()
 
     # Save results
-    results_file = (
-        Path(__file__).parent.parent.parent / "web_validation_results.json"
-    )
+    results_file = Path(__file__).parent.parent.parent / "web_validation_results.json"
     with open(results_file, "w") as f:
         json.dump(results, f, indent=2)
 

@@ -12,7 +12,6 @@ This test validates that monitoring systems can observe and track:
 
 import asyncio
 import json
-import sys
 import time
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -20,12 +19,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 # Add project root to path
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
-
-from src.omics_oracle.monitoring.api_monitor import APIMonitoringMiddleware
-from src.omics_oracle.monitoring.pipeline_monitor import PipelineMonitor
-from src.omics_oracle.monitoring.websocket_monitor import WebSocketMonitor
+from omics_oracle.monitoring.api_monitor import APIMonitoringMiddleware
+from omics_oracle.monitoring.pipeline_monitor import PipelineMonitor
+from omics_oracle.monitoring.websocket_monitor import WebSocketMonitor
 
 
 class TestRealTimeMonitoring:
@@ -161,9 +157,7 @@ class TestRealTimeMonitoring:
         ws_monitor.record_connection(client_id, timestamp=time.time())
 
         # 2. Query processing started
-        pipeline_monitor.record_query_start(
-            query_id, query, timestamp=time.time()
-        )
+        pipeline_monitor.record_query_start(query_id, query, timestamp=time.time())
 
         # 3. Progress update sent via WebSocket
         ws_monitor.record_message(
@@ -178,9 +172,7 @@ class TestRealTimeMonitoring:
         )
 
         # 4. Query completed
-        pipeline_monitor.record_query_completion(
-            query_id, results_count=5, timestamp=time.time()
-        )
+        pipeline_monitor.record_query_completion(query_id, results_count=5, timestamp=time.time())
 
         # 5. Results sent via WebSocket
         ws_monitor.record_message(
@@ -208,15 +200,11 @@ class TestRealTimeMonitoring:
 
         # Simulate error scenario
         # 1. Query starts normally
-        pipeline_monitor.record_query_start(
-            query_id, "test query", timestamp=time.time()
-        )
+        pipeline_monitor.record_query_start(query_id, "test query", timestamp=time.time())
 
         # 2. Error occurs during processing
         error_msg = "External API timeout"
-        pipeline_monitor.record_error(
-            query_id, error_msg, timestamp=time.time()
-        )
+        pipeline_monitor.record_error(query_id, error_msg, timestamp=time.time())
 
         # 3. Error notification sent via WebSocket
         ws_monitor.record_connection(client_id, timestamp=time.time())
@@ -234,11 +222,7 @@ class TestRealTimeMonitoring:
         assert len(pipeline_monitor.error_events) == 1
         assert pipeline_monitor.error_events[0]["error_message"] == error_msg
 
-        error_messages = [
-            msg
-            for msg in ws_monitor.message_history
-            if msg.get("type") == "query_error"
-        ]
+        error_messages = [msg for msg in ws_monitor.message_history if msg.get("type") == "query_error"]
         assert len(error_messages) == 1
 
     def test_monitoring_performance_metrics(self):
@@ -252,9 +236,7 @@ class TestRealTimeMonitoring:
             query_id = f"perf_test_{i}"
 
             # Record query processing
-            pipeline_monitor.record_query_start(
-                query_id, f"test query {i}", timestamp=start_time + i
-            )
+            pipeline_monitor.record_query_start(query_id, f"test query {i}", timestamp=start_time + i)
             pipeline_monitor.record_query_completion(
                 query_id, results_count=10 + i, timestamp=start_time + i + 1.5
             )
@@ -269,9 +251,7 @@ class TestRealTimeMonitoring:
 
         # Verify metrics
         assert len(query_times) == 5
-        assert all(
-            qt >= 1.5 for qt in query_times
-        )  # All queries took at least 1.5s
+        assert all(qt >= 1.5 for qt in query_times)  # All queries took at least 1.5s
 
     def test_monitoring_data_export(self):
         """Test monitoring data export functionality."""
@@ -279,9 +259,7 @@ class TestRealTimeMonitoring:
         ws_monitor = WebSocketMonitor()
 
         # Generate some test data
-        pipeline_monitor.record_query_start(
-            "export_test", "test query", timestamp=time.time()
-        )
+        pipeline_monitor.record_query_start("export_test", "test query", timestamp=time.time())
         ws_monitor.record_connection("export_client", timestamp=time.time())
 
         # Test data export
@@ -309,9 +287,7 @@ class TestRealTimeMonitoring:
         assert "error_count" in status
 
         # Add some data and verify status updates
-        monitor.record_query_start(
-            "realtime_test", "test", timestamp=time.time()
-        )
+        monitor.record_query_start("realtime_test", "test", timestamp=time.time())
         updated_status = monitor.get_current_status()
 
         assert updated_status["total_queries"] > status["total_queries"]

@@ -32,8 +32,6 @@ except ImportError:
     TestClient = None
 
 # Add the src directory to the Python path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
-
 from omics_oracle.web.main import app
 
 # Configure logging
@@ -62,9 +60,7 @@ class WebInterfaceTestSuite:
     async def test_health_check(self) -> bool:
         """Test basic health check endpoint."""
         try:
-            async with self.session.get(
-                f"{self.base_url}/api/status/health"
-            ) as resp:
+            async with self.session.get(f"{self.base_url}/api/status/health") as resp:
                 success = resp.status == 200
                 if success:
                     data = await resp.json()
@@ -85,14 +81,10 @@ class WebInterfaceTestSuite:
                 "include_sra": False,
             }
 
-            async with self.session.post(
-                f"{self.base_url}/api/search", json=search_data
-            ) as resp:
+            async with self.session.post(f"{self.base_url}/api/search", json=search_data) as resp:
                 if resp.status == 200:
                     result = await resp.json()
-                    logger.info(
-                        f"✅ Basic search successful: {len(result.get('geo_ids', []))} results"
-                    )
+                    logger.info(f"✅ Basic search successful: {len(result.get('geo_ids', []))} results")
                     self.test_results["basic_search"] = result
                     return True
                 else:
@@ -112,9 +104,7 @@ class WebInterfaceTestSuite:
                 "include_individual_summaries": True,
             }
 
-            async with self.session.post(
-                f"{self.base_url}/api/ai/summarize", json=ai_data
-            ) as resp:
+            async with self.session.post(f"{self.base_url}/api/ai/summarize", json=ai_data) as resp:
                 if resp.status == 200:
                     result = await resp.json()
                     logger.info("✅ AI summarization successful")
@@ -124,12 +114,8 @@ class WebInterfaceTestSuite:
                         summaries = result["ai_summaries"]
                         has_batch = "batch_summary" in summaries
                         has_individual = "individual_summaries" in summaries
-                        logger.info(
-                            f"   📊 Batch summary: {'✓' if has_batch else '✗'}"
-                        )
-                        logger.info(
-                            f"   📚 Individual summaries: {'✓' if has_individual else '✗'}"
-                        )
+                        logger.info(f"   📊 Batch summary: {'✓' if has_batch else '✗'}")
+                        logger.info(f"   📚 Individual summaries: {'✓' if has_individual else '✗'}")
                         self.test_results["ai_summarization"] = result
                         return True
                     else:
@@ -154,14 +140,10 @@ class WebInterfaceTestSuite:
                 "max_results_per_query": 3,
             }
 
-            async with self.session.post(
-                f"{self.base_url}/api/batch", json=batch_data
-            ) as resp:
+            async with self.session.post(f"{self.base_url}/api/batch", json=batch_data) as resp:
                 if resp.status == 200:
                     result = await resp.json()
-                    logger.info(
-                        f"✅ Batch processing successful: {result.get('job_id', 'N/A')}"
-                    )
+                    logger.info(f"✅ Batch processing successful: {result.get('job_id', 'N/A')}")
                     self.test_results["batch_processing"] = result
                     return True
                 else:
@@ -196,13 +178,9 @@ class WebInterfaceTestSuite:
                     if resp.status == 200:
                         data = await resp.json()
                         results[endpoint] = data
-                        logger.info(
-                            f"✅ Visualization endpoint '{endpoint}' successful"
-                        )
+                        logger.info(f"✅ Visualization endpoint '{endpoint}' successful")
                     else:
-                        logger.error(
-                            f"❌ Visualization endpoint '{endpoint}' failed: {resp.status}"
-                        )
+                        logger.error(f"❌ Visualization endpoint '{endpoint}' failed: {resp.status}")
                         all_passed = False
 
             self.test_results["visualization"] = results
@@ -218,9 +196,7 @@ class WebInterfaceTestSuite:
             # First do a search to get data to export
             search_result = self.test_results.get("basic_search")
             if not search_result:
-                logger.warning(
-                    "⚠️  No search results available for export test"
-                )
+                logger.warning("⚠️  No search results available for export test")
                 return False
 
             export_data = {
@@ -229,9 +205,7 @@ class WebInterfaceTestSuite:
                 "include_metadata": True,
             }
 
-            async with self.session.post(
-                f"{self.base_url}/api/export", json=export_data
-            ) as resp:
+            async with self.session.post(f"{self.base_url}/api/export", json=export_data) as resp:
                 if resp.status == 200:
                     result = await resp.json()
                     logger.info("✅ Export functionality successful")
@@ -259,9 +233,7 @@ class WebInterfaceTestSuite:
                 await websocket.send(json.dumps(test_message))
 
                 # Wait for response
-                response = await asyncio.wait_for(
-                    websocket.recv(), timeout=10.0
-                )
+                response = await asyncio.wait_for(websocket.recv(), timeout=10.0)
                 result = json.loads(response)
 
                 logger.info("✅ WebSocket connection successful")
@@ -286,24 +258,16 @@ class WebInterfaceTestSuite:
 
             all_passed = True
             for file_path in static_files:
-                async with self.session.get(
-                    f"{self.base_url}{file_path}"
-                ) as resp:
+                async with self.session.get(f"{self.base_url}{file_path}") as resp:
                     if resp.status == 200:
                         content = await resp.text()
                         if len(content) > 100:  # Basic validation
-                            logger.info(
-                                f"✅ Static file '{file_path}' served successfully"
-                            )
+                            logger.info(f"✅ Static file '{file_path}' served successfully")
                         else:
-                            logger.warning(
-                                f"⚠️  Static file '{file_path}' seems empty"
-                            )
+                            logger.warning(f"⚠️  Static file '{file_path}' seems empty")
                             all_passed = False
                     else:
-                        logger.error(
-                            f"❌ Static file '{file_path}' failed: {resp.status}"
-                        )
+                        logger.error(f"❌ Static file '{file_path}' failed: {resp.status}")
                         all_passed = False
 
             return all_passed
@@ -325,13 +289,11 @@ class WebInterfaceTestSuite:
                         ("Search form", "search" in html_content.lower()),
                         (
                             "AI features",
-                            "ai" in html_content.lower()
-                            or "summarization" in html_content.lower(),
+                            "ai" in html_content.lower() or "summarization" in html_content.lower(),
                         ),
                         (
                             "Visualization",
-                            "chart" in html_content.lower()
-                            or "visualization" in html_content.lower(),
+                            "chart" in html_content.lower() or "visualization" in html_content.lower(),
                         ),
                         ("API endpoints", "/api/" in html_content),
                     ]
@@ -341,9 +303,7 @@ class WebInterfaceTestSuite:
                         if check_result:
                             logger.info(f"✅ UI check '{check_name}' passed")
                         else:
-                            logger.warning(
-                                f"⚠️  UI check '{check_name}' failed"
-                            )
+                            logger.warning(f"⚠️  UI check '{check_name}' failed")
                             all_passed = False
 
                     return all_passed
@@ -432,19 +392,14 @@ async def main():
     print("🌐 OmicsOracle Web Interface - Comprehensive Test Suite")
     print("=" * 60)
     print("⚠️  Make sure the web server is running on localhost:8000")
-    print(
-        "   Start with: python -m uvicorn src.omics_oracle.web.main:app --reload"
-    )
+    print("   Start with: python -m uvicorn src.omics_oracle.web.main:app --reload")
     print()
 
     async with WebInterfaceTestSuite() as test_suite:
         results = await test_suite.run_comprehensive_test()
 
         # Save results to file
-        results_file = (
-            Path(__file__).parent.parent.parent
-            / "web_interface_test_results.json"
-        )
+        results_file = Path(__file__).parent.parent.parent / "web_interface_test_results.json"
         with open(results_file, "w") as f:
             json.dump(results, f, indent=2, default=str)
 
@@ -455,9 +410,7 @@ async def main():
             logger.info("\n🎉 Web interface testing completed successfully!")
             return 0
         else:
-            logger.error(
-                "\n❌ Web interface has significant issues. Please review the results."
-            )
+            logger.error("\n❌ Web interface has significant issues. Please review the results.")
             return 1
 
 

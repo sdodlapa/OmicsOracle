@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmicsOracle WebSocket Demo</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .disconnect {
+            background-color: #f44336;
+        }
+        .disconnect:hover {
+            background-color: #da190b;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        .status.connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .status.disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .messages {
+            height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #fafafa;
+            border-radius: 4px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            border-left: 4px solid #4CAF50;
+            background-color: white;
+        }
+        .message .type {
+            font-weight: bold;
+            color: #4CAF50;
+            margin-bottom: 5px;
+        }
+        .message .timestamp {
+            font-size: 11px;
+            color: #666;
+        }
+        .message .content {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 5px;
+            white-space: pre-wrap;
+        }
+        .stage_start {
+            border-left-color: #2196F3;
+        }
+        .stage_start .type {
+            color: #2196F3;
+        }
+        .stage_complete {
+            border-left-color: #4CAF50;
+        }
+        .stage_complete .type {
+            color: #4CAF50;
+        }
+        .progress {
+            border-left-color: #FF9800;
+        }
+        .progress .type {
+            color: #FF9800;
+        }
+        .workflow_complete {
+            border-left-color: #9C27B0;
+        }
+        .workflow_complete .type {
+            color: #9C27B0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧬 OmicsOracle WebSocket Demo</h1>
+
+    <div class="container">
+        <h2>WebSocket Connection</h2>
+        <div id="status" class="status disconnected">Disconnected</div>
+
+        <div class="controls">
+            <input type="text" id="workflowId" placeholder="Workflow ID (leave empty for auto-generated)" />
+            <button id="connectBtn" onclick="connect()">Connect</button>
+            <button id="disconnectBtn" onclick="disconnect()" disabled class="disconnect">Disconnect</button>
+            <button id="pingBtn" onclick="sendPing()" disabled>Send Ping</button>
+        </div>
+
+        <p><strong>Server URL:</strong> <code id="serverUrl">ws://localhost:8000/ws/workflows</code></p>
+        <p><strong>Current Workflow ID:</strong> <code id="currentWorkflowId">-</code></p>
+    </div>
+
+    <div class="container">
+        <h2>Messages</h2>
+        <button onclick="clearMessages()">Clear Messages</button>
+        <div id="messages" class="messages"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentWorkflowId = null;
+
+        function updateStatus(connected, message) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status ' + (connected ? 'connected' : 'disconnected');
+            statusEl.textContent = message;
+
+            document.getElementById('connectBtn').disabled = connected;
+            document.getElementById('disconnectBtn').disabled = !connected;
+            document.getElementById('pingBtn').disabled = !connected;
+        }
+
+        function addMessage(type, data) {
+            const messagesEl = document.getElementById('messages');
+            const messageEl = document.createElement('div');
+            messageEl.className = 'message ' + type;
+
+            const timestamp = new Date().toLocaleTimeString();
+
+            messageEl.innerHTML = `
+                <div class="type">${type.toUpperCase().replace('_', ' ')}</div>
+                <div class="timestamp">${timestamp}</div>
+                <div class="content">${JSON.stringify(data, null, 2)}</div>
+            `;
+
+            messagesEl.appendChild(messageEl);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function connect() {
+            const workflowId = document.getElementById('workflowId').value.trim();
+            const url = workflowId
+                ? `ws://localhost:8000/ws/workflows/${workflowId}`
+                : 'ws://localhost:8000/ws/workflows';
+
+            document.getElementById('serverUrl').textContent = url;
+
+            updateStatus(false, 'Connecting...');
+
+            ws = new WebSocket(url);
+
+            ws.onopen = function() {
+                updateStatus(true, 'Connected');
+                addMessage('system', { message: 'WebSocket connection established' });
+            };
+
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+
+                if (data.type === 'connected') {
+                    currentWorkflowId = data.workflow_id;
+                    document.getElementById('currentWorkflowId').textContent = currentWorkflowId;
+                }
+
+                addMessage(data.type, data);
+            };
+
+            ws.onerror = function(error) {
+                addMessage('error', { message: 'WebSocket error', error: error.toString() });
+            };
+
+            ws.onclose = function() {
+                updateStatus(false, 'Disconnected');
+                addMessage('system', { message: 'WebSocket connection closed' });
+                ws = null;
+                currentWorkflowId = null;
+                document.getElementById('currentWorkflowId').textContent = '-';
+            };
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+            }
+        }
+
+        function sendPing() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send('ping');
+                addMessage('system', { message: 'Sent ping to server' });
+            }
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        // Handle enter key in workflow ID input
+        document.getElementById('workflowId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                connect();
+            }
+        });
+    </script>
+</body>
+</html>

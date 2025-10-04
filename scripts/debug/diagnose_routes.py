@@ -4,7 +4,6 @@ Quick route diagnosis using our existing FastAPI app.
 """
 
 import os
-import sys
 
 # Set up environment
 os.environ.setdefault("NCBI_EMAIL", "omicsoracle@example.com")
@@ -14,7 +13,6 @@ for line in open(".env.development"):
         os.environ[key] = value
 
 # Add src to path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
 
 
 def main():

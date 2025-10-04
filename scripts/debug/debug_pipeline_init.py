@@ -9,7 +9,6 @@ process, identifying issues that may prevent proper startup.
 import importlib.util
 import logging
 import os
-import sys
 import time
 import traceback
 from pathlib import Path
@@ -29,7 +28,6 @@ logger = logging.getLogger("pipeline_debug")
 script_path = Path(__file__).resolve()
 project_root = script_path.parent
 logger.info(f"Project root: {project_root}")
-sys.path.insert(0, str(project_root))
 
 
 def test_imports():

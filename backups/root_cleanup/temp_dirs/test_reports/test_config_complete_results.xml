@@ -1,1 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="0" skipped="0" tests="1" time="0.169" timestamp="2025-06-27T04:28:08.249440-04:00" hostname="Sanjeevas-iMac.local"><testcase classname="test_config_complete" name="test_config_loading" time="0.140" /></testsuite></testsuites>

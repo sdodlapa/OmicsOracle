@@ -21,9 +21,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Add project root to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-
 # Import the query handler components
 try:
     from src.omics_oracle.core.config import Config

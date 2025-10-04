@@ -14,7 +14,6 @@ This script will:
 import asyncio
 import logging
 import os
-import sys
 from pathlib import Path
 
 # Set up logging
@@ -22,9 +21,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Add project root to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-
 # Set NCBI email before importing Bio modules
 os.environ["NCBI_EMAIL"] = "omicsoracle@example.com"
 
@@ -37,8 +33,8 @@ try:
 except ImportError:
     logger.warning("Bio.Entrez module not available")
 
-from src.omics_oracle.core.config import Config
-from src.omics_oracle.pipeline.pipeline import OmicsOracle
+from omics_oracle.core.config import Config
+from omics_oracle.pipeline.pipeline import OmicsOracle
 
 
 async def test_honest_results():

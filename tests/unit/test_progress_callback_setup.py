@@ -7,8 +7,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from src.omics_oracle.core.config import Config
-from src.omics_oracle.pipeline.pipeline import OmicsOracle, ProgressEvent
+from omics_oracle.core.config import Config
+from omics_oracle.pipeline.pipeline import OmicsOracle, ProgressEvent
 
 
 class TestProgressCallback:
@@ -19,21 +19,15 @@ class TestProgressCallback:
         """Mock configuration for testing."""
         config = MagicMock(spec=Config)
         config.logging.level = "INFO"
-        config.logging.format = (
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
+        config.logging.format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
         return config
 
     @pytest.fixture
     def mock_pipeline(self, mock_config):
         """Create a mock pipeline for testing."""
-        with patch(
-            "src.omics_oracle.geo_tools.geo_client.UnifiedGEOClient"
-        ), patch(
+        with patch("src.omics_oracle.geo_tools.geo_client.UnifiedGEOClient"), patch(
             "src.omics_oracle.services.summarizer.SummarizationService"
-        ), patch(
-            "src.omics_oracle.nlp.prompt_interpreter.PromptInterpreter"
-        ), patch(
+        ), patch("src.omics_oracle.nlp.prompt_interpreter.PromptInterpreter"), patch(
             "src.omics_oracle.nlp.biomedical_ner.BiomedicalNER"
         ), patch(
             "src.omics_oracle.nlp.biomedical_ner.EnhancedBiologicalSynonymMapper"
@@ -103,9 +97,7 @@ class TestProgressCallback:
 
         # This should not raise an exception
         try:
-            await mock_pipeline._report_progress(
-                query_result, "test_stage", "test_message", 50.0
-            )
+            await mock_pipeline._report_progress(query_result, "test_stage", "test_message", 50.0)
         except Exception:
             pytest.fail("Progress callback exception should be handled")
 
@@ -117,9 +109,7 @@ class TestProgressCallback:
         query_result.add_progress_event = MagicMock()
 
         # This should not raise an exception
-        await mock_pipeline._report_progress(
-            query_result, "test_stage", "test_message", 50.0
-        )
+        await mock_pipeline._report_progress(query_result, "test_stage", "test_message", 50.0)
 
         # Verify that query result was still updated
         query_result.add_progress_event.assert_called_once()
@@ -167,9 +157,7 @@ class TestProgressCallback:
         query_result.query_id = "test_query_001"
         query_result.add_progress_event = MagicMock()
 
-        await mock_pipeline._report_progress(
-            query_result, "test_stage", "test_message", 50.0
-        )
+        await mock_pipeline._report_progress(query_result, "test_stage", "test_message", 50.0)
 
         # Only the second callback should be called
         callback1.assert_not_called()

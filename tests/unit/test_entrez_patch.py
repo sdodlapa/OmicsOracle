@@ -24,7 +24,6 @@ class TestEntrezPatch:
             project_root = Path("test_root")
 
             if Path(project_root / "entrez_patch.py").exists():
-                sys.path.insert(0, str(project_root))
                 import entrez_patch
 
             mock_exists.assert_called_once()

@@ -26,12 +26,10 @@ logging.basicConfig(
 logger = logging.getLogger("progress_validation")
 
 # Add project root to path
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-
-from src.omics_oracle.core.config import Config
+from omics_oracle.core.config import Config
 
 # Import OmicsOracle components
-from src.omics_oracle.pipeline.pipeline import OmicsOracle, ProgressEvent
+from omics_oracle.pipeline.pipeline import OmicsOracle, ProgressEvent
 
 # List to store progress events
 progress_events = []

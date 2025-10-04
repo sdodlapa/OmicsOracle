@@ -6,7 +6,6 @@ This will help diagnose issues with the pipeline initialization process.
 
 import logging
 import os
-import sys
 import traceback
 from pathlib import Path
 
@@ -18,9 +17,6 @@ logging.basicConfig(
 logger = logging.getLogger("debug")
 
 # Add project root to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-
 # Set NCBI email
 os.environ["NCBI_EMAIL"] = "omicsoracle@example.com"
 logger.info(f"Set NCBI_EMAIL environment variable to {os.environ['NCBI_EMAIL']}")

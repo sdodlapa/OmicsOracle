@@ -12,11 +12,7 @@ from typing import Any, Dict, List
 
 import pytest
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "src"))
-
-from omics_oracle.integrations.citation_managers import (
-    CitationManagerIntegration,
-)
+from omics_oracle.integrations.citation_managers import CitationManagerIntegration
 from omics_oracle.integrations.pubmed import PubMedIntegration
 from omics_oracle.integrations.service import IntegrationService
 
@@ -235,17 +231,13 @@ class IntegrationTestSuite:
                 }
             ]
 
-            citations = service.export_citations(
-                mock_datasets, "bibtex", include_papers=False
-            )
+            citations = service.export_citations(mock_datasets, "bibtex", include_papers=False)
             assert "@misc{GSE12345," in citations
             results["passed"] += 1
             results["details"].append("✅ Citation export")
 
             # Test different formats
-            ris_citations = service.export_citations(
-                mock_datasets, "ris", include_papers=False
-            )
+            ris_citations = service.export_citations(mock_datasets, "ris", include_papers=False)
             assert "TY  - DATA" in ris_citations
             results["passed"] += 1
             results["details"].append("✅ Multi-format export")
@@ -271,14 +263,10 @@ class IntegrationTestSuite:
 
                 if papers:
                     results["passed"] += 1
-                    results["details"].append(
-                        f"✅ Search successful: {len(papers)} papers"
-                    )
+                    results["details"].append(f"✅ Search successful: {len(papers)} papers")
 
                     # Test paper details
-                    details = await asyncio.wait_for(
-                        pubmed.fetch_paper_details(papers[:1]), timeout=15.0
-                    )
+                    details = await asyncio.wait_for(pubmed.fetch_paper_details(papers[:1]), timeout=15.0)
 
                     if details and details[0].get("title"):
                         results["passed"] += 1
@@ -359,15 +347,11 @@ class IntegrationTestSuite:
             formats = ["bibtex", "ris", "csl-json", "endnote"]
 
             for fmt in formats:
-                citations = service.export_citations(
-                    mock_datasets, fmt, include_papers=False
-                )
+                citations = service.export_citations(mock_datasets, fmt, include_papers=False)
                 assert len(citations) > 0
 
                 # Test file writing
-                with tempfile.NamedTemporaryFile(
-                    mode="w", suffix=f".{fmt}", delete=False
-                ) as f:
+                with tempfile.NamedTemporaryFile(mode="w", suffix=f".{fmt}", delete=False) as f:
                     f.write(citations)
                     temp_path = f.name
 
@@ -410,14 +394,10 @@ class IntegrationTestSuite:
 
             if single_time < 0.1:  # Should be under 100ms
                 results["passed"] += 1
-                results["details"].append(
-                    f"✅ Single citation: {single_time:.3f}s"
-                )
+                results["details"].append(f"✅ Single citation: {single_time:.3f}s")
             else:
                 results["failed"] += 1
-                results["details"].append(
-                    f"❌ Single citation too slow: {single_time:.3f}s"
-                )
+                results["details"].append(f"❌ Single citation too slow: {single_time:.3f}s")
 
             # Test bulk citation speed
             datasets = [mock_data] * 50
@@ -435,14 +415,10 @@ class IntegrationTestSuite:
 
             if avg_time < 0.05:  # Should be under 50ms average
                 results["passed"] += 1
-                results["details"].append(
-                    f"✅ Bulk citations: {avg_time:.3f}s avg"
-                )
+                results["details"].append(f"✅ Bulk citations: {avg_time:.3f}s avg")
             else:
                 results["failed"] += 1
-                results["details"].append(
-                    f"❌ Bulk citations too slow: {avg_time:.3f}s avg"
-                )
+                results["details"].append(f"❌ Bulk citations too slow: {avg_time:.3f}s avg")
 
         except Exception as e:
             results["failed"] += 1
@@ -471,26 +447,20 @@ class IntegrationTestSuite:
 
             # Test batch enrichment (without live API)
             start_time = time.time()
-            enriched = await service.batch_enrich_datasets(
-                mock_datasets, include_papers=False, max_papers=0
-            )
+            enriched = await service.batch_enrich_datasets(mock_datasets, include_papers=False, max_papers=0)
             batch_time = time.time() - start_time
 
             results["metrics"]["batch_processing_time"] = batch_time
             results["metrics"]["datasets_processed"] = len(enriched)
 
-            if (
-                batch_time < 5.0 and len(enriched) == 20
-            ):  # Should complete in under 5 seconds
+            if batch_time < 5.0 and len(enriched) == 20:  # Should complete in under 5 seconds
                 results["passed"] += 1
                 results["details"].append(
                     f"✅ Batch processing: {batch_time:.2f}s for {len(enriched)} datasets"
                 )
             else:
                 results["failed"] += 1
-                results["details"].append(
-                    f"❌ Batch processing too slow: {batch_time:.2f}s"
-                )
+                results["details"].append(f"❌ Batch processing too slow: {batch_time:.2f}s")
 
         except Exception as e:
             results["failed"] += 1
@@ -519,16 +489,13 @@ class IntegrationTestSuite:
                     {
                         "accession": f"GSE{10000 + i}",
                         "title": f"Large Dataset {i}" * 10,  # Make title longer
-                        "summary": f"Large summary {i}"
-                        * 50,  # Make summary much longer
+                        "summary": f"Large summary {i}" * 50,  # Make summary much longer
                         "submission_date": "2023-01-01",
                     }
                 )
 
             # Process large batch
-            enriched = await service.batch_enrich_datasets(
-                large_datasets, include_papers=False, max_papers=0
-            )
+            enriched = await service.batch_enrich_datasets(large_datasets, include_papers=False, max_papers=0)
 
             # Get peak memory
             peak_memory = process.memory_info().rss / 1024 / 1024  # MB
@@ -549,20 +516,14 @@ class IntegrationTestSuite:
 
             if memory_used < 100:  # Should use less than 100MB for 100 datasets
                 results["passed"] += 1
-                results["details"].append(
-                    f"✅ Memory usage: {memory_used:.1f}MB"
-                )
+                results["details"].append(f"✅ Memory usage: {memory_used:.1f}MB")
             else:
                 results["failed"] += 1
-                results["details"].append(
-                    f"❌ Memory usage too high: {memory_used:.1f}MB"
-                )
+                results["details"].append(f"❌ Memory usage too high: {memory_used:.1f}MB")
 
         except ImportError:
             results["failed"] += 1
-            results["details"].append(
-                "❌ psutil not available for memory testing"
-            )
+            results["details"].append("❌ psutil not available for memory testing")
         except Exception as e:
             results["failed"] += 1
             results["details"].append(f"❌ Memory test error: {e}")
@@ -643,10 +604,7 @@ class IntegrationTestSuite:
 
             # Verify key data is preserved
             assert reference["title"] == original_data["title"]
-            assert (
-                reference["note"]
-                == f"GEO accession: {original_data['accession']}"
-            )
+            assert reference["note"] == f"GEO accession: {original_data['accession']}"
             assert reference["abstract"] == original_data["summary"]
             results["passed"] += 1
             results["details"].append("✅ Data preservation")
@@ -703,9 +661,7 @@ class IntegrationTestSuite:
             results["details"].append("✅ Empty dataset handling")
 
             # Test unsupported format
-            citation_manager.export_references(
-                [minimal_data], "unsupported_format"
-            )
+            citation_manager.export_references([minimal_data], "unsupported_format")
             # Should not crash (logs warning)
             results["passed"] += 1
             results["details"].append("✅ Unsupported format handling")
@@ -736,9 +692,7 @@ class IntegrationTestSuite:
                     total_failed += test_results["failed"]
 
         total_tests = total_passed + total_failed
-        success_rate = (
-            (total_passed / total_tests * 100) if total_tests > 0 else 0
-        )
+        success_rate = (total_passed / total_tests * 100) if total_tests > 0 else 0
 
         self.results["summary"] = {
             "total_tests": total_tests,

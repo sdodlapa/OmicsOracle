@@ -2,7 +2,6 @@
 Unit tests for the OmicsOracle pipeline module.
 """
 
-import sys
 from datetime import datetime
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -10,15 +9,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 # Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
-
 # Import project modules after path setup  # noqa: E402
-from omics_oracle.pipeline.pipeline import (  # noqa: E402
-    OmicsOracle,
-    QueryResult,
-    QueryStatus,
-    ResultFormat,
-)
+from omics_oracle.pipeline.pipeline import OmicsOracle, QueryResult, QueryStatus, ResultFormat  # noqa: E402
 
 
 class TestQueryResult:
@@ -116,9 +108,7 @@ class TestOmicsOracle:
             patch("omics_oracle.pipeline.pipeline.UnifiedGEOClient"),
             patch("omics_oracle.pipeline.pipeline.PromptInterpreter"),
             patch("omics_oracle.pipeline.pipeline.BiomedicalNER"),
-            patch(
-                "omics_oracle.pipeline.pipeline.EnhancedBiologicalSynonymMapper"
-            ),
+            patch("omics_oracle.pipeline.pipeline.EnhancedBiologicalSynonymMapper"),
         ):
             oracle = OmicsOracle(mock_config)
             # Mock the components
@@ -135,9 +125,7 @@ class TestOmicsOracle:
             patch("omics_oracle.pipeline.pipeline.UnifiedGEOClient"),
             patch("omics_oracle.pipeline.pipeline.PromptInterpreter"),
             patch("omics_oracle.pipeline.pipeline.BiomedicalNER"),
-            patch(
-                "omics_oracle.pipeline.pipeline.EnhancedBiologicalSynonymMapper"
-            ),
+            patch("omics_oracle.pipeline.pipeline.EnhancedBiologicalSynonymMapper"),
         ):
             oracle = OmicsOracle(mock_config)
 
@@ -192,9 +180,7 @@ class TestOmicsOracle:
     async def test_process_query_failure(self, mock_oracle):
         """Test query processing failure."""
         # Set up mocks to raise exception
-        mock_oracle.nlp_interpreter.classify_intent.side_effect = Exception(
-            "NLP failed"
-        )
+        mock_oracle.nlp_interpreter.classify_intent.side_effect = Exception("NLP failed")
 
         # Process query and expect exception
         with pytest.raises(Exception):
@@ -291,9 +277,7 @@ class TestOmicsOracle:
         mock_oracle._active_queries["recent_001"] = recent_result
 
         # Cleanup old queries
-        cleaned_count = await mock_oracle.cleanup_completed_queries(
-            max_age_hours=1
-        )
+        cleaned_count = await mock_oracle.cleanup_completed_queries(max_age_hours=1)
 
         assert cleaned_count == 1
         assert "old_001" not in mock_oracle._active_queries

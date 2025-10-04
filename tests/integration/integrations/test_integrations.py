@@ -4,14 +4,9 @@ Test the third-party integrations.
 
 import asyncio
 import os
-import sys
 
 # Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
-
-from omics_oracle.integrations.citation_managers import (
-    CitationManagerIntegration,
-)
+from omics_oracle.integrations.citation_managers import CitationManagerIntegration
 from omics_oracle.integrations.pubmed import PubMedIntegration
 
 
@@ -36,9 +31,7 @@ async def test_pubmed_integration() -> None:
             print(f"   PMID: {paper.get('pmid', 'Unknown')}")
             if paper.get("abstract"):
                 abstract_preview = (
-                    paper["abstract"][:200] + "..."
-                    if len(paper["abstract"]) > 200
-                    else paper["abstract"]
+                    paper["abstract"][:200] + "..." if len(paper["abstract"]) > 200 else paper["abstract"]
                 )
                 print(f"   Abstract: {abstract_preview}")
 

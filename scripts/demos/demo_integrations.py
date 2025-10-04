@@ -7,11 +7,8 @@ to enrich GEO dataset information with related research papers and export citati
 
 import asyncio
 import os
-import sys
 
 # Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "src"))
-
 from omics_oracle.integrations.service import IntegrationService
 
 
@@ -47,9 +44,7 @@ async def demo_integration_service() -> None:
     print("-" * 30)
 
     # Enrich datasets (this will try to fetch papers but may fail due to SSL/network issues)
-    enriched_datasets = await service.batch_enrich_datasets(
-        mock_datasets, include_papers=True, max_papers=3
-    )
+    enriched_datasets = await service.batch_enrich_datasets(mock_datasets, include_papers=True, max_papers=3)
 
     for dataset in enriched_datasets:
         print(f"\nDataset: {dataset['accession']}")
@@ -71,17 +66,13 @@ async def demo_integration_service() -> None:
     # Generate BibTeX citations
     print("\nBibTeX Format:")
     print("-" * 15)
-    bibtex_citations = service.export_citations(
-        enriched_datasets, format_type="bibtex", include_papers=True
-    )
+    bibtex_citations = service.export_citations(enriched_datasets, format_type="bibtex", include_papers=True)
     print(bibtex_citations)
 
     # Generate RIS citations
     print("\nRIS Format:")
     print("-" * 10)
-    ris_citations = service.export_citations(
-        enriched_datasets, format_type="ris", include_papers=True
-    )
+    ris_citations = service.export_citations(enriched_datasets, format_type="ris", include_papers=True)
     print(ris_citations)
 
     # Save citations to files
@@ -98,9 +89,7 @@ async def demo_integration_service() -> None:
     print("✓ Saved RIS citations to 'geo_datasets.ris'")
 
     # Generate CSL-JSON for modern reference managers
-    csl_json = service.export_citations(
-        enriched_datasets, format_type="csl-json", include_papers=True
-    )
+    csl_json = service.export_citations(enriched_datasets, format_type="csl-json", include_papers=True)
     with open("geo_datasets.json", "w") as f:
         f.write(csl_json)
     print("✓ Saved CSL-JSON citations to 'geo_datasets.json'")

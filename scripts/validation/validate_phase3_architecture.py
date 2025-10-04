@@ -7,13 +7,10 @@ and integrated according to Clean Architecture principles.
 """
 
 import asyncio
-import sys
 from pathlib import Path
 from typing import Any, Dict, List
 
 # Add project root to Python path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
 
 
 async def validate_infrastructure_layer() -> Dict[str, Any]:

@@ -16,9 +16,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Add project root to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-
 # Set NCBI email
 os.environ["NCBI_EMAIL"] = "omicsoracle@example.com"
 
@@ -32,7 +29,7 @@ except ImportError:
     logger.warning("Bio.Entrez not available")
 
 # Import our GEO client
-from src.omics_oracle.geo_tools.geo_client import NCBIDirectClient
+from omics_oracle.geo_tools.geo_client import NCBIDirectClient
 
 
 def test_ncbi_connection():

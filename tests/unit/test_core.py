@@ -5,12 +5,10 @@ This module provides basic unit tests to ensure core functionality
 and prevent workflow failures.
 """
 
-import sys
 import unittest
 from pathlib import Path
 
 # Add the src directory to the path to import our modules
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 
 class TestCoreModules(unittest.TestCase):

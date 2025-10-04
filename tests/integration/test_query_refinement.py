@@ -7,12 +7,9 @@ to ensure they're working correctly.
 """
 
 import asyncio
-import sys
 from pathlib import Path
 
 # Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
 from omics_oracle.services.query_analysis import QueryAnalysisService
 
 
@@ -42,9 +39,7 @@ async def test_query_analysis_service():
 
     print(f"  Original query: '{analysis.original_query}'")
     print(f"  Complexity score: {analysis.complexity_score:.2f}")
-    print(
-        f"  Issues found: {[issue.value for issue in analysis.potential_issues]}"
-    )
+    print(f"  Issues found: {[issue.value for issue in analysis.potential_issues]}")
     print(f"  Modifications suggested: {analysis.suggested_modifications}")
 
     # Test suggestion generation
@@ -60,15 +55,11 @@ async def test_query_analysis_service():
 
     # Test similar query finding
     print("🔎 Testing similar query lookup:")
-    similar_queries = service.find_similar_successful_queries(
-        "breast cancer rna-seq"
-    )
+    similar_queries = service.find_similar_successful_queries("breast cancer rna-seq")
 
     for i, sq in enumerate(similar_queries, 1):
         print(f"  {i}. '{sq.query_text}'")
-        print(
-            f"     Results: {sq.result_count}, Success: {sq.success_score:.2f}"
-        )
+        print(f"     Results: {sq.result_count}, Success: {sq.success_score:.2f}")
         print(f"     Similarity: {sq.similarity_score:.2f}")
         print(f"     Common entities: {sq.common_entities}")
         print()
@@ -107,9 +98,7 @@ async def test_api_endpoints():
         print(f"   Results: {case['result_count']}")
 
         # Simulate suggestion generation endpoint
-        analysis = service.analyze_failed_query(
-            case["original_query"], case["result_count"]
-        )
+        analysis = service.analyze_failed_query(case["original_query"], case["result_count"])
         suggestions = service.generate_suggestions(analysis)
 
         # Format response like API would
@@ -124,27 +113,18 @@ async def test_api_endpoints():
                 for s in suggestions
             ],
             "alternative_queries": [
-                sq.query_text
-                for sq in service.find_similar_successful_queries(
-                    case["original_query"]
-                )[:3]
+                sq.query_text for sq in service.find_similar_successful_queries(case["original_query"])[:3]
             ],
             "explanation": f"Generated {len(suggestions)} suggestions based on analysis",
             "analysis_metadata": {
                 "complexity_score": analysis.complexity_score,
-                "issues_found": [
-                    issue.value for issue in analysis.potential_issues
-                ],
+                "issues_found": [issue.value for issue in analysis.potential_issues],
             },
         }
 
         print(f"   Generated {len(response_data['suggestions'])} suggestions")
-        print(
-            f"   Found {len(response_data['alternative_queries'])} alternative queries"
-        )
-        print(
-            f"   Issues identified: {response_data['analysis_metadata']['issues_found']}"
-        )
+        print(f"   Found {len(response_data['alternative_queries'])} alternative queries")
+        print(f"   Issues identified: {response_data['analysis_metadata']['issues_found']}")
 
     print("\n✅ API endpoint logic tests completed successfully!")
 
@@ -173,9 +153,7 @@ def test_edge_cases():
     # Test special characters
     try:
         special_query = "cancer & tumor | disease (human)"
-        _ = service.analyze_failed_query(
-            special_query, 0
-        )  # Use _ to indicate intentionally unused
+        _ = service.analyze_failed_query(special_query, 0)  # Use _ to indicate intentionally unused
         print("  ✅ Special characters handled")
     except Exception as e:
         print(f"  ❌ Special characters failed: {e}")

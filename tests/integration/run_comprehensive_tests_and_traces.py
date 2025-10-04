@@ -25,9 +25,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Add project root to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-
 # Import test modules
 import test_endpoints_comprehensive
 from trace_query_flow import trace_query_flow

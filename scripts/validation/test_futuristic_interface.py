@@ -8,15 +8,12 @@ and verifies the fallback mechanism works properly.
 
 import asyncio
 import json
-import sys
 import time
 from pathlib import Path
 
 import requests
 
 # Add paths for imports
-sys.path.insert(0, str(Path(__file__).parent))
-sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 
 async def test_futuristic_interface():
@@ -60,9 +57,7 @@ async def test_futuristic_interface():
             "search_type": "basic",
             "max_results": 5,
         }
-        response = requests.post(
-            f"{base_url}/api/v2/search", json=search_data, timeout=30
-        )
+        response = requests.post(f"{base_url}/api/v2/search", json=search_data, timeout=30)
         if response.status_code == 200:
             result = response.json()
             print("[OK] Search API works")
@@ -78,38 +73,26 @@ async def test_futuristic_interface():
     # Test 4: Check if legacy interface is available
     print("\n4. Checking legacy interface...")
     try:
-        legacy_response = requests.get(
-            "http://localhost:8000/health", timeout=5
-        )
+        legacy_response = requests.get("http://localhost:8000/health", timeout=5)
         if legacy_response.status_code == 200:
             print("[OK] Legacy interface is available as fallback")
         else:
-            print(
-                "[WARNING]  Legacy interface not running (internal fallback will be used)"
-            )
+            print("[WARNING]  Legacy interface not running (internal fallback will be used)")
     except Exception as e:
-        print(
-            "[WARNING]  Legacy interface not accessible (internal fallback will be used)"
-        )
+        print("[WARNING]  Legacy interface not accessible (internal fallback will be used)")
 
     print("\n" + "=" * 50)
     print("[TARGET] Test Summary:")
-    print(
-        "   - Futuristic interface should be running on http://localhost:8001"
-    )
+    print("   - Futuristic interface should be running on http://localhost:8001")
     print("   - Legacy interface should be available as fallback")
     print("   - Both interfaces can run simultaneously")
-    print(
-        "   - Users can choose between interfaces or rely on automatic fallback"
-    )
+    print("   - Users can choose between interfaces or rely on automatic fallback")
 
 
 if __name__ == "__main__":
     # Check if interface is running
     try:
-        response = requests.get(
-            "http://localhost:8001/api/v2/health", timeout=2
-        )
+        response = requests.get("http://localhost:8001/api/v2/health", timeout=2)
         if response.status_code == 200:
             asyncio.run(test_futuristic_interface())
         else:

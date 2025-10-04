@@ -12,7 +12,6 @@ import json
 import logging
 import signal
 import subprocess
-import sys
 import threading
 import time
 import webbrowser
@@ -95,9 +94,7 @@ class WebInterfaceTester:
     def check_port_availability(self, port: int) -> bool:
         """Check if a port is available"""
         try:
-            result = subprocess.run(
-                ["lsof", "-i", f":{port}"], capture_output=True, text=True
-            )
+            result = subprocess.run(["lsof", "-i", f":{port}"], capture_output=True, text=True)
             return len(result.stdout.strip()) == 0
         except:
             return True
@@ -114,9 +111,7 @@ class WebInterfaceTester:
                     text=True,
                 )
                 if result.stdout.strip():
-                    processes[
-                        port
-                    ] = f"{config['name']} (PID: {result.stdout.strip()})"
+                    processes[port] = f"{config['name']} (PID: {result.stdout.strip()})"
                 else:
                     processes[port] = "Not running"
             except:
@@ -148,12 +143,8 @@ class WebInterfaceTester:
             result["accessible"] = True
             result["response_time"] = round(end_time - start_time, 3)
             result["status_code"] = response.status_code
-            result["content_type"] = response.headers.get(
-                "content-type", "unknown"
-            )
-            result["content_preview"] = (
-                response.text[:200] if response.text else "No content"
-            )
+            result["content_type"] = response.headers.get("content-type", "unknown")
+            result["content_preview"] = response.text[:200] if response.text else "No content"
 
             # Test health endpoint if available
             if config["health_endpoint"]:
@@ -225,9 +216,7 @@ class WebInterfaceTester:
                 except:
                     result["response_data"] = response.text[:500]
             else:
-                result[
-                    "error"
-                ] = f"HTTP {response.status_code}: {response.text[:200]}"
+                result["error"] = f"HTTP {response.status_code}: {response.text[:200]}"
 
         except Exception as e:
             result["error"] = str(e)
@@ -279,9 +268,7 @@ class WebInterfaceTester:
 
             # Check for JavaScript errors
             logs = self.driver.get_log("browser")
-            result["console_logs"] = [
-                log for log in logs if log["level"] in ["SEVERE", "WARNING"]
-            ]
+            result["console_logs"] = [log for log in logs if log["level"] in ["SEVERE", "WARNING"]]
 
             # Look for search form
             try:
@@ -333,9 +320,7 @@ class WebInterfaceTester:
         """Monitor live user interaction with interface"""
         config = self.interfaces[interface_id]
 
-        print(
-            f"\n{Fore.GREEN}🔴 LIVE MONITORING: {config['name']}{Style.RESET_ALL}"
-        )
+        print(f"\n{Fore.GREEN}🔴 LIVE MONITORING: {config['name']}{Style.RESET_ALL}")
         print(f"URL: {config['url']}")
         print(f"Duration: {duration} seconds")
         print(f"Monitoring console logs, network requests, and DOM changes...")
@@ -354,16 +339,12 @@ class WebInterfaceTester:
             start_time = time.time()
             self.monitoring_active = True
 
-            while (
-                time.time() - start_time < duration and self.monitoring_active
-            ):
+            while time.time() - start_time < duration and self.monitoring_active:
                 # Get console logs
                 logs = self.driver.get_log("browser")
                 if logs:
                     for log in logs:
-                        timestamp = datetime.fromtimestamp(
-                            log["timestamp"] / 1000
-                        ).strftime("%H:%M:%S")
+                        timestamp = datetime.fromtimestamp(log["timestamp"] / 1000).strftime("%H:%M:%S")
                         level = log["level"]
                         message = log["message"]
                         color = (
@@ -373,9 +354,7 @@ class WebInterfaceTester:
                             if level == "WARNING"
                             else Fore.WHITE
                         )
-                        print(
-                            f"{color}[{timestamp}] {level}: {message}{Style.RESET_ALL}"
-                        )
+                        print(f"{color}[{timestamp}] {level}: {message}{Style.RESET_ALL}")
 
                 # Check for DOM changes
                 current_title = self.driver.title
@@ -390,9 +369,7 @@ class WebInterfaceTester:
         """Analyze test results to determine best interface"""
         scores = {}
 
-        for interface_id, connectivity in self.test_results.get(
-            "connectivity", {}
-        ).items():
+        for interface_id, connectivity in self.test_results.get("connectivity", {}).items():
             score = 0
 
             # Connectivity score (40%)
@@ -404,16 +381,12 @@ class WebInterfaceTester:
                 score += 10
 
             # Search functionality score (40%)
-            search_result = self.test_results.get("search", {}).get(
-                interface_id, {}
-            )
+            search_result = self.test_results.get("search", {}).get(interface_id, {})
             if search_result.get("search_working"):
                 score += 40
 
             # Frontend functionality score (20%)
-            frontend_result = self.test_results.get("frontend", {}).get(
-                interface_id, {}
-            )
+            frontend_result = self.test_results.get("frontend", {}).get(interface_id, {})
             if frontend_result.get("page_loads"):
                 score += 5
             if frontend_result.get("search_form_exists"):
@@ -444,9 +417,7 @@ class WebInterfaceTester:
 
         # Connectivity results
         print(f"\n{Fore.CYAN}🌐 CONNECTIVITY TEST RESULTS:{Style.RESET_ALL}")
-        for interface_id, result in self.test_results.get(
-            "connectivity", {}
-        ).items():
+        for interface_id, result in self.test_results.get("connectivity", {}).items():
             name = result["interface"]
             accessible = "✅" if result["accessible"] else "❌"
             health = "✅" if result["health_check"] else "❌"
@@ -458,9 +429,7 @@ class WebInterfaceTester:
             print(f"     Response Time: {response_time}s")
 
             if result.get("error"):
-                print(
-                    f"     {Fore.RED}Error: {result['error']}{Style.RESET_ALL}"
-                )
+                print(f"     {Fore.RED}Error: {result['error']}{Style.RESET_ALL}")
             if result.get("content_type"):
                 print(f"     Content Type: {result['content_type']}")
 
@@ -474,56 +443,36 @@ class WebInterfaceTester:
             print(f"     Search Working: {working}")
 
             if result.get("error"):
-                print(
-                    f"     {Fore.RED}Error: {result['error']}{Style.RESET_ALL}"
-                )
+                print(f"     {Fore.RED}Error: {result['error']}{Style.RESET_ALL}")
             elif result.get("response_data"):
                 data = result["response_data"]
                 if isinstance(data, dict):
-                    print(
-                        f"     Response: {json.dumps(data, indent=6)[:200]}..."
-                    )
+                    print(f"     Response: {json.dumps(data, indent=6)[:200]}...")
                 else:
                     print(f"     Response: {str(data)[:200]}...")
 
         # Frontend functionality results
-        print(
-            f"\n{Fore.CYAN}🖥️ FRONTEND FUNCTIONALITY RESULTS:{Style.RESET_ALL}"
-        )
-        for interface_id, result in self.test_results.get(
-            "frontend", {}
-        ).items():
+        print(f"\n{Fore.CYAN}🖥️ FRONTEND FUNCTIONALITY RESULTS:{Style.RESET_ALL}")
+        for interface_id, result in self.test_results.get("frontend", {}).items():
             name = result["interface"]
 
             print(f"\n   {name}:")
             print(f"     Page Loads: {'✅' if result['page_loads'] else '❌'}")
-            print(
-                f"     Search Form: {'✅' if result['search_form_exists'] else '❌'}"
-            )
-            print(
-                f"     Search Submits: {'✅' if result['search_submits'] else '❌'}"
-            )
-            print(
-                f"     Results Display: {'✅' if result['results_display'] else '❌'}"
-            )
+            print(f"     Search Form: {'✅' if result['search_form_exists'] else '❌'}")
+            print(f"     Search Submits: {'✅' if result['search_submits'] else '❌'}")
+            print(f"     Results Display: {'✅' if result['results_display'] else '❌'}")
 
             if result.get("console_logs"):
-                print(
-                    f"     {Fore.YELLOW}Console Issues: {len(result['console_logs'])}{Style.RESET_ALL}"
-                )
+                print(f"     {Fore.YELLOW}Console Issues: {len(result['console_logs'])}{Style.RESET_ALL}")
             if result.get("error"):
-                print(
-                    f"     {Fore.RED}Error: {result['error']}{Style.RESET_ALL}"
-                )
+                print(f"     {Fore.RED}Error: {result['error']}{Style.RESET_ALL}")
 
         # Best interface recommendation
         best_interface = self.analyze_best_interface()
         print(f"\n{Fore.CYAN}🏆 BEST INTERFACE RECOMMENDATION:{Style.RESET_ALL}")
         if best_interface != "none":
             best_config = self.interfaces[best_interface]
-            print(
-                f"   {Fore.GREEN}✅ RECOMMENDED: {best_config['name']}{Style.RESET_ALL}"
-            )
+            print(f"   {Fore.GREEN}✅ RECOMMENDED: {best_config['name']}{Style.RESET_ALL}")
             print(f"   URL: {best_config['url']}")
             print(f"   Reason: Highest overall functionality score")
         else:
@@ -534,9 +483,7 @@ class WebInterfaceTester:
 
         working_interfaces = [
             interface_id
-            for interface_id, result in self.test_results.get(
-                "connectivity", {}
-            ).items()
+            for interface_id, result in self.test_results.get("connectivity", {}).items()
             if result.get("accessible")
         ]
 
@@ -551,23 +498,17 @@ class WebInterfaceTester:
             fully_working = [
                 interface_id
                 for interface_id in working_interfaces
-                if self.test_results.get("search", {})
-                .get(interface_id, {})
-                .get("search_working")
+                if self.test_results.get("search", {}).get(interface_id, {}).get("search_working")
             ]
 
             if fully_working:
                 best = fully_working[0]
                 config = self.interfaces[best]
-                print(
-                    f"   {Fore.GREEN}1. USE {config['name']} at {config['url']}{Style.RESET_ALL}"
-                )
+                print(f"   {Fore.GREEN}1. USE {config['name']} at {config['url']}{Style.RESET_ALL}")
                 print(f"   2. This interface has working search functionality")
                 print(f"   3. Test it manually to verify user interaction")
             else:
-                print(
-                    f"   {Fore.YELLOW}1. Interfaces are running but search is broken{Style.RESET_ALL}"
-                )
+                print(f"   {Fore.YELLOW}1. Interfaces are running but search is broken{Style.RESET_ALL}")
                 print(f"   2. Check backend API connectivity")
                 print(f"   3. Verify OmicsOracle pipeline configuration")
                 print(f"   4. Check for JavaScript errors in browser console")
@@ -583,9 +524,7 @@ class WebInterfaceTester:
             print(f"Testing {self.interfaces[interface_id]['name']}...")
             result = self.test_interface_connectivity(interface_id)
             self.test_results["connectivity"][interface_id] = result
-            status = (
-                "✅ ACCESSIBLE" if result["accessible"] else "❌ NOT ACCESSIBLE"
-            )
+            status = "✅ ACCESSIBLE" if result["accessible"] else "❌ NOT ACCESSIBLE"
             print(f"   {status} ({result.get('response_time', 'N/A')}s)")
 
         # Test search functionality
@@ -593,35 +532,25 @@ class WebInterfaceTester:
         self.test_results["search"] = {}
         for interface_id in self.interfaces:
             if self.test_results["connectivity"][interface_id]["accessible"]:
-                print(
-                    f"Testing search on {self.interfaces[interface_id]['name']}..."
-                )
+                print(f"Testing search on {self.interfaces[interface_id]['name']}...")
                 result = self.test_search_functionality(interface_id)
                 self.test_results["search"][interface_id] = result
                 status = "✅ WORKING" if result["search_working"] else "❌ BROKEN"
                 print(f"   Search: {status}")
             else:
-                print(
-                    f"Skipping search test for {self.interfaces[interface_id]['name']} (not accessible)"
-                )
+                print(f"Skipping search test for {self.interfaces[interface_id]['name']} (not accessible)")
 
         # Test frontend functionality (if browser driver available)
         self.print_section("Testing Frontend Functionality")
         if self.setup_browser_driver():
             self.test_results["frontend"] = {}
             for interface_id in self.interfaces:
-                if self.test_results["connectivity"][interface_id][
-                    "accessible"
-                ]:
-                    print(
-                        f"Testing frontend for {self.interfaces[interface_id]['name']}..."
-                    )
+                if self.test_results["connectivity"][interface_id]["accessible"]:
+                    print(f"Testing frontend for {self.interfaces[interface_id]['name']}...")
                     result = self.test_frontend_functionality(interface_id)
                     self.test_results["frontend"][interface_id] = result
                     status = (
-                        "✅ WORKING"
-                        if result["page_loads"] and result["search_form_exists"]
-                        else "❌ ISSUES"
+                        "✅ WORKING" if result["page_loads"] and result["search_form_exists"] else "❌ ISSUES"
                     )
                     print(f"   Frontend: {status}")
                 else:
@@ -629,9 +558,7 @@ class WebInterfaceTester:
                         f"Skipping frontend test for {self.interfaces[interface_id]['name']} (not accessible)"
                     )
         else:
-            print(
-                "Browser testing not available (Selenium/Chrome not installed)"
-            )
+            print("Browser testing not available (Selenium/Chrome not installed)")
 
         # Generate report
         self.generate_comprehensive_report()
@@ -643,18 +570,12 @@ class WebInterfaceTester:
             print(
                 f"Would you like to monitor live user interaction with {self.interfaces[best_interface]['name']}?"
             )
-            print(
-                f"This will open the interface in your browser and monitor all activity..."
-            )
+            print(f"This will open the interface in your browser and monitor all activity...")
 
             try:
-                response = (
-                    input("Start live monitoring? (y/n): ").lower().strip()
-                )
+                response = input("Start live monitoring? (y/n): ").lower().strip()
                 if response in ["y", "yes"]:
-                    self.monitor_live_interaction(
-                        best_interface, 120
-                    )  # 2 minutes
+                    self.monitor_live_interaction(best_interface, 120)  # 2 minutes
             except KeyboardInterrupt:
                 print(f"\n{Fore.YELLOW}Monitoring cancelled{Style.RESET_ALL}")
 
@@ -665,25 +586,18 @@ class WebInterfaceTester:
     def save_results(self):
         """Save test results to file"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        results_file = (
-            Path("test_results")
-            / f"comprehensive_interface_test_{timestamp}.json"
-        )
+        results_file = Path("test_results") / f"comprehensive_interface_test_{timestamp}.json"
         results_file.parent.mkdir(exist_ok=True)
 
         with open(results_file, "w") as f:
             json.dump(self.test_results, f, indent=2, default=str)
 
-        print(
-            f"\n{Fore.CYAN}📄 Results saved to: {results_file}{Style.RESET_ALL}"
-        )
+        print(f"\n{Fore.CYAN}📄 Results saved to: {results_file}{Style.RESET_ALL}")
 
 
 def main():
     """Main function"""
-    print(
-        f"{Fore.CYAN}🧬 OmicsOracle Web Interface Comprehensive Testing System{Style.RESET_ALL}"
-    )
+    print(f"{Fore.CYAN}🧬 OmicsOracle Web Interface Comprehensive Testing System{Style.RESET_ALL}")
     print(f"{'='*80}")
 
     tester = WebInterfaceTester()

@@ -21,9 +21,6 @@ os.environ["NCBI_EMAIL"] = "omicsoracle@example.com"
 logger.info(f"Set NCBI_EMAIL environment variable to: {os.environ['NCBI_EMAIL']}")
 
 # Add project root to path
-project_root = Path(__file__).parent
-sys.path.insert(0, str(project_root))
-
 # Try to import Bio.Entrez directly and set email
 try:
     from Bio import Entrez
@@ -36,7 +33,7 @@ except ImportError:
 
 # Import the OmicsOracle config
 try:
-    from src.omics_oracle.core.config import Config
+    from omics_oracle.core.config import Config
 
     config = Config()
     logger.info("Successfully loaded Config")
@@ -64,7 +61,7 @@ except ImportError:
 
 # Try to initialize the NCBI client directly
 try:
-    from src.omics_oracle.geo_tools.geo_client import NCBIDirectClient
+    from omics_oracle.geo_tools.geo_client import NCBIDirectClient
 
     # Create client with our email
     ncbi_client = NCBIDirectClient(email=os.environ["NCBI_EMAIL"], verify_ssl=False)
@@ -104,7 +101,7 @@ except Exception as e:
 
 # Now try to initialize the UnifiedGEOClient
 try:
-    from src.omics_oracle.geo_tools.geo_client import UnifiedGEOClient
+    from omics_oracle.geo_tools.geo_client import UnifiedGEOClient
 
     # Create client with our config
     geo_client = UnifiedGEOClient(config)

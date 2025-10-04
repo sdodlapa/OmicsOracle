@@ -5,15 +5,12 @@ This test validates all components of the new architecture work together correct
 """
 
 import asyncio
-import sys
+
+# Add src to path for testing
+from datetime import datetime
 from pathlib import Path
 from typing import List
 from unittest.mock import AsyncMock, Mock
-
-# Add src to path for testing
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
-from datetime import datetime
 
 from src.omics_oracle.application.dto.search_dto import SearchRequestDTO, SearchResponseDTO
 from src.omics_oracle.application.use_cases.search_datasets import SearchDatasetsUseCase

@@ -91,15 +91,12 @@ def check_web_interface_features():
 
     try:
         # Check main web module
-        sys.path.insert(0, str(Path("src")))
         from omics_oracle.web.main import app
 
         # Count routes
         routes = [route for route in app.routes if hasattr(route, "path")]
         api_routes = [route for route in routes if "/api/" in route.path]
-        static_routes = [
-            route for route in routes if "static" in route.path.lower()
-        ]
+        static_routes = [route for route in routes if "static" in route.path.lower()]
 
         print(f"✅ FastAPI Application: {len(routes)} total routes")
         print(f"✅ API Endpoints: {len(api_routes)} routes")
@@ -109,9 +106,7 @@ def check_web_interface_features():
         features = {
             "Search API": any("/search" in route.path for route in routes),
             "AI Integration": any("/ai" in route.path for route in routes),
-            "Visualization": any(
-                "/visualization" in route.path for route in routes
-            ),
+            "Visualization": any("/visualization" in route.path for route in routes),
             "WebSocket": any("/ws" in route.path for route in routes),
             "Batch Processing": any("/batch" in route.path for route in routes),
             "Export Features": any("/export" in route.path for route in routes),
@@ -162,12 +157,8 @@ def generate_test_report():
     }
 
     total_areas = len(coverage_areas)
-    good_coverage = sum(
-        1 for desc in coverage_areas.values() if desc.startswith("✅")
-    )
-    partial_coverage = sum(
-        1 for desc in coverage_areas.values() if desc.startswith("⚠️")
-    )
+    good_coverage = sum(1 for desc in coverage_areas.values() if desc.startswith("✅"))
+    partial_coverage = sum(1 for desc in coverage_areas.values() if desc.startswith("⚠️"))
 
     for area, status in coverage_areas.items():
         print(f"{status.split()[0]} {area:<20} | {status}")
@@ -175,13 +166,9 @@ def generate_test_report():
     print(f"\nOverall Status:")
     print(f"✅ Complete: {good_coverage}/{total_areas}")
     print(f"⚠️ Partial: {partial_coverage}/{total_areas}")
-    print(
-        f"❌ Missing: {total_areas - good_coverage - partial_coverage}/{total_areas}"
-    )
+    print(f"❌ Missing: {total_areas - good_coverage - partial_coverage}/{total_areas}")
 
-    success_rate = (
-        (good_coverage + partial_coverage * 0.5) / total_areas
-    ) * 100
+    success_rate = ((good_coverage + partial_coverage * 0.5) / total_areas) * 100
     print(f"📈 Coverage Score: {success_rate:.1f}%")
 
     return success_rate

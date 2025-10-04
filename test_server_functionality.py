@@ -11,8 +11,6 @@ import sys
 from pathlib import Path
 
 # Add the src directory to the path so we can import our modules
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 from omics_oracle.search.advanced_search_enhancer import AdvancedSearchEnhancer
 from omics_oracle.search.enhanced_query_handler import EnhancedQueryHandler
 from omics_oracle.services.summarizer import SummarizationService

@@ -16,8 +16,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 # Add src to path for imports
-sys.path.insert(0, str(Path(__file__).parent / "src"))
-
 from omics_oracle.integrations.service import IntegrationService
 
 
@@ -34,9 +32,7 @@ class ValidationSuite:
         }
         self.project_root = Path(__file__).parent
 
-    def run_command(
-        self, cmd: List[str], cwd: Optional[Path] = None
-    ) -> Dict[str, Any]:
+    def run_command(self, cmd: List[str], cwd: Optional[Path] = None) -> Dict[str, Any]:
         """Run a shell command and return results."""
         try:
             result = subprocess.run(
@@ -98,9 +94,7 @@ class ValidationSuite:
             "success": result["success"],
             "output": result["stdout"],
             "errors": result["stderr"],
-            "coverage": coverage_data.get("totals", {}).get(
-                "percent_covered", 0
-            ),
+            "coverage": coverage_data.get("totals", {}).get("percent_covered", 0),
         }
 
     def test_code_quality(self) -> Dict[str, Any]:
@@ -256,8 +250,7 @@ class ValidationSuite:
             results["batch_processing"] = {
                 "datasets_processed": len(enriched_datasets),
                 "total_time": end_time - start_time,
-                "avg_time_per_dataset": (end_time - start_time)
-                / len(enriched_datasets),
+                "avg_time_per_dataset": (end_time - start_time) / len(enriched_datasets),
                 "success": len(enriched_datasets) == len(test_datasets),
             }
 
@@ -288,8 +281,7 @@ class ValidationSuite:
             results["citation_generation"] = {
                 "datasets_processed": len(large_dataset),
                 "total_time": end_time - start_time,
-                "avg_time_per_dataset": (end_time - start_time)
-                / len(large_dataset),
+                "avg_time_per_dataset": (end_time - start_time) / len(large_dataset),
                 "output_size": len(bibtex_citations),
                 "success": len(bibtex_citations) > 0,
             }
@@ -309,11 +301,7 @@ class ValidationSuite:
         print("  - Checking for hardcoded secrets...")
         secret_patterns = ["password", "secret", "key", "token", "api_key"]
 
-        integration_files = list(
-            (self.project_root / "src" / "omics_oracle" / "integrations").glob(
-                "*.py"
-            )
-        )
+        integration_files = list((self.project_root / "src" / "omics_oracle" / "integrations").glob("*.py"))
         security_issues = []
 
         for file_path in integration_files:
@@ -325,9 +313,7 @@ class ValidationSuite:
                             # Check if it's just a parameter name
                             if "def " in content or "self." in content:
                                 continue
-                            security_issues.append(
-                                f"Potential hardcoded {pattern} in {file_path.name}"
-                            )
+                            security_issues.append(f"Potential hardcoded {pattern} in {file_path.name}")
             except Exception as e:
                 security_issues.append(f"Could not scan {file_path.name}: {e}")
 
@@ -346,13 +332,9 @@ class ValidationSuite:
                 stat = file_path.stat()
                 # Check if file is world-writable
                 if stat.st_mode & 0o002:
-                    permission_issues.append(
-                        f"World-writable file: {file_path.name}"
-                    )
+                    permission_issues.append(f"World-writable file: {file_path.name}")
             except Exception as e:
-                permission_issues.append(
-                    f"Could not check permissions for {file_path.name}: {e}"
-                )
+                permission_issues.append(f"Could not check permissions for {file_path.name}: {e}")
 
         results["permissions"] = {
             "issues_found": len(permission_issues),
@@ -374,9 +356,7 @@ class ValidationSuite:
         self.results["tests"]["quality"] = self.test_code_quality()
 
         # Run integration tests
-        self.results["tests"][
-            "integration"
-        ] = await self.test_integration_functionality()
+        self.results["tests"]["integration"] = await self.test_integration_functionality()
 
         # Run performance tests
         self.results["performance"] = await self.test_performance_benchmarks()
@@ -413,13 +393,9 @@ class ValidationSuite:
 
         # Check performance
         perf = self.results["performance"]
-        batch_time = perf.get("batch_processing", {}).get(
-            "avg_time_per_dataset", 0
-        )
+        batch_time = perf.get("batch_processing", {}).get("avg_time_per_dataset", 0)
         if batch_time > 5:  # More than 5 seconds per dataset
-            issues.append(
-                f"Batch processing too slow: {batch_time:.2f}s per dataset"
-            )
+            issues.append(f"Batch processing too slow: {batch_time:.2f}s per dataset")
 
         # Check security
         security = self.results["security"]
@@ -449,43 +425,31 @@ class ValidationSuite:
         # Print test results
         print(f"\n📊 Test Results:")
         unit = self.results["tests"]["unit"]
-        print(
-            f"  Unit Tests: {'✅' if unit['success'] else '❌'} (Coverage: {unit.get('coverage', 0):.1f}%)"
-        )
+        print(f"  Unit Tests: {'✅' if unit['success'] else '❌'} (Coverage: {unit.get('coverage', 0):.1f}%)")
 
         integration = self.results["tests"]["integration"]
         pubmed_success = integration.get("pubmed", {}).get("success", False)
         papers_found = integration.get("pubmed", {}).get("papers_found", 0)
-        print(
-            f"  PubMed Integration: {'✅' if pubmed_success else '❌'} ({papers_found} papers found)"
-        )
+        print(f"  PubMed Integration: {'✅' if pubmed_success else '❌'} ({papers_found} papers found)")
 
         # Print performance results
         print(f"\n⚡ Performance:")
         perf = self.results["performance"]
         if "batch_processing" in perf:
             batch = perf["batch_processing"]
-            print(
-                f"  Batch Processing: {batch.get('avg_time_per_dataset', 0):.2f}s per dataset"
-            )
+            print(f"  Batch Processing: {batch.get('avg_time_per_dataset', 0):.2f}s per dataset")
 
         if "citation_generation" in perf:
             citation = perf["citation_generation"]
-            print(
-                f"  Citation Generation: {citation.get('avg_time_per_dataset', 0):.3f}s per dataset"
-            )
+            print(f"  Citation Generation: {citation.get('avg_time_per_dataset', 0):.3f}s per dataset")
 
         # Print security results
         print(f"\n🔒 Security:")
         security = self.results["security"]
         secret_issues = security.get("secret_scan", {}).get("issues_found", 0)
         perm_issues = security.get("permissions", {}).get("issues_found", 0)
-        print(
-            f"  Secret Scan: {'✅' if secret_issues == 0 else '❌'} ({secret_issues} issues)"
-        )
-        print(
-            f"  Permissions: {'✅' if perm_issues == 0 else '❌'} ({perm_issues} issues)"
-        )
+        print(f"  Secret Scan: {'✅' if secret_issues == 0 else '❌'} ({secret_issues} issues)")
+        print(f"  Permissions: {'✅' if perm_issues == 0 else '❌'} ({perm_issues} issues)")
 
         # Print issues
         if self.results.get("issues"):

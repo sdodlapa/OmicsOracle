@@ -3,12 +3,9 @@ Simple test to verify the OmicsOracle pipeline works.
 """
 
 import asyncio
-import sys
 from pathlib import Path
 
 # Add src to path
-sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
-
 # Import project modules after path setup  # noqa: E402
 from omics_oracle.core.config import Config  # noqa: E402
 from omics_oracle.pipeline import OmicsOracle  # noqa: E402
@@ -29,9 +26,7 @@ async def test_pipeline():
         query = "BRCA1 breast cancer studies"
         print(f"Processing query: {query}")
 
-        result = await oracle.process_query(
-            query=query, max_results=5, include_sra=False
-        )
+        result = await oracle.process_query(query=query, max_results=5, include_sra=False)
 
         print("Query processed successfully!")
         print(f"Status: {result.status}")
