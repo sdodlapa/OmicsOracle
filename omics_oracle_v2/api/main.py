@@ -18,13 +18,16 @@ from omics_oracle_v2.api.metrics import PrometheusMetricsMiddleware
 from omics_oracle_v2.api.middleware import ErrorHandlingMiddleware, RequestLoggingMiddleware
 from omics_oracle_v2.api.routes import (
     agents_router,
+    auth_router,
     batch_router,
     health_router,
     metrics_router,
+    users_router,
     websocket_router,
     workflows_router,
 )
 from omics_oracle_v2.core import Settings
+from omics_oracle_v2.database import close_db, init_db
 
 logger = logging.getLogger(__name__)
 
@@ -47,8 +50,14 @@ async def lifespan(app: FastAPI):
         api_settings = APISettings()
 
         logger.info("Settings loaded successfully")
+        logger.info(f"Environment: {settings.environment}")
         logger.info(f"NCBI email: {settings.geo.ncbi_email}")
         logger.info(f"CORS origins: {api_settings.cors_origins}")
+
+        # Initialize database
+        logger.info("Initializing database...")
+        await init_db()
+        logger.info("Database initialized successfully")
 
     except Exception as e:
         logger.error(f"Failed to initialize: {e}", exc_info=True)
@@ -60,6 +69,14 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     logger.info("Shutting down OmicsOracle Agent API...")
+
+    # Close database connections
+    try:
+        await close_db()
+        logger.info("Database connections closed")
+    except Exception as e:
+        logger.error(f"Error closing database: {e}", exc_info=True)
+
     logger.info("API shutdown complete")
 
 
@@ -107,6 +124,12 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
 
     # Include routers
     app.include_router(health_router, prefix="/health", tags=["Health"])
+
+    # V2 API with authentication
+    app.include_router(auth_router, prefix="/api/v2")
+    app.include_router(users_router, prefix="/api/v2")
+
+    # V1 API (legacy, will be deprecated)
     app.include_router(agents_router, prefix="/api/v1/agents", tags=["Agents"])
     app.include_router(workflows_router, prefix="/api/v1/workflows", tags=["Workflows"])
     app.include_router(batch_router, prefix="/api/v1", tags=["Batch"])
