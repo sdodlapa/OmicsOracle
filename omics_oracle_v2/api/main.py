@@ -14,11 +14,13 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from omics_oracle_v2.api.config import APISettings
+from omics_oracle_v2.api.metrics import PrometheusMetricsMiddleware
 from omics_oracle_v2.api.middleware import ErrorHandlingMiddleware, RequestLoggingMiddleware
 from omics_oracle_v2.api.routes import (
     agents_router,
     batch_router,
     health_router,
+    metrics_router,
     websocket_router,
     workflows_router,
 )
@@ -99,6 +101,7 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     )
 
     # Add custom middleware
+    app.add_middleware(PrometheusMetricsMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(ErrorHandlingMiddleware)
 
@@ -108,6 +111,7 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     app.include_router(workflows_router, prefix="/api/v1/workflows", tags=["Workflows"])
     app.include_router(batch_router, prefix="/api/v1", tags=["Batch"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
+    app.include_router(metrics_router, tags=["Metrics"])
 
     # Mount static files
     static_dir = Path(__file__).parent / "static"
