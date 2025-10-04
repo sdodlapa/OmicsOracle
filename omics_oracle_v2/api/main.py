@@ -6,10 +6,12 @@ Creates and configures the FastAPI application for the agent API.
 
 import logging
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from omics_oracle_v2.api.config import APISettings
 from omics_oracle_v2.api.middleware import ErrorHandlingMiddleware, RequestLoggingMiddleware
@@ -107,6 +109,24 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     app.include_router(batch_router, prefix="/api/v1", tags=["Batch"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 
+    # Mount static files
+    static_dir = Path(__file__).parent / "static"
+    if static_dir.exists():
+        app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+        logger.info(f"Mounted static files from {static_dir}")
+
+    # Dashboard endpoint
+    @app.get("/dashboard", tags=["Dashboard"])
+    async def dashboard():
+        """Serve the web dashboard."""
+        dashboard_path = static_dir / "dashboard.html"
+        if dashboard_path.exists():
+            return FileResponse(dashboard_path)
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Dashboard not found"},
+        )
+
     # Root endpoint
     @app.get("/", tags=["Root"])
     async def root():
@@ -116,6 +136,7 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
             "version": api_settings.version,
             "description": api_settings.description,
             "docs": "/docs",
+            "dashboard": "/dashboard",
             "health": "/health",
         }
 
