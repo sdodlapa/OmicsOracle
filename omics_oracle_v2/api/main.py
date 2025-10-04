@@ -13,7 +13,13 @@ from fastapi.responses import JSONResponse
 
 from omics_oracle_v2.api.config import APISettings
 from omics_oracle_v2.api.middleware import ErrorHandlingMiddleware, RequestLoggingMiddleware
-from omics_oracle_v2.api.routes import agents_router, health_router, websocket_router, workflows_router
+from omics_oracle_v2.api.routes import (
+    agents_router,
+    batch_router,
+    health_router,
+    websocket_router,
+    workflows_router,
+)
 from omics_oracle_v2.core import Settings
 
 logger = logging.getLogger(__name__)
@@ -98,6 +104,7 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     app.include_router(health_router, prefix="/health", tags=["Health"])
     app.include_router(agents_router, prefix="/api/v1/agents", tags=["Agents"])
     app.include_router(workflows_router, prefix="/api/v1/workflows", tags=["Workflows"])
+    app.include_router(batch_router, prefix="/api/v1", tags=["Batch"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
 
     # Root endpoint
