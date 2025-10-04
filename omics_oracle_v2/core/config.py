@@ -91,6 +91,47 @@ class AISettings(BaseSettings):
         case_sensitive = False
 
 
+class DatabaseSettings(BaseSettings):
+    """Configuration for database connection."""
+
+    url: str = Field(
+        default="postgresql+asyncpg://omics:omics@localhost:5432/omics_oracle",
+        description="Database connection URL (async)",
+    )
+    echo: bool = Field(default=False, description="Echo SQL queries (debug)")
+    pool_size: int = Field(default=5, ge=1, le=100, description="Connection pool size")
+    max_overflow: int = Field(default=10, ge=0, le=100, description="Max connections beyond pool_size")
+
+    class Config:
+        env_prefix = "OMICS_DB_"
+        case_sensitive = False
+
+
+class AuthSettings(BaseSettings):
+    """Configuration for authentication and security."""
+
+    secret_key: str = Field(
+        default="CHANGE_ME_IN_PRODUCTION_USE_OPENSSL_RAND_HEX_32",
+        description="Secret key for JWT tokens (use openssl rand -hex 32)",
+    )
+    access_token_expire_minutes: int = Field(
+        default=60 * 24,  # 24 hours
+        ge=1,
+        description="JWT access token expiration (minutes)",
+    )
+    password_reset_token_expire_hours: int = Field(
+        default=24, ge=1, description="Password reset token expiration (hours)"
+    )
+    email_verification_token_expire_hours: int = Field(
+        default=48, ge=1, description="Email verification token expiration (hours)"
+    )
+    bcrypt_rounds: int = Field(default=12, ge=4, le=31, description="Bcrypt hashing rounds")
+
+    class Config:
+        env_prefix = "OMICS_AUTH_"
+        case_sensitive = False
+
+
 class Settings(BaseSettings):
     """Main application settings."""
 
@@ -100,11 +141,58 @@ class Settings(BaseSettings):
         default="INFO",
         description="Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
+    environment: str = Field(
+        default="development",
+        description="Environment (development, staging, production, test)",
+    )
 
     # Service-specific settings
     nlp: NLPSettings = Field(default_factory=NLPSettings, description="NLP service configuration")
     geo: GEOSettings = Field(default_factory=GEOSettings, description="GEO service configuration")
     ai: AISettings = Field(default_factory=AISettings, description="AI service configuration")
+    database: DatabaseSettings = Field(default_factory=DatabaseSettings, description="Database configuration")
+    auth: AuthSettings = Field(default_factory=AuthSettings, description="Authentication configuration")
+
+    # Computed properties for convenience
+    @property
+    def database_url(self) -> str:
+        """Get database URL."""
+        return self.database.url
+
+    @property
+    def database_echo(self) -> bool:
+        """Get database echo setting."""
+        return self.database.echo
+
+    @property
+    def database_pool_size(self) -> int:
+        """Get database pool size."""
+        return self.database.pool_size
+
+    @property
+    def database_max_overflow(self) -> int:
+        """Get database max overflow."""
+        return self.database.max_overflow
+
+    @property
+    def secret_key(self) -> str:
+        """Get secret key for JWT tokens."""
+        return self.auth.secret_key
+
+    @property
+    def access_token_expire_minutes(self) -> int:
+        """Get access token expiration."""
+        return self.auth.access_token_expire_minutes
+
+    @property
+    def password_reset_token_expire_hours(self) -> int:
+        """Get password reset token expiration."""
+        return self.auth.password_reset_token_expire_hours
+
+    @property
+    def email_verification_token_expire_hours(self) -> int:
+        """Get email verification token expiration."""
+        return self.auth.email_verification_token_expire_hours
 
     class Config:
         env_prefix = "OMICS_"  # Add prefix for main settings too
