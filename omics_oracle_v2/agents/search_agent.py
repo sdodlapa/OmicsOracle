@@ -8,6 +8,8 @@ ranks results by relevance, and applies filtering criteria.
 import logging
 from typing import Dict, List
 
+import nest_asyncio
+
 from ..core.config import Settings
 from ..lib.geo import GEOClient
 from ..lib.geo.models import GEOSeriesMetadata
@@ -15,6 +17,9 @@ from .base import Agent
 from .context import AgentContext
 from .exceptions import AgentExecutionError, AgentValidationError
 from .models.search import RankedDataset, SearchInput, SearchOutput
+
+# Allow nested event loops for API contexts
+nest_asyncio.apply()
 
 logger = logging.getLogger(__name__)
 
