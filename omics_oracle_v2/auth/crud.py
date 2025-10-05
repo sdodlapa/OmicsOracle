@@ -124,18 +124,22 @@ async def increment_user_request_count(db: AsyncSession, user: User) -> User:
     return user
 
 
-async def update_user_tier(db: AsyncSession, user: User, tier: str) -> User:
+async def update_user_tier(db: AsyncSession, user_id: UUID, tier: str) -> User:
     """
     Update user's subscription tier.
 
     Args:
         db: Database session
-        user: User to update
+        user_id: User ID to update
         tier: New tier (free, pro, enterprise)
 
     Returns:
         Updated user
     """
+    user = await get_user_by_id(db, user_id)
+    if not user:
+        raise ValueError(f"User {user_id} not found")
+
     user.tier = tier
     user.updated_at = datetime.utcnow()
     await db.commit()

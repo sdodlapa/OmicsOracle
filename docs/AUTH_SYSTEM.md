@@ -36,14 +36,15 @@ OmicsOracle v2.1.0 introduces a comprehensive authentication system with user ma
 ✅ **Role-Based Access Control (RBAC)**
 - User roles: Regular User, Admin
 - User tiers: Free, Pro, Enterprise
-- Per-tier rate limiting (coming in Task 2)
+- Per-tier rate limiting with quotas
 - Admin-only endpoints
 
 ✅ **Security Features**
 - Bcrypt password hashing
 - JWT tokens with expiration
 - API key cryptographic security
-- Rate limiting (coming in Task 2)
+- Redis-backed distributed rate limiting
+- In-memory fallback for reliability
 - HTTPS support (production)
 
 ---
@@ -446,27 +447,57 @@ Some endpoints support optional authentication. If authenticated, receive higher
 
 ## User Tiers
 
+OmicsOracle uses a tier-based system that determines rate limits and feature access. See [Rate Limiting Documentation](RATE_LIMITING.md) for complete details.
+
 ### Free Tier
-- **Rate Limit:** 100 requests/hour (coming in Task 2)
+- **Rate Limit:** 100 requests/hour, 1,000 requests/day
+- **Concurrent Requests:** 5
 - **Features:** Basic API access
 - **Cost:** Free
+- **Best for:** Testing, personal projects, learning
 
 ### Pro Tier
-- **Rate Limit:** 1,000 requests/hour
+- **Rate Limit:** 1,000 requests/hour, 20,000 requests/day
+- **Concurrent Requests:** 20
 - **Features:**
   - Priority support
   - Advanced analytics
   - Bulk operations
+  - Higher rate limits
 - **Cost:** $29/month (planned)
+- **Best for:** Production apps, small-medium businesses
 
 ### Enterprise Tier
-- **Rate Limit:** Custom
+- **Rate Limit:** 10,000 requests/hour, 200,000 requests/day
+- **Concurrent Requests:** 100
 - **Features:**
   - Dedicated support
   - SLA guarantees
   - Custom integrations
   - On-premise deployment
+  - Highest rate limits
 - **Cost:** Custom pricing
+- **Best for:** Enterprise applications, high-traffic services
+
+### Rate Limiting
+
+All API requests are subject to rate limiting based on your tier. The system:
+
+- **Tracks usage** in both hourly and daily windows
+- **Returns headers** with quota information on every request:
+  - `X-RateLimit-Limit`: Your quota limit
+  - `X-RateLimit-Remaining`: Requests remaining
+  - `X-RateLimit-Reset`: When quota resets (Unix timestamp)
+- **Returns 429** when quota exceeded with `Retry-After` header
+- **Costs vary** by endpoint (batch operations cost more)
+
+**Check your quota:**
+```bash
+curl -H "Authorization: Bearer $TOKEN" \
+  http://localhost:8000/api/v2/quotas/me
+```
+
+**📖 See [RATE_LIMITING.md](RATE_LIMITING.md) for complete documentation**
 
 ---
 

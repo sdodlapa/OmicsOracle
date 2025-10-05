@@ -26,6 +26,7 @@ from omics_oracle_v2.api.routes import (
     websocket_router,
     workflows_router,
 )
+from omics_oracle_v2.api.routes.quotas import router as quotas_router
 from omics_oracle_v2.cache import close_redis_client, get_redis_client
 from omics_oracle_v2.core import Settings
 from omics_oracle_v2.database import close_db, init_db
@@ -150,6 +151,7 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     # V2 API with authentication
     app.include_router(auth_router, prefix="/api/v2")
     app.include_router(users_router, prefix="/api/v2")
+    app.include_router(quotas_router, prefix="/api/v2")  # Quota management
 
     # V1 API (legacy, will be deprecated)
     app.include_router(agents_router, prefix="/api/v1/agents", tags=["Agents"])

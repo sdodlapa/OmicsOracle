@@ -19,7 +19,6 @@ Usage:
         pass
 """
 
-import os
 import tempfile
 from pathlib import Path
 from typing import Any, Dict
@@ -283,3 +282,123 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "slow: Slow-running tests")
     config.addinivalue_line("markers", "requires_api_key: Tests requiring API keys")
     config.addinivalue_line("markers", "requires_network: Tests requiring network access")
+
+
+# ============================================================================
+# Database Fixtures (for v2 API tests)
+# ============================================================================
+
+
+@pytest.fixture
+async def db_session():
+    """
+    Create an async database session for testing.
+
+    Uses SQLite in-memory database for fast, isolated tests.
+
+    Returns:
+        AsyncSession: Database session
+    """
+    from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from omics_oracle_v2.database import Base
+
+    # Create in-memory database
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
+
+    # Create tables
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
+
+    # Create session
+    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+    async with async_session() as session:
+        yield session
+
+    # Cleanup
+    await engine.dispose()
+
+
+@pytest.fixture
+async def create_test_user():
+    """
+    Factory fixture for creating test users.
+
+    Returns:
+        Callable: Function to create users with custom attributes
+    """
+    from omics_oracle_v2.auth.models import User
+    from omics_oracle_v2.auth.security import get_password_hash
+
+    async def _create_user(
+        db_session,
+        email: str,
+        password: str,
+        tier: str = "free",
+        is_admin: bool = False,
+        is_active: bool = True,
+        is_verified: bool = True,
+        full_name: str = None,
+    ) -> User:
+        """
+        Create a test user.
+
+        Args:
+            db_session: Database session
+            email: User email
+            password: Plain text password
+            tier: Subscription tier
+            is_admin: Admin status
+            is_active: Active status
+            is_verified: Verified status
+            full_name: User's full name
+
+        Returns:
+            User: Created user
+        """
+        user = User(
+            email=email,
+            hashed_password=get_password_hash(password),
+            tier=tier,
+            is_admin=is_admin,
+            is_active=is_active,
+            is_verified=is_verified,
+            full_name=full_name or email.split("@")[0],
+        )
+        db_session.add(user)
+        await db_session.commit()
+        await db_session.refresh(user)
+
+        # Store password for later use (e.g., login tests)
+        user._test_password = password
+        return user
+
+    return _create_user
+
+
+@pytest.fixture
+async def get_auth_headers():
+    """
+    Get authentication headers for a user.
+
+    Returns:
+        Callable: Function that returns auth headers for a user
+    """
+    from omics_oracle_v2.auth.security import create_access_token
+
+    async def _get_headers(user):
+        """
+        Get auth headers for user.
+
+        Args:
+            user: User object
+
+        Returns:
+            dict: Headers with JWT token
+        """
+        token = create_access_token({"sub": str(user.id)})
+        return {"Authorization": f"Bearer {token}"}
+
+    return _get_headers
