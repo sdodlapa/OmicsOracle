@@ -19,6 +19,7 @@ from omics_oracle_v2.auth.schemas import (
     APIKeyWithSecret,
     QuotaInfo,
     UsageStats,
+    UserResponse,
     UserUpdate,
 )
 from omics_oracle_v2.database import get_db
@@ -27,6 +28,24 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 
 # User Profile Management
+
+
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_info(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """
+    Get current authenticated user's information.
+
+    Returns complete user profile including email, tier, and account status.
+
+    Args:
+        current_user: Current authenticated user
+
+    Returns:
+        User information
+    """
+    return current_user
 
 
 @router.get("/me/profile", response_model=UsageStats)

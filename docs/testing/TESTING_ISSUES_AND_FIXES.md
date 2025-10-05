@@ -1,19 +1,23 @@
 # Testing Issues and Fixes - v2.1.0
 
 **Date:** October 5, 2025
-**Status:** 🔴 In Progress - 5 Critical Issues Found
-**Test Run:** Manual API Testing - First Run
+**Status:** ✅ All Critical Issues Fixed - Ready for Re-test
+**Test Run:** Manual API Testing - Issues Fixed
 
 ---
 
 ## Executive Summary
 
-**First manual API test run completed with 5 critical issues found:**
-- ✅ **4 tests passed** (36% success rate)
-- ❌ **6 tests failed** (55% failure rate)
-- 🐛 **5 critical issues** requiring immediate fixes
+**First manual API test run completed - All critical issues now fixed:**
+- ✅ **4 tests passed** (36% success rate initially)
+- ✅ **All 5 critical issues FIXED**
+- 🔄 **Ready for re-test** (expect ~90% success rate)
 
-**Critical Finding:** The v1 API endpoints (`/api/v1/agents`, `/api/v1/workflows`) **do not have list endpoints** - only execute endpoints exist. This is a fundamental API design issue.
+**Issues Fixed:**
+1. ✅ Issue #3: Added GET /api/v2/users/me endpoint
+2. ✅ Issue #4: Added GET /api/v1/agents list endpoint
+3. ✅ Issue #5: Added GET /api/v1/workflows list endpoint
+4. ✅ Issue #6: Fixed quota UUID type mismatch (500 error)
 
 ---
 
@@ -68,10 +72,101 @@ Update test to accept both 200 and 201 as success
 
 ---
 
-### Issue #3: Get Current User Not Found (MEDIUM PRIORITY)
+## 🔴 Issue #3: Users "me" Endpoint (404)
 
-**Severity:** 🟡 MEDIUM
-**Status:** 🔴 BUG - Route missing or incorrectly configured
+**Status:** ✅ FIXED
+
+**Severity:** CRITICAL
+
+**Test:** List Agents
+**Expected:** GET /api/v2/users/me returns user info
+**Actual:** 404 Not Found
+
+### Root Cause
+- Router had `/me/profile` endpoint but no `/me` endpoint
+- Test expects standard REST pattern `/users/me` for current user
+
+### Solution
+Added GET /me endpoint to `omics_oracle_v2/api/routes/users.py`:
+
+```python
+@router.get("/me", response_model=UserResponse)
+async def get_current_user_info(
+    current_user: User = Depends(get_current_active_user),
+) -> User:
+    """Get current user information."""
+    return current_user
+```
+
+**Files Modified:**
+- `omics_oracle_v2/api/routes/users.py` - Added GET /me endpoint
+
+**Verification:**
+```bash
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v2/users/me
+# Should return user info (id, email, is_active, etc.)
+```
+
+---
+
+## 🔴 Issue #4: Agents List Endpoint (404)
+
+**Status:** ✅ FIXED
+
+**Severity:** CRITICAL
+
+**Test:** List Agents
+**Expected:** GET /api/v1/agents returns list of available agents
+**Actual:** 404 Not Found
+
+### Root Cause
+- Router only had POST endpoints for executing agents
+- No GET endpoint to list available agents and their capabilities
+
+### Solution
+Added list agents endpoint to `omics_oracle_v2/api/routes/agents.py`:
+
+1. Created `AgentInfo` schema:
+```python
+class AgentInfo(BaseModel):
+    """Information about an available agent."""
+    id: str
+    name: str
+    description: str
+    category: str
+    capabilities: List[str]
+    input_types: List[str]
+    output_types: List[str]
+    endpoint: str
+```
+
+2. Added GET / endpoint:
+```python
+@router.get("/", response_model=List[AgentInfo])
+async def list_agents():
+    """List all available agents with their metadata."""
+    return [
+        AgentInfo(id="query", name="Query Agent", ...),
+        AgentInfo(id="search", name="Search Agent", ...),
+        AgentInfo(id="data", name="Data Agent", ...),
+        AgentInfo(id="report", name="Report Agent", ...),
+    ]
+```
+
+**Files Modified:**
+- `omics_oracle_v2/api/routes/agents.py` - Added AgentInfo schema and GET / endpoint
+
+**Verification:**
+```bash
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8000/api/v1/agents
+# Should return array of 4 agents with full metadata
+```
+
+---
+
+## 🔴 Issue #5: Workflows List Endpoint (404)
+
+**Status:** ✅ FIXED
 
 **Problem:**
 ```

@@ -7,8 +7,10 @@ REST endpoints for executing multi-agent workflows.
 import logging
 import time
 from datetime import datetime, timezone
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 
 from omics_oracle_v2.agents import Orchestrator
 from omics_oracle_v2.agents.models.orchestrator import OrchestratorInput
@@ -18,6 +20,70 @@ from omics_oracle_v2.api.models.workflow import StageResultResponse, WorkflowReq
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Workflows"])
+
+
+# Workflow Information Schema
+
+
+class WorkflowInfo(BaseModel):
+    """Information about an available workflow."""
+
+    type: str = Field(..., description="Workflow type identifier")
+    name: str = Field(..., description="Human-readable workflow name")
+    description: str = Field(..., description="Workflow description")
+    agents: List[str] = Field(..., description="Agents used in this workflow")
+    use_case: str = Field(..., description="When to use this workflow")
+
+
+# Workflow Listing
+
+
+@router.get("/", response_model=List[WorkflowInfo], summary="List Available Workflows")
+async def list_workflows():
+    """
+    List all available workflows with their metadata.
+
+    Returns comprehensive information about each workflow including
+    the agents involved and recommended use cases.
+
+    Returns:
+        List of workflow information objects
+    """
+    from omics_oracle_v2.agents.models.orchestrator import WorkflowType
+
+    return [
+        WorkflowInfo(
+            type=WorkflowType.FULL_ANALYSIS.value,
+            name="Full Analysis",
+            description="Complete analysis: Query -> Search -> Data Validation -> Report",
+            agents=["QueryAgent", "SearchAgent", "DataAgent", "ReportAgent"],
+            use_case="Comprehensive dataset analysis with quality validation",
+        ),
+        WorkflowInfo(
+            type=WorkflowType.SIMPLE_SEARCH.value,
+            name="Simple Search",
+            description="Quick search: Query -> Search -> Report",
+            agents=["QueryAgent", "SearchAgent", "ReportAgent"],
+            use_case="Fast dataset discovery without quality validation",
+        ),
+        WorkflowInfo(
+            type=WorkflowType.QUICK_REPORT.value,
+            name="Quick Report",
+            description="Direct report: Search -> Report (with dataset IDs)",
+            agents=["SearchAgent", "ReportAgent"],
+            use_case="Generate report for known dataset IDs",
+        ),
+        WorkflowInfo(
+            type=WorkflowType.DATA_VALIDATION.value,
+            name="Data Validation",
+            description="Validate and report: Data Validation -> Report",
+            agents=["DataAgent", "ReportAgent"],
+            use_case="Quality analysis of existing datasets",
+        ),
+    ]
+
+
+# Workflow Execution
 
 
 @router.post("/execute", response_model=WorkflowResponse, summary="Execute Complete Workflow")

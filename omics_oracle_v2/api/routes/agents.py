@@ -7,8 +7,10 @@ REST endpoints for executing individual agents.
 import logging
 import time
 from datetime import datetime, timezone
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from pydantic import BaseModel, Field
 
 from omics_oracle_v2.agents import DataAgent, QueryAgent, ReportAgent, SearchAgent
 from omics_oracle_v2.agents.models import QueryInput
@@ -41,6 +43,103 @@ from omics_oracle_v2.api.models.responses import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Agents"])
+
+
+# Agent Information Schemas
+
+
+class AgentInfo(BaseModel):
+    """Information about an available agent."""
+
+    id: str = Field(..., description="Agent identifier")
+    name: str = Field(..., description="Human-readable agent name")
+    description: str = Field(..., description="Agent description")
+    category: str = Field(..., description="Agent category")
+    capabilities: List[str] = Field(..., description="List of agent capabilities")
+    input_types: List[str] = Field(..., description="Accepted input types")
+    output_types: List[str] = Field(..., description="Produced output types")
+    endpoint: str = Field(..., description="API endpoint path")
+
+
+# Agent Listing
+
+
+@router.get("/", response_model=List[AgentInfo], summary="List Available Agents")
+async def list_agents():
+    """
+    List all available agents with their metadata.
+
+    Returns comprehensive information about each agent including
+    capabilities, input/output types, and API endpoints.
+
+    Returns:
+        List of agent information objects
+    """
+    return [
+        AgentInfo(
+            id="query",
+            name="Query Agent",
+            description="Extract biomedical entities and intent from natural language queries",
+            category="NLP",
+            capabilities=[
+                "Named Entity Recognition (NER)",
+                "Intent Detection",
+                "Entity Extraction (genes, diseases, chemicals, etc.)",
+                "Search Term Generation",
+            ],
+            input_types=["text/plain"],
+            output_types=["application/json"],
+            endpoint="/api/v1/agents/query",
+        ),
+        AgentInfo(
+            id="search",
+            name="Search Agent",
+            description="Search and rank GEO datasets based on relevance",
+            category="Data Discovery",
+            capabilities=[
+                "GEO Database Search",
+                "Relevance Ranking",
+                "Dataset Filtering",
+                "Metadata Extraction",
+            ],
+            input_types=["application/json"],
+            output_types=["application/json"],
+            endpoint="/api/v1/agents/search",
+        ),
+        AgentInfo(
+            id="data",
+            name="Data Agent",
+            description="Validate, integrate, and process biomedical datasets",
+            category="Data Processing",
+            capabilities=[
+                "Data Validation",
+                "Quality Assessment",
+                "Data Integration",
+                "Format Conversion",
+            ],
+            input_types=["application/json", "text/csv"],
+            output_types=["application/json"],
+            endpoint="/api/v1/agents/data",
+        ),
+        AgentInfo(
+            id="report",
+            name="Report Agent",
+            description="Generate comprehensive analysis reports",
+            category="Reporting",
+            capabilities=[
+                "Report Generation",
+                "Data Summarization",
+                "Visualization",
+                "Export to Multiple Formats",
+            ],
+            input_types=["application/json"],
+            output_types=["application/json", "text/html", "application/pdf"],
+            endpoint="/api/v1/agents/report",
+        ),
+    ]
+
+
+# Agent Execution Endpoints
 
 
 @router.post("/query", response_model=QueryResponse, summary="Execute Query Agent")
