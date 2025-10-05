@@ -186,6 +186,322 @@ class AuthSettings(BaseSettings):
         case_sensitive = False
 
 
+class RankingConfig(BaseSettings):
+    """Configuration for relevance ranking algorithms.
+
+    Controls how datasets are scored for relevance to search queries.
+    Supports both keyword-based matching (current) and semantic search (Phase 2).
+
+    Environment Variables:
+        OMICS_RANKING_KEYWORD_TITLE_WEIGHT=0.4
+        OMICS_RANKING_KEYWORD_SUMMARY_WEIGHT=0.3
+        OMICS_RANKING_KEYWORD_ORGANISM_BONUS=0.15
+        OMICS_RANKING_KEYWORD_SAMPLE_COUNT_BONUS=0.15
+        OMICS_RANKING_USE_SEMANTIC_RANKING=false
+        OMICS_RANKING_SEMANTIC_WEIGHT=0.6
+
+    Example:
+        >>> config = RankingConfig()
+        >>> config.keyword_title_weight
+        0.4
+        >>> # Higher weight means title matches contribute more to score
+    """
+
+    # Keyword matching weights (Phase 0 - Current)
+    keyword_title_weight: float = Field(
+        default=0.4,
+        ge=0.0,
+        le=1.0,
+        description="Weight for title keyword matches (0.0-1.0)",
+    )
+    keyword_summary_weight: float = Field(
+        default=0.3,
+        ge=0.0,
+        le=1.0,
+        description="Weight for summary keyword matches (0.0-1.0)",
+    )
+    keyword_organism_bonus: float = Field(
+        default=0.15,
+        ge=0.0,
+        le=1.0,
+        description="Bonus score for organism match (0.0-1.0)",
+    )
+    keyword_sample_count_bonus: float = Field(
+        default=0.15,
+        ge=0.0,
+        le=1.0,
+        description="Bonus score for adequate sample count (0.0-1.0)",
+    )
+
+    # Sample count thresholds for bonus scoring
+    sample_count_large: int = Field(
+        default=100,
+        ge=1,
+        description="Sample count threshold for 'large' dataset",
+    )
+    sample_count_medium: int = Field(
+        default=50,
+        ge=1,
+        description="Sample count threshold for 'medium' dataset",
+    )
+    sample_count_small: int = Field(
+        default=10,
+        ge=1,
+        description="Sample count threshold for 'small' dataset",
+    )
+
+    # Keyword matching parameters
+    keyword_match_multiplier: float = Field(
+        default=0.2,
+        ge=0.0,
+        le=1.0,
+        description="Multiplier per keyword match for title scoring",
+    )
+    keyword_summary_multiplier: float = Field(
+        default=0.15,
+        ge=0.0,
+        le=1.0,
+        description="Multiplier per keyword match for summary scoring",
+    )
+
+    # Semantic search configuration (Phase 2)
+    use_semantic_ranking: bool = Field(
+        default=False,
+        description="Enable semantic similarity ranking (requires OpenAI)",
+    )
+    semantic_weight: float = Field(
+        default=0.6,
+        ge=0.0,
+        le=1.0,
+        description="Weight for semantic similarity score when enabled",
+    )
+    keyword_weight_semantic_mode: float = Field(
+        default=0.4,
+        ge=0.0,
+        le=1.0,
+        description="Weight for keyword score when semantic ranking enabled",
+    )
+    embedding_model: str = Field(
+        default="text-embedding-3-small",
+        description="OpenAI embedding model for semantic search",
+    )
+    similarity_threshold: float = Field(
+        default=0.7,
+        ge=0.0,
+        le=1.0,
+        description="Minimum cosine similarity for semantic matches",
+    )
+
+    # Synonym expansion (Phase 1)
+    use_synonyms: bool = Field(
+        default=False,
+        description="Enable biomedical synonym expansion",
+    )
+    synonym_weight: float = Field(
+        default=0.8,
+        ge=0.0,
+        le=1.0,
+        description="Weight multiplier for synonym matches (vs exact matches)",
+    )
+
+    class Config:
+        env_prefix = "OMICS_RANKING_"
+        case_sensitive = False
+
+
+class QualityConfig(BaseSettings):
+    """Configuration for dataset quality scoring.
+
+    Controls how datasets are assessed for quality based on metadata completeness,
+    sample counts, text quality, publications, and other factors.
+
+    Total points add up to 100. Thresholds determine what constitutes 'high quality'.
+
+    Environment Variables:
+        OMICS_QUALITY_POINTS_SAMPLE_COUNT=20
+        OMICS_QUALITY_POINTS_TITLE=15
+        OMICS_QUALITY_SAMPLE_COUNT_EXCELLENT=100
+
+    Example:
+        >>> config = QualityConfig()
+        >>> config.points_sample_count
+        20
+        >>> config.sample_count_excellent
+        100
+    """
+
+    # Point allocations (should sum to 100 for clarity)
+    points_sample_count: int = Field(
+        default=20,
+        ge=0,
+        le=100,
+        description="Maximum points for sample count (out of 100)",
+    )
+    points_title: int = Field(
+        default=15,
+        ge=0,
+        le=100,
+        description="Maximum points for title quality (out of 100)",
+    )
+    points_summary: int = Field(
+        default=15,
+        ge=0,
+        le=100,
+        description="Maximum points for summary quality (out of 100)",
+    )
+    points_publications: int = Field(
+        default=20,
+        ge=0,
+        le=100,
+        description="Maximum points for associated publications (out of 100)",
+    )
+    points_sra_data: int = Field(
+        default=10,
+        ge=0,
+        le=100,
+        description="Maximum points for SRA data availability (out of 100)",
+    )
+    points_recency: int = Field(
+        default=10,
+        ge=0,
+        le=100,
+        description="Maximum points for dataset recency (out of 100)",
+    )
+    points_metadata: int = Field(
+        default=10,
+        ge=0,
+        le=100,
+        description="Maximum points for metadata completeness (out of 100)",
+    )
+
+    # Sample count thresholds
+    sample_count_excellent: int = Field(
+        default=100,
+        ge=1,
+        description="Sample count for excellent quality (full points)",
+    )
+    sample_count_good: int = Field(
+        default=50,
+        ge=1,
+        description="Sample count for good quality (75% points)",
+    )
+    sample_count_adequate: int = Field(
+        default=10,
+        ge=1,
+        description="Sample count for adequate quality (50% points)",
+    )
+
+    # Title length thresholds (characters)
+    title_length_descriptive: int = Field(
+        default=50,
+        ge=1,
+        description="Title length for descriptive quality (full points)",
+    )
+    title_length_adequate: int = Field(
+        default=20,
+        ge=1,
+        description="Title length for adequate quality (67% points)",
+    )
+    title_length_minimal: int = Field(
+        default=10,
+        ge=1,
+        description="Title length for minimal quality (33% points)",
+    )
+
+    # Summary length thresholds (characters)
+    summary_length_comprehensive: int = Field(
+        default=200,
+        ge=1,
+        description="Summary length for comprehensive quality (full points)",
+    )
+    summary_length_good: int = Field(
+        default=100,
+        ge=1,
+        description="Summary length for good quality (67% points)",
+    )
+    summary_length_minimal: int = Field(
+        default=50,
+        ge=1,
+        description="Summary length for minimal quality (33% points)",
+    )
+
+    # Publication thresholds
+    publications_many: int = Field(
+        default=5,
+        ge=1,
+        description="Publication count for 'many' (full points)",
+    )
+    publications_some: int = Field(
+        default=2,
+        ge=1,
+        description="Publication count for 'some' (75% points)",
+    )
+    publications_one: int = Field(
+        default=1,
+        ge=1,
+        description="Publication count for 'one' (50% points)",
+    )
+
+    # Recency thresholds (days)
+    recency_recent: int = Field(
+        default=365,
+        ge=1,
+        description="Days for 'recent' dataset (< 1 year, full points)",
+    )
+    recency_moderate: int = Field(
+        default=1825,
+        ge=1,
+        description="Days for 'moderate' age (< 5 years, 50% points)",
+    )
+    recency_old: int = Field(
+        default=3650,
+        ge=1,
+        description="Days for 'old' dataset (< 10 years, 25% points)",
+    )
+
+    # Metadata completeness thresholds
+    metadata_fields_complete: int = Field(
+        default=10,
+        ge=1,
+        description="Required metadata fields for 'complete' (full points)",
+    )
+    metadata_fields_good: int = Field(
+        default=7,
+        ge=1,
+        description="Required metadata fields for 'good' (75% points)",
+    )
+    metadata_fields_basic: int = Field(
+        default=5,
+        ge=1,
+        description="Required metadata fields for 'basic' (50% points)",
+    )
+
+    # Quality level thresholds (normalized 0-1)
+    excellent_threshold: float = Field(
+        default=0.8,
+        ge=0.0,
+        le=1.0,
+        description="Score threshold for EXCELLENT quality level",
+    )
+    good_threshold: float = Field(
+        default=0.6,
+        ge=0.0,
+        le=1.0,
+        description="Score threshold for GOOD quality level",
+    )
+    fair_threshold: float = Field(
+        default=0.4,
+        ge=0.0,
+        le=1.0,
+        description="Score threshold for FAIR quality level",
+    )
+    # Below fair_threshold is considered POOR
+
+    class Config:
+        env_prefix = "OMICS_QUALITY_"
+        case_sensitive = False
+
+
 class Settings(BaseSettings):
     """Main application settings."""
 
@@ -210,6 +526,10 @@ class Settings(BaseSettings):
     )
     database: DatabaseSettings = Field(default_factory=DatabaseSettings, description="Database configuration")
     auth: AuthSettings = Field(default_factory=AuthSettings, description="Authentication configuration")
+    ranking: RankingConfig = Field(
+        default_factory=RankingConfig, description="Ranking algorithm configuration"
+    )
+    quality: QualityConfig = Field(default_factory=QualityConfig, description="Quality scoring configuration")
 
     # Computed properties for convenience
     @property

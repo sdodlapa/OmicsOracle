@@ -9,6 +9,7 @@ import logging
 from typing import List, Tuple
 
 from ..core.config import Settings
+from ..lib.ranking import QualityScorer
 from .base import Agent
 from .context import AgentContext
 from .exceptions import AgentExecutionError, AgentValidationError
@@ -33,6 +34,7 @@ class DataAgent(Agent[DataInput, DataOutput]):
             settings: Application settings
         """
         super().__init__(settings)
+        self._scorer = QualityScorer(settings.quality)
 
     def _initialize_resources(self) -> None:
         """Initialize resources (none needed for DataAgent)."""
@@ -208,102 +210,16 @@ class DataAgent(Agent[DataInput, DataOutput]):
         """
         Calculate overall quality score for a dataset.
 
+        Delegates to QualityScorer for configurable, testable scoring.
+
         Args:
             metadata: GEOSeriesMetadata
 
         Returns:
             Tuple of (quality_score, issues, strengths)
         """
-        score = 0.0
-        issues = []
-        strengths = []
-
-        # 1. Sample count (0-20 points)
-        if metadata.sample_count:
-            if metadata.sample_count >= 100:
-                score += 20
-                strengths.append(f"Large sample size: {metadata.sample_count} samples")
-            elif metadata.sample_count >= 50:
-                score += 15
-                strengths.append(f"Good sample size: {metadata.sample_count} samples")
-            elif metadata.sample_count >= 10:
-                score += 10
-                strengths.append(f"Adequate sample size: {metadata.sample_count} samples")
-            else:
-                score += 5
-                issues.append(f"Small sample size: {metadata.sample_count} samples")
-        else:
-            issues.append("Missing sample count information")
-
-        # 2. Title quality (0-15 points)
-        if metadata.title:
-            title_len = len(metadata.title)
-            if title_len >= 20:
-                score += 15
-                if title_len >= 50:
-                    strengths.append("Descriptive title")
-            elif title_len >= 10:
-                score += 10
-            else:
-                score += 5
-                issues.append("Very short title")
-        else:
-            issues.append("Missing title")
-
-        # 3. Summary quality (0-15 points)
-        if metadata.summary:
-            summary_len = len(metadata.summary)
-            if summary_len >= 200:
-                score += 15
-                strengths.append("Comprehensive summary")
-            elif summary_len >= 100:
-                score += 10
-            elif summary_len >= 50:
-                score += 5
-            else:
-                issues.append("Very short summary")
-        else:
-            issues.append("Missing summary")
-
-        # 4. Publication (0-20 points)
-        if metadata.pubmed_ids and len(metadata.pubmed_ids) > 0:
-            score += 20
-            strengths.append(f"Published ({len(metadata.pubmed_ids)} publication(s))")
-        else:
-            issues.append("No associated publications")
-
-        # 5. SRA data (0-10 points)
-        if metadata.has_sra_data():
-            score += 10
-            strengths.append("Raw sequencing data available (SRA)")
-        else:
-            issues.append("No SRA sequencing data")
-
-        # 6. Recency (0-10 points)
-        age_days = metadata.get_age_days()
-        if age_days is not None:
-            if age_days <= 365:  # Within 1 year
-                score += 10
-                strengths.append("Recent dataset (< 1 year old)")
-            elif age_days <= 1825:  # Within 5 years
-                score += 7
-            elif age_days <= 3650:  # Within 10 years
-                score += 4
-            else:
-                issues.append(f"Old dataset ({age_days // 365} years)")
-
-        # 7. Metadata completeness (0-10 points)
-        completeness = self._calculate_metadata_completeness(metadata)
-        score += completeness * 10
-        if completeness >= 0.8:
-            strengths.append("Complete metadata")
-        elif completeness < 0.5:
-            issues.append("Incomplete metadata")
-
-        # Normalize to 0.0-1.0
-        quality_score = min(1.0, score / 100.0)
-
-        return quality_score, issues, strengths
+        # Delegate to QualityScorer
+        return self._scorer.calculate_quality(metadata)
 
     def _calculate_metadata_completeness(self, metadata) -> float:
         """
@@ -345,24 +261,20 @@ class DataAgent(Agent[DataInput, DataOutput]):
 
         return completeness
 
-    def _determine_quality_level(self, quality_score: float) -> DataQualityLevel:
+    def _determine_quality_level(self, score: float) -> DataQualityLevel:
         """
-        Determine quality level from score.
+        Determine quality level enum from score.
+
+        Delegates to QualityScorer for consistent threshold application.
 
         Args:
-            quality_score: Quality score (0.0-1.0)
+            score: Quality score (0.0-1.0)
 
         Returns:
-            DataQualityLevel enum value
+            DataQualityLevel enum
         """
-        if quality_score >= 0.9:
-            return DataQualityLevel.EXCELLENT
-        elif quality_score >= 0.75:
-            return DataQualityLevel.GOOD
-        elif quality_score >= 0.5:
-            return DataQualityLevel.FAIR
-        else:
-            return DataQualityLevel.POOR
+        level_str = self._scorer.get_quality_level(score)
+        return DataQualityLevel[level_str]
 
     def _passes_filters(self, dataset: ProcessedDataset, input_data: DataInput) -> bool:
         """

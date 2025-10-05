@@ -13,6 +13,7 @@ import nest_asyncio
 from ..core.config import Settings
 from ..lib.geo import GEOClient
 from ..lib.geo.models import GEOSeriesMetadata
+from ..lib.ranking import KeywordRanker
 from .base import Agent
 from .context import AgentContext
 from .exceptions import AgentExecutionError, AgentValidationError
@@ -46,6 +47,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
         """
         super().__init__(settings)
         self._geo_client: GEOClient = None
+        self._ranker = KeywordRanker(settings.ranking)
 
     def _initialize_resources(self) -> None:
         """Initialize the GEO client."""
@@ -80,7 +82,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
 
         try:
             # Check if there's a running loop
-            loop = asyncio.get_running_loop()
+            _ = asyncio.get_running_loop()
             # We're in an async context - create a new thread with its own loop
             import threading
 
