@@ -24,6 +24,7 @@ langchain-openai>=0.0.2
 scikit-learn>=1.3.0
 numpy>=1.24.0
 pandas>=2.1.0
+faiss-cpu>=1.7.4  # Vector similarity search for semantic search
 
 # NLP - Biomedical Processing
 spacy>=3.7.0
