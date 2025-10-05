@@ -26,8 +26,10 @@ from omics_oracle_v2.api.routes import (
     websocket_router,
     workflows_router,
 )
+from omics_oracle_v2.cache import close_redis_client, get_redis_client
 from omics_oracle_v2.core import Settings
 from omics_oracle_v2.database import close_db, init_db
+from omics_oracle_v2.middleware import RateLimitMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +61,14 @@ async def lifespan(app: FastAPI):
         await init_db()
         logger.info("Database initialized successfully")
 
+        # Initialize Redis (optional - will warn if unavailable)
+        logger.info("Initializing Redis cache...")
+        redis = await get_redis_client()
+        if redis:
+            logger.info("Redis cache initialized successfully")
+        else:
+            logger.warning("Redis unavailable - using in-memory cache for rate limiting")
+
     except Exception as e:
         logger.error(f"Failed to initialize: {e}", exc_info=True)
         raise
@@ -76,6 +86,13 @@ async def lifespan(app: FastAPI):
         logger.info("Database connections closed")
     except Exception as e:
         logger.error(f"Error closing database: {e}", exc_info=True)
+
+    # Close Redis connections
+    try:
+        await close_redis_client()
+        logger.info("Redis connections closed")
+    except Exception as e:
+        logger.error(f"Error closing Redis: {e}", exc_info=True)
 
     logger.info("API shutdown complete")
 
@@ -117,10 +134,15 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
         allow_headers=api_settings.cors_allow_headers,
     )
 
-    # Add custom middleware
+    # Add custom middleware (order matters - last added runs first)
     app.add_middleware(PrometheusMetricsMiddleware)
     app.add_middleware(RequestLoggingMiddleware)
     app.add_middleware(ErrorHandlingMiddleware)
+
+    # Add rate limiting middleware (should run early in the chain)
+    if settings.rate_limit.enabled:
+        app.add_middleware(RateLimitMiddleware, settings=settings)
+        logger.info("Rate limiting middleware enabled")
 
     # Include routers
     app.include_router(health_router, prefix="/health", tags=["Health"])
