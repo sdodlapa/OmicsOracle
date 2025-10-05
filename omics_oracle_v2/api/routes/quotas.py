@@ -8,6 +8,7 @@ for admins to manage user quotas.
 import logging
 from datetime import datetime, timedelta
 from typing import List
+from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -29,7 +30,7 @@ router = APIRouter(prefix="/quotas", tags=["Quotas"])
 class QuotaUsageResponse(BaseModel):
     """Current quota usage information."""
 
-    user_id: int
+    user_id: UUID
     tier: str
 
     # Hourly quota
@@ -74,7 +75,7 @@ class UsageHistoryItem(BaseModel):
 class UsageHistoryResponse(BaseModel):
     """Usage history over time."""
 
-    user_id: int
+    user_id: UUID
     period_start: datetime
     period_end: datetime
     total_requests: int
@@ -185,7 +186,7 @@ async def get_my_usage_history(
 # Admin quota endpoints
 @router.get("/{user_id}", response_model=QuotaUsageResponse)
 async def get_user_quota(
-    user_id: int,
+    user_id: UUID,
     current_user: UserResponse = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
 ) -> QuotaUsageResponse:
@@ -239,7 +240,7 @@ async def get_user_quota(
 
 @router.put("/{user_id}/tier", response_model=UserResponse)
 async def update_user_tier(
-    user_id: int,
+    user_id: UUID,
     request: QuotaUpdateRequest,
     current_user: UserResponse = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),
@@ -283,7 +284,7 @@ async def update_user_tier(
 
 @router.post("/{user_id}/reset", status_code=status.HTTP_204_NO_CONTENT)
 async def reset_user_quota(
-    user_id: int,
+    user_id: UUID,
     request: QuotaResetRequest = QuotaResetRequest(),
     current_user: UserResponse = Depends(get_current_admin_user),
     db: AsyncSession = Depends(get_db),

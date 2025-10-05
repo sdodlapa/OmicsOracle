@@ -18,8 +18,13 @@ from .context import AgentContext
 from .exceptions import AgentExecutionError, AgentValidationError
 from .models.search import RankedDataset, SearchInput, SearchOutput
 
-# Allow nested event loops for API contexts
-nest_asyncio.apply()
+# Allow nested event loops for API contexts (only if not using uvloop)
+try:
+    nest_asyncio.apply()
+except ValueError:
+    # uvloop doesn't support nest_asyncio, but we don't need it in API context
+    logger = logging.getLogger(__name__)
+    logger.debug("nest_asyncio not applied (uvloop detected)")
 
 logger = logging.getLogger(__name__)
 
