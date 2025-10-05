@@ -1,12 +1,8 @@
-# Byte-compiled / optimized / DLL files
+# Python
 __pycache__/
 *.py[cod]
 *$py.class
-
-# C extensions
 *.so
-
-# Distribution / packaging
 .Python
 build/
 develop-eggs/
@@ -16,201 +12,84 @@ eggs/
 .eggs/
 lib/
 lib64/
-!omics_oracle_v2/lib/
 parts/
 sdist/
 var/
 wheels/
-pip-wheel-metadata/
-share/python-wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
 
-# PyInstaller
-*.manifest
-*.spec
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
 htmlcov/
 .tox/
 .nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
+coverage.json
+*.db
+test_*.db
 
-# Type checking and linting cache
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Backup files
-*.backup
-*.bak
-*_backup.*
-*_old.*
-*_temp.*
-*_tmp.*
-
-# Translations
-*.mo
-*.pot
-
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-
-# Flask stuff:
-instance/
-.webassets-cache
-
-# Scrapy stuff:
-.scrapy
-
-# Sphinx documentation
-docs/_build/
-
-# PyBuilder
-target/
-
-# Jupyter Notebook
-.ipynb_checkpoints
-
-# IPython
-profile_default/
-ipython_config.py
-
-# pyenv
-.python-version
-
-# pipenv
-Pipfile.lock
-
-# PEP 582
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.env.local
-.env.*.local
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-
-# OS
 .DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
 
-# Project specific
-data/
-logs/
-temp/
-uploads/
-*.db
-*.sqlite
+# Environment
+.env
+.env.local
+.env.*.local
+*.local
+
+# Cache
+.cache/
+*.cache
+
+# Logs
 *.log
+logs/
 
-# Docker
-.dockerignore
+# Documentation builds
+site/
+docs/_build/
 
-# ChromaDB
-chromadb/
-
-# Model files
-models/
-checkpoints/
-
-# Archived and backup files
-scripts/archived_*.bak
-*.archived
+# Backup files
+*.bak
 *.backup
+backups/
 
 # Temporary files
 tmp/
 temp/
 *.tmp
-*.temp
 
-# Auto-generated files
-src/omics_oracle/_version.py
+# Data files (keep structure, not data)
+data/cache/*
+!data/cache/.gitkeep
+data/exports/*
+!data/exports/.gitkeep
+data/analytics/*
+!data/analytics/.gitkeep
 
-# Log files
-*.log
-backend.log
-frontend.log
+# MagicMock
+MagicMock/
 
-# Test results and temporary files
-test_results/
-test-results/
+# Database
+*.db
+*.sqlite
+*.sqlite3
 
-# Archive and legacy files
-archive/
-backups/
-
-# Node.js and frontend dependencies
-node_modules/
-*/node_modules/
-package-lock.json
-*/package-lock.json
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-.npm
-.yarn-integrity
-
-# Frontend build artifacts
-dist/
-build/
-*.tgz
-
-# Temporary utility outputs
-utils/temp/
-utils/output/
-*.cache/
-.mypy_cache/
-.pytest_cache/
+# OS
+.DS_Store
+Thumbs.db

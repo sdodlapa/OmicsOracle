@@ -16,6 +16,8 @@ from omics_oracle_v2.agents import Orchestrator
 from omics_oracle_v2.agents.models.orchestrator import OrchestratorInput
 from omics_oracle_v2.api.dependencies import get_orchestrator
 from omics_oracle_v2.api.models.workflow import StageResultResponse, WorkflowRequest, WorkflowResponse
+from omics_oracle_v2.auth.dependencies import get_current_user
+from omics_oracle_v2.auth.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +41,11 @@ class WorkflowInfo(BaseModel):
 
 
 @router.get("/", response_model=List[WorkflowInfo], summary="List Available Workflows")
-async def list_workflows():
+async def list_workflows(current_user: User = Depends(get_current_user)):
     """
     List all available workflows with their metadata.
+
+    Requires authentication.
 
     Returns comprehensive information about each workflow including
     the agents involved and recommended use cases.
@@ -89,6 +93,7 @@ async def list_workflows():
 @router.post("/execute", response_model=WorkflowResponse, summary="Execute Complete Workflow")
 async def execute_workflow(
     request: WorkflowRequest,
+    current_user: User = Depends(get_current_user),
     orchestrator: Orchestrator = Depends(get_orchestrator),
 ):
     """

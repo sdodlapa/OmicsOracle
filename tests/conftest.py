@@ -1,7 +1,8 @@
 """
-Test Configuration and Fixtures for OmicsOracle
+Test Configuration and Fixtures for OmicsOracle.
 
-This module provides shared fixtures and test configuration for all test suites.
+This module provides shared fixtures and test configuration for all test suites,
+including database sessions, HTTP clients, and authentication helpers.
 
 Fixtures:
     - temp_dir: Temporary directory for test files
@@ -12,6 +13,9 @@ Fixtures:
     - test_config: Test configuration with safe defaults
     - mock_nlp_service: Mocked NLP service for testing
     - mock_cache: Mocked cache service for testing
+    - db_session: Database session for API tests
+    - client: HTTP client for API tests
+    - authenticated_client: Authenticated HTTP client for API tests
 
 Usage:
     def test_something(temp_dir, mock_geo_response):
@@ -19,16 +23,49 @@ Usage:
         pass
 """
 
+import asyncio
+import os  # noqa: F401 - used by fixture functions
 import tempfile
+import uuid  # noqa: F401 - used by fixture functions
 from pathlib import Path
-from typing import Any, Dict
-from unittest.mock import AsyncMock, MagicMock
+from typing import Any, AsyncGenerator, Dict  # noqa: F401 - used by fixture functions
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from faker import Faker  # noqa: F401 - used by fixture functions
+from httpx import ASGITransport, AsyncClient
+from sqlalchemy.ext.asyncio import (  # noqa: F401 - used by fixture functions
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 # ============================================================================
-# Directory and Path Fixtures
+# Pytest Configuration
 # ============================================================================
+
+
+def pytest_configure(config):
+    """
+    Configure custom pytest markers.
+
+    Registers markers for:
+    - unit: Unit tests (fast, no external dependencies)
+    - integration: Integration tests (may require services)
+    - e2e: End-to-end tests (full system)
+    - slow: Slow-running tests
+    - requires_api_key: Tests requiring API keys
+    - requires_network: Tests requiring network access
+
+    Args:
+        config: pytest config object
+    """
+    config.addinivalue_line("markers", "unit: Unit tests (fast, no external dependencies)")
+    config.addinivalue_line("markers", "slow: Tests that take a long time to run")
+    config.addinivalue_line("markers", "integration: Integration tests")
+    config.addinivalue_line("markers", "e2e: End-to-end tests (full system)")
+    config.addinivalue_line("markers", "requires_api_key: Tests requiring API keys")
+    config.addinivalue_line("markers", "requires_network: Tests requiring network access")
 
 
 @pytest.fixture
@@ -265,26 +302,6 @@ def mock_geo_client():
 
 
 # ============================================================================
-# Test Markers Configuration
-# ============================================================================
-
-
-def pytest_configure(config):
-    """
-    Configure custom pytest markers.
-
-    Args:
-        config: pytest config object
-    """
-    config.addinivalue_line("markers", "unit: Unit tests (fast, no external dependencies)")
-    config.addinivalue_line("markers", "integration: Integration tests (may require services)")
-    config.addinivalue_line("markers", "e2e: End-to-end tests (full system)")
-    config.addinivalue_line("markers", "slow: Slow-running tests")
-    config.addinivalue_line("markers", "requires_api_key: Tests requiring API keys")
-    config.addinivalue_line("markers", "requires_network: Tests requiring network access")
-
-
-# ============================================================================
 # Database Fixtures (for v2 API tests)
 # ============================================================================
 
@@ -294,31 +311,114 @@ async def db_session():
     """
     Create an async database session for testing.
 
-    Uses SQLite in-memory database for fast, isolated tests.
+    Function-scoped to ensure test isolation.
 
     Returns:
-        AsyncSession: Database session
+        Tuple[engine, session_factory]: Database engine and session factory
     """
-    from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-    from sqlalchemy.orm import sessionmaker
+    import sqlalchemy  # noqa: F401 - used in Base.metadata
+    from sqlalchemy.orm import sessionmaker  # noqa: F401 - used for session factory
+    from sqlalchemy.pool import NullPool  # noqa: F401 - used for test isolation
 
-    from omics_oracle_v2.database import Base
+    from omics_oracle_v2.auth.models import APIKey, User  # noqa: F401 - needed for create_all
+    from omics_oracle_v2.database import Base  # noqa: F401 - used for create_all
 
-    # Create in-memory database
-    engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
 
-    # Create tables
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+@pytest.fixture
+async def client(db_session):
+    """
+    Create test HTTP client with database override and rate limiting disabled.
 
-    # Create session
-    async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+    Function-scoped to ensure test isolation.
 
-    async with async_session() as session:
-        yield session
+    Args:
+        db_session: Tuple of (engine, session_factory)
+
+    Returns:
+        AsyncClient: HTTP client for testing
+    """
+    from omics_oracle_v2.api.main import app
+    from omics_oracle_v2.auth.quota import RateLimitInfo
+    from omics_oracle_v2.database import get_db
+
+    # Unpack the tuple
+    engine, session_factory = db_session
+
+    # Override get_db dependency to use test database
+    async def override_get_db():
+        async with session_factory() as session:
+            try:
+                yield session
+                await session.commit()
+            except Exception:
+                await session.rollback()
+                raise
+
+    # Mock rate limit check to always allow requests (for testing)
+    async def mock_check_rate_limit(*args, **kwargs):
+        return RateLimitInfo(
+            limit=1000000,
+            remaining=1000000,
+            reset_at=int(asyncio.get_event_loop().time() + 3600),
+            quota_exceeded=False,
+        )
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    # Patch the rate limit check function
+    with patch("omics_oracle_v2.middleware.rate_limit.check_rate_limit", side_effect=mock_check_rate_limit):
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as ac:
+            yield ac
+
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def test_user_data():
+    """Sample user data for testing."""
+    return {
+        "email": "test@example.com",
+        "password": "TestPassword123!",
+        "username": "testuser",
+    }
+
+
+@pytest.fixture
+async def authenticated_client(client, test_user_data):
+    """
+    Create authenticated HTTP client with token.
+
+    Args:
+        client: HTTP client
+        test_user_data: User registration data
+
+    Returns:
+        tuple: (client, user_data)
+    """
+    # Register user
+    response = await client.post("/api/v2/auth/register", json=test_user_data)
+    assert response.status_code in [201, 409]  # 409 if user exists
+
+    # Login
+    response = await client.post(
+        "/api/v2/auth/login",
+        json={
+            "email": test_user_data["email"],
+            "password": test_user_data["password"],
+        },
+    )
+    assert response.status_code == 200
+    data = response.json()
+    token = data["access_token"]
+
+    # Set auth header
+    client.headers["Authorization"] = f"Bearer {token}"
+
+    yield client, data
 
     # Cleanup
-    await engine.dispose()
+    client.headers.pop("Authorization", None)
 
 
 @pytest.fixture

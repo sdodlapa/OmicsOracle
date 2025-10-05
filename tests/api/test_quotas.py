@@ -1,8 +1,9 @@
 """
 Tests for quota management API endpoints.
 """
-# flake8: noqa: F821
-# Note: create_test_user and get_auth_headers are fixtures from conftest.py
+# flake8: noqa
+# Note: Some tests use fixtures (admin_user, regular_user, app, get_auth_headers,
+# create_test_user) that are marked as skip pending implementation.
 
 import pytest  # noqa: F401
 from httpx import AsyncClient

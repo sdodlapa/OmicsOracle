@@ -39,6 +39,8 @@ from omics_oracle_v2.api.models.responses import (
     SearchResponse,
     ValidatedDatasetResponse,
 )
+from omics_oracle_v2.auth.dependencies import get_current_user
+from omics_oracle_v2.auth.models import User
 
 logger = logging.getLogger(__name__)
 
@@ -65,9 +67,11 @@ class AgentInfo(BaseModel):
 
 
 @router.get("/", response_model=List[AgentInfo], summary="List Available Agents")
-async def list_agents():
+async def list_agents(current_user: User = Depends(get_current_user)):
     """
     List all available agents with their metadata.
+
+    Requires authentication.
 
     Returns comprehensive information about each agent including
     capabilities, input/output types, and API endpoints.
@@ -145,6 +149,7 @@ async def list_agents():
 @router.post("/query", response_model=QueryResponse, summary="Execute Query Agent")
 async def execute_query_agent(
     request: QueryRequest,
+    current_user: User = Depends(get_current_user),
     agent: QueryAgent = Depends(get_query_agent),
 ):
     """
@@ -213,6 +218,7 @@ async def execute_query_agent(
 @router.post("/search", response_model=SearchResponse, summary="Execute Search Agent")
 async def execute_search_agent(
     request: SearchRequest,
+    current_user: User = Depends(get_current_user),
     agent: SearchAgent = Depends(get_search_agent),
 ):
     """
@@ -290,6 +296,7 @@ async def execute_search_agent(
 )
 async def execute_data_agent(
     request: DataValidationRequest,
+    current_user: User = Depends(get_current_user),
     agent: DataAgent = Depends(get_data_agent),
 ):
     """
@@ -406,6 +413,7 @@ async def execute_data_agent(
 @router.post("/report", response_model=ReportResponse, summary="Execute Report Agent")
 async def execute_report_agent(
     request: ReportRequest,
+    current_user: User = Depends(get_current_user),
     agent: ReportAgent = Depends(get_report_agent),
 ):
     """
