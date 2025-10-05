@@ -13,6 +13,7 @@ sys.path.insert(0, str(project_root))
 # Load environment variables
 try:
     from dotenv import load_dotenv
+
     env_file = project_root / ".env"
     if env_file.exists():
         load_dotenv(env_file)

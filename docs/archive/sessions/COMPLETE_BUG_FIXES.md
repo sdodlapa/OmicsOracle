@@ -7,7 +7,7 @@
 
 **Location**: `orchestrator.py` line 183
 
-**Root Cause**: 
+**Root Cause**:
 - `RankedDataset` has nested structure: `RankedDataset.dataset.geo_id`
 - Code was trying to access `ds.geo_id` directly on `RankedDataset`
 

@@ -25,7 +25,7 @@ Every query gets a unique `trace_id` that follows it through the entire pipeline
 
 3. Workflow Orchestrator: Execution begins
    └─> Event: WORKFLOW_STARTED logged
-   
+
 4. QueryAgent: NLP processing
    ├─> Event: AGENT_STARTED (QueryAgent)
    ├─> External API: OpenAI GPT-4 call
@@ -58,7 +58,7 @@ Every query gets a unique `trace_id` that follows it through the entire pipeline
 
 8. Response: Sent to frontend
    └─> Event: REQUEST_COMPLETED
-   
+
 Total Duration: 13.2s
 Total Events: 24
 Success: ✅
@@ -227,11 +227,11 @@ async def execute_workflow(request: WorkflowRequest, orchestrator: Orchestrator)
         workflow_type=request.workflow_type.value,
         user_id="dev_user"
     )
-    
+
     try:
         with TraceContext(trace_id, "API", "execute_workflow"):
             result = orchestrator.execute(orchestrator_input)
-        
+
         # Complete trace
         RequestTracer.complete_trace(
             trace_id,
@@ -240,11 +240,11 @@ async def execute_workflow(request: WorkflowRequest, orchestrator: Orchestrator)
             datasets_analyzed=result.output.total_datasets_analyzed,
             report_generated=bool(result.output.final_report)
         )
-        
+
         # Add trace_id to response for debugging
         response["trace_id"] = trace_id
         return response
-        
+
     except Exception as e:
         RequestTracer.complete_trace(trace_id, success=False, error_message=str(e))
         raise
@@ -263,11 +263,11 @@ class QueryAgent(Agent):
             # Process query
             with TraceContext(trace_id, "QueryAgent", "extract_entities"):
                 entities = self._extract_entities(input_data["query"])
-            
+
             # Call OpenAI
             with trace_external_api(trace_id, "OpenAI", "/v1/chat/completions", "POST"):
                 response = openai_client.chat.completions.create(...)
-            
+
             return result
 ```
 
@@ -391,7 +391,7 @@ curl http://localhost:8000/debug/traces/req_abc123/export > trace.json
 import json
 with open('trace.json') as f:
     trace = json.load(f)
-    
+
 # Find slowest operations
 events = trace['events']
 slowest = sorted(events, key=lambda e: e.get('duration_ms', 0), reverse=True)[:5]

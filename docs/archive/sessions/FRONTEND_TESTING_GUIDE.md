@@ -130,13 +130,13 @@ Add a login form to `omics_oracle_v2/api/static/dashboard.html`:
 async function login() {
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
-    
+
     const response = await fetch('/api/v2/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
     });
-    
+
     if (response.ok) {
         const data = await response.json();
         localStorage.setItem('access_token', data.access_token);

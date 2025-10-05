@@ -189,7 +189,7 @@ class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
                     sample_count=ds.sample_count or 0,
                     platform_count=1,
                     has_publication=bool(ds.pubmed_ids),  # pubmed_ids is a list
-                    has_sra_data=ds.has_sra_data() if hasattr(ds, 'has_sra_data') else False,
+                    has_sra_data=ds.has_sra_data() if hasattr(ds, "has_sra_data") else False,
                     quality_score=ranked_ds.relevance_score,  # Use relevance as quality
                     quality_level=DataQualityLevel.FAIR,
                     relevance_score=ranked_ds.relevance_score,
@@ -240,7 +240,7 @@ class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
         self, input_data: OrchestratorInput, output: OrchestratorOutput
     ) -> OrchestratorOutput:
         """Execute data validation workflow: Data -> Report (validate existing datasets).
-        
+
         This workflow assumes the query contains GEO dataset IDs (e.g., GSE12345).
         It validates the datasets and generates a quality report.
         """
@@ -248,45 +248,45 @@ class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
         output.final_stage = WorkflowStage.QUERY_PROCESSING
         query_result = self._execute_query_stage(input_data)
         output.stage_results.append(query_result)
-        
+
         if not query_result.success:
             output.error_message = f"Query processing failed: {query_result.error}"
             output.final_stage = WorkflowStage.FAILED
             return output
-        
+
         # Stage 2: Validate datasets
         output.final_stage = WorkflowStage.DATA_VALIDATION
-        
+
         # Extract GEO IDs from query or use processed entities
         geo_ids = self._extract_geo_ids_from_query(input_data.query)
-        
+
         if not geo_ids:
             # If no explicit IDs, treat query as search and validate results
             search_result = self._execute_search_stage(input_data, query_result.output)
             output.stage_results.append(search_result)
-            
+
             if not search_result.success or not search_result.output:
                 output.error_message = "No datasets found to validate"
                 output.final_stage = WorkflowStage.FAILED
                 return output
-            
+
             geo_ids = search_result.output.get("dataset_ids", [])[:10]  # Limit to 10
-        
+
         # Validate the datasets
         data_result = self._execute_data_validation_stage(geo_ids)
         output.stage_results.append(data_result)
-        
+
         if not data_result.success:
             output.error_message = f"Data validation failed: {data_result.error}"
             output.final_stage = WorkflowStage.FAILED
             return output
-        
+
         # Extract metrics
         validated_data = data_result.output or {}
         output.total_datasets_found = len(geo_ids)
         output.total_datasets_analyzed = len(validated_data.get("validated_datasets", []))
         output.high_quality_datasets = len(validated_data.get("high_quality_datasets", []))
-        
+
         # Stage 3: Generate validation report
         output.final_stage = WorkflowStage.REPORT_GENERATION
         report_result = self._execute_report_stage(
@@ -296,33 +296,33 @@ class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
             validated_data,
         )
         output.stage_results.append(report_result)
-        
+
         if not report_result.success:
             output.error_message = f"Report generation failed: {report_result.error}"
             output.final_stage = WorkflowStage.FAILED
             return output
-        
+
         # Extract report
         report_data = report_result.output or {}
         output.final_report = report_data.get("report")
         output.report_title = report_data.get("title", "Dataset Validation Report")
-        
+
         output.final_stage = WorkflowStage.COMPLETED
         return output
-    
+
     def _extract_geo_ids_from_query(self, query: str) -> list:
         """Extract GEO dataset IDs from query string."""
         import re
-        
+
         # Match patterns like GSE12345, GDS1234, GPL1234
-        pattern = r'\b(GSE\d+|GDS\d+|GPL\d+)\b'
+        pattern = r"\b(GSE\d+|GDS\d+|GPL\d+)\b"
         matches = re.findall(pattern, query, re.IGNORECASE)
         return [m.upper() for m in matches]
-    
+
     def _execute_data_validation_stage(self, dataset_ids: list) -> WorkflowResult:
         """Execute data validation on specific datasets."""
         start_time = time.time()
-        
+
         try:
             data_input = DataInput(
                 dataset_ids=dataset_ids,
@@ -330,10 +330,10 @@ class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
                 validate_samples=True,
                 validate_files=False,  # Skip file validation for speed
             )
-            
+
             result = self.data_agent.execute(data_input)
             execution_time = (time.time() - start_time) * 1000
-            
+
             return WorkflowResult(
                 stage=WorkflowStage.DATA_VALIDATION,
                 success=result.success,
@@ -342,7 +342,7 @@ class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
                 error=result.error,
                 execution_time_ms=execution_time,
             )
-            
+
         except Exception as e:
             execution_time = (time.time() - start_time) * 1000
             return WorkflowResult(

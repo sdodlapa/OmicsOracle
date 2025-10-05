@@ -66,9 +66,9 @@ grep -r "0\.[0-9]" omics_oracle_v2/agents/*.py
 ```python
 class RankingConfig(BaseModel):
     """Configuration for relevance ranking algorithms."""
-    
+
     model_config = ConfigDict(protected_namespaces=())
-    
+
     # === Keyword Ranking Weights ===
     keyword_title_weight: float = Field(
         default=0.4,
@@ -94,7 +94,7 @@ class RankingConfig(BaseModel):
         le=1.0,
         description="Bonus for large sample counts"
     )
-    
+
     # === Sample Count Thresholds ===
     sample_count_large: int = Field(
         default=100,
@@ -111,7 +111,7 @@ class RankingConfig(BaseModel):
         ge=1,
         description="Sample count threshold for 'adequate' datasets"
     )
-    
+
     # === Semantic Ranking (Phase 2) ===
     use_semantic_ranking: bool = Field(
         default=False,  # Disabled until Phase 2
@@ -135,7 +135,7 @@ class RankingConfig(BaseModel):
         le=2.0,
         description="Multiplier when semantic and keyword scores agree"
     )
-    
+
     # === LLM Validation (Phase 3) ===
     enable_llm_validation: bool = Field(
         default=False,  # Disabled until Phase 3
@@ -153,13 +153,13 @@ class RankingConfig(BaseModel):
         le=1.0,
         description="Weight for LLM score when blending with algorithmic score"
     )
-    
+
     # === Synonym Expansion (Phase 1) ===
     use_synonym_expansion: bool = Field(
         default=False,  # Will enable in Phase 1
         description="Expand search terms with biomedical synonyms"
     )
-    
+
     # === Caching ===
     cache_embeddings: bool = Field(
         default=True,
@@ -173,9 +173,9 @@ class RankingConfig(BaseModel):
 
 class QualityConfig(BaseModel):
     """Configuration for quality scoring algorithms."""
-    
+
     model_config = ConfigDict(protected_namespaces=())
-    
+
     # === Point Allocations (max 100 points) ===
     points_sample_count: int = Field(
         default=20,
@@ -219,26 +219,26 @@ class QualityConfig(BaseModel):
         le=100,
         description="Maximum points for metadata completeness"
     )
-    
+
     # === Sample Count Thresholds ===
     sample_count_excellent: int = Field(default=100, ge=1)
     sample_count_good: int = Field(default=50, ge=1)
     sample_count_adequate: int = Field(default=10, ge=1)
-    
+
     # === Text Length Thresholds ===
     title_length_descriptive: int = Field(default=50, ge=1)
     title_length_adequate: int = Field(default=20, ge=1)
     title_length_minimal: int = Field(default=10, ge=1)
-    
+
     summary_length_comprehensive: int = Field(default=200, ge=1)
     summary_length_good: int = Field(default=100, ge=1)
     summary_length_minimal: int = Field(default=50, ge=1)
-    
+
     # === Recency Thresholds (days) ===
     recency_recent: int = Field(default=365, ge=1, description="< 1 year")
     recency_moderate: int = Field(default=1825, ge=1, description="< 5 years")
     recency_acceptable: int = Field(default=3650, ge=1, description="< 10 years")
-    
+
     # === Metadata Completeness ===
     metadata_weight_required: float = Field(
         default=0.7,
@@ -257,7 +257,7 @@ class QualityConfig(BaseModel):
 # Add to main Settings class
 class Settings(BaseSettings):
     """Application settings."""
-    
+
     model_config = SettingsConfig(
         env_prefix="OMICS_",
         env_file=".env",
@@ -265,9 +265,9 @@ class Settings(BaseSettings):
         case_sensitive=False,
         extra="ignore",
     )
-    
+
     # ... existing fields ...
-    
+
     # New configuration sections
     ranking: RankingConfig = Field(default_factory=RankingConfig)
     quality: QualityConfig = Field(default_factory=QualityConfig)
@@ -351,7 +351,7 @@ ranking:
   use_semantic_ranking: true
   semantic_weight: 0.6
   keyword_weight: 0.4
-  
+
 quality:
   points_sample_count: 20
   sample_count_excellent: 100
@@ -399,20 +399,20 @@ logger = logging.getLogger(__name__)
 class KeywordRanker:
     """
     Keyword-based dataset relevance ranking.
-    
+
     Scores datasets based on exact keyword matches in title,
     summary, and other metadata fields.
     """
-    
+
     def __init__(self, config: RankingConfig):
         """
         Initialize keyword ranker.
-        
+
         Args:
             config: Ranking configuration
         """
         self.config = config
-    
+
     def calculate_relevance(
         self,
         title: str,
@@ -424,7 +424,7 @@ class KeywordRanker:
     ) -> Tuple[float, List[str]]:
         """
         Calculate keyword-based relevance score.
-        
+
         Args:
             title: Dataset title
             summary: Dataset summary
@@ -432,30 +432,30 @@ class KeywordRanker:
             organism: Dataset organism
             organism_filter: Organism filter from query
             sample_count: Number of samples
-            
+
         Returns:
             Tuple of (score, match_reasons)
         """
         score = 0.0
         reasons = []
-        
+
         # Normalize search terms
         search_terms_lower = {term.lower() for term in search_terms}
-        
+
         # 1. Title matches (highest weight)
         title_score, title_reasons = self._score_title_matches(
             title, search_terms_lower
         )
         score += title_score
         reasons.extend(title_reasons)
-        
+
         # 2. Summary matches (medium weight)
         summary_score, summary_reasons = self._score_summary_matches(
             summary, search_terms_lower
         )
         score += summary_score
         reasons.extend(summary_reasons)
-        
+
         # 3. Organism match (bonus)
         if organism_filter and organism:
             organism_score, organism_reason = self._score_organism_match(
@@ -464,7 +464,7 @@ class KeywordRanker:
             score += organism_score
             if organism_reason:
                 reasons.append(organism_reason)
-        
+
         # 4. Sample count (bonus)
         if sample_count:
             sample_score, sample_reason = self._score_sample_count(
@@ -473,76 +473,76 @@ class KeywordRanker:
             score += sample_score
             if sample_reason:
                 reasons.append(sample_reason)
-        
+
         # Normalize to 0.0-1.0
         score = min(1.0, score)
-        
+
         # Ensure minimum score if any match exists
         if not reasons:
             reasons.append("General database match")
             score = 0.1
-        
+
         return score, reasons
-    
+
     def _score_title_matches(
         self, title: str, search_terms: Set[str]
     ) -> Tuple[float, List[str]]:
         """Score title keyword matches."""
         if not title:
             return 0.0, []
-        
+
         title_lower = title.lower()
         matches = sum(1 for term in search_terms if term in title_lower)
-        
+
         if matches == 0:
             return 0.0, []
-        
+
         # Score with diminishing returns
         score = min(
             self.config.keyword_title_weight,
             matches * (self.config.keyword_title_weight / 2)
         )
-        
+
         reason = f"Title matches {matches} search term(s)"
         return score, [reason]
-    
+
     def _score_summary_matches(
         self, summary: str, search_terms: Set[str]
     ) -> Tuple[float, List[str]]:
         """Score summary keyword matches."""
         if not summary:
             return 0.0, []
-        
+
         summary_lower = summary.lower()
         matches = sum(1 for term in search_terms if term in summary_lower)
-        
+
         if matches == 0:
             return 0.0, []
-        
+
         # Score with diminishing returns
         score = min(
             self.config.keyword_summary_weight,
             matches * (self.config.keyword_summary_weight / 2)
         )
-        
+
         reason = f"Summary matches {matches} search term(s)"
         return score, [reason]
-    
+
     def _score_organism_match(
         self, organism: str, organism_filter: str
     ) -> Tuple[float, str]:
         """Score organism match."""
         if not organism or not organism_filter:
             return 0.0, None
-        
+
         if organism_filter.lower() in organism.lower():
             return (
                 self.config.keyword_organism_bonus,
                 f"Organism matches: {organism}"
             )
-        
+
         return 0.0, None
-    
+
     def _score_sample_count(
         self, sample_count: int
     ) -> Tuple[float, str]:
@@ -562,7 +562,7 @@ class KeywordRanker:
                 self.config.keyword_sample_count_bonus * 0.33,
                 f"Adequate sample size: {sample_count} samples"
             )
-        
+
         return 0.0, None
 ```
 
@@ -590,36 +590,36 @@ logger = logging.getLogger(__name__)
 class QualityScorer:
     """
     Dataset quality assessment.
-    
+
     Scores datasets on multiple quality dimensions including
     sample size, metadata completeness, publications, and recency.
     """
-    
+
     def __init__(self, config: QualityConfig):
         """
         Initialize quality scorer.
-        
+
         Args:
             config: Quality configuration
         """
         self.config = config
-    
+
     def calculate_quality(
         self, metadata: GEOSeriesMetadata
     ) -> Tuple[float, List[str], List[str]]:
         """
         Calculate overall quality score.
-        
+
         Args:
             metadata: GEO dataset metadata
-            
+
         Returns:
             Tuple of (quality_score, issues, strengths)
         """
         score = 0.0
         issues = []
         strengths = []
-        
+
         # 1. Sample count
         sample_score, sample_msg, is_issue = self._score_sample_count(
             metadata.sample_count
@@ -629,7 +629,7 @@ class QualityScorer:
             issues.append(sample_msg)
         else:
             strengths.append(sample_msg)
-        
+
         # 2. Title quality
         title_score, title_msg, is_issue = self._score_title_quality(
             metadata.title
@@ -639,7 +639,7 @@ class QualityScorer:
             issues.append(title_msg)
         elif title_msg:
             strengths.append(title_msg)
-        
+
         # 3. Summary quality
         summary_score, summary_msg, is_issue = self._score_summary_quality(
             metadata.summary
@@ -649,7 +649,7 @@ class QualityScorer:
             issues.append(summary_msg)
         elif summary_msg:
             strengths.append(summary_msg)
-        
+
         # 4. Publications
         pub_score, pub_msg, is_issue = self._score_publications(
             metadata.pubmed_ids
@@ -659,7 +659,7 @@ class QualityScorer:
             issues.append(pub_msg)
         else:
             strengths.append(pub_msg)
-        
+
         # 5. SRA data
         sra_score, sra_msg, is_issue = self._score_sra_data(
             metadata.has_sra_data()
@@ -669,7 +669,7 @@ class QualityScorer:
             issues.append(sra_msg)
         elif sra_msg:
             strengths.append(sra_msg)
-        
+
         # 6. Recency
         recency_score, recency_msg, is_issue = self._score_recency(
             metadata.get_age_days()
@@ -679,7 +679,7 @@ class QualityScorer:
             issues.append(recency_msg)
         elif recency_msg:
             strengths.append(recency_msg)
-        
+
         # 7. Metadata completeness
         completeness_score, completeness_msg, is_issue = self._score_metadata_completeness(
             metadata
@@ -689,21 +689,21 @@ class QualityScorer:
             issues.append(completeness_msg)
         elif completeness_msg:
             strengths.append(completeness_msg)
-        
+
         # Normalize to 0.0-1.0
         quality_score = min(1.0, score / 100.0)
-        
+
         return quality_score, issues, strengths
-    
+
     def _score_sample_count(
         self, sample_count: int
     ) -> Tuple[float, str, bool]:
         """Score sample count (0-20 points)."""
         max_points = self.config.points_sample_count
-        
+
         if not sample_count:
             return 0, "Missing sample count information", True
-        
+
         if sample_count >= self.config.sample_count_excellent:
             return (
                 max_points,
@@ -728,7 +728,7 @@ class QualityScorer:
                 f"Small sample size: {sample_count} samples",
                 True
             )
-    
+
     # ... Additional scoring methods following same pattern ...
     # (Implement _score_title_quality, _score_summary_quality, etc.)
 ```
@@ -774,22 +774,22 @@ __all__ = [
 from ..lib.ranking.keyword_ranker import KeywordRanker
 
 class SearchAgent(Agent[SearchInput, SearchOutput]):
-    
+
     def __init__(self, settings: Settings):
         super().__init__(settings)
         self._geo_client: GEOClient = None
         self.keyword_ranker = KeywordRanker(settings.ranking)  # NEW
-    
+
     def _calculate_relevance(
         self, dataset: GEOSeriesMetadata, input_data: SearchInput
     ) -> tuple[float, List[str]]:
         """
         Calculate relevance score using KeywordRanker.
-        
+
         Args:
             dataset: GEO dataset to score
             input_data: Search input with terms
-            
+
         Returns:
             Tuple of (score, match_reasons)
         """
@@ -811,20 +811,20 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
 from ..lib.ranking.quality_scorer import QualityScorer
 
 class DataAgent(Agent[DataInput, DataOutput]):
-    
+
     def __init__(self, settings: Settings):
         super().__init__(settings)
         self.quality_scorer = QualityScorer(settings.quality)  # NEW
-    
+
     def _calculate_quality_score(
         self, metadata: GEOSeriesMetadata
     ) -> Tuple[float, List[str], List[str]]:
         """
         Calculate quality score using QualityScorer.
-        
+
         Args:
             metadata: GEOSeriesMetadata
-            
+
         Returns:
             Tuple of (quality_score, issues, strengths)
         """
@@ -852,12 +852,12 @@ from omics_oracle_v2.core.config import RankingConfig
 
 
 class TestKeywordRanker:
-    
+
     @pytest.fixture
     def ranker(self):
         config = RankingConfig()
         return KeywordRanker(config)
-    
+
     def test_title_match(self, ranker):
         """Test title keyword matching."""
         score, reasons = ranker.calculate_relevance(
@@ -865,10 +865,10 @@ class TestKeywordRanker:
             summary="",
             search_terms=["dna methylation"]
         )
-        
+
         assert score > 0, "Should have non-zero score for title match"
         assert any("title" in r.lower() for r in reasons), "Should mention title in reasons"
-    
+
     def test_summary_match(self, ranker):
         """Test summary keyword matching."""
         score, reasons = ranker.calculate_relevance(
@@ -876,10 +876,10 @@ class TestKeywordRanker:
             summary="This study uses chromatin accessibility profiling",
             search_terms=["chromatin accessibility"]
         )
-        
+
         assert score > 0, "Should have non-zero score for summary match"
         assert any("summary" in r.lower() for r in reasons), "Should mention summary in reasons"
-    
+
     def test_multiple_matches(self, ranker):
         """Test multiple keyword matches."""
         score, reasons = ranker.calculate_relevance(
@@ -887,10 +887,10 @@ class TestKeywordRanker:
             summary="Chromatin accessibility was measured simultaneously",
             search_terms=["dna methylation", "chromatin accessibility", "joint profiling"]
         )
-        
+
         assert score > 0.5, "Multiple matches should give higher score"
         assert len(reasons) > 1, "Should have multiple match reasons"
-    
+
     def test_no_match(self, ranker):
         """Test no keyword matches."""
         score, reasons = ranker.calculate_relevance(
@@ -898,9 +898,9 @@ class TestKeywordRanker:
             summary="Gene expression profiling",
             search_terms=["dna methylation"]
         )
-        
+
         assert score < 0.2, "No matches should give low score"
-    
+
     def test_sample_count_bonus(self, ranker):
         """Test sample count bonus."""
         score_small, _ = ranker.calculate_relevance(
@@ -909,14 +909,14 @@ class TestKeywordRanker:
             search_terms=["study"],
             sample_count=5
         )
-        
+
         score_large, reasons_large = ranker.calculate_relevance(
             title="Study",
             summary="",
             search_terms=["study"],
             sample_count=150
         )
-        
+
         assert score_large > score_small, "Larger sample count should increase score"
         assert any("large sample" in r.lower() for r in reasons_large)
 ```
@@ -933,12 +933,12 @@ from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
 
 
 class TestQualityScorer:
-    
+
     @pytest.fixture
     def scorer(self):
         config = QualityConfig()
         return QualityScorer(config)
-    
+
     def test_high_quality_dataset(self, scorer):
         """Test scoring of high-quality dataset."""
         metadata = GEOSeriesMetadata(
@@ -949,13 +949,13 @@ class TestQualityScorer:
             sample_count=150,
             pubmed_ids=["12345678"]
         )
-        
+
         score, issues, strengths = scorer.calculate_quality(metadata)
-        
+
         assert score > 0.7, "High quality dataset should score > 0.7"
         assert len(strengths) > len(issues), "Should have more strengths than issues"
         assert any("large sample" in s.lower() for s in strengths)
-    
+
     def test_low_quality_dataset(self, scorer):
         """Test scoring of low-quality dataset."""
         metadata = GEOSeriesMetadata(
@@ -966,9 +966,9 @@ class TestQualityScorer:
             sample_count=3,
             pubmed_ids=[]
         )
-        
+
         score, issues, strengths = scorer.calculate_quality(metadata)
-        
+
         assert score < 0.5, "Low quality dataset should score < 0.5"
         assert len(issues) > len(strengths), "Should have more issues than strengths"
 ```
@@ -987,19 +987,19 @@ from omics_oracle_v2.core.config import Settings
 
 
 class TestRankingIntegration:
-    
+
     @pytest.fixture
     def settings(self):
         return Settings()
-    
+
     @pytest.fixture
     def search_agent(self, settings):
         return SearchAgent(settings)
-    
+
     @pytest.fixture
     def data_agent(self, settings):
         return DataAgent(settings)
-    
+
     def test_search_and_quality_pipeline(self, search_agent, data_agent):
         """Test complete search → quality pipeline."""
         # This will be a more complex test once we have test data
@@ -1038,7 +1038,7 @@ The ranking system consists of two main components:
 - Responsibility: Keyword-based relevance scoring
 - Configuration: `Settings.ranking`
 
-#### QualityScorer  
+#### QualityScorer
 - Location: `omics_oracle_v2/lib/ranking/quality_scorer.py`
 - Responsibility: Dataset quality assessment
 - Configuration: `Settings.quality`
@@ -1160,7 +1160,7 @@ def test_keyword_ranking_performance():
     """Benchmark keyword ranking speed."""
     settings = Settings()
     ranker = KeywordRanker(settings.ranking)
-    
+
     # Simulate 100 datasets
     start = time.time()
     for i in range(100):
@@ -1170,7 +1170,7 @@ def test_keyword_ranking_performance():
             search_terms=["dna methylation", "cancer"]
         )
     elapsed = time.time() - start
-    
+
     print(f"Ranked 100 datasets in {elapsed:.2f}s ({elapsed/100*1000:.1f}ms per dataset)")
     assert elapsed < 1.0, "Should rank 100 datasets in < 1 second"
 ```

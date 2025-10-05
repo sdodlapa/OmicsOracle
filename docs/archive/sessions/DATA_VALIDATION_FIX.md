@@ -55,7 +55,7 @@ Data → Report
 ✓ Validate Datasets
 Quality check specific datasets (provide GEO IDs)
 
-💡 Tip: Use Validate Datasets to check quality of specific GEO datasets. 
+💡 Tip: Use Validate Datasets to check quality of specific GEO datasets.
 Provide IDs in query.
 ```
 

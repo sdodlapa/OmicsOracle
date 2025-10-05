@@ -160,13 +160,13 @@ OpenAI GPT-4:
   Success Rate: 100%
   Avg Duration: 3.05s
   Total Cost: ~$0.04
-  
+
 NCBI GEO:
   Total Calls: 3
   Success Rate: 100%
   Avg Duration: 4.2s
   Rate Limit Remaining: 847/1000
-  
+
 Database (PostgreSQL):
   Total Queries: 5
   Avg Duration: 0.015s
@@ -355,7 +355,7 @@ External API summary shows:
 Show trace_id in response:
 "Your query was processed in 8.3s
  View details: /debug/traces/req_abc123"
- 
+
 User clicks, sees:
 - What agents processed their query
 - How long each step took

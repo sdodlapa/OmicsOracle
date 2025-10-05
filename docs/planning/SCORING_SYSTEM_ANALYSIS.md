@@ -173,7 +173,7 @@ from openai import OpenAI
 class SemanticRanker:
     def __init__(self, openai_client):
         self.client = openai_client
-    
+
     def get_embedding(self, text: str) -> List[float]:
         """Get embedding from OpenAI."""
         response = self.client.embeddings.create(
@@ -181,12 +181,12 @@ class SemanticRanker:
             input=text
         )
         return response.data[0].embedding
-    
+
     def calculate_similarity(self, query: str, dataset_text: str) -> float:
         """Calculate semantic similarity."""
         query_emb = self.get_embedding(query)
         dataset_emb = self.get_embedding(dataset_text)
-        
+
         # Cosine similarity
         import numpy as np
         similarity = np.dot(query_emb, dataset_emb) / (
@@ -235,7 +235,7 @@ Query: {user_query}
 Dataset Title: {dataset.title}
 Dataset Summary: {dataset.summary}
 
-Is this dataset highly relevant (8-10), moderately relevant (5-7), 
+Is this dataset highly relevant (8-10), moderately relevant (5-7),
 or not relevant (1-4) to the query? Explain why.
 """
 ```
@@ -249,16 +249,16 @@ or not relevant (1-4) to the query? Explain why.
 
 ### Current Architecture:
 ```
-QueryAgent (NER) 
-  → SearchAgent (keyword match) 
+QueryAgent (NER)
+  → SearchAgent (keyword match)
     → DataAgent (rule-based quality)
       → ReportAgent
 ```
 
 ### Proposed Enhanced Architecture:
 ```
-QueryAgent (NER + synonyms) 
-  → SearchAgent (NCBI search) 
+QueryAgent (NER + synonyms)
+  → SearchAgent (NCBI search)
     → SemanticRanker (OpenAI embeddings)  ← NEW!
       → RelevanceValidator (GPT-4 top-10)  ← NEW!
         → DataAgent (enhanced quality)

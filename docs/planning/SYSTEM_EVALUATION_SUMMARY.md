@@ -57,7 +57,7 @@ GSE200685: [NOMe-seq] study
 ### 2. **No Similarity Search** - Missing Feature! 🚫
 
 **Current**: Each dataset scored independently
-**Missing**: 
+**Missing**:
 - No embedding-based semantic search
 - No cross-dataset similarity ("find datasets like this one")
 - No synonym/ontology mapping
@@ -100,7 +100,7 @@ Should Be: 0.90+ (highly relevant!)
 
 **Formula**:
 ```
-Score = Samples(20) + Title(15) + Summary(15) + Publications(20) + 
+Score = Samples(20) + Title(15) + Summary(15) + Publications(20) +
         SRA(10) + Recency(10) + Metadata(10) = 0-100 → 0.0-1.0
 ```
 

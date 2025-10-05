@@ -35,7 +35,7 @@ Total Implementation:    15 hours (2 days)
 ## Implementation Order
 
 ### Phase 0: Codebase Consolidation (MUST DO FIRST!)
-**Duration**: 6 hours  
+**Duration**: 6 hours
 **Priority**: CRITICAL
 
 #### Steps:
@@ -78,8 +78,8 @@ Total Implementation:    15 hours (2 days)
 ---
 
 ### Phase 1: Synonym Mapping (Quick Win!)
-**Duration**: 2 hours  
-**Impact**: 30-40% improvement immediately  
+**Duration**: 2 hours
+**Impact**: 30-40% improvement immediately
 **Cost**: $0
 
 #### Steps:
@@ -107,15 +107,15 @@ Query: "chromatin accessibility"
 Matches: Only datasets with exact phrase ❌
 
 # After:
-Query: "chromatin accessibility"  
+Query: "chromatin accessibility"
 Matches: ATAC-seq, DNase-seq, FAIRE-seq, NOMe-seq ✅
 ```
 
 ---
 
 ### Phase 2: Semantic Search (Major Impact!)
-**Duration**: 4 hours  
-**Impact**: 2x improvement in relevance  
+**Duration**: 4 hours
+**Impact**: 2x improvement in relevance
 **Cost**: ~$0.005 per query
 
 #### Steps:
@@ -157,8 +157,8 @@ GSE200685: "NOMe-seq study" → Score: 0.90 ✅
 ---
 
 ### Phase 3: LLM Validation (Optional)
-**Duration**: 3 hours  
-**Impact**: Human-like judgment  
+**Duration**: 3 hours
+**Impact**: Human-like judgment
 **Cost**: ~$0.03 per query
 
 #### Steps:
@@ -183,7 +183,7 @@ GSE200685: "NOMe-seq study" → Score: 0.90 ✅
 ---
 
 ### Phase 4: Monitoring (Ongoing)
-**Duration**: Ongoing  
+**Duration**: Ongoing
 **Priority**: Important for long-term success
 
 #### Metrics to Track:

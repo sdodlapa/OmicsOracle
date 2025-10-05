@@ -65,27 +65,28 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
     def _run_async(self, coro):
         """
         Run an async coroutine in a sync context.
-        
+
         Handles both cases:
         - Running inside an async event loop (FastAPI context)
         - Running outside an event loop (standalone scripts)
-        
+
         Args:
             coro: Coroutine to run
-            
+
         Returns:
             Result of the coroutine
         """
         import asyncio
-        
+
         try:
             # Check if there's a running loop
             loop = asyncio.get_running_loop()
             # We're in an async context - create a new thread with its own loop
             import threading
+
             result = [None]
             exception = [None]
-            
+
             def run_in_thread():
                 try:
                     # Create a new event loop for this thread
@@ -97,15 +98,15 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
                         new_loop.close()
                 except Exception as e:
                     exception[0] = e
-            
+
             thread = threading.Thread(target=run_in_thread)
             thread.start()
             thread.join()
-            
+
             if exception[0]:
                 raise exception[0]
             return result[0]
-            
+
         except RuntimeError:
             # No running loop - we can use asyncio.run directly
             return asyncio.run(coro)
@@ -211,15 +212,12 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
         """
         # Filter out generic/non-specific terms
         generic_terms = {"dataset", "datasets", "data", "study", "studies", "analysis", "profiling"}
-        filtered_terms = [
-            term for term in input_data.search_terms 
-            if term.lower() not in generic_terms
-        ]
-        
+        filtered_terms = [term for term in input_data.search_terms if term.lower() not in generic_terms]
+
         # If we filtered everything out, use original terms
         if not filtered_terms:
             filtered_terms = input_data.search_terms
-        
+
         query_parts = []
 
         # Add main search terms
@@ -242,11 +240,11 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             # Also use AND for "joint" or "combined" or "multi"
             elif any(word in query_lower for word in ["joint", "combined", "multi", "integrated"]):
                 use_and_logic = True
-        
+
         # If we have 2-3 specific terms and no clear OR intent, use AND
         if not use_and_logic and 2 <= len(query_parts) <= 3:
             use_and_logic = True
-        
+
         # Combine with appropriate logic
         if use_and_logic:
             query = " AND ".join(query_parts)

@@ -377,7 +377,7 @@
                             </div>
                         </div>
                         <div style="margin-top: 10px; padding: 10px; background: #f0f8ff; border-left: 4px solid #667eea; font-size: 13px; color: #555;">
-                            <strong>💡 Tip:</strong> 
+                            <strong>💡 Tip:</strong>
                             <span id="workflow-help">Use <strong>Full Analysis</strong> for comprehensive results with quality validation.</span>
                         </div>
                     </div>
@@ -468,7 +468,7 @@ alzheimer disease biomarkers</textarea>
         let ws = null;
         let currentWorkflowId = null;
         let selectedWorkflowType = 'full_analysis';
-        
+
         // Workflow help text mapping
         const workflowHelp = {
             'full_analysis': 'Use <strong>Full Analysis</strong> for comprehensive results with quality validation. Best for general research queries.',
@@ -483,7 +483,7 @@ alzheimer disease biomarkers</textarea>
                 document.querySelectorAll('.workflow-type').forEach(e => e.classList.remove('selected'));
                 el.classList.add('selected');
                 selectedWorkflowType = el.dataset.type;
-                
+
                 // Update help text
                 const helpEl = document.getElementById('workflow-help');
                 if (helpEl) {
@@ -619,7 +619,7 @@ alzheimer disease biomarkers</textarea>
         // Display results
         function displayResults(data) {
             const resultsDiv = document.getElementById('results');
-            
+
             // Check if there's a final_report (Markdown format)
             if (data.final_report) {
                 resultsDiv.innerHTML = renderReportView(data);
@@ -632,11 +632,11 @@ alzheimer disease biomarkers</textarea>
                 `;
             }
         }
-        
+
         // Render beautiful report view
         function renderReportView(data) {
             const markdown = data.final_report;
-            
+
             // Simple Markdown to HTML converter
             let html = markdown
                 // Headers
@@ -651,9 +651,9 @@ alzheimer disease biomarkers</textarea>
                 .replace(/\n\n/g, '</p><p style="margin: 10px 0; line-height: 1.6;">')
                 // Line breaks
                 .replace(/\n/g, '<br>');
-            
+
             html = '<p style="margin: 10px 0; line-height: 1.6;">' + html + '</p>';
-            
+
             return `
                 <div style="margin-bottom: 20px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
@@ -667,7 +667,7 @@ alzheimer disease biomarkers</textarea>
                             </button>
                         </div>
                     </div>
-                    
+
                     <!-- Report View -->
                     <div id="report-view" style="display: block;">
                         <!-- Summary Cards -->
@@ -689,7 +689,7 @@ alzheimer disease biomarkers</textarea>
                                 <div style="font-size: 1.5em; font-weight: bold;">${(data.execution_time_ms / 1000).toFixed(1)}s</div>
                             </div>
                         </div>
-                        
+
                         <!-- Workflow Status -->
                         <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 5px solid ${data.success ? '#43e97b' : '#f5576c'};">
                             <div style="display: flex; align-items: center; margin-bottom: 15px;">
@@ -699,7 +699,7 @@ alzheimer disease biomarkers</textarea>
                                     <div style="color: #666; font-size: 0.9em;">Query: "${data.query}"</div>
                                 </div>
                             </div>
-                            
+
                             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                                 ${data.stage_results ? data.stage_results.map(stage => `
                                     <div style="background: ${stage.success ? '#e7f5e7' : '#ffe7e7'}; padding: 10px 15px; border-radius: 6px; font-size: 0.9em;">
@@ -710,13 +710,13 @@ alzheimer disease biomarkers</textarea>
                                 `).join('') : ''}
                             </div>
                         </div>
-                        
+
                         <!-- Report Content -->
                         <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); line-height: 1.8; color: #333;">
                             ${html}
                         </div>
                     </div>
-                    
+
                     <!-- JSON View (hidden by default) -->
                     <div id="json-view" style="display: none;">
                         <div style="background: #1e1e1e; color: #d4d4d4; padding: 20px; border-radius: 10px; overflow-x: auto;">
@@ -726,14 +726,14 @@ alzheimer disease biomarkers</textarea>
                 </div>
             `;
         }
-        
+
         // Toggle between report and JSON view
         function toggleView(view) {
             const reportView = document.getElementById('report-view');
             const jsonView = document.getElementById('json-view');
             const reportBtn = event.target.parentElement.children[0];
             const jsonBtn = event.target.parentElement.children[1];
-            
+
             if (view === 'report') {
                 reportView.style.display = 'block';
                 jsonView.style.display = 'none';

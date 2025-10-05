@@ -12,6 +12,7 @@ from pathlib import Path
 # Load environment variables from .env file at startup
 try:
     from dotenv import load_dotenv
+
     env_file = Path(__file__).parent.parent.parent / ".env"
     if env_file.exists():
         load_dotenv(env_file)
@@ -173,7 +174,9 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     # V1 API (legacy, will be deprecated)
     app.include_router(agents_router, prefix="/api/v1/agents", tags=["Agents"])
     app.include_router(workflows_router, prefix="/api/v1/workflows", tags=["Workflows"])
-    app.include_router(workflows_dev_router, prefix="/api/v1/workflows", tags=["Workflows (Dev)"])  # DEV: No auth
+    app.include_router(
+        workflows_dev_router, prefix="/api/v1/workflows", tags=["Workflows (Dev)"]
+    )  # DEV: No auth
     app.include_router(batch_router, prefix="/api/v1", tags=["Batch"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
     app.include_router(metrics_router, tags=["Metrics"])

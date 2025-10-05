@@ -26,7 +26,7 @@ Created a `_run_async()` helper method that:
 def _run_async(self, coro):
     """Run an async coroutine in a sync context."""
     import asyncio
-    
+
     try:
         # Check if there's a running loop
         loop = asyncio.get_running_loop()
@@ -34,7 +34,7 @@ def _run_async(self, coro):
         import threading
         result = [None]
         exception = [None]
-        
+
         def run_in_thread():
             try:
                 # Create a new event loop for this thread
@@ -46,15 +46,15 @@ def _run_async(self, coro):
                     new_loop.close()
             except Exception as e:
                 exception[0] = e
-        
+
         thread = threading.Thread(target=run_in_thread)
         thread.start()
         thread.join()
-        
+
         if exception[0]:
             raise exception[0]
         return result[0]
-        
+
     except RuntimeError:
         # No running loop - we can use asyncio.run directly
         return asyncio.run(coro)
@@ -106,5 +106,5 @@ Try this query in the dashboard:
 - ✅ Works in both FastAPI (async) and standalone (sync) contexts
 - ✅ Thread-safe implementation
 
-**Date**: October 5, 2025  
+**Date**: October 5, 2025
 **Status**: Applied and ready for testing

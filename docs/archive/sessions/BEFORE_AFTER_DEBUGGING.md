@@ -44,7 +44,7 @@
 
 **User**: "Why did I only get 5 results? I expected more."
 
-**Support Team**: 
+**Support Team**:
 ```
 ❓ What query did they run?
 ❓ What workflow type?
@@ -95,7 +95,7 @@ Recommendation: Add exponential backoff retry
 
 **Time to diagnose**: 30 seconds 🎉
 
-**Fix**: 
+**Fix**:
 ```python
 # Add to SearchAgent
 @retry(wait=wait_exponential(multiplier=1, max=10))
@@ -282,7 +282,7 @@ Result: Lost user 😞
 ```
 User: "This doesn't work! trace_id: req_abc123"
 Support: *Clicks trace, sees immediately*
-Support: "I see! You searched 'caner' (typo). 
+Support: "I see! You searched 'caner' (typo).
          The system didn't find results.
          Try 'cancer' instead."
 User: "Oh! Thanks!"

@@ -8,7 +8,7 @@ Enhanced the dashboard to render workflow results in a beautiful, human-readable
 
 ### 1. 📊 Summary Cards
 - **Total Datasets**: Gradient purple card
-- **Analyzed**: Gradient pink card  
+- **Analyzed**: Gradient pink card
 - **High Quality**: Gradient blue card
 - **Execution Time**: Gradient green card
 
@@ -119,7 +119,7 @@ When you execute "cancer genomics in breast tissue", you'll now see:
 Query: "cancer genomics in breast tissue"
 
 ✓ query_processing (8305ms)
-✓ dataset_search (225996ms)  
+✓ dataset_search (225996ms)
 ✓ data_validation (2ms)
 ✓ report_generation (2ms)
 ```

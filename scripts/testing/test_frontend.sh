@@ -103,7 +103,7 @@ if [ -n "$TOKEN" ]; then
       -d '{
         "query": "breast cancer gene expression"
       }')
-    
+
     if echo "$QUERY_RESPONSE" | grep -q "query" || echo "$QUERY_RESPONSE" | grep -q "success"; then
         echo -e "${GREEN}✓${NC}"
     else

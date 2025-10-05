@@ -63,17 +63,17 @@ if metadata.sample_count >= 100:
 # omics_oracle_v2/core/config.py
 class RankingConfig(BaseModel):
     """Configuration for relevance ranking."""
-    
+
     # Keyword matching weights
     title_match_weight: float = Field(default=0.4, ge=0.0, le=1.0)
     summary_match_weight: float = Field(default=0.3, ge=0.0, le=1.0)
     organism_match_weight: float = Field(default=0.15, ge=0.0, le=1.0)
     sample_count_weight: float = Field(default=0.15, ge=0.0, le=1.0)
-    
+
     # Semantic search weights (to be added)
     semantic_weight: float = Field(default=0.6, ge=0.0, le=1.0)
     keyword_weight: float = Field(default=0.4, ge=0.0, le=1.0)
-    
+
     # Quality score blending
     use_semantic_ranking: bool = Field(default=True)
     enable_llm_validation: bool = Field(default=False)
@@ -81,7 +81,7 @@ class RankingConfig(BaseModel):
 
 class QualityConfig(BaseModel):
     """Configuration for quality scoring."""
-    
+
     sample_count_max_points: int = Field(default=20, ge=0, le=100)
     title_quality_max_points: int = Field(default=15, ge=0, le=100)
     summary_quality_max_points: int = Field(default=15, ge=0, le=100)
@@ -102,7 +102,7 @@ class QualityConfig(BaseModel):
 # NEW: omics_oracle_v2/lib/ranking/keyword_ranker.py
 class KeywordRanker:
     """Pure keyword-based ranking (current implementation)."""
-    
+
     def calculate_relevance(self, dataset, search_terms) -> Tuple[float, List[str]]:
         """Calculate keyword-based relevance."""
         pass
@@ -110,7 +110,7 @@ class KeywordRanker:
 # NEW: omics_oracle_v2/lib/ranking/quality_scorer.py
 class QualityScorer:
     """Dataset quality assessment."""
-    
+
     def calculate_quality(self, metadata) -> Tuple[float, List[str], List[str]]:
         """Calculate quality score with issues and strengths."""
         pass
@@ -183,11 +183,11 @@ from typing import Dict, List, Set
 class BiomedicalSynonyms:
     """
     Biomedical technique synonym database.
-    
+
     Maps techniques to their common synonyms, abbreviations,
     and alternative names used in the literature.
     """
-    
+
     # Genomics techniques
     DNA_METHYLATION = {
         "canonical": "dna methylation",
@@ -202,7 +202,7 @@ class BiomedicalSynonyms:
             "tet-assisted bisulfite sequencing", "tab-seq"
         ]
     }
-    
+
     CHROMATIN_ACCESSIBILITY = {
         "canonical": "chromatin accessibility",
         "synonyms": [
@@ -215,7 +215,7 @@ class BiomedicalSynonyms:
             "nome-seq"
         ]
     }
-    
+
     HI_C = {
         "canonical": "hi-c",
         "synonyms": [
@@ -228,7 +228,7 @@ class BiomedicalSynonyms:
             "micro-c", "dnase hi-c", "nome-hic"
         ]
     }
-    
+
     RNA_SEQ = {
         "canonical": "rna-seq",
         "synonyms": [
@@ -239,7 +239,7 @@ class BiomedicalSynonyms:
             "total rna-seq", "poly-a rna-seq"
         ]
     }
-    
+
     SINGLE_CELL = {
         "canonical": "single-cell",
         "synonyms": [
@@ -251,7 +251,7 @@ class BiomedicalSynonyms:
             "sciseq", "sci-seq"
         ]
     }
-    
+
     MULTI_OMICS = {
         "canonical": "multi-omics",
         "synonyms": [
@@ -264,7 +264,7 @@ class BiomedicalSynonyms:
             "paired-seq", "cite-seq", "reap-seq"
         ]
     }
-    
+
     CHIP_SEQ = {
         "canonical": "chip-seq",
         "synonyms": [
@@ -276,7 +276,7 @@ class BiomedicalSynonyms:
             "cleavage under targets and tagmentation"
         ]
     }
-    
+
     # Build reverse index for fast lookup
     @classmethod
     def get_all_mappings(cls) -> Dict[str, List[str]]:
@@ -290,7 +290,7 @@ class BiomedicalSynonyms:
             "multi_omics": cls.MULTI_OMICS,
             "chip_seq": cls.CHIP_SEQ,
         }
-    
+
     @classmethod
     def build_reverse_index(cls) -> Dict[str, str]:
         """Build reverse index: synonym -> canonical."""
@@ -316,23 +316,23 @@ class BiomedicalSynonyms:
 from ..lib.ranking.synonyms import BiomedicalSynonyms
 
 class SearchAgent(Agent[SearchInput, SearchOutput]):
-    
+
     def __init__(self, settings: Settings):
         super().__init__(settings)
         self._synonym_index = BiomedicalSynonyms.build_reverse_index()
-    
+
     def _expand_search_terms(self, terms: List[str]) -> List[str]:
         """
         Expand search terms with synonyms.
-        
+
         Args:
             terms: Original search terms
-            
+
         Returns:
             Expanded terms with synonyms
         """
         expanded = set(terms)
-        
+
         for term in terms:
             term_lower = term.lower()
             # Check if term matches any canonical or synonym
@@ -341,20 +341,20 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
                 # Add canonical term
                 expanded.add(canonical)
                 logger.debug(f"Expanded '{term}' to include canonical: '{canonical}'")
-        
+
         return list(expanded)
-    
+
     def _calculate_relevance(
         self, dataset: GEOSeriesMetadata, input_data: SearchInput
     ) -> tuple[float, List[str]]:
         """Calculate relevance score with synonym matching."""
         score = 0.0
         reasons = []
-        
+
         # Expand search terms with synonyms
         expanded_terms = self._expand_search_terms(input_data.search_terms)
         search_terms_lower = {term.lower() for term in expanded_terms}
-        
+
         # ... rest of scoring logic with expanded terms
 ```
 
@@ -373,7 +373,7 @@ def test_nome_seq_recognized():
     """NOMe-seq should match DNA methylation AND chromatin accessibility."""
     query = "joint profiling of dna methylation and chromatin accessibility"
     dataset_title = "Genome-wide profiling using NOMe-seq"
-    
+
     # Should recognize NOMe-seq = both techniques
     score = calculate_relevance(query, dataset_title)
     assert score > 0.7, "NOMe-seq should be highly relevant"
@@ -382,7 +382,7 @@ def test_atac_seq_expansion():
     """ATAC-seq should match chromatin accessibility query."""
     query = "chromatin accessibility in cancer"
     dataset_title = "ATAC-seq profiling of tumor samples"
-    
+
     score = calculate_relevance(query, dataset_title)
     assert score > 0.6, "ATAC-seq should match accessibility"
 ```
@@ -423,16 +423,16 @@ logger = logging.getLogger(__name__)
 class EmbeddingService:
     """
     OpenAI embedding generation with disk caching.
-    
+
     Caches embeddings to avoid redundant API calls and reduce costs.
     """
-    
+
     def __init__(self, settings: Settings):
         self.settings = settings
         self.client = None
         self.cache_dir = Path(settings.cache_directory) / "embeddings"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Initialize OpenAI client
         if settings.ai.openai_api_key:
             try:
@@ -443,16 +443,16 @@ class EmbeddingService:
                 logger.warning("OpenAI library not installed")
         else:
             logger.warning("OpenAI API key not configured")
-    
+
     def _get_cache_key(self, text: str, model: str) -> str:
         """Generate cache key for text."""
         content = f"{model}:{text}"
         return hashlib.sha256(content.encode()).hexdigest()
-    
+
     def _get_cache_path(self, cache_key: str) -> Path:
         """Get cache file path."""
         return self.cache_dir / f"{cache_key}.json"
-    
+
     def _load_from_cache(self, cache_key: str) -> Optional[List[float]]:
         """Load embedding from cache."""
         cache_path = self._get_cache_path(cache_key)
@@ -465,7 +465,7 @@ class EmbeddingService:
             except Exception as e:
                 logger.warning(f"Failed to load cache: {e}")
         return None
-    
+
     def _save_to_cache(self, cache_key: str, embedding: List[float]):
         """Save embedding to cache."""
         cache_path = self._get_cache_path(cache_key)
@@ -475,7 +475,7 @@ class EmbeddingService:
             logger.debug(f"Saved embedding to cache: {cache_key[:8]}...")
         except Exception as e:
             logger.warning(f"Failed to save cache: {e}")
-    
+
     def get_embedding(
         self,
         text: str,
@@ -484,48 +484,48 @@ class EmbeddingService:
     ) -> Optional[List[float]]:
         """
         Get embedding for text.
-        
+
         Args:
             text: Text to embed
             model: OpenAI embedding model
             use_cache: Whether to use caching
-            
+
         Returns:
             Embedding vector or None if unavailable
         """
         if not self.client:
             return None
-        
+
         # Check cache
         cache_key = self._get_cache_key(text, model)
         if use_cache:
             cached = self._load_from_cache(cache_key)
             if cached is not None:
                 return cached
-        
+
         # Generate embedding
         try:
             # Truncate text to avoid token limit
             truncated = text[:8000]
-            
+
             response = self.client.embeddings.create(
                 model=model,
                 input=truncated
             )
-            
+
             embedding = response.data[0].embedding
-            
+
             # Cache result
             if use_cache:
                 self._save_to_cache(cache_key, embedding)
-            
+
             logger.debug(f"Generated embedding (model={model}, length={len(embedding)})")
             return embedding
-            
+
         except Exception as e:
             logger.error(f"Failed to generate embedding: {e}")
             return None
-    
+
     def calculate_similarity(
         self,
         embedding1: List[float],
@@ -533,25 +533,25 @@ class EmbeddingService:
     ) -> float:
         """
         Calculate cosine similarity between embeddings.
-        
+
         Args:
             embedding1: First embedding vector
             embedding2: Second embedding vector
-            
+
         Returns:
             Similarity score (0.0-1.0)
         """
         vec1 = np.array(embedding1)
         vec2 = np.array(embedding2)
-        
+
         # Cosine similarity
         similarity = np.dot(vec1, vec2) / (
             np.linalg.norm(vec1) * np.linalg.norm(vec2)
         )
-        
+
         # Normalize to 0-1 range (cosine is -1 to 1)
         normalized = (similarity + 1) / 2
-        
+
         return float(normalized)
 ```
 
@@ -576,21 +576,21 @@ logger = logging.getLogger(__name__)
 class SemanticRanker:
     """
     Hybrid semantic + keyword ranking.
-    
+
     Combines traditional keyword matching with embedding-based
     semantic similarity for improved relevance scoring.
     """
-    
+
     def __init__(self, settings: Settings):
         self.settings = settings
         self.embedding_service = EmbeddingService(settings)
         self.keyword_ranker = KeywordRanker(settings)
         self.synonyms = BiomedicalSynonyms()
-        
+
         # Get weights from config
         self.semantic_weight = settings.ranking.semantic_weight
         self.keyword_weight = settings.ranking.keyword_weight
-    
+
     def rank_dataset(
         self,
         query: str,
@@ -601,19 +601,19 @@ class SemanticRanker:
     ) -> Tuple[float, List[str]]:
         """
         Calculate hybrid relevance score.
-        
+
         Args:
             query: Original user query
             dataset_title: Dataset title
             dataset_summary: Dataset summary
             search_terms: Extracted search terms
             dataset_id: Dataset ID for caching
-            
+
         Returns:
             Tuple of (score, reasons)
         """
         reasons = []
-        
+
         # 1. Calculate keyword score
         keyword_score, keyword_reasons = self.keyword_ranker.calculate_relevance(
             title=dataset_title,
@@ -621,7 +621,7 @@ class SemanticRanker:
             search_terms=search_terms
         )
         reasons.extend([f"Keyword: {r}" for r in keyword_reasons])
-        
+
         # 2. Calculate semantic similarity
         semantic_score = self._calculate_semantic_score(
             query=query,
@@ -629,27 +629,27 @@ class SemanticRanker:
             dataset_summary=dataset_summary,
             dataset_id=dataset_id
         )
-        
+
         if semantic_score is not None:
             reasons.append(f"Semantic similarity: {semantic_score:.2f}")
-            
+
             # 3. Blend scores
             final_score = (
                 self.semantic_weight * semantic_score +
                 self.keyword_weight * keyword_score
             )
-            
+
             # 4. Boost if both agree
             if semantic_score > 0.7 and keyword_score > 0.5:
                 final_score = min(1.0, final_score * 1.1)
                 reasons.append("High confidence (semantic + keyword agreement)")
-            
+
             return final_score, reasons
         else:
             # Fall back to keyword only
             reasons.append("Semantic ranking unavailable, using keyword only")
             return keyword_score, reasons
-    
+
     def _calculate_semantic_score(
         self,
         query: str,
@@ -660,27 +660,27 @@ class SemanticRanker:
         """Calculate semantic similarity score."""
         # Combine title and summary for dataset representation
         dataset_text = f"{dataset_title}. {dataset_summary}"
-        
+
         # Get embeddings
         query_emb = self.embedding_service.get_embedding(
             text=query,
             use_cache=True
         )
-        
+
         dataset_emb = self.embedding_service.get_embedding(
             text=dataset_text,
             use_cache=True
         )
-        
+
         if query_emb is None or dataset_emb is None:
             return None
-        
+
         # Calculate similarity
         similarity = self.embedding_service.calculate_similarity(
             query_emb,
             dataset_emb
         )
-        
+
         return similarity
 ```
 
@@ -701,11 +701,11 @@ class SemanticRanker:
 from ..lib.ranking.semantic_ranker import SemanticRanker
 
 class SearchAgent(Agent[SearchInput, SearchOutput]):
-    
+
     def _initialize_resources(self) -> None:
         """Initialize resources."""
         # ... existing GEO client initialization
-        
+
         # Initialize semantic ranker
         if self.settings.ranking.use_semantic_ranking:
             self.semantic_ranker = SemanticRanker(self.settings)
@@ -713,13 +713,13 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
         else:
             self.semantic_ranker = None
             logger.info("Semantic ranking disabled, using keyword only")
-    
+
     def _rank_datasets(
         self, datasets: List[GEOSeriesMetadata], input_data: SearchInput
     ) -> List[RankedDataset]:
         """Rank datasets with semantic or keyword ranking."""
         ranked = []
-        
+
         for dataset in datasets:
             if self.semantic_ranker and input_data.original_query:
                 # Use hybrid semantic + keyword ranking
@@ -733,7 +733,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             else:
                 # Fall back to keyword ranking
                 score, reasons = self._calculate_relevance(dataset, input_data)
-            
+
             ranked.append(
                 RankedDataset(
                     dataset=dataset,
@@ -741,10 +741,10 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
                     match_reasons=reasons
                 )
             )
-        
+
         # Sort by relevance
         ranked.sort(key=lambda d: d.relevance_score, reverse=True)
-        
+
         return ranked
 ```
 
@@ -761,27 +761,27 @@ def test_nome_seq_semantic_match():
         "title": "Genome-wide NOMe-seq profiling",
         "summary": "We used NOMe-seq to simultaneously measure DNA methylation and chromatin accessibility..."
     }
-    
+
     score, reasons = semantic_ranker.rank_dataset(
         query=query,
         dataset_title=dataset["title"],
         dataset_summary=dataset["summary"],
         search_terms=["joint profiling", "dna methylation", "chromatin accessibility"]
     )
-    
+
     assert score > 0.8, f"NOMe-seq should get high score, got {score}"
     assert any("semantic" in r.lower() for r in reasons), "Should have semantic reasoning"
 
 def test_embedding_caching():
     """Embeddings should be cached."""
     text = "Test dataset for caching"
-    
+
     # First call - generates embedding
     emb1 = embedding_service.get_embedding(text)
-    
+
     # Second call - should use cache
     emb2 = embedding_service.get_embedding(text)
-    
+
     assert emb1 == emb2, "Cached embedding should match"
     # Check cache file exists
     cache_key = embedding_service._get_cache_key(text, "text-embedding-3-small")
@@ -800,12 +800,12 @@ def benchmark_semantic_vs_keyword():
         "single-cell RNA sequencing in cancer",
         "Hi-C genome architecture in development"
     ]
-    
+
     for query in test_queries:
         # Test with 50 datasets
         results_semantic = rank_with_semantic(query, datasets)
         results_keyword = rank_with_keyword(query, datasets)
-        
+
         print(f"Query: {query}")
         print(f"  Semantic top-5: {[r.geo_id for r in results_semantic[:5]]}")
         print(f"  Keyword top-5: {[r.geo_id for r in results_keyword[:5]]}")
@@ -847,17 +847,17 @@ logger = logging.getLogger(__name__)
 class LLMValidator:
     """
     LLM-based relevance validation for top results.
-    
+
     Uses GPT-4 to provide human-like judgment on dataset relevance.
     Only applied to top N results to control costs.
     """
-    
+
     def __init__(self, settings: Settings):
         self.settings = settings
         self.ai_client = SummarizationClient(settings)
         self.enabled = settings.ranking.enable_llm_validation
         self.top_n = settings.ranking.llm_validation_top_n
-    
+
     def validate_relevance(
         self,
         query: str,
@@ -867,44 +867,44 @@ class LLMValidator:
     ) -> Tuple[float, str]:
         """
         Validate dataset relevance using LLM.
-        
+
         Args:
             query: User query
             dataset_title: Dataset title
-            dataset_summary: Dataset summary  
+            dataset_summary: Dataset summary
             current_score: Current relevance score
-            
+
         Returns:
             Tuple of (adjusted_score, explanation)
         """
         if not self.enabled or not self.ai_client.client:
             return current_score, "LLM validation disabled"
-        
+
         prompt = self._build_validation_prompt(
             query, dataset_title, dataset_summary
         )
-        
+
         try:
             response = self.ai_client._call_llm(
                 prompt=prompt,
                 system_message="You are an expert in biomedical data analysis.",
                 max_tokens=200
             )
-            
+
             # Parse response
             llm_score, explanation = self._parse_llm_response(response)
-            
+
             # Blend with current score (70% LLM, 30% algorithmic)
             if llm_score is not None:
                 adjusted_score = 0.7 * llm_score + 0.3 * current_score
                 return adjusted_score, f"LLM: {explanation}"
             else:
                 return current_score, "LLM validation failed to parse"
-                
+
         except Exception as e:
             logger.error(f"LLM validation error: {e}")
             return current_score, f"LLM validation error: {str(e)}"
-    
+
     def _build_validation_prompt(
         self, query: str, title: str, summary: str
     ) -> str:
@@ -928,17 +928,17 @@ Respond in this format:
 SCORE: 0.X
 REASON: Brief explanation of relevance
 """
-    
+
     def _parse_llm_response(self, response: str) -> Tuple[Optional[float], str]:
         """Parse LLM response to extract score and reason."""
         try:
             lines = response.strip().split('\n')
             score_line = [l for l in lines if l.startswith('SCORE:')][0]
             reason_line = [l for l in lines if l.startswith('REASON:')][0]
-            
+
             score = float(score_line.split(':')[1].strip())
             reason = reason_line.split(':')[1].strip()
-            
+
             return score, reason
         except:
             return None, response

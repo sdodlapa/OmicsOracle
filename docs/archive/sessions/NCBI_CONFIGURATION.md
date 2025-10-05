@@ -2,7 +2,7 @@
 
 ## Summary
 
-**Date**: October 5, 2025  
+**Date**: October 5, 2025
 **Status**: ✅ **CONFIGURED**
 
 Your NCBI credentials have been added to the `.env` file.
@@ -52,7 +52,7 @@ cd /Users/sanjeevadodlapati/Downloads/Repos/OmicsOracle
 
 Once the server restarts, try this query:
 
-**Query**: "HiC data for human brain tissue"  
+**Query**: "HiC data for human brain tissue"
 **Workflow**: 🔍 Simple Search
 
 **Expected Result**: Should successfully search NCBI GEO and return real datasets!
