@@ -360,27 +360,31 @@
                         <label>Workflow Type</label>
                         <div class="workflow-types">
                             <div class="workflow-type selected" data-type="full_analysis">
-                                <div class="workflow-type-name">Full Analysis</div>
-                                <div class="workflow-type-desc">Query → Search → Data → Report</div>
+                                <div class="workflow-type-name">🔬 Full Analysis</div>
+                                <div class="workflow-type-desc">Complete pipeline with validation (Query → Search → Data → Report)</div>
                             </div>
                             <div class="workflow-type" data-type="simple_search">
-                                <div class="workflow-type-name">Simple Search</div>
-                                <div class="workflow-type-desc">Query → Search → Report</div>
+                                <div class="workflow-type-name">⚡ Simple Search</div>
+                                <div class="workflow-type-desc">Quick search without validation (Query → Search → Report)</div>
                             </div>
                             <div class="workflow-type" data-type="quick_report">
-                                <div class="workflow-type-name">Quick Report</div>
-                                <div class="workflow-type-desc">Search → Report</div>
+                                <div class="workflow-type-name">📄 Quick Report</div>
+                                <div class="workflow-type-desc">Report from known GEO IDs (e.g., GSE12345)</div>
                             </div>
                             <div class="workflow-type" data-type="data_validation">
-                                <div class="workflow-type-name">Data Validation</div>
-                                <div class="workflow-type-desc">Data → Report</div>
+                                <div class="workflow-type-name">✓ Validate Datasets</div>
+                                <div class="workflow-type-desc">Quality check specific datasets (provide GEO IDs)</div>
                             </div>
+                        </div>
+                        <div style="margin-top: 10px; padding: 10px; background: #f0f8ff; border-left: 4px solid #667eea; font-size: 13px; color: #555;">
+                            <strong>💡 Tip:</strong> 
+                            <span id="workflow-help">Use <strong>Full Analysis</strong> for comprehensive results with quality validation.</span>
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label for="query">Research Query</label>
-                        <textarea id="query" placeholder="Enter your biomedical research query...">cancer genomics in breast tissue</textarea>
+                        <textarea id="query" placeholder="E.g., 'breast cancer RNA-seq' or 'GSE12345 GSE67890' for validation">cancer genomics in breast tissue</textarea>
                     </div>
 
                     <button class="btn" onclick="executeWorkflow()">Execute Workflow</button>
@@ -464,6 +468,14 @@ alzheimer disease biomarkers</textarea>
         let ws = null;
         let currentWorkflowId = null;
         let selectedWorkflowType = 'full_analysis';
+        
+        // Workflow help text mapping
+        const workflowHelp = {
+            'full_analysis': 'Use <strong>Full Analysis</strong> for comprehensive results with quality validation. Best for general research queries.',
+            'simple_search': 'Use <strong>Simple Search</strong> for faster results without validation. Good for quick exploration.',
+            'quick_report': 'Use <strong>Quick Report</strong> when you have specific GEO dataset IDs (e.g., GSE12345, GSE67890).',
+            'data_validation': 'Use <strong>Validate Datasets</strong> to check quality of specific GEO datasets. Provide IDs in query.'
+        };
 
         // Workflow type selection
         document.querySelectorAll('.workflow-type').forEach(el => {
@@ -471,6 +483,12 @@ alzheimer disease biomarkers</textarea>
                 document.querySelectorAll('.workflow-type').forEach(e => e.classList.remove('selected'));
                 el.classList.add('selected');
                 selectedWorkflowType = el.dataset.type;
+                
+                // Update help text
+                const helpEl = document.getElementById('workflow-help');
+                if (helpEl) {
+                    helpEl.innerHTML = workflowHelp[selectedWorkflowType] || '';
+                }
             });
         });
 
@@ -492,7 +510,7 @@ alzheimer disease biomarkers</textarea>
             }
 
             try {
-                const response = await fetch('/api/v1/workflows/execute', {
+                const response = await fetch('/api/v1/workflows/dev/execute', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -601,11 +619,136 @@ alzheimer disease biomarkers</textarea>
         // Display results
         function displayResults(data) {
             const resultsDiv = document.getElementById('results');
-            resultsDiv.innerHTML = `
-                <div class="result-item">
-                    <pre style="white-space: pre-wrap; overflow-x: auto;">${JSON.stringify(data, null, 2)}</pre>
+            
+            // Check if there's a final_report (Markdown format)
+            if (data.final_report) {
+                resultsDiv.innerHTML = renderReportView(data);
+            } else {
+                // Fallback to JSON view
+                resultsDiv.innerHTML = `
+                    <div class="result-item">
+                        <pre style="white-space: pre-wrap; overflow-x: auto;">${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            }
+        }
+        
+        // Render beautiful report view
+        function renderReportView(data) {
+            const markdown = data.final_report;
+            
+            // Simple Markdown to HTML converter
+            let html = markdown
+                // Headers
+                .replace(/^### (.+)$/gm, '<h3 style="color: #667eea; margin-top: 25px; margin-bottom: 10px; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px;">$1</h3>')
+                .replace(/^## (.+)$/gm, '<h2 style="color: #667eea; margin-top: 30px; margin-bottom: 15px; font-size: 1.5em;">$1</h2>')
+                .replace(/^# (.+)$/gm, '<h1 style="color: #333; margin-bottom: 20px; font-size: 1.8em; border-bottom: 3px solid #667eea; padding-bottom: 10px;">$1</h1>')
+                // Bold
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                // Lists
+                .replace(/^- (.+)$/gm, '<li style="margin-left: 20px; margin-bottom: 5px;">$1</li>')
+                // Paragraphs
+                .replace(/\n\n/g, '</p><p style="margin: 10px 0; line-height: 1.6;">')
+                // Line breaks
+                .replace(/\n/g, '<br>');
+            
+            html = '<p style="margin: 10px 0; line-height: 1.6;">' + html + '</p>';
+            
+            return `
+                <div style="margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="margin: 0; color: #333;">📊 Analysis Results</h3>
+                        <div>
+                            <button onclick="toggleView('report')" class="btn" style="padding: 8px 15px; margin-right: 10px;">
+                                📄 Report View
+                            </button>
+                            <button onclick="toggleView('json')" class="btn" style="padding: 8px 15px; background: #f5f5f5; color: #666;">
+                                🔧 JSON View
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Report View -->
+                    <div id="report-view" style="display: block;">
+                        <!-- Summary Cards -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Total Datasets</div>
+                                <div style="font-size: 2.2em; font-weight: bold;">${data.total_datasets_found || 0}</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Analyzed</div>
+                                <div style="font-size: 2.2em; font-weight: bold;">${data.total_datasets_analyzed || 0}</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">High Quality</div>
+                                <div style="font-size: 2.2em; font-weight: bold;">${data.high_quality_datasets || 0}</div>
+                            </div>
+                            <div style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                                <div style="font-size: 0.9em; opacity: 0.9; margin-bottom: 5px;">Execution Time</div>
+                                <div style="font-size: 1.5em; font-weight: bold;">${(data.execution_time_ms / 1000).toFixed(1)}s</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Workflow Status -->
+                        <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin-bottom: 25px; border-left: 5px solid ${data.success ? '#43e97b' : '#f5576c'};">
+                            <div style="display: flex; align-items: center; margin-bottom: 15px;">
+                                <div style="font-size: 2em; margin-right: 15px;">${data.success ? '✅' : '❌'}</div>
+                                <div>
+                                    <div style="font-weight: bold; font-size: 1.2em; color: #333;">${data.success ? 'Workflow Completed Successfully' : 'Workflow Failed'}</div>
+                                    <div style="color: #666; font-size: 0.9em;">Query: "${data.query}"</div>
+                                </div>
+                            </div>
+                            
+                            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                                ${data.stage_results ? data.stage_results.map(stage => `
+                                    <div style="background: ${stage.success ? '#e7f5e7' : '#ffe7e7'}; padding: 10px 15px; border-radius: 6px; font-size: 0.9em;">
+                                        <span style="margin-right: 5px;">${stage.success ? '✓' : '✗'}</span>
+                                        <strong>${stage.stage}</strong>
+                                        <span style="color: #666; margin-left: 5px;">(${(stage.execution_time_ms || 0).toFixed(0)}ms)</span>
+                                    </div>
+                                `).join('') : ''}
+                            </div>
+                        </div>
+                        
+                        <!-- Report Content -->
+                        <div style="background: white; padding: 25px; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); line-height: 1.8; color: #333;">
+                            ${html}
+                        </div>
+                    </div>
+                    
+                    <!-- JSON View (hidden by default) -->
+                    <div id="json-view" style="display: none;">
+                        <div style="background: #1e1e1e; color: #d4d4d4; padding: 20px; border-radius: 10px; overflow-x: auto;">
+                            <pre style="margin: 0; font-family: 'Courier New', monospace; font-size: 0.9em;">${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    </div>
                 </div>
             `;
+        }
+        
+        // Toggle between report and JSON view
+        function toggleView(view) {
+            const reportView = document.getElementById('report-view');
+            const jsonView = document.getElementById('json-view');
+            const reportBtn = event.target.parentElement.children[0];
+            const jsonBtn = event.target.parentElement.children[1];
+            
+            if (view === 'report') {
+                reportView.style.display = 'block';
+                jsonView.style.display = 'none';
+                reportBtn.style.background = '#667eea';
+                reportBtn.style.color = 'white';
+                jsonBtn.style.background = '#f5f5f5';
+                jsonBtn.style.color = '#666';
+            } else {
+                reportView.style.display = 'none';
+                jsonView.style.display = 'block';
+                reportBtn.style.background = '#f5f5f5';
+                reportBtn.style.color = '#666';
+                jsonBtn.style.background = '#667eea';
+                jsonBtn.style.color = 'white';
+            }
         }
 
         // WebSocket functions

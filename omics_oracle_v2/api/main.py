@@ -5,8 +5,24 @@ Creates and configures the FastAPI application for the agent API.
 """
 
 import logging
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
+
+# Load environment variables from .env file at startup
+try:
+    from dotenv import load_dotenv
+    env_file = Path(__file__).parent.parent.parent / ".env"
+    if env_file.exists():
+        load_dotenv(env_file)
+        logger = logging.getLogger(__name__)
+        logger.info(f"Loaded environment from {env_file}")
+    else:
+        logger = logging.getLogger(__name__)
+        logger.warning(f".env file not found at {env_file}")
+except ImportError:
+    logger = logging.getLogger(__name__)
+    logger.warning("python-dotenv not installed - environment variables must be set manually")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -27,6 +43,7 @@ from omics_oracle_v2.api.routes import (
     workflows_router,
 )
 from omics_oracle_v2.api.routes.quotas import router as quotas_router
+from omics_oracle_v2.api.routes.workflows_dev import router as workflows_dev_router
 from omics_oracle_v2.cache import close_redis_client, get_redis_client
 from omics_oracle_v2.core import Settings
 from omics_oracle_v2.database import close_db, init_db
@@ -156,6 +173,7 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     # V1 API (legacy, will be deprecated)
     app.include_router(agents_router, prefix="/api/v1/agents", tags=["Agents"])
     app.include_router(workflows_router, prefix="/api/v1/workflows", tags=["Workflows"])
+    app.include_router(workflows_dev_router, prefix="/api/v1/workflows", tags=["Workflows (Dev)"])  # DEV: No auth
     app.include_router(batch_router, prefix="/api/v1", tags=["Batch"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
     app.include_router(metrics_router, tags=["Metrics"])

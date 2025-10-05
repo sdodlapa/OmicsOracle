@@ -15,6 +15,7 @@ class SearchInput(BaseModel):
     """Input for search operations."""
 
     search_terms: List[str] = Field(..., description="Search terms extracted from query", min_length=1)
+    original_query: Optional[str] = Field(default=None, description="Original user query for context")
     max_results: int = Field(default=50, description="Maximum number of results", ge=1, le=500)
     organism: Optional[str] = Field(default=None, description="Filter by organism (e.g., 'Homo sapiens')")
     study_type: Optional[str] = Field(

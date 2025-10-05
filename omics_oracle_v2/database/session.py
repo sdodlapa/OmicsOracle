@@ -71,8 +71,22 @@ async def init_db() -> None:
     This creates all tables defined in the Base metadata.
     Use Alembic migrations in production instead.
     """
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        import logging
+        logging.error(f"Failed to initialize database: {e}")
+        # For SQLite, create directory if it doesn't exist
+        if "sqlite" in str(settings.database_url).lower():
+            db_path = str(settings.database_url).split("///")[-1]
+            from pathlib import Path
+            Path(db_path).parent.mkdir(parents=True, exist_ok=True)
+            # Retry once
+            async with engine.begin() as conn:
+                await conn.run_sync(Base.metadata.create_all)
+        else:
+            raise
 
 
 async def drop_db() -> None:

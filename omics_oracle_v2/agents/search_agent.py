@@ -62,6 +62,54 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             logger.info("Cleaning up GEO client resources")
             self._geo_client = None
 
+    def _run_async(self, coro):
+        """
+        Run an async coroutine in a sync context.
+        
+        Handles both cases:
+        - Running inside an async event loop (FastAPI context)
+        - Running outside an event loop (standalone scripts)
+        
+        Args:
+            coro: Coroutine to run
+            
+        Returns:
+            Result of the coroutine
+        """
+        import asyncio
+        
+        try:
+            # Check if there's a running loop
+            loop = asyncio.get_running_loop()
+            # We're in an async context - create a new thread with its own loop
+            import threading
+            result = [None]
+            exception = [None]
+            
+            def run_in_thread():
+                try:
+                    # Create a new event loop for this thread
+                    new_loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(new_loop)
+                    try:
+                        result[0] = new_loop.run_until_complete(coro)
+                    finally:
+                        new_loop.close()
+                except Exception as e:
+                    exception[0] = e
+            
+            thread = threading.Thread(target=run_in_thread)
+            thread.start()
+            thread.join()
+            
+            if exception[0]:
+                raise exception[0]
+            return result[0]
+            
+        except RuntimeError:
+            # No running loop - we can use asyncio.run directly
+            return asyncio.run(coro)
+
     def _validate_input(self, input_data: SearchInput) -> SearchInput:
         """
         Validate search input.
@@ -104,16 +152,8 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             search_query = self._build_search_query(input_data)
             context.set_metric("search_query", search_query)
 
-            # Run async search in sync context
-            import asyncio
-
-            loop = asyncio.get_event_loop()
-            if loop.is_running():
-                # If already in async context, create new loop
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
-
-            search_result = loop.run_until_complete(
+            # Handle async operations properly
+            search_result = self._run_async(
                 self._geo_client.search(query=search_query, max_results=input_data.max_results)
             )
 
@@ -127,7 +167,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             geo_datasets = []
             for geo_id in top_ids:
                 try:
-                    metadata = loop.run_until_complete(self._geo_client.get_metadata(geo_id))
+                    metadata = self._run_async(self._geo_client.get_metadata(geo_id))
                     geo_datasets.append(metadata)
                 except Exception as e:
                     logger.warning(f"Failed to fetch metadata for {geo_id}: {e}")
@@ -169,19 +209,51 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
         Returns:
             Formatted search query string
         """
-        # Join search terms with OR for broader results
+        # Filter out generic/non-specific terms
+        generic_terms = {"dataset", "datasets", "data", "study", "studies", "analysis", "profiling"}
+        filtered_terms = [
+            term for term in input_data.search_terms 
+            if term.lower() not in generic_terms
+        ]
+        
+        # If we filtered everything out, use original terms
+        if not filtered_terms:
+            filtered_terms = input_data.search_terms
+        
         query_parts = []
 
         # Add main search terms
-        for term in input_data.search_terms:
+        for term in filtered_terms:
             # Escape special characters and quote multi-word terms
             if " " in term:
                 query_parts.append(f'"{term}"')
             else:
                 query_parts.append(term)
 
-        # Combine with OR
-        query = " OR ".join(query_parts)
+        # Determine whether to use AND or OR logic
+        # Use AND if:
+        # 1. Original query contains "and" or "&"
+        # 2. We have 2-4 specific biomedical terms (suggests combined requirement)
+        use_and_logic = False
+        if input_data.original_query:
+            query_lower = input_data.original_query.lower()
+            if " and " in query_lower or " & " in query_lower:
+                use_and_logic = True
+            # Also use AND for "joint" or "combined" or "multi"
+            elif any(word in query_lower for word in ["joint", "combined", "multi", "integrated"]):
+                use_and_logic = True
+        
+        # If we have 2-3 specific terms and no clear OR intent, use AND
+        if not use_and_logic and 2 <= len(query_parts) <= 3:
+            use_and_logic = True
+        
+        # Combine with appropriate logic
+        if use_and_logic:
+            query = " AND ".join(query_parts)
+            logger.info(f"Using AND logic for search: {query}")
+        else:
+            query = " OR ".join(query_parts)
+            logger.info(f"Using OR logic for search: {query}")
 
         # Add organism filter if specified
         if input_data.organism:
