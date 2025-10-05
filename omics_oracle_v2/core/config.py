@@ -36,11 +36,11 @@ from pathlib import Path
 from typing import Optional
 
 try:
-    from pydantic import Field
+    from pydantic import BaseModel, Field
     from pydantic_settings import BaseSettings
 except ImportError:
     # Fallback for older pydantic versions
-    from pydantic import BaseSettings, Field  # type: ignore
+    from pydantic import BaseModel, BaseSettings, Field  # type: ignore
 
 
 class NLPSettings(BaseSettings):
@@ -594,3 +594,72 @@ def get_settings() -> Settings:
         False
     """
     return Settings()
+
+
+# ============================================================================
+# Embedding Configuration (Phase 1: Semantic Search)
+# ============================================================================
+
+
+class EmbeddingConfig(BaseModel):
+    """
+    Configuration for text embedding generation.
+
+    Used by the EmbeddingService to generate vector representations
+    of text for semantic similarity search.
+    """
+
+    # OpenAI settings
+    api_key: Optional[str] = Field(
+        None,
+        description="OpenAI API key (falls back to OPENAI_API_KEY env var)",
+    )
+    model: str = Field(
+        default="text-embedding-3-small",
+        description="Embedding model: text-embedding-3-small (fast) or text-embedding-3-large (accurate)",
+    )
+    dimension: int = Field(
+        default=1536, description="Embedding vector dimension (1536 for small, 3072 for large)"
+    )
+
+    # Performance
+    batch_size: int = Field(default=100, description="Number of texts to embed in single API call")
+    max_retries: int = Field(default=3, description="Maximum API retry attempts on failure")
+
+    # Caching
+    cache_enabled: bool = Field(default=True, description="Enable file-based embedding cache")
+    cache_dir: str = Field(default="data/embeddings/cache", description="Directory for cached embeddings")
+
+    def explain_config(self) -> str:
+        """
+        Generate human-readable explanation of configuration.
+
+        Returns:
+            Formatted string explaining all configuration values
+        """
+        return f"""
+Embedding Configuration:
+========================================================================
+
+Model Settings:
+  Provider: OpenAI
+  Model: {self.model}
+  Dimension: {self.dimension}
+
+Performance:
+  Batch Size: {self.batch_size} texts/batch
+  Max Retries: {self.max_retries}
+
+Caching:
+  Enabled: {self.cache_enabled}
+  Directory: {self.cache_dir}
+
+Cost Estimate (text-embedding-3-small):
+  ~$0.02 per 1M tokens
+  ~150 tokens per dataset = ~$3 per 1M datasets
+
+Performance:
+  ~100ms per batch of 100 texts
+  Cache hit: <1ms
+========================================================================
+"""

@@ -10,8 +10,9 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
 lib64/
+# Note: We use 'lib' as our source code directory, so we don't ignore it
+# If you need to ignore Python lib build artifacts, use a more specific pattern
 parts/
 sdist/
 var/
