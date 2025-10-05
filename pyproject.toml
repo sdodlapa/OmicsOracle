@@ -54,6 +54,8 @@ dependencies = [
     "python-jose[cryptography]>=3.3.0",
     "passlib[bcrypt]>=1.7.4",
     "python-multipart>=0.0.6",
+    # Phase 4: Rate Limiting (Task 2)
+    "hiredis>=2.0.0",
 ]
 
 [project.optional-dependencies]

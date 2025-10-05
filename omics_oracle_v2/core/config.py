@@ -91,6 +91,60 @@ class AISettings(BaseSettings):
         case_sensitive = False
 
 
+class RedisSettings(BaseSettings):
+    """Configuration for Redis caching and rate limiting."""
+
+    url: str = Field(
+        default="redis://localhost:6379/0",
+        description="Redis connection URL",
+    )
+    password: str | None = Field(default=None, description="Redis password")
+    max_connections: int = Field(default=10, ge=1, le=100, description="Maximum number of Redis connections")
+    socket_timeout: int = Field(default=5, ge=1, le=60, description="Socket timeout in seconds")
+    socket_connect_timeout: int = Field(
+        default=5, ge=1, le=60, description="Socket connect timeout in seconds"
+    )
+    decode_responses: bool = Field(default=True, description="Automatically decode responses to strings")
+    health_check_interval: int = Field(
+        default=30, ge=5, le=300, description="Health check interval in seconds"
+    )
+
+    class Config:
+        env_prefix = "OMICS_REDIS_"
+        case_sensitive = False
+
+
+class RateLimitSettings(BaseSettings):
+    """Configuration for rate limiting and quotas."""
+
+    enabled: bool = Field(default=True, description="Enable rate limiting")
+    fallback_to_memory: bool = Field(
+        default=True, description="Use in-memory rate limiting if Redis unavailable"
+    )
+
+    # Tier limits (requests per hour)
+    free_tier_limit_hour: int = Field(default=100, ge=1, description="Free tier hourly limit")
+    pro_tier_limit_hour: int = Field(default=1000, ge=1, description="Pro tier hourly limit")
+    enterprise_tier_limit_hour: int = Field(default=10000, ge=1, description="Enterprise tier hourly limit")
+
+    # Daily limits
+    free_tier_limit_day: int = Field(default=1000, ge=1, description="Free tier daily limit")
+    pro_tier_limit_day: int = Field(default=20000, ge=1, description="Pro tier daily limit")
+    enterprise_tier_limit_day: int = Field(default=200000, ge=1, description="Enterprise tier daily limit")
+
+    # Anonymous/IP-based limits
+    anonymous_limit_hour: int = Field(default=10, ge=1, description="Anonymous hourly limit")
+
+    # Concurrent request limits
+    free_tier_concurrent: int = Field(default=5, ge=1, description="Free tier concurrent limit")
+    pro_tier_concurrent: int = Field(default=20, ge=1, description="Pro tier concurrent limit")
+    enterprise_tier_concurrent: int = Field(default=100, ge=1, description="Enterprise tier concurrent limit")
+
+    class Config:
+        env_prefix = "OMICS_RATE_LIMIT_"
+        case_sensitive = False
+
+
 class DatabaseSettings(BaseSettings):
     """Configuration for database connection."""
 
@@ -150,6 +204,10 @@ class Settings(BaseSettings):
     nlp: NLPSettings = Field(default_factory=NLPSettings, description="NLP service configuration")
     geo: GEOSettings = Field(default_factory=GEOSettings, description="GEO service configuration")
     ai: AISettings = Field(default_factory=AISettings, description="AI service configuration")
+    redis: RedisSettings = Field(default_factory=RedisSettings, description="Redis configuration")
+    rate_limit: RateLimitSettings = Field(
+        default_factory=RateLimitSettings, description="Rate limiting configuration"
+    )
     database: DatabaseSettings = Field(default_factory=DatabaseSettings, description="Database configuration")
     auth: AuthSettings = Field(default_factory=AuthSettings, description="Authentication configuration")
 
