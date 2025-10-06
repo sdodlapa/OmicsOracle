@@ -171,6 +171,8 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     app.include_router(quotas_router, prefix="/api/v2")  # Quota management
 
     # V1 API (legacy, will be deprecated)
+    # Add v1 auth routes for backwards compatibility with existing UIs
+    app.include_router(auth_router, prefix="/api/v1")
     app.include_router(agents_router, prefix="/api/v1/agents", tags=["Agents"])
     app.include_router(workflows_router, prefix="/api/v1/workflows", tags=["Workflows"])
     app.include_router(
