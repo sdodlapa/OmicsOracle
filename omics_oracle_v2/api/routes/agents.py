@@ -213,7 +213,6 @@ async def execute_query_agent(
 @router.post("/search", response_model=SearchResponse, summary="Execute Search Agent")
 async def execute_search_agent(
     request: SearchRequest,
-    current_user: User = Depends(get_current_user),
 ):
     """
     Execute the Search Agent to find datasets in GEO database.
@@ -225,6 +224,8 @@ async def execute_search_agent(
     - **Keyword Search (default)**: Traditional GEO search with keyword matching
     - **Semantic Search**: AI-powered search with query expansion, hybrid ranking,
       and cross-encoder reranking (requires FAISS index)
+
+    **Note:** This endpoint is public for demo purposes. No authentication required.
 
     Args:
         request: Search request with terms, filters, result limit, and semantic flag

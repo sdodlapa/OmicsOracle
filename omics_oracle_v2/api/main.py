@@ -165,22 +165,22 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     # Include routers
     app.include_router(health_router, prefix="/health", tags=["Health"])
 
-    # V2 API with authentication
-    app.include_router(auth_router, prefix="/api/v2")
-    app.include_router(users_router, prefix="/api/v2")
-    app.include_router(quotas_router, prefix="/api/v2")  # Quota management
-
-    # V1 API (legacy, will be deprecated)
-    # Add v1 auth routes for backwards compatibility with existing UIs
-    app.include_router(auth_router, prefix="/api/v1")
-    app.include_router(agents_router, prefix="/api/v1/agents", tags=["Agents"])
-    app.include_router(workflows_router, prefix="/api/v1/workflows", tags=["Workflows"])
-    app.include_router(
-        workflows_dev_router, prefix="/api/v1/workflows", tags=["Workflows (Dev)"]
-    )  # DEV: No auth
-    app.include_router(batch_router, prefix="/api/v1", tags=["Batch"])
+    # Main API routes (no version - simpler)
+    app.include_router(auth_router, prefix="/api")
+    app.include_router(users_router, prefix="/api")
+    app.include_router(quotas_router, prefix="/api")
+    app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
+    app.include_router(workflows_router, prefix="/api/workflows", tags=["Workflows"])
+    app.include_router(workflows_dev_router, prefix="/api/workflows", tags=["Workflows (Dev)"])
+    app.include_router(batch_router, prefix="/api", tags=["Batch"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
     app.include_router(metrics_router, tags=["Metrics"])
+
+    # Legacy v1 routes for backwards compatibility (will be removed after frontend updates)
+    app.include_router(auth_router, prefix="/api/v1")
+    app.include_router(agents_router, prefix="/api/v1/agents")
+    app.include_router(workflows_router, prefix="/api/v1/workflows")
+    app.include_router(batch_router, prefix="/api/v1")
 
     # Mount static files
     static_dir = Path(__file__).parent / "static"
