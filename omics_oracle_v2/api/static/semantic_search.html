@@ -1132,18 +1132,42 @@
             // Try to get auth token
             authToken = localStorage.getItem('authToken');
             if (!authToken) {
-                // Try to create a test token (for demo purposes)
+                // Try to login with test credentials
                 try {
-                    const response = await fetch('/api/v2/auth/demo-token', {
-                        method: 'POST'
+                    // First try to register test user
+                    await fetch('/api/v1/auth/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: 'test@omicsoracle.com',
+                            password: 'TestPassword123!',
+                            full_name: 'Test User'
+                        })
                     });
+                } catch (e) {
+                    console.log('Test user might already exist:', e.message);
+                }
+
+                // Try to login
+                try {
+                    const response = await fetch('/api/v1/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            email: 'test@omicsoracle.com',
+                            password: 'TestPassword123!'
+                        })
+                    });
+
                     if (response.ok) {
                         const data = await response.json();
                         authToken = data.access_token;
                         localStorage.setItem('authToken', authToken);
+                        console.log('✅ Auto-authenticated with test credentials');
                     }
                 } catch (e) {
-                    console.warn('Could not get demo token:', e);
+                    console.warn('Could not auto-login:', e);
+                    showError('Authentication required. Please refresh or login manually.');
                 }
             }
         }
