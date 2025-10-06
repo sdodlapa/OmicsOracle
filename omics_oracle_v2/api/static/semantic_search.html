@@ -443,7 +443,31 @@
         .dataset-id {
             font-size: 1.1em;
             font-weight: 700;
+        }
+
+        .dataset-id a {
             color: var(--primary);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dataset-id a:hover {
+            color: #5568d3;
+            text-decoration: underline;
+        }
+
+        .dataset-id a::after {
+            content: '🔗';
+            font-size: 0.8em;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .dataset-id a:hover::after {
+            opacity: 1;
         }
 
         .relevance-badge {
@@ -1328,7 +1352,14 @@
 
             card.innerHTML = `
                 <div class="dataset-header">
-                    <div class="dataset-id">${dataset.geo_id}</div>
+                    <div class="dataset-id">
+                        <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=${dataset.geo_id}"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           title="View ${dataset.geo_id} on NCBI GEO">
+                            ${dataset.geo_id}
+                        </a>
+                    </div>
                     <div class="relevance-badge">
                         <span class="relevance-score">${relevancePercent}%</span>
                         <span class="relevance-label">Relevant</span>
@@ -1715,7 +1746,11 @@
                         <div class="comparison-score">${relevancePercent}%</div>
                     </div>
                     <div class="comparison-card-meta">
-                        <span>📋 ${dataset.geo_id}</span>
+                        <span>📋 <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=${dataset.geo_id}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style="color: inherit; text-decoration: none;"
+                                    title="View ${dataset.geo_id} on NCBI GEO">${dataset.geo_id}</a></span>
                         <span>🧬 ${escapeHtml(dataset.organism || 'N/A')}</span>
                         <span>📊 ${dataset.sample_count || 0} samples</span>
                     </div>
