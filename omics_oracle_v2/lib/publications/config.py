@@ -72,21 +72,28 @@ class GoogleScholarConfig(BaseModel):
     Configuration for Google Scholar scraping (Week 3).
 
     Attributes:
+        enable: Enable Google Scholar search
         max_results: Maximum results per query
+        rate_limit_seconds: Seconds to wait between requests
         use_proxy: Use proxy for requests
-        proxy_list: List of proxy servers
-        user_agent: User agent string
-        delay_between_requests: Delay in seconds
+        proxy_url: Proxy server URL
+        timeout_seconds: Request timeout
+        user_agent: User agent string (currently unused by scholarly)
     """
 
-    max_results: int = Field(50, ge=1, le=100)
-    use_proxy: bool = Field(False)
-    proxy_list: List[str] = Field(default_factory=list)
+    enable: bool = Field(True, description="Enable Google Scholar search")
+    max_results: int = Field(50, ge=1, le=100, description="Max results per query")
+    rate_limit_seconds: float = Field(
+        3.0, ge=0.5, le=10.0, description="Seconds between requests to avoid blocking"
+    )
+    use_proxy: bool = Field(False, description="Use proxy for requests")
+    proxy_url: Optional[str] = Field(None, description="Proxy server URL")
+    timeout_seconds: int = Field(30, ge=5, le=300, description="Request timeout")
     user_agent: str = Field(
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        description="User agent string"
     )
-    delay_between_requests: float = Field(2.0, ge=0.5, le=10.0)
 
     class Config:
         """Pydantic config."""
