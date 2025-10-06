@@ -14,7 +14,7 @@ from datetime import datetime
 
 from sqlalchemy import select
 
-from omics_oracle_v2.database import async_session_maker
+from omics_oracle_v2.database import async_session
 from omics_oracle_v2.models.geo_dataset import GEODataset
 
 SAMPLE_DATASETS = [
@@ -164,7 +164,7 @@ async def create_sample_datasets():
     """Create sample GEO datasets in the database."""
     print("Creating sample GEO datasets...")
 
-    async with async_session_maker() as session:
+    async with async_session() as session:
         # Check if datasets already exist
         result = await session.execute(select(GEODataset).limit(1))
         existing = result.scalar_one_or_none()
@@ -198,7 +198,7 @@ async def clear_sample_datasets():
     """Clear all sample datasets from the database."""
     print("Clearing sample datasets...")
 
-    async with async_session_maker() as session:
+    async with async_session() as session:
         # Delete all datasets
         result = await session.execute(select(GEODataset))
         datasets = result.scalars().all()
