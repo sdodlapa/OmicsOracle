@@ -278,7 +278,7 @@ async def execute_search_agent(
                 relevance_score=ranked.relevance_score,
                 match_reasons=ranked.match_reasons,
             )
-            for ranked in output.ranked_datasets
+            for ranked in output.datasets
         ]
 
         execution_time_ms = (time.time() - start_time) * 1000
