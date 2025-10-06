@@ -50,12 +50,12 @@ def get_query_agent(settings: Settings = Depends(get_settings)) -> QueryAgent:
     return _query_agent
 
 
-def get_search_agent(settings: Settings = Depends(get_settings)) -> SearchAgent:
-    """Get Search Agent instance (singleton)."""
-    global _search_agent
-    if _search_agent is None:
-        _search_agent = SearchAgent(settings=settings)
-    return _search_agent
+def get_search_agent(
+    settings: Settings = Depends(get_settings), enable_semantic: bool = False
+) -> SearchAgent:
+    """Get or create SearchAgent instance with optional semantic search."""
+    # Create new instance with semantic flag (don't cache to allow different modes)
+    return SearchAgent(settings=settings, enable_semantic=enable_semantic)
 
 
 def get_data_agent(settings: Settings = Depends(get_settings)) -> DataAgent:

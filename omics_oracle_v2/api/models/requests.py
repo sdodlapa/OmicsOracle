@@ -43,6 +43,10 @@ class SearchRequest(BaseModel):
         ge=1,
         le=100,
     )
+    enable_semantic: bool = Field(
+        default=False,
+        description="Enable semantic search using AI-powered query expansion and hybrid search",
+    )
 
 
 class DataValidationRequest(BaseModel):

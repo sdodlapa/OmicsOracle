@@ -17,12 +17,7 @@ from omics_oracle_v2.agents.models import QueryInput
 from omics_oracle_v2.agents.models.data import DataInput
 from omics_oracle_v2.agents.models.report import ReportInput
 from omics_oracle_v2.agents.models.search import RankedDataset, SearchInput
-from omics_oracle_v2.api.dependencies import (
-    get_data_agent,
-    get_query_agent,
-    get_report_agent,
-    get_search_agent,
-)
+from omics_oracle_v2.api.dependencies import get_data_agent, get_query_agent, get_report_agent
 from omics_oracle_v2.api.models.requests import (
     DataValidationRequest,
     QueryRequest,
@@ -219,7 +214,6 @@ async def execute_query_agent(
 async def execute_search_agent(
     request: SearchRequest,
     current_user: User = Depends(get_current_user),
-    agent: SearchAgent = Depends(get_search_agent),
 ):
     """
     Execute the Search Agent to find datasets in GEO database.
@@ -227,8 +221,13 @@ async def execute_search_agent(
     This endpoint searches the NCBI GEO database using provided search terms
     and filters, returning ranked results.
 
+    Supports two search modes:
+    - **Keyword Search (default)**: Traditional GEO search with keyword matching
+    - **Semantic Search**: AI-powered search with query expansion, hybrid ranking,
+      and cross-encoder reranking (requires FAISS index)
+
     Args:
-        request: Search request with terms, filters, and result limit
+        request: Search request with terms, filters, result limit, and semantic flag
 
     Returns:
         SearchResponse: Ranked dataset results with relevance scores
@@ -236,6 +235,21 @@ async def execute_search_agent(
     start_time = time.time()
 
     try:
+        # Import here to avoid circular dependency
+        from omics_oracle_v2.api.dependencies import get_settings
+
+        settings = get_settings()
+        agent = SearchAgent(settings=settings, enable_semantic=request.enable_semantic)
+
+        # Log semantic search status
+        if request.enable_semantic:
+            if agent.is_semantic_search_available():
+                logger.info("Using semantic search with query expansion and hybrid ranking")
+            else:
+                logger.warning(
+                    "Semantic search requested but index unavailable, falling back to keyword search"
+                )
+
         # Execute agent
         search_input = SearchInput(
             search_terms=request.search_terms,
