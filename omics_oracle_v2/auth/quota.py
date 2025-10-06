@@ -246,19 +246,7 @@ def get_endpoint_cost(path: str, method: str = "GET") -> int:
         >>> print(cost)
         5  # Batch operations cost 5x normal requests
     """
-    # Expensive endpoints
-    expensive_patterns = {
-        "/api/v1/batch": 5,  # Batch operations are expensive
-        "/api/v1/agents": 2,  # AI agent calls are expensive
-        "/api/v1/workflows": 2,  # Workflow execution is expensive
-    }
-
-    # Check if path matches any expensive pattern
-    for pattern, cost in expensive_patterns.items():
-        if path.startswith(pattern):
-            return cost
-
-    # Free endpoints (don't count against quota)
+    # Free endpoints (don't count against quota) - check FIRST
     free_patterns = [
         "/health",
         "/metrics",
@@ -266,11 +254,30 @@ def get_endpoint_cost(path: str, method: str = "GET") -> int:
         "/openapi.json",
         "/api/v2/auth/login",  # Login shouldn't count
         "/api/v2/auth/register",  # Registration shouldn't count
+        "/api/auth/login",  # Version-less login
+        "/api/auth/register",  # Version-less registration
+        "/api/agents/search",  # Search endpoint free for demo/testing
+        "/api/v1/agents/search",  # Legacy search endpoint
     ]
 
     for pattern in free_patterns:
         if path.startswith(pattern):
             return 0
+
+    # Expensive endpoints (checked AFTER free endpoints)
+    expensive_patterns = {
+        "/api/v1/batch": 5,  # Batch operations are expensive
+        "/api/batch": 5,  # Version-less batch operations
+        "/api/v1/agents": 2,  # AI agent calls are expensive
+        "/api/agents": 2,  # Version-less agent calls
+        "/api/v1/workflows": 2,  # Workflow execution is expensive
+        "/api/workflows": 2,  # Version-less workflows
+    }
+
+    # Check if path matches any expensive pattern
+    for pattern, cost in expensive_patterns.items():
+        if path.startswith(pattern):
+            return cost
 
     # Default cost
     return 1

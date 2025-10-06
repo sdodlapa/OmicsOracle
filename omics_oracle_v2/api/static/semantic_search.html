@@ -1753,6 +1753,10 @@
 
                 const data = await response.json();
 
+                // Debug logging
+                console.log('Search response:', data);
+                console.log('Datasets found:', data.datasets ? data.datasets.length : 'none');
+
                 if (!data.success) {
                     throw new Error(data.error || 'Search failed');
                 }
@@ -1761,6 +1765,7 @@
                 displayResults(data, duration, query);
 
             } catch (error) {
+                console.error('Search error:', error);
                 showError(error.message || 'An error occurred during search');
             } finally {
                 loadingOverlay.classList.remove('active');
@@ -1770,6 +1775,12 @@
 
         // Display results
         function displayResults(data, duration, query) {
+            console.log('displayResults called with:', {
+                totalFound: data.total_found,
+                datasetsCount: data.datasets?.length,
+                query: query
+            });
+
             // Store results for visualization and export
             currentResults = data;
 
@@ -1805,7 +1816,10 @@
             // Clear and populate results
             resultsGrid.innerHTML = '';
 
+            console.log('Checking datasets:', data.datasets, 'Length:', data.datasets?.length);
+
             if (!data.datasets || data.datasets.length === 0) {
+                console.log('No datasets found, showing empty state');
                 resultsGrid.innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">📭</div>
@@ -1817,6 +1831,7 @@
                     </div>
                 `;
             } else {
+                console.log('Rendering', data.datasets.length, 'dataset cards');
                 data.datasets.forEach(dataset => {
                     const card = createDatasetCard(dataset);
                     resultsGrid.appendChild(card);
@@ -1824,6 +1839,7 @@
             }
 
             // Show results section
+            console.log('Making results section active');
             resultsSection.classList.add('active');
         }
 
