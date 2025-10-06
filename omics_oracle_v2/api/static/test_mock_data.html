@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Data Testing - Visualization Features</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+        .container {
+            background: white;
+            color: #374151;
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #667eea;
+            margin-top: 0;
+            font-size: 2.5em;
+        }
+        h2 {
+            color: #764ba2;
+            margin-top: 30px;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        .step {
+            background: #f9fafb;
+            padding: 20px;
+            border-left: 4px solid #667eea;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .code-block {
+            background: #1f2937;
+            color: #10b981;
+            padding: 20px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+            position: relative;
+        }
+        .copy-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .copy-btn:hover {
+            background: #5568d3;
+        }
+        .test-checklist {
+            background: #f0fdf4;
+            border: 2px solid #10b981;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .test-item {
+            padding: 10px;
+            margin: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        .test-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+        }
+        .btn-primary {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 14px 28px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            margin: 10px 10px 10px 0;
+            transition: all 0.3s;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .success {
+            background: #d1fae5;
+            border-left: 4px solid #10b981;
+            color: #065f46;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        .warning {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            color: #92400e;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Mock Data Testing Guide</h1>
+        <p><strong>Goal:</strong> Test all visualization features with realistic mock data (5 minutes)</p>
+
+        <div class="success">
+            ✅ <strong>Server Running:</strong> http://localhost:8000<br>
+            ✅ <strong>Task 2 Complete:</strong> All visualization features implemented<br>
+            ✅ <strong>Ready to Test:</strong> Charts, export, and comparison view
+        </div>
+
+        <h2>Step-by-Step Instructions</h2>
+
+        <div class="step">
+            <span class="step-number">1</span>
+            <strong>Open the Semantic Search UI</strong>
+            <p style="margin: 10px 0 10px 40px;">
+                Click the button below to open the search interface in a new tab:
+            </p>
+            <div style="margin-left: 40px;">
+                <a href="http://localhost:8000/search" target="_blank" class="btn-primary">
+                    🚀 Open Search UI
+                </a>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">2</span>
+            <strong>Open Browser Console</strong>
+            <p style="margin: 10px 0 10px 40px;">
+                Press <code>F12</code> or <code>Cmd+Option+J</code> (Mac) / <code>Ctrl+Shift+J</code> (Windows)
+            </p>
+        </div>
+
+        <div class="step">
+            <span class="step-number">3</span>
+            <strong>Paste Mock Data Code</strong>
+            <p style="margin: 10px 0 10px 40px;">
+                Copy the code below and paste it into the console, then press Enter:
+            </p>
+            <div class="code-block">
+                <button class="copy-btn" onclick="copyCode()">📋 Copy Code</button>
+                <pre id="mockCode">// Mock search results with realistic GEO datasets
+const mockData = {
+    success: true,
+    total_found: 10,
+    datasets: [
+        {
+            geo_id: "GSE12345",
+            title: "Comprehensive Molecular Portraits of Human Breast Tumors",
+            organism: "Homo sapiens",
+            sample_count: 825,
+            platform: "GPL570",
+            relevance_score: 0.95,
+            summary: "TCGA comprehensive characterization of 825 breast tumors using DNA, RNA, and protein analysis platforms. This integrated genomic analysis revealed four main breast cancer classes.",
+            match_reasons: ["High similarity to query", "Contains 'breast cancer'", "Large sample size", "Multi-omics study"]
+        },
+        {
+            geo_id: "GSE67890",
+            title: "Gene Expression Profiling of Breast Cancer Molecular Subtypes",
+            organism: "Homo sapiens",
+            sample_count: 150,
+            platform: "GPL570",
+            relevance_score: 0.88,
+            summary: "Microarray analysis of 150 breast cancer samples classified into molecular subtypes (Luminal A, Luminal B, HER2-enriched, and Basal-like).",
+            match_reasons: ["Subtype classification", "Contains 'breast cancer'", "Expression profiling"]
+        },
+        {
+            geo_id: "GSE11111",
+            title: "RNA-seq Analysis of Tumor-Infiltrating Lymphocytes in Breast Cancer",
+            organism: "Homo sapiens",
+            sample_count: 200,
+            platform: "GPL24676",
+            relevance_score: 0.85,
+            summary: "High-throughput RNA sequencing of tumor-infiltrating lymphocytes (TILs) from 200 breast cancer patients to characterize immune landscape.",
+            match_reasons: ["Immune response study", "Cancer genomics", "RNA-seq technology"]
+        },
+        {
+            geo_id: "GSE22222",
+            title: "Single-Cell RNA-seq of Breast Cancer Metastases",
+            organism: "Homo sapiens",
+            sample_count: 75,
+            platform: "GPL24676",
+            relevance_score: 0.78,
+            summary: "Single-cell transcriptomic profiling of metastatic breast cancer cells from brain, bone, liver, and lung metastases. Over 50,000 cells analyzed.",
+            match_reasons: ["Metastasis study", "Single-cell resolution", "Multi-organ analysis"]
+        },
+        {
+            geo_id: "GSE33333",
+            title: "Epigenomic Landscape of Breast Cancer Progression",
+            organism: "Homo sapiens",
+            sample_count: 120,
+            platform: "GPL20795",
+            relevance_score: 0.72,
+            summary: "Genome-wide DNA methylation profiling of breast cancer progression from DCIS to invasive ductal carcinoma. ChIP-seq and ATAC-seq data included.",
+            match_reasons: ["Epigenetic study", "Progression analysis", "Multi-platform data"]
+        },
+        {
+            geo_id: "GSE44444",
+            title: "Oncogene Expression Patterns in Early-Stage Breast Cancer",
+            organism: "Homo sapiens",
+            sample_count: 95,
+            platform: "GPL96",
+            relevance_score: 0.68,
+            summary: "Analysis of oncogene expression in early-stage breast cancer patients with long-term follow-up data.",
+            match_reasons: ["Oncogene focus", "Early-stage cancer"]
+        },
+        {
+            geo_id: "GSE55555",
+            title: "Breast Tumor Microenvironment Transcriptomics",
+            organism: "Homo sapiens",
+            sample_count: 180,
+            platform: "GPL16791",
+            relevance_score: 0.65,
+            summary: "RNA-seq analysis of breast tumor microenvironment including cancer-associated fibroblasts, immune cells, and endothelial cells.",
+            match_reasons: ["Microenvironment study", "Multi-cell type analysis"]
+        },
+        {
+            geo_id: "GSE66666",
+            title: "Chemotherapy Response in Triple-Negative Breast Cancer",
+            organism: "Homo sapiens",
+            sample_count: 110,
+            platform: "GPL20301",
+            relevance_score: 0.58,
+            summary: "Gene expression changes in triple-negative breast cancer patients before and after neoadjuvant chemotherapy.",
+            match_reasons: ["Treatment response", "TNBC subtype"]
+        },
+        {
+            geo_id: "GSE77777",
+            title: "Long Non-coding RNAs in Breast Cancer Development",
+            organism: "Homo sapiens",
+            sample_count: 85,
+            platform: "GPL16791",
+            relevance_score: 0.52,
+            summary: "Comprehensive profiling of lncRNAs and their regulatory roles in breast cancer initiation and progression.",
+            match_reasons: ["lncRNA focus", "Regulatory mechanisms"]
+        },
+        {
+            geo_id: "GSE88888",
+            title: "Circulating Tumor Cells Genomic Profiling in Metastatic Breast Cancer",
+            organism: "Homo sapiens",
+            sample_count: 60,
+            platform: "GPL18573",
+            relevance_score: 0.45,
+            summary: "Single-cell genomic analysis of circulating tumor cells from metastatic breast cancer patients.",
+            match_reasons: ["CTC analysis", "Liquid biopsy"]
+        }
+    ],
+    filters_applied: {
+        search_mode: "keyword",
+        semantic_expanded_query: null,
+        organism: null,
+        min_samples: null
+    },
+    cache_hit: false,
+    search_time_ms: 250
+};
+
+// Display the mock results
+console.log("🎯 Injecting mock search results...");
+displayResults(mockData, 250);
+console.log("✅ Mock data loaded successfully!");
+console.log("\n📊 Now you can test:");
+console.log("  1. Click '📈 Show Charts' to see visualizations");
+console.log("  2. Click '⬇️ Export' to download data");
+console.log("  3. Click '📊 Compare Modes' to see side-by-side comparison");
+</pre>
+            </div>
+        </div>
+
+        <div class="step">
+            <span class="step-number">4</span>
+            <strong>Verify Mock Data Loaded</strong>
+            <p style="margin: 10px 0 10px 40px;">
+                You should see:
+            </p>
+            <ul style="margin-left: 40px;">
+                <li>10 dataset cards displayed</li>
+                <li>"Results Found: 10" in the header</li>
+                <li>Relevance scores (95%, 88%, 85%, etc.)</li>
+                <li>GEO IDs, titles, and summaries</li>
+            </ul>
+        </div>
+
+        <h2>Testing Checklist</h2>
+
+        <div class="test-checklist">
+            <h3 style="margin-top: 0;">Test All Features (Check off as you go):</h3>
+
+            <div class="test-item">
+                <input type="checkbox" id="test1">
+                <label for="test1"><strong>📈 Visualization Panel:</strong> Click "Show Charts" button</label>
+            </div>
+            <ul style="margin-left: 40px; color: #6b7280;">
+                <li>Score distribution chart appears (bar chart with 5 bins)</li>
+                <li>Top matches chart appears (horizontal bars)</li>
+                <li>Quality metrics display (Avg: 72.6%, High: 5, Med: 4, Low: 1)</li>
+                <li>Charts are responsive and animated</li>
+                <li>Close button (✕) works</li>
+            </ul>
+
+            <div class="test-item">
+                <input type="checkbox" id="test2">
+                <label for="test2"><strong>⬇️ Export Functionality:</strong> Click "Export" button</label>
+            </div>
+            <ul style="margin-left: 40px; color: #6b7280;">
+                <li>Export menu appears with 3 buttons</li>
+                <li>Click "Export as JSON" → file downloads</li>
+                <li>Open JSON file → valid structure with all fields</li>
+                <li>Click "Export as CSV" → file downloads</li>
+                <li>Open CSV in Excel/Numbers → properly formatted table</li>
+            </ul>
+
+            <div class="test-item">
+                <input type="checkbox" id="test3">
+                <label for="test3"><strong>📊 Comparison View:</strong> Click "Compare Modes" button</label>
+            </div>
+            <ul style="margin-left: 40px; color: #6b7280;">
+                <li>Comparison panel opens</li>
+                <li>Left column: "Keyword Search" (loading...)</li>
+                <li>Right column: "Semantic Search" (loading...)</li>
+                <li>Both columns populate with results</li>
+                <li>Compact cards show GEO ID, organism, samples, score</li>
+                <li>Close button (✕) works</li>
+            </ul>
+
+            <div class="test-item">
+                <input type="checkbox" id="test4">
+                <label for="test4"><strong>📱 Responsive Design:</strong> Resize browser window</label>
+            </div>
+            <ul style="margin-left: 40px; color: #6b7280;">
+                <li>Charts stack vertically on mobile</li>
+                <li>Comparison columns stack on tablet</li>
+                <li>Action buttons wrap properly</li>
+                <li>No horizontal scroll</li>
+            </ul>
+
+            <div class="test-item">
+                <input type="checkbox" id="test5">
+                <label for="test5"><strong>🎨 UI Polish:</strong> Visual quality check</label>
+            </div>
+            <ul style="margin-left: 40px; color: #6b7280;">
+                <li>Colors match theme (purple/blue gradient)</li>
+                <li>Animations are smooth</li>
+                <li>Hover states work on buttons</li>
+                <li>No console errors</li>
+                <li>Loading states are clear</li>
+            </ul>
+        </div>
+
+        <h2>Expected Results</h2>
+
+        <div class="step">
+            <strong>Score Distribution Chart:</strong>
+            <p style="margin: 10px 0 10px 20px; color: #6b7280;">
+                Should show 5 bins with heights: 0-20% (1 dataset), 20-40% (0), 40-60% (4), 60-80% (5), 80-100% (5)
+            </p>
+        </div>
+
+        <div class="step">
+            <strong>Quality Metrics:</strong>
+            <p style="margin: 10px 0 10px 20px; color: #6b7280;">
+                Avg Relevance: ~72.6% | High Quality: 5 | Med Quality: 4 | Low Quality: 1
+            </p>
+        </div>
+
+        <div class="step">
+            <strong>Export Files:</strong>
+            <p style="margin: 10px 0 10px 20px; color: #6b7280;">
+                JSON: ~8KB with full nested structure<br>
+                CSV: ~2KB with 11 rows (header + 10 datasets)
+            </p>
+        </div>
+
+        <h2>Success Criteria</h2>
+
+        <div class="success">
+            <strong>✅ All Tests Pass If:</strong>
+            <ul style="margin: 10px 0 0 20px;">
+                <li>All 5 checklist items completed</li>
+                <li>No JavaScript errors in console</li>
+                <li>Charts render correctly</li>
+                <li>Export downloads work</li>
+                <li>Comparison view loads both modes</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Common Issues:</strong>
+            <ul style="margin: 10px 0 0 20px;">
+                <li><strong>Charts don't appear:</strong> Check browser console for errors. Try hard refresh (Cmd+Shift+R)</li>
+                <li><strong>Export doesn't download:</strong> Check browser pop-up blocker settings</li>
+                <li><strong>Comparison shows errors:</strong> This is expected - real API calls will fail without auth, but UI should handle gracefully</li>
+            </ul>
+        </div>
+
+        <h2>Next Steps</h2>
+
+        <div style="margin: 30px 0;">
+            <strong>After Testing:</strong>
+            <ol>
+                <li><strong>Document any issues</strong> you found</li>
+                <li><strong>Take screenshots</strong> of charts and exports (optional)</li>
+                <li><strong>Decide:</strong>
+                    <ul style="margin: 10px 0;">
+                        <li>Continue to Task 3: Query Enhancement UI (75% progress)</li>
+                        <li>Polish Task 2 if issues found</li>
+                        <li>Build FAISS index for full semantic search testing</li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div style="text-align: center; margin-top: 40px; padding-top: 30px; border-top: 2px solid #e5e7eb;">
+            <a href="http://localhost:8000/search" target="_blank" class="btn-primary">
+                🚀 Start Testing Now
+            </a>
+            <a href="http://localhost:8000/static/dashboard.html" target="_blank" class="btn-primary" style="background: #764ba2;">
+                📊 View Dashboard
+            </a>
+        </div>
+
+        <p style="text-align: center; color: #9ca3af; margin-top: 20px;">
+            <strong>Time Required:</strong> ~5 minutes | <strong>Complexity:</strong> Easy | <strong>Impact:</strong> High
+        </p>
+    </div>
+
+    <script>
+        function copyCode() {
+            const code = document.getElementById('mockCode').textContent;
+            navigator.clipboard.writeText(code).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                }, 2000);
+            });
+        }
+
+        // Auto-check server status
+        fetch('http://localhost:8000/api/health')
+            .then(response => {
+                if (response.ok) {
+                    document.body.insertAdjacentHTML('afterbegin',
+                        '<div style="position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; font-weight: 600;">' +
+                        '✅ Server Online' +
+                        '</div>'
+                    );
+                }
+            })
+            .catch(() => {
+                document.body.insertAdjacentHTML('afterbegin',
+                    '<div style="position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 15px 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.2); z-index: 1000; font-weight: 600;">' +
+                    '⚠️ Server Offline - Start with ./start_dev_server.sh' +
+                    '</div>'
+                );
+            });
+    </script>
+</body>
+</html>
