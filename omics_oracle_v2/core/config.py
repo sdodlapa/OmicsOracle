@@ -37,10 +37,12 @@ from typing import Optional
 
 try:
     from pydantic import BaseModel, Field
-    from pydantic_settings import BaseSettings
+    from pydantic_settings import BaseSettings, SettingsConfigDict
 except ImportError:
     # Fallback for older pydantic versions
     from pydantic import BaseModel, BaseSettings, Field  # type: ignore
+
+    SettingsConfigDict = None  # type: ignore
 
 
 class NLPSettings(BaseSettings):
@@ -58,6 +60,14 @@ class NLPSettings(BaseSettings):
 class GEOSettings(BaseSettings):
     """Configuration for GEO data access."""
 
+    model_config = SettingsConfigDict(
+        env_prefix="OMICS_GEO_",
+        case_sensitive=False,
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
     ncbi_email: Optional[str] = Field(default=None, description="Email for NCBI API (required)")
     ncbi_api_key: Optional[str] = Field(
         default=None, description="Optional NCBI API key for higher rate limits"
@@ -71,10 +81,6 @@ class GEOSettings(BaseSettings):
     max_retries: int = Field(default=3, ge=0, le=10, description="Maximum retry attempts for API calls")
     timeout: int = Field(default=30, ge=1, le=300, description="Request timeout in seconds")
     verify_ssl: bool = Field(default=True, description="Verify SSL certificates for API calls")
-
-    class Config:
-        env_prefix = "OMICS_GEO_"
-        case_sensitive = False
 
 
 class AISettings(BaseSettings):
