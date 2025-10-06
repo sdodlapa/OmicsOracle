@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualization Features Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        .test-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #374151;
+            margin-top: 0;
+            font-size: 1.3em;
+        }
+        .test-item {
+            padding: 12px;
+            border-left: 4px solid #667eea;
+            background: #f3f4f6;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success {
+            border-left-color: #10b981;
+        }
+        .pending {
+            border-left-color: #f59e0b;
+        }
+        .status {
+            font-weight: 600;
+            margin-right: 10px;
+        }
+        .test-link {
+            display: inline-block;
+            margin-top: 15px;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+        .test-link:hover {
+            background: #5568d3;
+        }
+        .code-block {
+            background: #1f2937;
+            color: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Visualization Features Test Suite</h1>
+
+    <div class="test-card">
+        <h2>✅ Task 2: Result Visualization - COMPLETE</h2>
+        <p><strong>Commit:</strong> 41f5aac</p>
+        <p><strong>Files Modified:</strong> semantic_search.html (+688 lines)</p>
+        <p><strong>Documentation:</strong> TASK2_RESULT_VISUALIZATION_COMPLETE.md (500+ lines)</p>
+    </div>
+
+    <div class="test-card">
+        <h2>📊 Features Implemented</h2>
+
+        <div class="test-item success">
+            <span class="status">✅</span>
+            <strong>Chart.js Integration</strong> - CDN loaded, v4.4.0
+        </div>
+
+        <div class="test-item success">
+            <span class="status">✅</span>
+            <strong>Score Distribution Chart</strong> - Bar chart with 5 bins, color-coded
+        </div>
+
+        <div class="test-item success">
+            <span class="status">✅</span>
+            <strong>Top Matches Chart</strong> - Horizontal bar chart, top 5 results
+        </div>
+
+        <div class="test-item success">
+            <span class="status">✅</span>
+            <strong>Quality Metrics</strong> - Avg relevance, high/med/low counts
+        </div>
+
+        <div class="test-item success">
+            <span class="status">✅</span>
+            <strong>Comparison View</strong> - Side-by-side keyword vs semantic
+        </div>
+
+        <div class="test-item success">
+            <span class="status">✅</span>
+            <strong>JSON Export</strong> - Full metadata download
+        </div>
+
+        <div class="test-item success">
+            <span class="status">✅</span>
+            <strong>CSV Export</strong> - Spreadsheet-ready format
+        </div>
+
+        <div class="test-item success">
+            <span class="status">✅</span>
+            <strong>Responsive Design</strong> - Mobile, tablet, desktop
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🧪 Manual Testing Steps</h2>
+
+        <h3>Test 1: Visualization Panel</h3>
+        <ol>
+            <li>Navigate to <code>/search</code></li>
+            <li>Enter query: "breast cancer RNA-seq"</li>
+            <li>Click Search button</li>
+            <li>Click "📈 Show Charts" button</li>
+            <li>Verify:
+                <ul>
+                    <li>Visualization panel appears</li>
+                    <li>Score distribution chart renders</li>
+                    <li>Top matches chart renders</li>
+                    <li>Quality metrics display</li>
+                </ul>
+            </li>
+            <li>Click ✕ to close panel</li>
+        </ol>
+
+        <h3>Test 2: Comparison View</h3>
+        <ol>
+            <li>Enter query: "immune response viral infection"</li>
+            <li>Click "📊 Compare Modes" button</li>
+            <li>Wait for both searches to complete</li>
+            <li>Verify:
+                <ul>
+                    <li>Comparison panel appears</li>
+                    <li>Left column shows keyword results</li>
+                    <li>Right column shows semantic results</li>
+                    <li>Results have GEO IDs, scores, metadata</li>
+                </ul>
+            </li>
+            <li>Click ✕ to close panel</li>
+        </ol>
+
+        <h3>Test 3: Export Functionality</h3>
+        <ol>
+            <li>Perform any search with results</li>
+            <li>Click "⬇️ Export" button</li>
+            <li>Verify export menu appears</li>
+            <li>Click "📄 Export as JSON"</li>
+            <li>Verify file downloads with timestamp</li>
+            <li>Open file, verify valid JSON</li>
+            <li>Repeat with "📊 Export as CSV"</li>
+            <li>Open CSV in Excel/Numbers</li>
+        </ol>
+    </div>
+
+    <div class="test-card">
+        <h2>🎯 Expected Results</h2>
+
+        <h3>Visualization Panel</h3>
+        <div class="code-block">
+┌──────────────────────────────────────────┐
+│ 📊 Result Analytics           [✕]       │
+├──────────────────────────────────────────┤
+│                                          │
+│  [Score Distribution]  [Top Matches]    │
+│                                          │
+│  Avg: 78.5%  High: 12  Med: 5  Low: 3  │
+└──────────────────────────────────────────┘
+        </div>
+
+        <h3>Comparison Panel</h3>
+        <div class="code-block">
+┌──────────────────────────────────────────┐
+│ 🔄 Mode Comparison            [✕]       │
+├──────────────────────────────────────────┤
+│  🔤 Keyword        🧠 Semantic           │
+│  Result 1 [85%]   Result 1 [92%]        │
+│  Result 2 [72%]   Result 2 [88%]        │
+│  ...              ...                    │
+└──────────────────────────────────────────┘
+        </div>
+    </div>
+
+    <div class="test-card">
+        <h2>🔗 Quick Links</h2>
+        <a href="http://localhost:8000/search" class="test-link">🚀 Open Semantic Search UI</a>
+        <br>
+        <a href="http://localhost:8000/static/dashboard.html" class="test-link">📊 Dashboard</a>
+    </div>
+
+    <div class="test-card">
+        <h2>📈 Progress Summary</h2>
+        <p><strong>Path A: User-Facing Features</strong></p>
+        <div class="test-item success">
+            <span class="status">✅</span>
+            Task 1: Enhanced Search Interface (100%)
+        </div>
+        <div class="test-item success">
+            <span class="status">✅</span>
+            Task 2: Result Visualization (100%)
+        </div>
+        <div class="test-item pending">
+            <span class="status">⏳</span>
+            Task 3: Query Enhancement UI (0%)
+        </div>
+        <div class="test-item pending">
+            <span class="status">⏳</span>
+            Task 4: User Testing & Polish (0%)
+        </div>
+
+        <p><strong>Overall Progress:</strong> 50% (2/4 tasks complete)</p>
+        <p><strong>Time Invested:</strong> ~3.5 hours</p>
+        <p><strong>Remaining:</strong> ~3-4 hours estimated</p>
+    </div>
+
+    <div class="test-card">
+        <h2>📝 Next Steps</h2>
+        <ol>
+            <li><strong>Test Current Features</strong>
+                <ul>
+                    <li>Run through manual test cases above</li>
+                    <li>Verify charts render correctly</li>
+                    <li>Test export downloads</li>
+                    <li>Check mobile responsiveness</li>
+                </ul>
+            </li>
+            <li><strong>Start Task 3: Query Enhancement UI</strong>
+                <ul>
+                    <li>Query suggestions/autocomplete</li>
+                    <li>Real-time expanded terms preview</li>
+                    <li>Accept/reject term controls</li>
+                    <li>Search history</li>
+                    <li>Example query templates</li>
+                </ul>
+            </li>
+        </ol>
+    </div>
+
+    <script>
+        // Auto-check if server is running
+        fetch('http://localhost:8000/api/health')
+            .then(response => {
+                if (response.ok) {
+                    document.body.insertAdjacentHTML('afterbegin',
+                        '<div style="background: #10b981; color: white; padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 20px; font-weight: 600;">' +
+                        '✅ Server is running! You can test the features now.' +
+                        '</div>'
+                    );
+                }
+            })
+            .catch(() => {
+                document.body.insertAdjacentHTML('afterbegin',
+                    '<div style="background: #f59e0b; color: white; padding: 15px; text-align: center; border-radius: 8px; margin-bottom: 20px; font-weight: 600;">' +
+                    '⚠️ Server not detected. Start with: ./start_dev_server.sh' +
+                    '</div>'
+                );
+            });
+    </script>
+</body>
+</html>
