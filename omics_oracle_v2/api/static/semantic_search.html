@@ -1758,7 +1758,7 @@
                 }
 
                 // Display results
-                displayResults(data, duration);
+                displayResults(data, duration, query);
 
             } catch (error) {
                 showError(error.message || 'An error occurred during search');
@@ -1769,7 +1769,7 @@
         }
 
         // Display results
-        function displayResults(data, duration) {
+        function displayResults(data, duration, query) {
             // Store results for visualization and export
             currentResults = data;
 
