@@ -515,3 +515,158 @@ async def execute_report_agent(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Report generation error: {str(e)}",
         )
+
+
+# AI Analysis Endpoint
+
+
+class AIAnalysisRequest(BaseModel):
+    """Request for AI analysis of datasets."""
+
+    datasets: List[DatasetResponse] = Field(..., description="Datasets to analyze")
+    query: str = Field(..., description="Original search query for context")
+    max_datasets: int = Field(default=5, ge=1, le=10, description="Max datasets to analyze")
+
+
+class AIAnalysisResponse(BaseModel):
+    """Response from AI analysis."""
+
+    success: bool = Field(..., description="Whether analysis succeeded")
+    execution_time_ms: float = Field(..., description="Execution time in milliseconds")
+    timestamp: datetime = Field(..., description="Response timestamp")
+    query: str = Field(..., description="Original query")
+    analysis: str = Field(..., description="AI-generated analysis")
+    insights: List[str] = Field(default_factory=list, description="Key insights")
+    recommendations: List[str] = Field(default_factory=list, description="Recommendations")
+    model_used: str = Field(default="", description="LLM model used")
+
+
+@router.post("/analyze", response_model=AIAnalysisResponse, summary="AI Analysis of Datasets")
+async def analyze_datasets(
+    request: AIAnalysisRequest,
+):
+    """
+    Use AI to analyze and provide insights on search results.
+
+    This endpoint uses GPT-4 or other LLMs to:
+    - Explain which datasets are most relevant
+    - Compare datasets and their methodologies
+    - Provide scientific context and insights
+    - Recommend which datasets to use for specific research goals
+
+    **Note:** Requires OpenAI API key to be configured (OMICS_AI_OPENAI_API_KEY)
+
+    Args:
+        request: Analysis request with datasets and query context
+
+    Returns:
+        AIAnalysisResponse: AI-generated analysis and insights
+    """
+    start_time = time.time()
+
+    try:
+        # Import here to avoid circular dependency
+        from omics_oracle_v2.api.dependencies import get_settings
+        from omics_oracle_v2.lib.ai.client import SummarizationClient
+
+        settings = get_settings()
+
+        # Check if OpenAI is configured
+        if not settings.ai.openai_api_key:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="AI analysis unavailable: OpenAI API key not configured. "
+                "Set OMICS_AI_OPENAI_API_KEY environment variable.",
+            )
+
+        # Initialize AI client
+        ai_client = SummarizationClient(settings=settings)
+
+        # Limit datasets
+        datasets_to_analyze = request.datasets[: request.max_datasets]
+
+        # Build comprehensive analysis prompt
+        dataset_summaries = []
+        for i, ds in enumerate(datasets_to_analyze, 1):
+            dataset_summaries.append(
+                f"{i}. **{ds.geo_id}** (Relevance: {int(ds.relevance_score * 100)}%)\n"
+                f"   Title: {ds.title}\n"
+                f"   Organism: {ds.organism or 'N/A'}, Samples: {ds.sample_count or 0}\n"
+                f"   Summary: {ds.summary[:300]}..."
+            )
+
+        analysis_prompt = f"""
+User searched for: "{request.query}"
+
+Found {len(datasets_to_analyze)} relevant datasets:
+
+{chr(10).join(dataset_summaries)}
+
+Analyze these datasets and provide:
+
+1. **Overview**: Which datasets are most relevant to the user's query and why?
+2. **Comparison**: How do these datasets differ in methodology and scope?
+3. **Key Insights**: What are the main scientific findings or approaches?
+4. **Recommendations**: Which dataset(s) would you recommend for:
+   - Basic understanding of the topic
+   - Advanced analysis
+   - Method development
+
+Write for a researcher who wants expert guidance on which datasets to use.
+Be specific and cite dataset IDs (GSE numbers).
+"""
+
+        # Call LLM
+        system_message = (
+            "You are an expert bioinformatics advisor helping researchers understand "
+            "and select genomics datasets. Provide clear, actionable insights."
+        )
+
+        analysis = ai_client._call_llm(prompt=analysis_prompt, system_message=system_message, max_tokens=800)
+
+        if not analysis:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="AI analysis failed to generate response",
+            )
+
+        # Extract insights and recommendations (basic parsing)
+        insights = []
+        recommendations = []
+
+        # Simple parsing - look for numbered or bulleted lists
+        lines = analysis.split("\n")
+        current_section = None
+        for line in lines:
+            line_lower = line.lower().strip()
+            if "insight" in line_lower or "finding" in line_lower:
+                current_section = "insights"
+            elif "recommend" in line_lower:
+                current_section = "recommendations"
+            elif line.strip() and (line.strip()[0].isdigit() or line.strip().startswith("-")):
+                if current_section == "insights":
+                    insights.append(line.strip().lstrip("0123456789.-) "))
+                elif current_section == "recommendations":
+                    recommendations.append(line.strip().lstrip("0123456789.-) "))
+
+        execution_time_ms = (time.time() - start_time) * 1000
+
+        return AIAnalysisResponse(
+            success=True,
+            execution_time_ms=execution_time_ms,
+            timestamp=datetime.now(timezone.utc),
+            query=request.query,
+            analysis=analysis,
+            insights=insights[:5] if insights else [],
+            recommendations=recommendations[:5] if recommendations else [],
+            model_used=settings.ai.model,
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"AI analysis failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"AI analysis error: {str(e)}",
+        )

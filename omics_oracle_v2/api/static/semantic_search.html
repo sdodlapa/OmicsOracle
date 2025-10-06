@@ -968,6 +968,128 @@
             font-weight: 700;
         }
 
+        /* AI Analysis Panel */
+        .ai-analysis-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+            color: white;
+        }
+
+        .ai-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .ai-header h3 {
+            color: white;
+            font-size: 1.4em;
+            margin: 0;
+        }
+
+        .ai-header .close-btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .ai-header .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .ai-content {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .ai-loading {
+            text-align: center;
+            padding: 40px;
+        }
+
+        .ai-loading .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .ai-loading p {
+            color: white;
+            font-size: 1.1em;
+        }
+
+        .ai-results {
+            color: white;
+        }
+
+        .ai-section {
+            margin-bottom: 25px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .ai-section:last-child {
+            border-bottom: none;
+        }
+
+        .ai-section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-section-content {
+            line-height: 1.8;
+            font-size: 1em;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+        }
+
+        .ai-insight-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .ai-insight-list li {
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            border-left: 3px solid rgba(255, 255, 255, 0.5);
+        }
+
+        .ai-analyze-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+        }
+
+        .ai-analyze-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
         /* Comparison Panel */
         .comparison-panel {
             background: white;
@@ -1262,6 +1384,9 @@
                     </div>
                 </div>
                 <div class="results-actions">
+                    <button class="action-btn ai-analyze-btn" id="aiAnalyzeBtn">
+                        <span>🤖</span> Analyze with AI
+                    </button>
                     <button class="action-btn" id="toggleComparisonBtn" style="display: none;">
                         <span>📊</span> Compare Modes
                     </button>
@@ -1271,6 +1396,23 @@
                     <button class="action-btn" id="exportBtn">
                         <span>⬇️</span> Export
                     </button>
+                </div>
+            </div>
+
+            <!-- AI Analysis Panel -->
+            <div class="ai-analysis-panel" id="aiAnalysisPanel" style="display: none;">
+                <div class="ai-header">
+                    <h3>🤖 AI Analysis</h3>
+                    <button class="close-btn" id="closeAiBtn">✕</button>
+                </div>
+                <div class="ai-content">
+                    <div class="ai-loading" id="aiLoading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>AI is analyzing your results...</p>
+                    </div>
+                    <div class="ai-results" id="aiResults">
+                        <!-- AI analysis will be displayed here -->
+                    </div>
                 </div>
             </div>
 
@@ -1414,6 +1556,13 @@
         const comparisonPanel = document.getElementById('comparisonPanel');
         const toggleComparisonBtn = document.getElementById('toggleComparisonBtn');
         const closeComparisonBtn = document.getElementById('closeComparisonBtn');
+
+        // AI Analysis elements
+        const aiAnalysisPanel = document.getElementById('aiAnalysisPanel');
+        const aiAnalyzeBtn = document.getElementById('aiAnalyzeBtn');
+        const closeAiBtn = document.getElementById('closeAiBtn');
+        const aiLoading = document.getElementById('aiLoading');
+        const aiResults = document.getElementById('aiResults');
 
         // Task 3: Query Enhancement elements
         const querySuggestions = document.getElementById('querySuggestions');
@@ -2260,6 +2409,117 @@
             });
         }
 
+        // ========== AI ANALYSIS FUNCTIONS ==========
+
+        // Analyze results with AI
+        async function analyzeWithAI() {
+            if (!currentResults || !currentResults.datasets || currentResults.datasets.length === 0) {
+                showError('No results to analyze');
+                return;
+            }
+
+            // Show panel and loading
+            aiAnalysisPanel.style.display = 'block';
+            aiLoading.style.display = 'block';
+            aiResults.innerHTML = '';
+
+            // Scroll to panel
+            aiAnalysisPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            try {
+                const query = searchInput.value.trim();
+
+                const response = await fetch('/api/agents/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                    },
+                    body: JSON.stringify({
+                        datasets: currentResults.datasets,
+                        query: query,
+                        max_datasets: 5
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({ detail: response.statusText }));
+                    throw new Error(errorData.detail || 'AI analysis failed');
+                }
+
+                const data = await response.json();
+
+                // Hide loading
+                aiLoading.style.display = 'none';
+
+                // Display analysis
+                displayAIAnalysis(data);
+
+            } catch (error) {
+                console.error('AI analysis error:', error);
+                aiLoading.style.display = 'none';
+                aiResults.innerHTML = `
+                    <div style="padding: 20px; text-align: center;">
+                        <p style="font-size: 1.2em; margin-bottom: 10px;">${error.message}</p>
+                        <p style="font-size: 0.9em; opacity: 0.8;">
+                            ${error.message.includes('API key') ?
+                                'AI analysis requires an OpenAI API key. Please set OMICS_AI_OPENAI_API_KEY environment variable.' :
+                                'Please try again or check your connection.'}
+                        </p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display AI analysis results
+        function displayAIAnalysis(data) {
+            let html = `
+                <div class="ai-section">
+                    <div class="ai-section-title">
+                        AI Analysis
+                    </div>
+                    <div class="ai-section-content">${data.analysis}</div>
+                </div>
+            `;
+
+            if (data.insights && data.insights.length > 0) {
+                html += `
+                    <div class="ai-section">
+                        <div class="ai-section-title">
+                            Key Insights
+                        </div>
+                        <ul class="ai-insight-list">
+                            ${data.insights.map(insight => `<li>${insight}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            if (data.recommendations && data.recommendations.length > 0) {
+                html += `
+                    <div class="ai-section">
+                        <div class="ai-section-title">
+                            Recommendations
+                        </div>
+                        <ul class="ai-insight-list">
+                            ${data.recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            }
+
+            html += `
+                <div style="text-align: center; margin-top: 20px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
+                    <p style="font-size: 0.9em; opacity: 0.8;">
+                        Powered by ${data.model_used || 'AI'} |
+                        Analysis completed in ${Math.round(data.execution_time_ms)}ms
+                    </p>
+                </div>
+            `;
+
+            aiResults.innerHTML = html;
+        }
+
         // Event listeners
         searchBtn.addEventListener('click', performSearch);
         searchInput.addEventListener('keypress', (e) => {
@@ -2278,6 +2538,12 @@
         toggleComparisonBtn.addEventListener('click', toggleComparison);
         closeComparisonBtn.addEventListener('click', () => {
             comparisonPanel.style.display = 'none';
+        });
+
+        // AI Analysis listeners
+        aiAnalyzeBtn.addEventListener('click', analyzeWithAI);
+        closeAiBtn.addEventListener('click', () => {
+            aiAnalysisPanel.style.display = 'none';
         });
 
         // Initialize on load
