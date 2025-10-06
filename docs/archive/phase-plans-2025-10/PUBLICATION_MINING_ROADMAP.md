@@ -229,7 +229,7 @@ print(metadata.pubmed_ids)  # ['34725712']
 class NCBIClient:
     async def esearch(self, db: str, term: str, retmax: int = 20):
         """Search NCBI databases"""
-    
+
     async def efetch(self, db: str, ids: List[str], retmode: str = "xml"):
         """Fetch records from NCBI"""
 ```
@@ -251,10 +251,10 @@ class NCBIClient:
 class SummarizationClient:
     def summarize(self, dataset: GEOSeriesMetadata) -> str:
         """Summarize a dataset"""
-    
+
     def summarize_batch(self, datasets: List[GEOSeriesMetadata]) -> List[str]:
         """Summarize multiple datasets"""
-    
+
     def _call_llm(self, prompt: str, system_message: str, max_tokens: int):
         """Call OpenAI/Anthropic API"""
 ```
@@ -293,7 +293,7 @@ class EmbeddingModel:
 class FAISSIndex:
     def add_vectors(self, vectors: np.ndarray, metadata: List[dict]):
         """Add vectors to index"""
-    
+
     def search(self, query_vector: np.ndarray, k: int = 10):
         """Search for similar vectors"""
 ```
@@ -325,16 +325,16 @@ Here's what's **missing** from your vision:
 ```python
 class PublicationFetcher:
     """Fetch publication metadata and full text"""
-    
+
     async def fetch_pubmed_metadata(self, pmid: str) -> Publication:
         """Get title, authors, abstract, DOI"""
-    
+
     async def fetch_pmc_fulltext(self, pmcid: str) -> str:
         """Get full text from PubMed Central"""
-    
+
     async def fetch_citations(self, pmid: str) -> List[str]:
         """Get papers that cite this one"""
-    
+
     async def search_dataset_mentions(self, geo_id: str) -> List[str]:
         """Find papers mentioning this dataset"""
 ```
@@ -348,13 +348,13 @@ class PublicationFetcher:
 ```python
 class PDFHandler:
     """Download and parse PDFs"""
-    
+
     async def download_pdf(self, url: str, pmid: str) -> Path:
         """Download PDF, skip if exists"""
-    
+
     def extract_text(self, pdf_path: Path) -> dict:
         """Extract text sections from PDF"""
-    
+
     def extract_figures(self, pdf_path: Path) -> List[Image]:
         """Extract figures from PDF"""
 ```
@@ -373,13 +373,13 @@ class PDFHandler:
 ```python
 class CitationNetwork:
     """Build and analyze citation networks"""
-    
+
     async def build_network(self, root_pmid: str, depth: int = 2):
         """Build citation graph"""
-    
+
     def find_influential_papers(self) -> List[str]:
         """Papers with most citations"""
-    
+
     def find_clusters(self) -> List[List[str]]:
         """Related paper clusters"""
 ```
@@ -398,7 +398,7 @@ class CitationNetwork:
 ```python
 class PublicationAgent(BaseAgent):
     """Agent for publication analysis"""
-    
+
     async def execute(self, input: PublicationInput) -> PublicationOutput:
         """
         1. Get dataset metadata
@@ -418,13 +418,13 @@ class PublicationAgent(BaseAgent):
 ```python
 class InsightGenerator:
     """Generate insights from publications"""
-    
+
     async def analyze_methods(self, papers: List[Publication]) -> str:
         """How was dataset analyzed?"""
-    
+
     async def synthesize_findings(self, papers: List[Publication]) -> str:
         """What were key discoveries?"""
-    
+
     async def suggest_questions(self, papers: List[Publication]) -> List[str]:
         """What questions remain?"""
 ```
@@ -438,10 +438,10 @@ class InsightGenerator:
 ```python
 class PublicationRAG:
     """RAG system for publication corpus"""
-    
+
     async def index_publications(self, papers: List[Publication]):
         """Build searchable knowledge base"""
-    
+
     async def query(self, question: str) -> str:
         """Answer questions from papers"""
 ```
@@ -455,10 +455,10 @@ class PublicationRAG:
 ```python
 class PublicationDeduplicator:
     """Prevent duplicate downloads"""
-    
+
     def is_downloaded(self, pmid: str) -> bool:
         """Check if PDF exists"""
-    
+
     def hash_content(self, content: bytes) -> str:
         """MD5 hash for duplicate detection"""
 ```
@@ -794,38 +794,38 @@ class PublicationOutput(BaseModel):
 ANALYSIS_PROMPTS = {
     "methods": """
     Review these {n} papers about dataset {geo_id}.
-    
+
     Papers:
     {paper_summaries}
-    
+
     Analyze:
     1. What methods were used to analyze this dataset?
     2. What tools/software were common?
     3. What preprocessing steps were taken?
     4. Any novel analysis approaches?
-    
+
     Provide a concise summary for researchers.
     """,
-    
+
     "findings": """
     Review these {n} papers about dataset {geo_id}.
-    
+
     Papers:
     {paper_summaries}
-    
+
     Synthesize:
     1. What are the key biological findings?
     2. What consensus exists across papers?
     3. What contradictions or debates emerged?
     4. What was the overall impact?
     """,
-    
+
     "gaps": """
     Review these {n} papers about dataset {geo_id}.
-    
+
     Papers:
     {paper_summaries}
-    
+
     Identify:
     1. What questions remain unanswered?
     2. What analyses were NOT performed?
@@ -873,7 +873,7 @@ class PublicationRAG:
         self.embeddings = EmbeddingModel()
         self.vector_db = FAISSIndex()
         self.llm = SummarizationClient()
-    
+
     async def index_publications(self, papers: List[Publication]):
         """
         For each paper:
@@ -899,11 +899,11 @@ class PublicationRAG:
                 },
                 # ... more sections
             ])
-        
+
         # Embed and index
         vectors = self.embeddings.embed_batch([c["text"] for c in chunks])
         self.vector_db.add_vectors(vectors, chunks)
-    
+
     async def query(self, question: str, k: int = 5) -> str:
         """
         1. Embed question
@@ -913,19 +913,19 @@ class PublicationRAG:
         """
         query_vector = self.embeddings.embed_text(question)
         results = self.vector_db.search(query_vector, k=k)
-        
+
         context = "\n\n".join([r["text"] for r in results])
-        
+
         prompt = f"""
         Based on the following research papers about this dataset:
-        
+
         {context}
-        
+
         Answer this question: {question}
-        
+
         Be specific and cite papers (PMID: ...) when relevant.
         """
-        
+
         answer = self.llm._call_llm(prompt, system_message=..., max_tokens=500)
         return answer
 ```
@@ -958,29 +958,29 @@ answer = await rag.query("What was the resolution of Hi-C data?")
 ```python
 class GEOClient:
     # ... existing code ...
-    
+
     async def get_publications(self, geo_id: str) -> List[str]:
         """
         Get PubMed IDs for a GEO dataset.
-        
+
         Returns:
             List of PMIDs (e.g., ["34725712", "35123456"])
         """
         metadata = await self.get_series_metadata(geo_id)
         return metadata.pubmed_ids
-    
+
     async def search_dataset_in_pubmed(self, geo_id: str, max_results: int = 100) -> List[str]:
         """
         Search PubMed for papers mentioning this GEO ID.
-        
+
         This catches papers that USE the dataset but didn't create it.
         """
         ncbi_client = NCBIClient(email=self.email, api_key=self.api_key)
-        
+
         # Search PubMed for dataset mention
         search_term = f'"{geo_id}"[All Fields]'
         results = await ncbi_client.esearch(db="pubmed", term=search_term, retmax=max_results)
-        
+
         return results.get("IdList", [])
 ```
 
@@ -1002,23 +1002,23 @@ from ..geo.client import NCBIClient
 
 class PublicationFetcher:
     """Fetch publication metadata and full text from various sources"""
-    
+
     def __init__(self, email: str, api_key: Optional[str] = None, cache_dir: Path = None):
         self.email = email
         self.api_key = api_key
         self.ncbi_client = NCBIClient(email=email, api_key=api_key)
         self.cache_dir = cache_dir or Path("data/publications/metadata")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Configure Entrez
         Entrez.email = email
         if api_key:
             Entrez.api_key = api_key
-    
+
     async def fetch_pubmed_metadata(self, pmid: str) -> Publication:
         """
         Fetch complete metadata for a PubMed article.
-        
+
         Returns:
             Publication object with all metadata
         """
@@ -1029,13 +1029,13 @@ class PublicationFetcher:
             with open(cache_file) as f:
                 data = json.load(f)
                 return Publication(**data)
-        
+
         # Fetch from PubMed
         results = await self.ncbi_client.efetch(db="pubmed", ids=[pmid], retmode="xml")
-        
+
         # Parse XML (simplified)
         article = results["PubmedArticle"][0]["MedlineCitation"]["Article"]
-        
+
         # Extract authors
         authors = []
         for author_data in article.get("AuthorList", []):
@@ -1044,7 +1044,7 @@ class PublicationFetcher:
                 affiliation=author_data.get("Affiliation"),
                 orcid=author_data.get("ORCID")
             ))
-        
+
         # Build Publication object
         pub = Publication(
             pmid=pmid,
@@ -1058,17 +1058,17 @@ class PublicationFetcher:
             keywords=self._extract_keywords(article),
             mesh_terms=self._extract_mesh_terms(results),
         )
-        
+
         # Cache
         with open(cache_file, 'w') as f:
             f.write(pub.model_dump_json(indent=2))
-        
+
         return pub
-    
+
     async def fetch_pmc_fulltext(self, pmcid: str) -> Optional[str]:
         """
         Fetch full text from PubMed Central (if available).
-        
+
         Returns:
             Full text as string, or None if not available
         """
@@ -1080,36 +1080,36 @@ class PublicationFetcher:
         except Exception as e:
             print(f"PMC full text not available for {pmcid}: {e}")
             return None
-    
+
     async def fetch_citations(self, pmid: str) -> List[str]:
         """
         Find papers that cite this PMID.
-        
+
         Uses Europe PMC API for citation data.
         """
         url = f"https://www.ebi.ac.uk/europepmc/webservices/rest/MED/{pmid}/citations"
-        
+
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params={"format": "json"}) as resp:
                 data = await resp.json()
                 citations = data.get("citationList", {}).get("citation", [])
                 return [c["id"] for c in citations if c.get("source") == "MED"]
-    
+
     async def fetch_batch(self, pmids: List[str]) -> List[Publication]:
         """
         Fetch multiple publications in parallel.
         """
         tasks = [self.fetch_pubmed_metadata(pmid) for pmid in pmids]
         return await asyncio.gather(*tasks, return_exceptions=True)
-    
+
     def _extract_pmcid(self, results: dict) -> Optional[str]:
         # ... implementation
         pass
-    
+
     def _extract_doi(self, results: dict) -> Optional[str]:
         # ... implementation
         pass
-    
+
     def _extract_abstract(self, article: dict) -> str:
         # ... implementation
         pass
@@ -1132,37 +1132,37 @@ import hashlib
 
 class PDFHandler:
     """Download and process PDF files"""
-    
+
     def __init__(self, cache_dir: Path = None):
         self.cache_dir = cache_dir or Path("data/publications/fulltext/pdf")
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.xml_dir = Path("data/publications/fulltext/xml")
         self.xml_dir.mkdir(parents=True, exist_ok=True)
-    
+
     async def download_pdf(self, url: str, pmid: str) -> Optional[Path]:
         """
         Download PDF from URL.
-        
+
         Args:
             url: Direct PDF URL
             pmid: PubMed ID (for filename)
-        
+
         Returns:
             Path to downloaded PDF, or None if failed
         """
         pdf_path = self.cache_dir / f"{pmid}.pdf"
-        
+
         # Skip if already exists
         if pdf_path.exists():
             print(f"PDF already exists: {pmid}")
             return pdf_path
-        
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, timeout=aiohttp.ClientTimeout(total=60)) as resp:
                     if resp.status == 200:
                         content = await resp.read()
-                        
+
                         # Verify it's actually a PDF
                         if content.startswith(b'%PDF'):
                             with open(pdf_path, 'wb') as f:
@@ -1178,11 +1178,11 @@ class PDFHandler:
         except Exception as e:
             print(f"Error downloading {pmid}: {e}")
             return None
-    
+
     def extract_text(self, pdf_path: Path) -> Dict[str, str]:
         """
         Extract text from PDF and structure by sections.
-        
+
         Returns:
             {
                 "full_text": "...",
@@ -1194,44 +1194,44 @@ class PDFHandler:
             }
         """
         sections = {}
-        
+
         with pdfplumber.open(pdf_path) as pdf:
             full_text = ""
             for page in pdf.pages:
                 full_text += page.extract_text() or ""
-            
+
             sections["full_text"] = full_text
-            
+
             # Basic section extraction (simple heuristic)
             sections["abstract"] = self._extract_section(full_text, "Abstract", "Introduction")
             sections["methods"] = self._extract_section(full_text, ["Methods", "Materials and Methods"], "Results")
             sections["results"] = self._extract_section(full_text, "Results", "Discussion")
             sections["discussion"] = self._extract_section(full_text, "Discussion", "References")
             sections["references"] = self._extract_section(full_text, "References", None)
-        
+
         return sections
-    
+
     def _extract_section(self, text: str, start_markers: list, end_marker: Optional[str]) -> str:
         """Extract text between section markers"""
         if isinstance(start_markers, str):
             start_markers = [start_markers]
-        
+
         for marker in start_markers:
             start_idx = text.find(marker)
             if start_idx != -1:
                 break
         else:
             return ""
-        
+
         if end_marker:
             end_idx = text.find(end_marker, start_idx + len(marker))
             if end_idx == -1:
                 end_idx = len(text)
         else:
             end_idx = len(text)
-        
+
         return text[start_idx:end_idx].strip()
-    
+
     def compute_hash(self, pdf_path: Path) -> str:
         """Compute MD5 hash for deduplication"""
         with open(pdf_path, 'rb') as f:
@@ -1263,7 +1263,7 @@ async def analyze_publications(
 ):
     """
     Analyze publications for a GEO dataset.
-    
+
     Steps:
     1. Fetch primary publications from GEO metadata
     2. Search for papers citing the dataset
@@ -1273,10 +1273,10 @@ async def analyze_publications(
     try:
         # Initialize agent
         agent = PublicationAgent()
-        
+
         # Execute
         result = await agent.execute(request)
-        
+
         return PublicationResponse(
             success=True,
             geo_id=request.geo_id,
@@ -1378,7 +1378,7 @@ Reduces timeline to **6-8 weeks**.
 1. **Test existing PubMed integration:**
    ```python
    from omics_oracle_v2.lib.geo.client import GEOClient
-   
+
    client = GEOClient(email="your@email.com")
    metadata = await client.get_series_metadata("GSE189158")
    print(f"PubMed IDs: {metadata.pubmed_ids}")
@@ -1443,7 +1443,7 @@ from ..geo.client import NCBIClient
 class PublicationFetcher:
     def __init__(self, email: str):
         self.ncbi = NCBIClient(email=email)
-    
+
     async def fetch_metadata(self, pmid: str) -> Publication:
         data = await self.ncbi.efetch(db="pubmed", ids=[pmid], retmode="xml")
         # Parse and return Publication
@@ -1486,6 +1486,6 @@ Once this works, expand incrementally!
 
 ---
 
-**Start small, iterate fast, and build incrementally.** 
+**Start small, iterate fast, and build incrementally.**
 
 **Your architecture is ready. Let's build it! 🚀**

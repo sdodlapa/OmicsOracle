@@ -1,8 +1,8 @@
 # Enhanced Data Sources - Web Scraping & Search Integration
 
-**Date:** October 6, 2025  
-**Version:** 1.0  
-**Status:** Enhancement Specification  
+**Date:** October 6, 2025
+**Version:** 1.0
+**Status:** Enhancement Specification
 **Priority:** High - Significantly Increases Coverage
 
 ---
@@ -76,11 +76,11 @@ class ScholarArticle:
     related_articles_url: str
     cited_by_url: str
     versions: int  # Different versions/preprints
-    
+
     # Additional Scholar-specific metadata
     cluster_id: str  # Google Scholar cluster ID
     cites_id: List[str]  # What this article cites
-    
+
     # Link to PubMed/DOI if available
     pmid: Optional[str] = None
     doi: Optional[str] = None
@@ -89,20 +89,20 @@ class ScholarArticle:
 class GoogleScholarClient:
     """
     Google Scholar client for publication search and citation analysis.
-    
+
     ADVANTAGES:
     - Citation counts and metrics
     - "Cited by" and "Related articles" links
     - Broader coverage (includes preprints, theses, reports)
     - Multiple PDF source detection
     - Real-time indexing
-    
+
     METHODS:
     - scholarly library (official-ish Python API)
     - Playwright (when scholarly blocked/rate-limited)
     - SerpAPI (paid backup for high-volume)
     """
-    
+
     def __init__(
         self,
         use_proxy: bool = False,
@@ -113,7 +113,7 @@ class GoogleScholarClient:
         self.serpapi_key = serpapi_key
         self.rate_limit = rate_limit
         self._last_request = 0
-    
+
     async def search(
         self,
         query: str,
@@ -124,7 +124,7 @@ class GoogleScholarClient:
     ) -> List[ScholarArticle]:
         """
         Search Google Scholar with advanced filtering.
-        
+
         Example:
             articles = await client.search(
                 query="CRISPR gene editing cancer",
@@ -134,16 +134,16 @@ class GoogleScholarClient:
             )
         """
         await self._rate_limit_wait()
-        
+
         # Method 1: scholarly library (free, no API key)
         try:
             search_query = scholarly.search_pubs(query)
             articles = []
-            
+
             for i, result in enumerate(search_query):
                 if i >= max_results:
                     break
-                
+
                 # Filter by year if specified
                 pub_year = result.get('bib', {}).get('pub_year')
                 if pub_year:
@@ -152,18 +152,18 @@ class GoogleScholarClient:
                         continue
                     if year_high and pub_year > year_high:
                         continue
-                
+
                 articles.append(self._parse_scholar_result(result))
                 await asyncio.sleep(self.rate_limit)
-            
+
             return articles
-            
+
         except Exception as e:
             # Fallback to SerpAPI if available
             if self.serpapi_key:
                 return await self._search_with_serpapi(query, year_low, year_high, max_results)
             raise
-    
+
     async def get_citation_graph(
         self,
         article_id: str,
@@ -171,7 +171,7 @@ class GoogleScholarClient:
     ) -> Dict:
         """
         Build citation graph for an article.
-        
+
         Returns:
             {
                 'article': ScholarArticle,
@@ -182,16 +182,16 @@ class GoogleScholarClient:
         """
         # Get main article
         article = await self.get_article(article_id)
-        
+
         # Get citations (papers that cite this article)
         cited_by = await self.get_cited_by(article_id, max_results=100)
-        
+
         # Get references (papers this article cites)
         references = await self.get_references(article_id)
-        
+
         # Find co-citation network
         co_cited = await self._find_co_cited_papers(article_id, cited_by)
-        
+
         return {
             'article': article,
             'cited_by': cited_by,
@@ -203,22 +203,22 @@ class GoogleScholarClient:
                 'co_citation_strength': len(co_cited)
             }
         }
-    
+
     async def get_author_metrics(
         self,
         author_name: str
     ) -> Dict:
         """
         Get author h-index, citations, and publication list.
-        
+
         ⭐ UNIQUE CAPABILITY - Not available via PubMed API
         """
         await self._rate_limit_wait()
-        
+
         search_query = scholarly.search_author(author_name)
         author = next(search_query)
         author = scholarly.fill(author)
-        
+
         return {
             'name': author['name'],
             'affiliation': author.get('affiliation', ''),
@@ -228,15 +228,15 @@ class GoogleScholarClient:
             'i10_index': author.get('i10index', 0),
             'total_citations': author.get('citedby', 0),
             'publications': [
-                self._parse_scholar_result(pub) 
+                self._parse_scholar_result(pub)
                 for pub in author.get('publications', [])
             ]
         }
-    
+
     def _parse_scholar_result(self, result: Dict) -> ScholarArticle:
         """Parse Google Scholar result into ScholarArticle."""
         bib = result.get('bib', {})
-        
+
         return ScholarArticle(
             title=bib.get('title', ''),
             authors=bib.get('author', '').split(' and '),
@@ -252,7 +252,7 @@ class GoogleScholarClient:
             cluster_id=result.get('cluster_id', ''),
             cites_id=result.get('cites_id', [])
         )
-    
+
     async def _search_with_serpapi(
         self,
         query: str,
@@ -262,29 +262,29 @@ class GoogleScholarClient:
     ) -> List[ScholarArticle]:
         """
         Fallback to SerpAPI for high-volume or when scholarly is blocked.
-        
+
         SerpAPI: Paid service ($50/month for 5000 searches)
         - More reliable than scraping
         - Better rate limits
         - JSON API
         """
         import serpapi
-        
+
         params = {
             "engine": "google_scholar",
             "q": query,
             "api_key": self.serpapi_key,
             "num": max_results
         }
-        
+
         if year_low:
             params["as_ylo"] = year_low
         if year_high:
             params["as_yhi"] = year_high
-        
+
         search = serpapi.search(params)
         results = search.get("organic_results", [])
-        
+
         return [self._parse_serpapi_result(r) for r in results]
 ```
 
@@ -327,7 +327,7 @@ class PDFSource:
 class WebPDFScraper:
     """
     Intelligent web scraping for PDF acquisition.
-    
+
     SOURCES CHECKED (in order):
     1. Google Scholar PDF links
     2. ResearchGate
@@ -335,13 +335,13 @@ class WebPDFScraper:
     4. Institutional repositories (arXiv, bioRxiv, institutional pages)
     5. Publisher pages (with JavaScript rendering)
     6. Sci-Hub (optional, legal gray area)
-    
+
     METHODS:
     - Playwright (JavaScript rendering for modern sites)
     - Requests + BeautifulSoup (static sites)
     - PDF validation (check if downloaded file is valid)
     """
-    
+
     async def find_pdf_sources(
         self,
         title: str,
@@ -351,35 +351,35 @@ class WebPDFScraper:
     ) -> List[PDFSource]:
         """
         Find all possible PDF sources for a publication.
-        
+
         Returns ranked list of PDF sources by confidence and quality.
         """
         sources = []
-        
+
         # 1. Google Scholar (highest priority - finds most sources)
         scholar_pdfs = await self._find_on_google_scholar(title, authors)
         sources.extend(scholar_pdfs)
-        
+
         # 2. ResearchGate (often has PDFs authors uploaded)
         rg_pdfs = await self._find_on_researchgate(title, authors)
         sources.extend(rg_pdfs)
-        
+
         # 3. Institutional repositories
         repo_pdfs = await self._find_in_repositories(title, authors)
         sources.extend(repo_pdfs)
-        
+
         # 4. Publisher site (if DOI available)
         if doi:
             pub_pdfs = await self._find_on_publisher_site(doi)
             sources.extend(pub_pdfs)
-        
+
         # 5. Preprint servers (if biomedical)
         preprint_pdfs = await self._find_preprints(title, authors)
         sources.extend(preprint_pdfs)
-        
+
         # Rank by confidence and OA status
         return self._rank_sources(sources)
-    
+
     async def _find_on_google_scholar(
         self,
         title: str,
@@ -387,7 +387,7 @@ class WebPDFScraper:
     ) -> List[PDFSource]:
         """
         Google Scholar often has direct PDF links.
-        
+
         Example Scholar result:
         - [HTML] link to article page
         - [PDF] link to PDF (if available)
@@ -396,15 +396,15 @@ class WebPDFScraper:
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
-            
+
             # Search Google Scholar
             query = f'"{title}" {authors[0] if authors else ""}'
             await page.goto(f'https://scholar.google.com/scholar?q={query}')
-            
+
             # Find PDF links
             pdf_links = await page.query_selector_all('a:has-text("[PDF]")')
             sources = []
-            
+
             for link in pdf_links:
                 url = await link.get_attribute('href')
                 sources.append(PDFSource(
@@ -414,10 +414,10 @@ class WebPDFScraper:
                     is_open_access=True,
                     quality_estimate="high"
                 ))
-            
+
             await browser.close()
             return sources
-    
+
     async def _find_on_researchgate(
         self,
         title: str,
@@ -429,7 +429,7 @@ class WebPDFScraper:
         """
         # Implementation: Search RG, extract download links
         pass
-    
+
     async def _find_in_repositories(
         self,
         title: str,
@@ -443,17 +443,17 @@ class WebPDFScraper:
         - PubMed Central (already covered, but double-check)
         """
         sources = []
-        
+
         # arXiv search
         arxiv_results = await self._search_arxiv(title)
         sources.extend(arxiv_results)
-        
+
         # bioRxiv/medRxiv
         biorxiv_results = await self._search_biorxiv(title, authors)
         sources.extend(biorxiv_results)
-        
+
         return sources
-    
+
     async def download_pdf(
         self,
         source: PDFSource,
@@ -462,7 +462,7 @@ class WebPDFScraper:
     ) -> bool:
         """
         Download PDF from web source with validation.
-        
+
         Handles:
         - JavaScript-rendered pages
         - CAPTCHAs (retry with delay)
@@ -472,11 +472,11 @@ class WebPDFScraper:
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
-            
+
             try:
                 # Navigate and wait for PDF
                 await page.goto(source.url, wait_until='networkidle')
-                
+
                 # Some sites require clicking "Download PDF" button
                 download_button = await page.query_selector('a:has-text("Download PDF")')
                 if download_button:
@@ -487,15 +487,15 @@ class WebPDFScraper:
                 else:
                     # Direct PDF download
                     await page.pdf(path=output_path)
-                
+
                 # Validate PDF
                 if validate:
                     is_valid = await self._validate_pdf(output_path)
                     if not is_valid:
                         return False
-                
+
                 return True
-                
+
             except Exception as e:
                 print(f"Download failed: {e}")
                 return False
@@ -531,25 +531,25 @@ import asyncio
 class TrendingTopicsDetector:
     """
     Detect trending biomedical topics using web signals.
-    
+
     DATA SOURCES:
     - Google Trends API (search volume over time)
     - Google Scholar alerts (new papers in field)
     - PubMed recent publications (via API)
     - Twitter/X academic hashtags (optional)
-    
+
     USE CASES:
     - Query suggestions ("Did you mean...?")
     - Trending research areas
     - Emerging techniques
     - Hot genes/diseases
     """
-    
+
     def __init__(self, google_api_key: str, google_cse_id: str):
         self.google_api_key = google_api_key
         self.google_cse_id = google_cse_id
         self.pytrends = TrendReq(hl='en-US', tz=360)
-    
+
     async def get_trending_topics(
         self,
         category: str = "biomedical",
@@ -557,7 +557,7 @@ class TrendingTopicsDetector:
     ) -> List[Dict]:
         """
         Get trending biomedical topics.
-        
+
         Example:
             trends = await detector.get_trending_topics(
                 category="gene_editing",
@@ -570,33 +570,33 @@ class TrendingTopicsDetector:
             # ]
         """
         keywords = self._get_category_keywords(category)
-        
+
         # Get Google Trends data
         self.pytrends.build_payload(keywords, timeframe=timeframe)
         interest_over_time = self.pytrends.interest_over_time()
-        
+
         # Get related queries
         related = self.pytrends.related_queries()
-        
+
         # Cross-reference with Google Scholar new papers
         trending_papers = await self._get_scholar_trending(keywords)
-        
+
         # Combine signals
         trends = self._combine_trend_signals(
             interest_over_time,
             related,
             trending_papers
         )
-        
+
         return trends
-    
+
     async def enhance_query_with_trends(
         self,
         query: str
     ) -> Dict:
         """
         Enhance user query with trending variations.
-        
+
         Example:
             query = "CRISPR cancer"
             enhanced = await enhancer.enhance_query_with_trends(query)
@@ -613,41 +613,41 @@ class TrendingTopicsDetector:
         """
         # Extract entities from query
         entities = await self._extract_entities(query)
-        
+
         # Find trending variations
         suggestions = []
         for entity in entities:
             trends = await self.get_trending_topics(entity)
             suggestions.extend([t['topic'] for t in trends[:3]])
-        
+
         # Get Google autocomplete suggestions
         autocomplete = await self._get_google_autocomplete(query)
-        
+
         return {
             'original': query,
             'suggestions': suggestions,
             'autocomplete': autocomplete,
             'trending_related': [t['topic'] for t in trends[:5]]
         }
-    
+
     async def _get_google_autocomplete(
         self,
         query: str
     ) -> List[str]:
         """
         Get Google autocomplete suggestions.
-        
+
         Uses Google's autocomplete API (same as search box).
         Shows what people actually search for.
         """
         import aiohttp
-        
+
         url = "http://suggestqueries.google.com/complete/search"
         params = {
             'client': 'firefox',
             'q': query
         }
-        
+
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params) as response:
                 data = await response.json()
@@ -677,20 +677,20 @@ EntityExtractor:
 class WebKnowledgeEnricher:
     """
     Enrich extracted entities with web knowledge.
-    
+
     SOURCES:
     - Wikipedia/Wikidata (entity disambiguation, descriptions)
     - Google Knowledge Graph (entity relationships)
     - DBpedia (structured knowledge)
     - BioPortal (biomedical ontologies)
-    
+
     CAPABILITIES:
     - Entity disambiguation ("TP53" gene vs "TP53" protein)
     - Entity descriptions (layman + technical)
     - Entity relationships (is-a, part-of, interacts-with)
     - Entity popularity (search volume, paper mentions)
     """
-    
+
     async def enrich_entity(
         self,
         entity_text: str,
@@ -699,7 +699,7 @@ class WebKnowledgeEnricher:
     ) -> Dict:
         """
         Enrich entity with web knowledge.
-        
+
         Example:
             entity = await enricher.enrich_entity(
                 entity_text="TP53",
@@ -719,10 +719,10 @@ class WebKnowledgeEnricher:
         """
         # Get Wikipedia/Wikidata info
         wiki_data = await self._get_wikidata(entity_text, entity_type)
-        
+
         # Get Google Knowledge Graph
         kg_data = await self._get_knowledge_graph(entity_text)
-        
+
         # Disambiguate using context
         canonical = await self._disambiguate(
             entity_text,
@@ -731,16 +731,16 @@ class WebKnowledgeEnricher:
             wiki_data,
             kg_data
         )
-        
+
         return canonical
-    
+
     async def _get_knowledge_graph(
         self,
         entity: str
     ) -> Dict:
         """
         Query Google Knowledge Graph API.
-        
+
         Provides:
         - Canonical entity ID
         - Description
@@ -748,14 +748,14 @@ class WebKnowledgeEnricher:
         - Entity type
         """
         from googleapiclient.discovery import build
-        
+
         service = build('kgsearch', 'v1', developerKey=self.google_api_key)
         response = service.entities().search(
             query=entity,
             limit=10,
             indent=True
         ).execute()
-        
+
         return response.get('itemListElement', [])
 ```
 
@@ -880,12 +880,12 @@ web_scraping:
     rate_limit: 5.0  # seconds between requests
     use_proxy: false
     serpapi_key: ${SERPAPI_KEY}  # Optional
-  
+
   # Google APIs
   google_apis:
     api_key: ${GOOGLE_API_KEY}
     custom_search_engine_id: ${GOOGLE_CSE_ID}
-  
+
   # Web scraping
   scraping:
     enabled: true
@@ -893,7 +893,7 @@ web_scraping:
     max_retries: 3
     timeout: 30
     respect_robots_txt: true
-  
+
   # Sources to check (in order)
   pdf_sources:
     - google_scholar
@@ -902,7 +902,7 @@ web_scraping:
     - institutional_repos
     - publisher_sites
     # - scihub  # Optional, legal gray area
-  
+
   # Rate limits per source
   rate_limits:
     google_scholar: 5.0
@@ -936,30 +936,30 @@ class EthicalWebScraper:
     """
     Ethical web scraping guidelines.
     """
-    
+
     def __init__(self):
         self.user_agent = "OmicsOracle/1.0 (Research Tool; mailto:your@email.com)"
         self.rate_limits = {
             'google_scholar': 5.0,  # 5 seconds between requests
             'default': 2.0
         }
-    
+
     async def scrape(self, url: str):
         # 1. Check robots.txt
         if not await self._check_robots_txt(url):
             raise ValueError(f"Scraping disallowed by robots.txt: {url}")
-        
+
         # 2. Respect rate limits
         await self._rate_limit_wait(url)
-        
+
         # 3. Use proper user agent
         headers = {'User-Agent': self.user_agent}
-        
+
         # 4. Cache results (avoid re-scraping)
         cached = await self._get_cached(url)
         if cached:
             return cached
-        
+
         # 5. Graceful error handling
         try:
             response = await self._fetch(url, headers)

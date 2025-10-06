@@ -280,17 +280,17 @@ class PublicationFetcher:
 # 3. Test with real data (1 hour)
 async def test():
     fetcher = PublicationFetcher(email="your@email.com")
-    
+
     # Get dataset metadata
     geo_client = GEOClient()
     metadata = await geo_client.get_series_metadata("GSE189158")
-    
+
     # Fetch all papers
     papers = []
     for pmid in metadata.pubmed_ids:
         pub = await fetcher.fetch_metadata(pmid)
         papers.append(pub)
-    
+
     print(f"Found {len(papers)} papers!")
     for pub in papers:
         print(f"- {pub.title}")

@@ -1,7 +1,7 @@
 # 🚨 CRITICAL ADDENDUM: GPT-4 Rate Limiting Analysis
 
-**Date:** October 6, 2025  
-**Issue:** GPT-4 API rate limits significantly impact orchestrator architecture feasibility  
+**Date:** October 6, 2025
+**Issue:** GPT-4 API rate limits significantly impact orchestrator architecture feasibility
 **Context:** Original recommendation assumed GPT-4 could handle orchestration load
 
 ---
@@ -80,7 +80,7 @@ Actual throughput:
 BUT: Token limit hit, must queue remaining 72 analyses
 Wait time: 350,000 - 100,000 = 250,000 tokens
            250,000 ÷ 100,000 TPM = 2.5 minutes
-           
+
 Total time for 100 analyses: 2.5 + 1 = 3.5 minutes
 
 ❌ SEVERELY LIMITED
@@ -96,7 +96,7 @@ Total time for 100 analyses: 2.5 + 1 = 3.5 minutes
 Max analyses/minute:
   Limited by: 100,000 TPM ÷ 3,500 tokens = 28.5 analyses
   Limited by: 500 RPM ÷ 2 calls = 250 analyses
-  
+
 BOTTLENECK: Token limit (28 analyses/min)
 
 Max throughput: 28 × 60 = 1,680 analyses/hour
@@ -113,7 +113,7 @@ Real-world throughput: ~1,200/hour (accounting for overhead)
 Max analyses/minute:
   450,000 TPM ÷ 3,500 tokens = 128 analyses/min
   5,000 RPM ÷ 2 calls = 2,500 analyses/min
-  
+
 BOTTLENECK: Token limit (128 analyses/min)
 
 Max throughput: 128 × 60 = 7,680 analyses/hour
@@ -125,7 +125,7 @@ Max throughput: 128 × 60 = 7,680 analyses/hour
 Max analyses/minute:
   800,000 TPM ÷ 3,500 tokens = 228 analyses/min
   10,000 RPM ÷ 2 calls = 5,000 analyses/min
-  
+
 BOTTLENECK: Token limit (228 analyses/min)
 
 Max throughput: 228 × 60 = 13,680 analyses/hour
@@ -144,10 +144,10 @@ Max throughput: 228 × 60 = 13,680 analyses/hour
 50 analyses × 3,500 tokens = 175,000 tokens
 100,000 TPM limit
 
-Result: 
+Result:
   First batch: 28 analyses in 1 minute
   Second batch: 22 analyses in 1 minute (wait 1 min)
-  
+
 Total time: 2 minutes (vs instant with free biomedical models)
 
 User experience: ⚠️ Noticeable delay
@@ -177,7 +177,7 @@ User experience: ✅ Consistent performance
 Result:
   First 28 analyses: Complete in 30s
   Remaining 22: Queued, complete in 90s
-  
+
 Total time: 2 minutes
 ```
 
@@ -254,7 +254,7 @@ Rate limiting issues:
 Max throughput: Unlimited (only limited by A100 count)
   - 4 A100s: ~2,000 analyses/hour (500/hour per GPU)
   - 8 A100s: ~4,000 analyses/hour
-  
+
 Burst capacity: Unlimited (instant)
 Daily limit: None (all free models)
 
@@ -397,7 +397,7 @@ Reasons:
 1. **Avoids Rate Limits:**
    - 80% of traffic goes to free models (no limits)
    - Only 20% hits GPT-4 (easily within Tier 1 limits)
-   
+
 2. **Better User Experience:**
    - Most analyses: Instant (3s, no queue)
    - Deep analyses: 55s (acceptable for quality)
@@ -426,29 +426,29 @@ class SmartPublicationAnalyzer:
     def __init__(self):
         # Fast path (80% of traffic)
         self.biomedlm = BioMedLMWorker(endpoint="http://a100-1:8000")
-        
+
         # Deep path (20% of traffic)
         self.orchestrator = GPT4Orchestrator()  # With all workers
-        
+
         # Rate limit tracker
         self.gpt4_usage = RateLimitTracker(
             tier=1,
             tpm_limit=100_000,
             rpm_limit=500
         )
-    
+
     async def analyze_publications(
-        self, 
+        self,
         papers: List[Dict],
         query: str,
         deep_analysis: bool = False,  # User can force deep
         quality_critical: bool = False
     ):
         """Route to appropriate analysis path."""
-        
+
         # Determine complexity
         complexity = self._assess_complexity(query, papers)
-        
+
         # Routing logic
         use_gpt4 = (
             deep_analysis or  # User requested
@@ -457,14 +457,14 @@ class SmartPublicationAnalyzer:
             len(papers) > 50 or  # Large paper set
             self._detect_novel_task(query)  # Unusual query
         )
-        
+
         if use_gpt4:
             # Check rate limits before using GPT-4
             if not self.gpt4_usage.can_proceed(estimated_tokens=3500):
                 # Rate limited! Fallback to biomedical model
                 logger.warning("GPT-4 rate limited, using BioMedLM")
                 return await self._biomedlm_path(papers, query)
-            
+
             # Use orchestrator (deep analysis)
             result = await self.orchestrator.analyze_publications(papers, query)
             self.gpt4_usage.record_usage(tokens=3500)
@@ -475,13 +475,13 @@ class SmartPublicationAnalyzer:
             result = await self._biomedlm_path(papers, query)
             result["analysis_type"] = "fast"
             return result
-    
+
     async def _biomedlm_path(self, papers, query):
         """Fast path using only biomedical model."""
-        
+
         prompt = self._build_biomedlm_prompt(papers, query)
         result = await self.biomedlm.analyze(prompt)
-        
+
         return {
             "analysis": result["text"],
             "confidence": result.get("confidence", 0.80),
@@ -490,12 +490,12 @@ class SmartPublicationAnalyzer:
             "cost": 0,
             "analysis_type": "fast"
         }
-    
+
     def _assess_complexity(self, query: str, papers: List[Dict]) -> float:
         """Estimate query complexity (0-1)."""
-        
+
         complexity_score = 0.0
-        
+
         # Check for complex keywords
         complex_keywords = [
             "synthesize", "compare", "contrast", "gaps",
@@ -503,26 +503,26 @@ class SmartPublicationAnalyzer:
         ]
         if any(kw in query.lower() for kw in complex_keywords):
             complexity_score += 0.3
-        
+
         # Check paper count
         if len(papers) > 20:
             complexity_score += 0.2
         if len(papers) > 50:
             complexity_score += 0.2
-        
+
         # Check query length
         if len(query.split()) > 30:
             complexity_score += 0.2
-        
+
         # Check for multi-part questions
         if "?" in query and query.count("?") > 1:
             complexity_score += 0.1
-        
+
         return min(complexity_score, 1.0)
-    
+
     def _detect_novel_task(self, query: str) -> bool:
         """Detect if this is an unusual query type."""
-        
+
         # Standard queries biomedical models handle well
         standard_patterns = [
             r"what methods",
@@ -531,46 +531,46 @@ class SmartPublicationAnalyzer:
             r"list.*papers",
             r"which papers"
         ]
-        
+
         import re
         for pattern in standard_patterns:
             if re.search(pattern, query.lower()):
                 return False
-        
+
         # If doesn't match standard patterns, might be novel
         return True
 
 class RateLimitTracker:
     """Track GPT-4 API rate limits."""
-    
+
     def __init__(self, tier: int, tpm_limit: int, rpm_limit: int):
         self.tpm_limit = tpm_limit
         self.rpm_limit = rpm_limit
         self.token_usage = deque()  # (timestamp, tokens)
         self.request_count = deque()  # timestamps
-    
+
     def can_proceed(self, estimated_tokens: int) -> bool:
         """Check if we can make a request without hitting limits."""
-        
+
         now = time.time()
         one_minute_ago = now - 60
-        
+
         # Clean old entries
         while self.token_usage and self.token_usage[0][0] < one_minute_ago:
             self.token_usage.popleft()
         while self.request_count and self.request_count[0] < one_minute_ago:
             self.request_count.popleft()
-        
+
         # Calculate current usage
         current_tokens = sum(tokens for _, tokens in self.token_usage)
         current_requests = len(self.request_count)
-        
+
         # Check limits
         tokens_available = current_tokens + estimated_tokens <= self.tpm_limit
         requests_available = current_requests + 1 <= self.rpm_limit
-        
+
         return tokens_available and requests_available
-    
+
     def record_usage(self, tokens: int):
         """Record a request."""
         now = time.time()
@@ -751,7 +751,7 @@ Month 2:
 
 **I was WRONG in my original recommendation.**
 
-**Original:** "GPT-4 Orchestrator is best"  
+**Original:** "GPT-4 Orchestrator is best"
 **Corrected:** "Smart Hybrid (20% GPT-4) is best"
 
 **Why the change:**

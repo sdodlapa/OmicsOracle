@@ -1,7 +1,7 @@
 # 📅 Week 1-2: Publications Module Implementation
 
-**Phase:** Foundation  
-**Duration:** 2 weeks  
+**Phase:** Foundation
+**Duration:** 2 weeks
 **Goal:** Implement publication search with PubMed integration
 
 ---
@@ -90,16 +90,16 @@ class PublicationType(str, Enum):
 class Publication(BaseModel):
     """
     Single publication record.
-    
+
     Represents a scientific publication from any source
     (PubMed, Scholar, PMC, etc.)
     """
-    
+
     # Identifiers
     pmid: Optional[str] = Field(None, description="PubMed ID")
     pmcid: Optional[str] = Field(None, description="PubMed Central ID")
     doi: Optional[str] = Field(None, description="DOI")
-    
+
     # Core metadata
     title: str = Field(..., description="Publication title")
     abstract: Optional[str] = Field(None, description="Abstract text")
@@ -110,18 +110,18 @@ class Publication(BaseModel):
         default=PublicationType.JOURNAL_ARTICLE,
         description="Type of publication"
     )
-    
+
     # Citations & Impact
     citation_count: int = Field(default=0, description="Number of citations")
-    
+
     # Full-text availability
     has_fulltext: bool = Field(default=False, description="Full-text available")
     fulltext_url: Optional[str] = Field(None, description="Full-text URL")
     pdf_url: Optional[str] = Field(None, description="PDF URL")
-    
+
     # Source
     source: str = Field(..., description="Source database (pubmed, scholar, etc.)")
-    
+
     # Additional metadata
     keywords: List[str] = Field(default_factory=list, description="Keywords/MeSH terms")
     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
@@ -129,7 +129,7 @@ class Publication(BaseModel):
 
 class PublicationSearchResult(BaseModel):
     """Result from publication search"""
-    
+
     publication: Publication = Field(..., description="Publication record")
     relevance_score: float = Field(..., description="Relevance score (0.0-1.0)", ge=0.0, le=1.0)
     match_reasons: List[str] = Field(default_factory=list, description="Why this publication matched")
@@ -139,7 +139,7 @@ class PublicationResult(BaseModel):
     """
     Complete result from PublicationSearchPipeline.
     """
-    
+
     query: str = Field(..., description="Search query used")
     publications: List[PublicationSearchResult] = Field(
         default_factory=list,
@@ -148,7 +148,7 @@ class PublicationResult(BaseModel):
     total_found: int = Field(..., description="Total publications found", ge=0)
     sources_used: List[str] = Field(default_factory=list, description="Sources queried")
     features_enabled: List[str] = Field(default_factory=list, description="Features that were enabled")
-    
+
     def get_top_publications(self, n: int = 10) -> List[PublicationSearchResult]:
         """Get top N publications by relevance"""
         return sorted(
@@ -156,7 +156,7 @@ class PublicationResult(BaseModel):
             key=lambda p: p.relevance_score,
             reverse=True
         )[:n]
-    
+
     def filter_by_score(self, min_score: float) -> List[PublicationSearchResult]:
         """Filter publications by minimum relevance score"""
         return [p for p in self.publications if p.relevance_score >= min_score]
@@ -176,13 +176,13 @@ from typing import Optional
 @dataclass
 class PubMedConfig:
     """Configuration for PubMed client"""
-    
+
     api_key: Optional[str] = None
     email: Optional[str] = None  # Required by NCBI
     max_results: int = 50
     request_timeout: int = 30
     rate_limit_delay: float = 0.34  # NCBI allows 3 requests/sec (10 with API key)
-    
+
     def __post_init__(self):
         """Validate configuration"""
         if not self.email:
@@ -193,10 +193,10 @@ class PubMedConfig:
 class PublicationSearchConfig:
     """
     Configuration for PublicationSearchPipeline.
-    
+
     Follows AdvancedSearchPipeline pattern with feature toggles.
     """
-    
+
     # Feature toggles (Week 1-2: Only PubMed)
     enable_pubmed: bool = True
     enable_scholar: bool = False      # Week 3
@@ -204,10 +204,10 @@ class PublicationSearchConfig:
     enable_citations: bool = False    # Week 3
     enable_pdf_download: bool = False # Week 4
     enable_fulltext: bool = False     # Week 4
-    
+
     # Component configs
     pubmed_config: PubMedConfig = field(default_factory=PubMedConfig)
-    
+
     # Ranking config
     ranking_weight_title: float = 0.4
     ranking_weight_abstract: float = 0.3
@@ -235,10 +235,10 @@ from ..models import Publication
 class BasePublicationClient(ABC):
     """
     Abstract base class for publication clients.
-    
+
     All publication sources (PubMed, Scholar, PMC) implement this interface.
     """
-    
+
     @abstractmethod
     def search(
         self,
@@ -248,25 +248,25 @@ class BasePublicationClient(ABC):
     ) -> List[Publication]:
         """
         Search for publications.
-        
+
         Args:
             query: Search query
             max_results: Maximum number of results
             filters: Optional filters (year, journal, etc.)
-        
+
         Returns:
             List of Publication objects
         """
         pass
-    
+
     @abstractmethod
     def get_by_id(self, publication_id: str) -> Optional[Publication]:
         """
         Get publication by ID.
-        
+
         Args:
             publication_id: Publication identifier (PMID, DOI, etc.)
-        
+
         Returns:
             Publication if found, None otherwise
         """
@@ -298,26 +298,26 @@ logger = logging.getLogger(__name__)
 class PubMedClient(BasePublicationClient):
     """
     PubMed client using Biopython Entrez.
-    
+
     Provides access to PubMed database via NCBI E-utilities.
     """
-    
+
     def __init__(self, config: PubMedConfig):
         """
         Initialize PubMed client.
-        
+
         Args:
             config: PubMed configuration
         """
         self.config = config
-        
+
         # Configure Entrez
         Entrez.email = config.email
         if config.api_key:
             Entrez.api_key = config.api_key
-        
+
         logger.info(f"PubMed client initialized (email: {config.email})")
-    
+
     def search(
         self,
         query: str,
@@ -326,21 +326,21 @@ class PubMedClient(BasePublicationClient):
     ) -> List[Publication]:
         """
         Search PubMed for publications.
-        
+
         Args:
             query: Search query (PubMed query syntax)
             max_results: Maximum number of results
             filters: Optional filters (year, journal, etc.)
-        
+
         Returns:
             List of Publication objects
         """
         try:
             # Build search query
             search_query = self._build_query(query, filters)
-            
+
             logger.info(f"Searching PubMed: {search_query}")
-            
+
             # Search PubMed
             search_handle = Entrez.esearch(
                 db="pubmed",
@@ -350,29 +350,29 @@ class PubMedClient(BasePublicationClient):
             )
             search_results = Entrez.read(search_handle)
             search_handle.close()
-            
+
             pmids = search_results["IdList"]
             logger.info(f"Found {len(pmids)} PubMed IDs")
-            
+
             if not pmids:
                 return []
-            
+
             # Fetch details
             publications = self._fetch_details(pmids)
-            
+
             return publications
-            
+
         except Exception as e:
             logger.error(f"PubMed search failed: {e}")
             return []
-    
+
     def get_by_id(self, publication_id: str) -> Optional[Publication]:
         """
         Get publication by PMID.
-        
+
         Args:
             publication_id: PubMed ID
-        
+
         Returns:
             Publication if found, None otherwise
         """
@@ -382,11 +382,11 @@ class PubMedClient(BasePublicationClient):
         except Exception as e:
             logger.error(f"Failed to fetch PMID {publication_id}: {e}")
             return None
-    
+
     def _build_query(self, query: str, filters: Optional[Dict[str, Any]]) -> str:
         """Build PubMed search query with filters"""
         query_parts = [query]
-        
+
         if filters:
             if "year_min" in filters:
                 query_parts.append(f"{filters['year_min']}[PDAT]:3000[PDAT]")
@@ -394,17 +394,17 @@ class PubMedClient(BasePublicationClient):
                 query_parts.append(f"1900[PDAT]:{filters['year_max']}[PDAT]")
             if "journal" in filters:
                 query_parts.append(f"{filters['journal']}[JOUR]")
-        
+
         return " AND ".join(query_parts)
-    
+
     def _fetch_details(self, pmids: List[str]) -> List[Publication]:
         """Fetch publication details for PMIDs"""
         publications = []
-        
+
         try:
             # Rate limiting
             time.sleep(self.config.rate_limit_delay)
-            
+
             # Fetch details
             fetch_handle = Entrez.efetch(
                 db="pubmed",
@@ -413,19 +413,19 @@ class PubMedClient(BasePublicationClient):
                 retmode="text"
             )
             records = Medline.parse(fetch_handle)
-            
+
             for record in records:
                 pub = self._parse_medline_record(record)
                 if pub:
                     publications.append(pub)
-            
+
             fetch_handle.close()
-            
+
         except Exception as e:
             logger.error(f"Failed to fetch details: {e}")
-        
+
         return publications
-    
+
     def _parse_medline_record(self, record: Dict) -> Optional[Publication]:
         """Parse Medline record into Publication"""
         try:
@@ -436,13 +436,13 @@ class PubMedClient(BasePublicationClient):
                     pub_date = datetime.strptime(record["DP"][:4], "%Y")
                 except:
                     pass
-            
+
             # Determine publication type
             pub_type = PublicationType.JOURNAL_ARTICLE
             if "PT" in record:
                 if "Review" in record["PT"]:
                     pub_type = PublicationType.REVIEW
-            
+
             # Create Publication
             publication = Publication(
                 pmid=record.get("PMID", ""),
@@ -456,9 +456,9 @@ class PubMedClient(BasePublicationClient):
                 keywords=record.get("MH", []),
                 source="pubmed"
             )
-            
+
             return publication
-            
+
         except Exception as e:
             logger.error(f"Failed to parse record: {e}")
             return None
@@ -488,18 +488,18 @@ logger = logging.getLogger(__name__)
 class PublicationRanker:
     """
     Rank publications by relevance to query.
-    
+
     Scoring factors:
     - Title match
     - Abstract match
     - Recency
     - Citation count
     """
-    
+
     def __init__(self, config: PublicationSearchConfig):
         """Initialize ranker with config"""
         self.config = config
-    
+
     def rank(
         self,
         publications: List[Publication],
@@ -507,31 +507,31 @@ class PublicationRanker:
     ) -> List[PublicationSearchResult]:
         """
         Rank publications by relevance.
-        
+
         Args:
             publications: Publications to rank
             query: Search query
-        
+
         Returns:
             Ranked PublicationSearchResult list
         """
         results = []
         query_lower = query.lower()
-        
+
         for pub in publications:
             score, reasons = self._calculate_score(pub, query_lower)
-            
+
             results.append(PublicationSearchResult(
                 publication=pub,
                 relevance_score=score,
                 match_reasons=reasons
             ))
-        
+
         # Sort by score (descending)
         results.sort(key=lambda r: r.relevance_score, reverse=True)
-        
+
         return results
-    
+
     def _calculate_score(
         self,
         pub: Publication,
@@ -540,7 +540,7 @@ class PublicationRanker:
         """Calculate relevance score and match reasons"""
         score = 0.0
         reasons = []
-        
+
         # 1. Title match (40% weight)
         if pub.title:
             title_lower = pub.title.lower()
@@ -554,9 +554,9 @@ class PublicationRanker:
                 title_score = matches / len(query_terms) if query_terms else 0
                 if title_score > 0:
                     reasons.append(f"Title matches {matches}/{len(query_terms)} terms")
-            
+
             score += title_score * self.config.ranking_weight_title
-        
+
         # 2. Abstract match (30% weight)
         if pub.abstract:
             abstract_lower = pub.abstract.lower()
@@ -569,9 +569,9 @@ class PublicationRanker:
                 abstract_score = matches / len(query_terms) if query_terms else 0
                 if abstract_score > 0:
                     reasons.append(f"Abstract matches {matches}/{len(query_terms)} terms")
-            
+
             score += abstract_score * self.config.ranking_weight_abstract
-        
+
         # 3. Recency (20% weight)
         if pub.publication_date:
             current_year = datetime.now().year
@@ -582,7 +582,7 @@ class PublicationRanker:
             score += recency_score * self.config.ranking_weight_recency
             if years_old <= 2:
                 reasons.append(f"Recent ({pub_year})")
-        
+
         # 4. Citation count (10% weight)
         if pub.citation_count > 0:
             # Normalize citation count (log scale, max 1000 citations = 1.0)
@@ -590,10 +590,10 @@ class PublicationRanker:
             citation_score = min(1.0, math.log(pub.citation_count + 1) / math.log(1001))
             score += citation_score * self.config.ranking_weight_citations
             reasons.append(f"{pub.citation_count} citations")
-        
+
         # Ensure score is in [0, 1]
         score = max(0.0, min(1.0, score))
-        
+
         return score, reasons
 ```
 
@@ -622,7 +622,7 @@ logger = logging.getLogger(__name__)
 class PublicationSearchPipeline:
     """
     Publication search pipeline following AdvancedSearchPipeline pattern.
-    
+
     Features (toggle via config):
     - PubMed search (enable_pubmed) - Week 1-2
     - Google Scholar (enable_scholar) - Week 3
@@ -631,16 +631,16 @@ class PublicationSearchPipeline:
     - PDF download (enable_pdf_download) - Week 4
     - Full-text extraction (enable_fulltext) - Week 4
     """
-    
+
     def __init__(self, config: PublicationSearchConfig):
         """
         Initialize pipeline with conditional components.
-        
+
         Args:
             config: Pipeline configuration with feature toggles
         """
         self.config = config
-        
+
         # Conditional initialization based on feature toggles
         if config.enable_pubmed:
             self.pubmed_client = PubMedClient(config.pubmed_config)
@@ -648,20 +648,20 @@ class PublicationSearchPipeline:
         else:
             self.pubmed_client = None
             logger.info("PubMed client disabled")
-        
+
         # Week 3 features (disabled for now)
         self.scholar_client = None
         self.pmc_client = None
         self.citation_analyzer = None
-        
+
         # Week 4 features (disabled for now)
         self.pdf_downloader = None
         self.fulltext_extractor = None
-        
+
         # Core component (always initialized)
         self.ranker = PublicationRanker(config)
         logger.info("PublicationRanker initialized")
-    
+
     def search(
         self,
         query: str,
@@ -670,19 +670,19 @@ class PublicationSearchPipeline:
     ) -> PublicationResult:
         """
         Execute publication search with conditional features.
-        
+
         Args:
             query: Search query
             max_results: Maximum results per source
             filters: Optional filters (year, journal, etc.)
-        
+
         Returns:
             PublicationResult with ranked publications
         """
         logger.info(f"Publication search: {query}")
-        
+
         publications = []
-        
+
         # Step 1: Search PubMed (if enabled)
         if self.pubmed_client:
             logger.info("Searching PubMed...")
@@ -693,38 +693,38 @@ class PublicationSearchPipeline:
             )
             publications.extend(pubmed_results)
             logger.info(f"PubMed returned {len(pubmed_results)} publications")
-        
+
         # Step 2: Search Google Scholar (if enabled) - Week 3
         if self.scholar_client:
             logger.info("Searching Google Scholar...")
             scholar_results = self.scholar_client.search(query, max_results=max_results)
             publications.extend(scholar_results)
-        
+
         # Step 3: Search PMC (if enabled) - Week 3
         if self.pmc_client:
             logger.info("Searching PMC...")
             pmc_results = self.pmc_client.search(query, max_results=max_results)
             publications.extend(pmc_results)
-        
+
         # Step 4: Rank and deduplicate (always executed)
         logger.info(f"Ranking {len(publications)} publications...")
         ranked_results = self.ranker.rank(publications, query)
-        
+
         # Step 5: Analyze citations (if enabled) - Week 3
         if self.citation_analyzer:
             logger.info("Analyzing citations...")
             ranked_results = self.citation_analyzer.analyze(ranked_results)
-        
+
         # Step 6: Download PDFs (if enabled) - Week 4
         if self.pdf_downloader:
             logger.info("Downloading PDFs...")
             ranked_results = self.pdf_downloader.download(ranked_results)
-        
+
         # Step 7: Extract full text (if enabled) - Week 4
         if self.fulltext_extractor:
             logger.info("Extracting full text...")
             ranked_results = self.fulltext_extractor.extract(ranked_results)
-        
+
         # Build result
         result = PublicationResult(
             query=query,
@@ -733,10 +733,10 @@ class PublicationSearchPipeline:
             sources_used=self._get_sources_used(),
             features_enabled=self._get_enabled_features()
         )
-        
+
         logger.info(f"Publication search complete: {result.total_found} results")
         return result
-    
+
     def _get_sources_used(self) -> List[str]:
         """Get list of enabled sources"""
         sources = []
@@ -747,7 +747,7 @@ class PublicationSearchPipeline:
         if self.pmc_client:
             sources.append("pmc")
         return sources
-    
+
     def _get_enabled_features(self) -> List[str]:
         """Get list of enabled features"""
         features = []
@@ -764,7 +764,7 @@ class PublicationSearchPipeline:
 
 ### **Day 5: SearchAgent Integration**
 
-#### **Task 5.1: Update SearchAgent** 
+#### **Task 5.1: Update SearchAgent**
 
 Add to `omics_oracle_v2/agents/search_agent.py`:
 
@@ -787,7 +787,7 @@ def __init__(
 # Update _initialize_resources
 def _initialize_resources(self) -> None:
     # ... existing code ...
-    
+
     # NEW: Optional publication pipeline
     if self.enable_publications:
         pub_config = PublicationSearchConfig(
@@ -829,7 +829,7 @@ def pubmed_client(pubmed_config):
 def test_pubmed_search(pubmed_client):
     """Test PubMed search"""
     results = pubmed_client.search("cancer genomics", max_results=10)
-    
+
     assert len(results) > 0
     assert all(pub.source == "pubmed" for pub in results)
     assert all(pub.pmid for pub in results)
@@ -838,7 +838,7 @@ def test_pubmed_search(pubmed_client):
 def test_pubmed_get_by_id(pubmed_client):
     """Test get publication by PMID"""
     pub = pubmed_client.get_by_id("34000000")
-    
+
     assert pub is not None
     assert pub.pmid == "34000000"
     assert pub.title
@@ -870,7 +870,7 @@ def pipeline(pipeline_config):
 def test_pipeline_search(pipeline):
     """Test pipeline search"""
     result = pipeline.search("breast cancer genomics", max_results=10)
-    
+
     assert result.total_found > 0
     assert len(result.publications) > 0
     assert "pubmed" in result.sources_used
@@ -882,9 +882,9 @@ def test_pipeline_feature_toggles():
     # Disabled PubMed
     config = PublicationSearchConfig(enable_pubmed=False)
     pipeline = PublicationSearchPipeline(config)
-    
+
     assert pipeline.pubmed_client is None
-    
+
     result = pipeline.search("test")
     assert result.total_found == 0
     assert len(result.sources_used) == 0
@@ -905,22 +905,22 @@ def test_search_agent_with_publications():
         ncbi_email="test@example.com",
         ncbi_api_key="test-key"
     )
-    
+
     agent = SearchAgent(
         settings,
         enable_semantic=False,
         enable_publications=True
     )
-    
+
     agent.initialize()
-    
+
     search_input = SearchInput(
         search_terms=["breast cancer", "genomics"],
         original_query="breast cancer genomics studies"
     )
-    
+
     result = agent.execute(search_input)
-    
+
     assert result.success
     assert result.output is not None
 ```
@@ -945,12 +945,12 @@ Update `config/development.yml`:
 search_agent:
   enable_semantic: true
   enable_publications: true  # NEW
-  
+
   publications_config:
     enable_pubmed: true
     enable_scholar: false
     enable_citations: false
-    
+
     pubmed_config:
       email: ${NCBI_EMAIL}
       api_key: ${NCBI_API_KEY}

@@ -1,7 +1,7 @@
 # 📚 Documentation Index: Publication Mining Feature
 
-**Date:** October 6, 2025  
-**Question:** Can OmicsOracle's architecture support publication mining + LLM analysis?  
+**Date:** October 6, 2025
+**Question:** Can OmicsOracle's architecture support publication mining + LLM analysis?
 **Answer:** ✅ **YES! Architecture Score: 9.5/10**
 
 ---
@@ -167,13 +167,13 @@ Infrastructure → cache/, database/, storage
 ## 🎯 **Core Question Answered**
 
 ### **Original Question:**
-> "I intend to use metadata like geo id, title, summary or ncbi id etc to 
-> get the information like the original publication of the dataset and 
-> other publications where it has been used and scrape the full text or 
-> download pdf files (without duplication). After gathering all the 
-> related information about each of the datasets, use LLM to summarize, 
-> analyze, and quiried for insightful questions. Is our overall framework 
-> suitable to develop into desirable comprehensive system by adding 
+> "I intend to use metadata like geo id, title, summary or ncbi id etc to
+> get the information like the original publication of the dataset and
+> other publications where it has been used and scrape the full text or
+> download pdf files (without duplication). After gathering all the
+> related information about each of the datasets, use LLM to summarize,
+> analyze, and quiried for insightful questions. Is our overall framework
+> suitable to develop into desirable comprehensive system by adding
 > capabilities one by one to either existing modules or developing new ones?"
 
 ### **Answer:**

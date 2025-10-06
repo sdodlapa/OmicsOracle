@@ -112,8 +112,8 @@ echo ""
 cat > "$ARCHIVE_DIR/README.md" << 'EOF'
 # Archived Phase Plans - October 2025
 
-**Archive Date:** October 6, 2025  
-**Reason:** Strategic pivot to multi-agent architecture  
+**Archive Date:** October 6, 2025
+**Reason:** Strategic pivot to multi-agent architecture
 **Status:** Historical reference only - DO NOT USE FOR CURRENT DEVELOPMENT
 
 ---
@@ -122,8 +122,8 @@ cat > "$ARCHIVE_DIR/README.md" << 'EOF'
 
 This directory contains all phase-based planning documents from the original OmicsOracle development approach (Phases 0-6).
 
-**Original Timeline:** September - October 2025  
-**Completion Status:** Phase 0-1 partially complete, others incomplete  
+**Original Timeline:** September - October 2025
+**Completion Status:** Phase 0-1 partially complete, others incomplete
 
 ---
 

@@ -1,7 +1,7 @@
 # OmicsOracle Documentation
 
-**Last Updated:** October 6, 2025  
-**Status:** Production-Ready with Advanced Semantic Search  
+**Last Updated:** October 6, 2025
+**Status:** Production-Ready with Advanced Semantic Search
 **Version:** 2.0
 
 ---
@@ -93,7 +93,7 @@
 - Cross-encoder reranking for precision
 - RAG pipeline for natural language Q&A
 
-**Integration:** ✅ SearchAgent, ✅ API, ✅ UI toggle  
+**Integration:** ✅ SearchAgent, ✅ API, ✅ UI toggle
 **Missing:** Dataset embeddings (10-min task with OpenAI API key)
 
 ### ✅ Authentication & Authorization
@@ -206,7 +206,7 @@ omics_oracle_v2/
 
 ---
 
-**OmicsOracle** - Intelligent Biomedical Dataset Discovery  
+**OmicsOracle** - Intelligent Biomedical Dataset Discovery
 *Built with ❤️ for the research community*
 
 Last Updated: October 6, 2025

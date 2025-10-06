@@ -1,8 +1,8 @@
 # Query Enhancement - Web Scraping Integration Summary
 
-**Date:** October 6, 2025  
-**Version:** 1.0  
-**Status:** Enhancement Approved  
+**Date:** October 6, 2025
+**Version:** 1.0
+**Status:** Enhancement Approved
 
 ---
 
@@ -89,7 +89,7 @@ Gray literature PDFs: ❌ Not available
 🆕 Add: WebPDFScraper
 🆕 Add: Playwright automation
 
-PDF Sources: 
+PDF Sources:
   1. PMC FTP (best quality, 20% coverage)
   2. Unpaywall API (OA aggregator, 25% coverage)
   3. 🆕 Google Scholar PDF links (direct PDFs)
@@ -156,7 +156,7 @@ Real-world patterns: ❌ Not available
 🆕 Add: Real-time trending topics
 
 Query Expansion: MeSH + Google Trends + real-world usage patterns
-Suggestions: 
+Suggestions:
   - Google autocomplete (what people actually search)
   - Trending biomedical topics (what's hot now)
   - Related searches (Google "related searches")
@@ -221,7 +221,7 @@ Relationships: Extracted from text only
 🆕 Add: Google Knowledge Graph
 
 Entity Extraction: NER + Wikipedia validation (90% accuracy)
-Entity Disambiguation: 
+Entity Disambiguation:
   - Context + Wikipedia descriptions
   - Wikidata canonical forms
   - Google Knowledge Graph IDs
@@ -299,7 +299,7 @@ Ranking Factors:
   - 🆕 Author h-index (credibility)
   - 🆕 Journal impact (web data)
   - 🆕 Trending score (Google Trends)
-  
+
 Quality Signals: ✅ Multiple web sources
   - Citation metrics (Scholar)
   - Social signals (mentions, shares)
@@ -326,7 +326,7 @@ Impact Assessment: ✅ Comprehensive
 omics_oracle_v2/lib/web/
 ├── __init__.py
 ├── google_scholar.py      # GoogleScholarClient
-├── web_scraper.py         # WebPDFScraper  
+├── web_scraper.py         # WebPDFScraper
 ├── trends.py              # TrendingTopicsDetector
 ├── knowledge_graph.py     # WebKnowledgeEnricher
 ├── utils.py               # Rate limiting, caching, ethics
@@ -447,7 +447,7 @@ Total: $0-100/month (only if scaling or rate limited)
 ```python
 class EthicalWebScraper:
     """Ethical scraping with proper rate limiting and robots.txt respect."""
-    
+
     def __init__(self):
         self.user_agent = "OmicsOracle/1.0 (+mailto:your@email.com)"
         self.rate_limits = {
@@ -455,22 +455,22 @@ class EthicalWebScraper:
             'researchgate': 3.0,
             'default': 2.0
         }
-    
+
     async def scrape(self, url: str):
         # 1. Check robots.txt
         if not await self.check_robots_txt(url):
             raise ValueError(f"Scraping disallowed: {url}")
-        
+
         # 2. Rate limiting
         await self.wait_for_rate_limit(url)
-        
+
         # 3. Proper user agent
         headers = {'User-Agent': self.user_agent}
-        
+
         # 4. Caching (avoid re-scraping)
         if cached := await self.get_cache(url):
             return cached
-        
+
         # 5. Scrape and cache
         response = await self.fetch(url, headers)
         await self.cache_result(url, response)
@@ -489,7 +489,7 @@ class EthicalWebScraper:
 - ❌ Before: 40% success rate (2 sources)
 - ✅ After: **70-80% success rate (7+ sources)**
 
-### Citation Analysis  
+### Citation Analysis
 - ❌ Before: Not available
 - ✅ After: **Full citation metrics, h-index, citation graphs**
 
@@ -581,8 +581,8 @@ class EthicalWebScraper:
 
 ---
 
-**Enhancement Status:** ✅ Specified & Ready  
-**Impact:** High - Transforms capabilities  
-**Cost:** Low - Mostly free tier  
-**Risk:** Low - Well-established libraries  
+**Enhancement Status:** ✅ Specified & Ready
+**Impact:** High - Transforms capabilities
+**Cost:** Low - Mostly free tier
+**Risk:** Low - Well-established libraries
 **Recommendation:** **Strongly approved - implement all enhancements** 🚀

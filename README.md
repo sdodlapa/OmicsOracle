@@ -177,7 +177,7 @@ pytest tests/api/
 ./scripts/comprehensive_test_suite.py
 ```
 
-**Test Coverage:** 85%+ in core modules  
+**Test Coverage:** 85%+ in core modules
 **Total Tests:** 220+
 
 📖 **Testing guide:** [docs/testing/AUTOMATED_TESTING_GUIDE.md](docs/testing/AUTOMATED_TESTING_GUIDE.md)
@@ -330,5 +330,5 @@ For issues or questions:
 
 ---
 
-**OmicsOracle** - Intelligent Biomedical Dataset Discovery  
+**OmicsOracle** - Intelligent Biomedical Dataset Discovery
 *Built with ❤️ for the research community*

@@ -1,8 +1,8 @@
 # Publication Mining Technical Specification
 
-**Date:** October 6, 2025  
-**Version:** 1.0  
-**Module:** `omics_oracle_v2/lib/publications/`  
+**Date:** October 6, 2025
+**Version:** 1.0
+**Module:** `omics_oracle_v2/lib/publications/`
 **Priority:** High
 
 ---
@@ -73,7 +73,7 @@ class Author:
     affiliation: Optional[str] = None
     orcid: Optional[str] = None
     email: Optional[str] = None
-    
+
     @property
     def full_name(self) -> str:
         """Get full name."""
@@ -117,42 +117,42 @@ class MeSHTerm:
 @dataclass
 class PublicationMetadata:
     """Core publication metadata."""
-    
+
     # Identifiers
     pmid: Optional[str] = None
     pmcid: Optional[str] = None
     doi: Optional[str] = None
-    
+
     # Core fields
     title: str = ""
     abstract: str = ""
     authors: List[Author] = field(default_factory=list)
-    
+
     # Journal info
     journal: Optional[Journal] = None
-    
+
     # Dates
     publication_date: Optional[date] = None
     epub_date: Optional[date] = None
     revised_date: Optional[date] = None
-    
+
     # Classification
     publication_type: PublicationType = PublicationType.OTHER
     mesh_terms: List[MeSHTerm] = field(default_factory=list)
     keywords: List[str] = field(default_factory=list)
-    
+
     # Metrics
     citation_count: int = 0
-    
+
     # Availability
     has_full_text: bool = False
     has_pdf: bool = False
     is_open_access: bool = False
-    
+
     # Source
     source: PublicationSource = PublicationSource.PUBMED
     retrieved_at: datetime = field(default_factory=datetime.now)
-    
+
     # Raw data
     raw_data: Dict[str, Any] = field(default_factory=dict)
 
@@ -160,13 +160,13 @@ class PublicationMetadata:
 @dataclass
 class FullTextArticle:
     """Full-text article with sections."""
-    
+
     # Core metadata
     metadata: PublicationMetadata
-    
+
     # Full text
     full_text: str = ""
-    
+
     # Structured sections
     sections: Dict[str, str] = field(default_factory=dict)
     # Example: {
@@ -177,14 +177,14 @@ class FullTextArticle:
     #     'discussion': '...',
     #     'conclusion': '...'
     # }
-    
+
     # References
     references: List[Reference] = field(default_factory=list)
-    
+
     # Additional content
     figures: List[Dict[str, Any]] = field(default_factory=list)
     tables: List[Dict[str, Any]] = field(default_factory=list)
-    
+
     # Extraction metadata
     extracted_at: datetime = field(default_factory=datetime.now)
     extraction_method: str = "unknown"
@@ -194,10 +194,10 @@ class FullTextArticle:
 @dataclass
 class SearchQuery:
     """Publication search query."""
-    
+
     query: str
     max_results: int = 20
-    
+
     # Filters
     publication_date_from: Optional[date] = None
     publication_date_to: Optional[date] = None
@@ -205,11 +205,11 @@ class SearchQuery:
     has_full_text: Optional[bool] = None
     has_abstract: Optional[bool] = None
     is_open_access: Optional[bool] = None
-    
+
     # Sorting
     sort_by: str = "relevance"  # relevance, date, citation_count
     sort_order: str = "desc"  # asc, desc
-    
+
     # Pagination
     offset: int = 0
 
@@ -217,7 +217,7 @@ class SearchQuery:
 @dataclass
 class SearchResults:
     """Publication search results."""
-    
+
     publications: List[PublicationMetadata]
     total: int
     query: str
@@ -259,15 +259,15 @@ logger = logging.getLogger(__name__)
 class PubMedClient:
     """
     Client for NCBI PubMed E-utilities API.
-    
+
     Provides methods to search PubMed, retrieve article details,
     and access related articles and citations.
-    
+
     Uses NCBI E-utilities: https://www.ncbi.nlm.nih.gov/books/NBK25501/
     """
-    
+
     BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
-    
+
     def __init__(
         self,
         email: str,
@@ -276,7 +276,7 @@ class PubMedClient:
     ):
         """
         Initialize PubMed client.
-        
+
         Args:
             email: Required by NCBI for tracking (good practice)
             api_key: Optional API key for higher rate limits
@@ -286,57 +286,57 @@ class PubMedClient:
         self.email = email
         self.api_key = api_key
         self.max_retries = max_retries
-        
+
         # Configure Biopython Entrez
         Entrez.email = email
         if api_key:
             Entrez.api_key = api_key
-        
+
         # Rate limiting (3 req/sec without key, 10 req/sec with key)
         self.rate_limit = 10 if api_key else 3
         self._last_request_time = 0
         self._request_lock = asyncio.Lock()
-    
+
     async def _wait_for_rate_limit(self) -> None:
         """Enforce rate limiting."""
         async with self._request_lock:
             now = asyncio.get_event_loop().time()
             time_since_last = now - self._last_request_time
             min_interval = 1.0 / self.rate_limit
-            
+
             if time_since_last < min_interval:
                 await asyncio.sleep(min_interval - time_since_last)
-            
+
             self._last_request_time = asyncio.get_event_loop().time()
-    
+
     async def search(
         self,
         query: SearchQuery,
     ) -> SearchResults:
         """
         Search PubMed for articles.
-        
+
         Args:
             query: Search query with filters
-        
+
         Returns:
             Search results with metadata
-        
+
         Raises:
             PublicationAPIError: If API call fails
             RateLimitError: If rate limit exceeded
         """
         await self._wait_for_rate_limit()
-        
+
         try:
             import time
             start_time = time.time()
-            
+
             # Build search term with filters
             search_term = self._build_search_term(query)
-            
+
             logger.info(f"Searching PubMed: {search_term}")
-            
+
             # ESearch: Get PMIDs
             with Entrez.esearch(
                 db="pubmed",
@@ -346,19 +346,19 @@ class PubMedClient:
                 sort=self._get_sort_param(query.sort_by),
             ) as handle:
                 search_results = Entrez.read(handle)
-            
+
             pmids = search_results["IdList"]
             total = int(search_results["Count"])
-            
+
             logger.info(f"Found {total} results, retrieving {len(pmids)} PMIDs")
-            
+
             # EFetch: Get full records
             publications = []
             if pmids:
                 publications = await self._fetch_details(pmids)
-            
+
             query_time = time.time() - start_time
-            
+
             return SearchResults(
                 publications=publications,
                 total=total,
@@ -367,41 +367,41 @@ class PubMedClient:
                 source=PublicationSource.PUBMED,
                 has_more=(query.offset + len(pmids)) < total,
             )
-            
+
         except Exception as e:
             logger.error(f"PubMed search failed: {e}")
             raise PublicationAPIError(f"PubMed search failed: {e}") from e
-    
+
     def _build_search_term(self, query: SearchQuery) -> str:
         """Build PubMed search term with filters."""
         terms = [query.query]
-        
+
         # Date filter
         if query.publication_date_from:
             date_str = query.publication_date_from.strftime("%Y/%m/%d")
             terms.append(f"{date_str}[PDAT]:3000[PDAT]")
-        
+
         if query.publication_date_to:
             date_str = query.publication_date_to.strftime("%Y/%m/%d")
             terms.append(f"1900[PDAT]:{date_str}[PDAT]")
-        
+
         # Publication type filter
         if query.publication_types:
             type_terms = " OR ".join(
                 f"{pt.value}[PT]" for pt in query.publication_types
             )
             terms.append(f"({type_terms})")
-        
+
         # Full text filter
         if query.has_full_text:
             terms.append("free full text[SB]")
-        
+
         # Abstract filter
         if query.has_abstract:
             terms.append("hasabstract")
-        
+
         return " AND ".join(terms)
-    
+
     def _get_sort_param(self, sort_by: str) -> str:
         """Convert sort parameter to PubMed format."""
         sort_map = {
@@ -410,11 +410,11 @@ class PubMedClient:
             "citation_count": "relevance",  # PubMed doesn't have citation sort
         }
         return sort_map.get(sort_by, "relevance")
-    
+
     async def _fetch_details(self, pmids: List[str]) -> List[PublicationMetadata]:
         """Fetch detailed article information for PMIDs."""
         await self._wait_for_rate_limit()
-        
+
         try:
             with Entrez.efetch(
                 db="pubmed",
@@ -423,7 +423,7 @@ class PubMedClient:
                 retmode="xml",
             ) as handle:
                 records = Entrez.read(handle)
-            
+
             publications = []
             for record in records["PubmedArticle"]:
                 try:
@@ -432,31 +432,31 @@ class PubMedClient:
                 except Exception as e:
                     logger.warning(f"Failed to parse PubMed record: {e}")
                     continue
-            
+
             return publications
-            
+
         except Exception as e:
             logger.error(f"Failed to fetch PubMed details: {e}")
             raise PublicationAPIError(f"Failed to fetch details: {e}") from e
-    
+
     def _parse_pubmed_record(self, record: dict) -> PublicationMetadata:
         """Parse PubMed XML record into PublicationMetadata."""
         medline = record["MedlineCitation"]
         article = medline["Article"]
-        
+
         # Extract PMID
         pmid = str(medline["PMID"])
-        
+
         # Extract title
         title = article.get("ArticleTitle", "")
-        
+
         # Extract abstract
         abstract_parts = article.get("Abstract", {}).get("AbstractText", [])
         if isinstance(abstract_parts, list):
             abstract = " ".join(str(part) for part in abstract_parts)
         else:
             abstract = str(abstract_parts)
-        
+
         # Extract authors
         authors = []
         for author_data in article.get("AuthorList", []):
@@ -470,7 +470,7 @@ class PubMedClient:
                     ),
                 )
                 authors.append(author)
-        
+
         # Extract journal info
         journal_data = article.get("Journal", {})
         journal = Journal(
@@ -480,7 +480,7 @@ class PubMedClient:
             issue=article.get("Issue"),
             pages=article.get("Pagination", {}).get("MedlinePgn"),
         )
-        
+
         # Extract publication date
         pub_date = article.get("ArticleDate", [{}])[0]
         if pub_date:
@@ -494,7 +494,7 @@ class PubMedClient:
                 publication_date = None
         else:
             publication_date = None
-        
+
         # Extract MeSH terms
         mesh_terms = []
         for mesh_data in medline.get("MeshHeadingList", []):
@@ -504,12 +504,12 @@ class PubMedClient:
                 is_major_topic=descriptor.attributes.get("MajorTopicYN") == "Y",
             )
             mesh_terms.append(mesh_term)
-        
+
         # Extract keywords
         keywords = [
             str(kw) for kw in medline.get("KeywordList", [[]])[0]
         ]
-        
+
         # Check for PMC ID and full text
         article_ids = record.get("PubmedData", {}).get("ArticleIdList", [])
         pmcid = None
@@ -520,7 +520,7 @@ class PubMedClient:
                 pmcid = str(id_data)
             elif id_type == "doi":
                 doi = str(id_data)
-        
+
         return PublicationMetadata(
             pmid=pmid,
             pmcid=pmcid,
@@ -537,14 +537,14 @@ class PubMedClient:
             source=PublicationSource.PUBMED,
             raw_data=record,
         )
-    
+
     async def get_article(self, pmid: str) -> PublicationMetadata:
         """
         Get detailed information for a single article.
-        
+
         Args:
             pmid: PubMed ID
-        
+
         Returns:
             Publication metadata
         """
@@ -552,7 +552,7 @@ class PubMedClient:
         if not publications:
             raise PublicationAPIError(f"Article not found: {pmid}")
         return publications[0]
-    
+
     async def get_related(
         self,
         pmid: str,
@@ -560,16 +560,16 @@ class PubMedClient:
     ) -> List[str]:
         """
         Get related article PMIDs.
-        
+
         Args:
             pmid: PubMed ID
             max_results: Maximum number of related articles
-        
+
         Returns:
             List of related PMIDs
         """
         await self._wait_for_rate_limit()
-        
+
         try:
             with Entrez.elink(
                 dbfrom="pubmed",
@@ -578,21 +578,21 @@ class PubMedClient:
                 linkname="pubmed_pubmed",
             ) as handle:
                 results = Entrez.read(handle)
-            
+
             if not results or not results[0].get("LinkSetDb"):
                 return []
-            
+
             pmids = [
                 link["Id"]
                 for link in results[0]["LinkSetDb"][0]["Link"][:max_results]
             ]
-            
+
             return pmids
-            
+
         except Exception as e:
             logger.error(f"Failed to get related articles: {e}")
             return []
-    
+
     async def get_citations(
         self,
         pmid: str,
@@ -600,16 +600,16 @@ class PubMedClient:
     ) -> List[str]:
         """
         Get PMIDs of articles citing this article.
-        
+
         Args:
             pmid: PubMed ID
             max_results: Maximum number of citing articles
-        
+
         Returns:
             List of citing PMIDs
         """
         await self._wait_for_rate_limit()
-        
+
         try:
             with Entrez.elink(
                 dbfrom="pubmed",
@@ -618,17 +618,17 @@ class PubMedClient:
                 linkname="pubmed_pubmed_citedin",
             ) as handle:
                 results = Entrez.read(handle)
-            
+
             if not results or not results[0].get("LinkSetDb"):
                 return []
-            
+
             pmids = [
                 link["Id"]
                 for link in results[0]["LinkSetDb"][0]["Link"][:max_results]
             ]
-            
+
             return pmids
-            
+
         except Exception as e:
             logger.error(f"Failed to get citations: {e}")
             return []
@@ -644,20 +644,20 @@ class PubMedClient:
 class PMCClient:
     """
     Client for PubMed Central (PMC) full-text articles.
-    
+
     Provides access to full-text XML and PDF files for open-access articles.
     """
-    
+
     BASE_URL = "https://www.ncbi.nlm.nih.gov/pmc/oai/oai.cgi"
     FTP_BASE = "ftp://ftp.ncbi.nlm.nih.gov/pub/pmc/"
-    
+
     async def get_full_text(self, pmcid: str) -> FullTextArticle:
         """
         Get full-text article from PMC.
-        
+
         Args:
             pmcid: PMC ID (e.g., 'PMC1234567')
-        
+
         Returns:
             Full-text article with sections
         """
@@ -666,15 +666,15 @@ class PMCClient:
         # 3. Parse references
         # 4. Return FullTextArticle
         pass
-    
+
     async def download_pdf(self, pmcid: str) -> bytes:
         """Download PDF from PMC FTP."""
         pass
-    
+
     async def get_sections(self, pmcid: str) -> Dict[str, str]:
         """Extract article sections."""
         pass
-    
+
     async def extract_references(self, pmcid: str) -> List[Reference]:
         """Extract references from article."""
         pass
@@ -690,10 +690,10 @@ class PMCClient:
 class PublicationService:
     """
     High-level service for publication management.
-    
+
     Orchestrates multiple clients and provides unified interface.
     """
-    
+
     def __init__(self, config: PublicationConfig):
         self.pubmed = PubMedClient(
             email=config.email,
@@ -704,7 +704,7 @@ class PublicationService:
             email=config.email,
         )
         self.cache = PublicationCache(config.cache_dir)
-    
+
     async def search(
         self,
         query: str,
@@ -713,12 +713,12 @@ class PublicationService:
     ) -> SearchResults:
         """
         Search across multiple sources.
-        
+
         Automatically tries multiple sources and merges results.
         """
         if sources is None:
             sources = [PublicationSource.PUBMED, PublicationSource.EUROPE_PMC]
-        
+
         # Search each source in parallel
         tasks = []
         for source in sources:
@@ -727,12 +727,12 @@ class PublicationService:
             elif source == PublicationSource.EUROPE_PMC:
                 task = self.europe_pmc.search(SearchQuery(query=query, **filters))
             tasks.append(task)
-        
+
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # Merge and deduplicate results
         return self._merge_results(results)
-    
+
     async def get_full_text(
         self,
         pmid: Optional[str] = None,
@@ -741,7 +741,7 @@ class PublicationService:
     ) -> Optional[FullTextArticle]:
         """
         Get full-text article from any available source.
-        
+
         Tries multiple methods:
         1. PMC if PMCID available
         2. Europe PMC as fallback
@@ -751,7 +751,7 @@ class PublicationService:
         cache_key = pmid or pmcid or doi
         if cached := self.cache.get(cache_key):
             return cached
-        
+
         # Try PMC first
         if pmcid:
             try:
@@ -760,7 +760,7 @@ class PublicationService:
                 return article
             except Exception as e:
                 logger.warning(f"PMC fetch failed: {e}")
-        
+
         # Try Europe PMC
         if pmcid:
             try:
@@ -769,7 +769,7 @@ class PublicationService:
                 return article
             except Exception as e:
                 logger.warning(f"Europe PMC fetch failed: {e}")
-        
+
         return None
 ```
 
@@ -783,26 +783,26 @@ class PublicationService:
 @dataclass
 class PublicationConfig:
     """Configuration for publication mining."""
-    
+
     # NCBI/PubMed
     ncbi_email: str
     ncbi_api_key: Optional[str] = None
-    
+
     # Europe PMC
     europe_pmc_email: str
-    
+
     # Caching
     cache_dir: Path = Path("data/publications/cache")
     cache_ttl_days: int = 7
-    
+
     # Rate limiting
     max_requests_per_second: int = 3
-    
+
     # PDF processing
     enable_pdf_download: bool = True
     pdf_storage_dir: Path = Path("data/publications/pdfs")
     max_pdf_size_mb: int = 50
-    
+
     # Full-text
     enable_full_text: bool = True
     preferred_sources: List[PublicationSource] = field(
@@ -829,14 +829,14 @@ from omics_oracle_v2.lib.publications import PubMedClient, SearchQuery
 async def test_pubmed_search():
     """Test basic PubMed search."""
     client = PubMedClient(email="test@example.com")
-    
+
     query = SearchQuery(
         query="breast cancer",
         max_results=10,
     )
-    
+
     results = await client.search(query)
-    
+
     assert results.total > 0
     assert len(results.publications) <= 10
     assert all(pub.pmid for pub in results.publications)
@@ -845,10 +845,10 @@ async def test_pubmed_search():
 async def test_pubmed_get_article():
     """Test fetching single article."""
     client = PubMedClient(email="test@example.com")
-    
+
     # Use a known PMID
     article = await client.get_article("36006037")
-    
+
     assert article.pmid == "36006037"
     assert article.title
     assert article.abstract
@@ -858,13 +858,13 @@ async def test_pubmed_get_article():
 async def test_pubmed_rate_limiting():
     """Test that rate limiting is enforced."""
     client = PubMedClient(email="test@example.com")
-    
+
     # Make multiple rapid requests
     start = time.time()
     for _ in range(5):
         await client.get_article("36006037")
     elapsed = time.time() - start
-    
+
     # Should take at least 1 second (3 req/sec limit)
     assert elapsed >= 1.0
 ```
@@ -899,7 +899,7 @@ async def search_publications(
         publication_date_from=publication_date_from,
         has_full_text=has_full_text,
     )
-    
+
     results = await service.search(search_query)
     return results
 
@@ -922,13 +922,13 @@ async def get_full_text(
 ):
     """Get full-text article."""
     article = await service.get_full_text(pmid=pmid)
-    
+
     if not article:
         raise HTTPException(
             status_code=404,
             detail="Full text not available"
         )
-    
+
     return article
 ```
 
@@ -973,5 +973,5 @@ tenacity = ">=8.2.3"
 
 ---
 
-**Specification Status:** ✅ Complete  
+**Specification Status:** ✅ Complete
 **Ready for:** Implementation (Phase 1)

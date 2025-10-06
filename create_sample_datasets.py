@@ -18,7 +18,7 @@ SAMPLE_DATASETS = [
         "organism": "Homo sapiens",
         "sample_count": 24,
         "platform": "GPL20301",
-        "keywords": ["ATAC-seq", "chromatin accessibility", "breast cancer", "epigenetics"]
+        "keywords": ["ATAC-seq", "chromatin accessibility", "breast cancer", "epigenetics"],
     },
     {
         "id": "GSE234567",
@@ -28,7 +28,7 @@ SAMPLE_DATASETS = [
         "organism": "Mus musculus",
         "sample_count": 48,
         "platform": "GPL24247",
-        "keywords": ["RNA-seq", "T cells", "differentiation", "scRNA-seq"]
+        "keywords": ["RNA-seq", "T cells", "differentiation", "scRNA-seq"],
     },
     {
         "id": "GSE345678",
@@ -38,7 +38,7 @@ SAMPLE_DATASETS = [
         "organism": "Homo sapiens",
         "sample_count": 36,
         "platform": "GPL20795",
-        "keywords": ["ChIP-seq", "histone modifications", "stem cells", "differentiation"]
+        "keywords": ["ChIP-seq", "histone modifications", "stem cells", "differentiation"],
     },
     {
         "id": "GSE456789",
@@ -48,7 +48,7 @@ SAMPLE_DATASETS = [
         "organism": "human gut metagenome",
         "sample_count": 120,
         "platform": "GPL19293",
-        "keywords": ["microbiome", "16S rRNA", "IBD", "gut bacteria"]
+        "keywords": ["microbiome", "16S rRNA", "IBD", "gut bacteria"],
     },
     {
         "id": "GSE567890",
@@ -58,7 +58,7 @@ SAMPLE_DATASETS = [
         "organism": "Homo sapiens",
         "sample_count": 60,
         "platform": "GPL28019",
-        "keywords": ["proteomics", "Alzheimer", "brain tissue", "mass spectrometry"]
+        "keywords": ["proteomics", "Alzheimer", "brain tissue", "mass spectrometry"],
     },
     {
         "id": "GSE678901",
@@ -68,7 +68,7 @@ SAMPLE_DATASETS = [
         "organism": "Homo sapiens",
         "sample_count": 80,
         "platform": "GPL24676",
-        "keywords": ["methylation", "lung cancer", "WGBS", "tumor suppressors"]
+        "keywords": ["methylation", "lung cancer", "WGBS", "tumor suppressors"],
     },
     {
         "id": "GSE789012",
@@ -78,7 +78,7 @@ SAMPLE_DATASETS = [
         "organism": "Homo sapiens",
         "sample_count": 15,
         "platform": "GPL24676",
-        "keywords": ["scRNA-seq", "diabetes", "pancreatic islets", "beta cells"]
+        "keywords": ["scRNA-seq", "diabetes", "pancreatic islets", "beta cells"],
     },
     {
         "id": "GSE890123",
@@ -88,7 +88,7 @@ SAMPLE_DATASETS = [
         "organism": "Mus musculus",
         "sample_count": 18,
         "platform": "GPL21103",
-        "keywords": ["Hi-C", "3D genome", "development", "chromatin organization"]
+        "keywords": ["Hi-C", "3D genome", "development", "chromatin organization"],
     },
     {
         "id": "GSE901234",
@@ -98,7 +98,7 @@ SAMPLE_DATASETS = [
         "organism": "Homo sapiens",
         "sample_count": 96,
         "platform": "GPL24676",
-        "keywords": ["CRISPR", "immunotherapy", "PD-L1", "melanoma"]
+        "keywords": ["CRISPR", "immunotherapy", "PD-L1", "melanoma"],
     },
     {
         "id": "GSE012345",
@@ -108,37 +108,41 @@ SAMPLE_DATASETS = [
         "organism": "Homo sapiens",
         "sample_count": 32,
         "platform": "GPL28019",
-        "keywords": ["metabolomics", "cancer metabolism", "hypoxia", "LC-MS"]
-    }
+        "keywords": ["metabolomics", "cancer metabolism", "hypoxia", "LC-MS"],
+    },
 ]
+
 
 def create_sample_datasets(output_dir: str = "data/cache/geo_samples"):
     """Create sample GEO datasets for testing."""
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
-    
+
     # Save as individual JSON files
     for dataset in SAMPLE_DATASETS:
         filename = f"{dataset['accession']}.json"
         filepath = output_path / filename
-        
-        with open(filepath, 'w') as f:
+
+        with open(filepath, "w") as f:
             json.dump(dataset, f, indent=2)
-        
+
         print(f"✅ Created {filename}")
-    
+
     # Also save as single combined file
     combined_path = output_path / "all_datasets.json"
-    with open(combined_path, 'w') as f:
+    with open(combined_path, "w") as f:
         json.dump(SAMPLE_DATASETS, f, indent=2)
-    
+
     print(f"\n✅ Created {len(SAMPLE_DATASETS)} sample datasets in {output_dir}/")
     print(f"✅ Combined file: {combined_path}")
-    
+
     return SAMPLE_DATASETS
+
 
 if __name__ == "__main__":
     datasets = create_sample_datasets()
     print(f"\nDatasets ready for embedding!")
     print(f"Total: {len(datasets)} datasets")
-    print(f"Topics: ATAC-seq, RNA-seq, ChIP-seq, microbiome, proteomics, methylation, scRNA-seq, Hi-C, CRISPR, metabolomics")
+    print(
+        f"Topics: ATAC-seq, RNA-seq, ChIP-seq, microbiome, proteomics, methylation, scRNA-seq, Hi-C, CRISPR, metabolomics"
+    )

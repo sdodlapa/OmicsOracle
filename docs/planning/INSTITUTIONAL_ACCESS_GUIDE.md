@@ -1,8 +1,8 @@
 # 🏛️ Institutional Access Integration Guide
 
-**Purpose:** Leverage Old Dominion University and Georgia Tech institutional access to bypass journal paywalls  
-**Status:** Ready for Week 4 integration (PDF processing module)  
-**Methods:** EZProxy, Unpaywall, OpenURL, VPN routing  
+**Purpose:** Leverage Old Dominion University and Georgia Tech institutional access to bypass journal paywalls
+**Status:** Ready for Week 4 integration (PDF processing module)
+**Methods:** EZProxy, Unpaywall, OpenURL, VPN routing
 
 ---
 
@@ -26,9 +26,9 @@ You have access to **thousands of journals** through your university subscriptio
 ## 🎯 Access Methods (In Priority Order)
 
 ### **1. Unpaywall API** (Free, Legal, No Auth) ⭐
-**What:** Database of 30M+ open access articles  
-**When:** Always try first  
-**Advantage:** No authentication, completely legal, high coverage  
+**What:** Database of 30M+ open access articles
+**When:** Always try first
+**Advantage:** No authentication, completely legal, high coverage
 
 **How it works:**
 ```python
@@ -44,9 +44,9 @@ if response.json()['is_oa']:
 ---
 
 ### **2. EZProxy Authentication** (Most Common) ⭐⭐⭐
-**What:** URL rewriting to route through university proxy  
-**When:** Article is paywalled, institution has subscription  
-**Advantage:** Works with 99% of publishers, automatic authentication  
+**What:** URL rewriting to route through university proxy
+**When:** Article is paywalled, institution has subscription
+**Advantage:** Works with 99% of publishers, automatic authentication
 
 **How it works:**
 ```python
@@ -69,9 +69,9 @@ ezproxy_url = "https://login.ezproxy.gatech.edu/login?url=https://www.sciencedir
 ---
 
 ### **3. OpenURL Link Resolvers** (Library Discovery) ⭐⭐
-**What:** Library systems that find where article is available  
-**When:** Not sure if institution has access  
-**Advantage:** Checks all subscriptions, interlibrary loan  
+**What:** Library systems that find where article is available
+**When:** Not sure if institution has access
+**Advantage:** Checks all subscriptions, interlibrary loan
 
 **How it works:**
 ```python
@@ -92,9 +92,9 @@ resolver_url = "https://buzzport.gatech.edu/sfx_local?{params}"
 ---
 
 ### **4. PubMed Central (PMC)** (Free Full Text) ⭐⭐⭐
-**What:** Free repository of NIH-funded research  
-**When:** Publication has PMCID  
-**Advantage:** Completely free, no authentication  
+**What:** Free repository of NIH-funded research
+**When:** Publication has PMCID
+**Advantage:** Completely free, no authentication
 
 **How it works:**
 ```python
@@ -107,9 +107,9 @@ if publication.pmcid:
 ---
 
 ### **5. VPN/Proxy Routing** (Network-Level Access) ⭐
-**What:** Route all traffic through university network  
-**When:** On-campus IP authentication  
-**Advantage:** Works for IP-authenticated resources  
+**What:** Route all traffic through university network
+**When:** On-campus IP authentication
+**Advantage:** Works for IP-authenticated resources
 
 **How it works:**
 - Connect to Georgia Tech VPN
@@ -132,7 +132,7 @@ Add institutional access to `PublicationSearchPipeline`:
 class PublicationSearchConfig:
     # Existing
     enable_pdf_download: bool = False
-    
+
     # NEW: Institutional access
     enable_institutional_access: bool = True
     institution: str = "gatech"  # or "odu"
@@ -144,17 +144,17 @@ class PublicationSearchPipeline:
         # Existing
         if config.enable_pdf_download:
             self.pdf_downloader = PDFDownloader(config.pdf_config)
-        
+
         # NEW: Institutional access
         if config.enable_institutional_access:
             self.institutional_manager = InstitutionalAccessManager(
                 institution=InstitutionType.GEORGIA_TECH
             )
-    
+
     def _download_pdfs(self, results):
         for result in results:
             pub = result.publication
-            
+
             # Try institutional access for PDF URL
             if self.institutional_manager:
                 pdf_url = self.institutional_manager.get_pdf_url(pub)
@@ -195,20 +195,20 @@ class PublicationSearchPipeline:
 ## 🔐 Security & Authentication
 
 ### **Option 1: Browser-Based (Recommended for Manual Use)**
-**Setup:** None  
-**How:** User clicks EZProxy link → logs in via browser → accesses article  
-**Pros:** No credential storage, uses existing university login  
-**Cons:** Requires manual interaction  
+**Setup:** None
+**How:** User clicks EZProxy link → logs in via browser → accesses article
+**Pros:** No credential storage, uses existing university login
+**Cons:** Requires manual interaction
 
 **Use Case:** Manual research, ad-hoc article access
 
 ---
 
 ### **Option 2: Automated with Credentials (Programmatic Access)**
-**Setup:** Store encrypted credentials  
-**How:** Selenium/Playwright automates login → downloads PDF  
-**Pros:** Fully automated  
-**Cons:** Requires secure credential storage  
+**Setup:** Store encrypted credentials
+**How:** Selenium/Playwright automates login → downloads PDF
+**Pros:** Fully automated
+**Cons:** Requires secure credential storage
 
 **Implementation:**
 ```python
@@ -218,16 +218,16 @@ def download_via_ezproxy(url, username, password):
     with sync_playwright() as p:
         browser = p.chromium.launch()
         page = browser.new_page()
-        
+
         # Go to EZProxy URL
         page.goto(ezproxy_url)
-        
+
         # Login (if needed)
         if "login" in page.url:
             page.fill("#username", username)
             page.fill("#password", password)
             page.click("button[type=submit]")
-        
+
         # Download PDF
         page.goto(article_url)
         # ... download logic
@@ -247,10 +247,10 @@ ODU_PASSWORD = Fernet(key).decrypt(encrypted_password)
 ---
 
 ### **Option 3: Session-Based (Best for Development)**
-**Setup:** Manual login once, save cookies  
-**How:** Reuse authenticated session for API calls  
-**Pros:** No repeated authentication  
-**Cons:** Sessions expire  
+**Setup:** Manual login once, save cookies
+**How:** Reuse authenticated session for API calls
+**Pros:** No repeated authentication
+**Cons:** Sessions expire
 
 **Implementation:**
 ```python
@@ -313,21 +313,21 @@ else:
 # In pipeline
 def search(self, query, max_results=50):
     # ... search and rank ...
-    
+
     # Enrich with access info
     for result in ranked_results:
         pub = result.publication
-        
+
         # Check access methods
         access_status = self.institutional_manager.check_access_status(pub)
-        
+
         # Add to metadata
         result.publication.metadata['access'] = {
             'open_access': access_status['unpaywall'],
             'institutional': access_status['ezproxy'],
             'pmc': access_status['pmc'],
         }
-    
+
     return ranked_results
 ```
 
@@ -339,18 +339,18 @@ def search(self, query, max_results=50):
 def _score_publication(self, publication, query):
     # Base score
     score = calculate_base_score(publication, query)
-    
+
     # Boost if easily accessible
     if self.institutional_manager:
         access_status = self.institutional_manager.check_access_status(publication)
-        
+
         if access_status['unpaywall']:
             score *= 1.2  # 20% boost for OA
         elif access_status['pmc']:
             score *= 1.15  # 15% boost for PMC
         elif access_status['ezproxy']:
             score *= 1.1  # 10% boost for institutional
-    
+
     return score
 ```
 
@@ -388,7 +388,7 @@ def get_pdf_url(self, publication):
     url = gt_manager.get_pdf_url(publication)
     if url:
         return url
-    
+
     # Fallback to ODU
     odu_manager = InstitutionalAccessManager(InstitutionType.OLD_DOMINION)
     url = odu_manager.get_pdf_url(publication)
@@ -424,7 +424,7 @@ def get_pdf_url(self, publication):
 - **Georgia Tech Library:** https://library.gatech.edu
   - Journal access: https://library.gatech.edu/search
   - EZProxy help: https://library.gatech.edu/ezproxy
-  
+
 - **ODU Libraries:** https://www.odu.edu/library
   - Journal finder: https://odu.illiad.oclc.org
   - Off-campus access: https://www.odu.edu/library/help/off-campus
@@ -475,6 +475,6 @@ def get_pdf_url(self, publication):
 
 ---
 
-**Status:** Implementation ready, Week 4 integration planned  
-**Estimated Development:** 2-3 days  
+**Status:** Implementation ready, Week 4 integration planned
+**Estimated Development:** 2-3 days
 **Value:** Transforms OmicsOracle from limited to comprehensive article access

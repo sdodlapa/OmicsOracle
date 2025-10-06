@@ -1,8 +1,8 @@
 # 🗺️ Module Integration Roadmap
 
-**Date**: June 25, 2025  
-**Status**: Implementation Ready  
-**Purpose**: Strategic roadmap for integrating advanced modules into consolidated interfaces  
+**Date**: June 25, 2025
+**Status**: Implementation Ready
+**Purpose**: Strategic roadmap for integrating advanced modules into consolidated interfaces
 
 ---
 
@@ -11,7 +11,7 @@
 This roadmap details the integration of four advanced modules into the consolidated OmicsOracle interface architecture:
 
 1. **Text Extraction Module** - Full-text publication processing
-2. **Publication Discovery Module** - Related literature identification  
+2. **Publication Discovery Module** - Related literature identification
 3. **Statistical Extraction Module** - Automated statistics extraction
 4. **Visualization Module** - Advanced data visualization
 
@@ -137,7 +137,7 @@ async def file(file_path: str, type: str, output: str):
     """Extract text from a single file"""
     agent = TextExtractionAgent("cli-extractor")
     result = await agent.extract_from_file(Path(file_path), type)
-    
+
     if output:
         with open(output, 'w') as f:
             f.write(result.extracted_text)
@@ -159,22 +159,22 @@ class PublicationDiscoveryAgent(BaseAgent):
         super().__init__(agent_id)
         self.citation_service = CitationAnalysisService()
         self.similarity_service = SimilaritySearchService()
-    
+
     async def process_message(self, message: AgentMessage):
         if message.message_type == "discover_related":
             return await self._discover_related_publications(message.payload)
         elif message.message_type == "analyze_citations":
             return await self._analyze_citations(message.payload)
-        
+
     async def _discover_related_publications(self, payload: dict):
         """Find related publications based on input"""
         publication_id = payload.get("publication_id")
         search_terms = payload.get("search_terms", [])
-        
+
         # Use both citation analysis and semantic similarity
         citation_related = await self.citation_service.find_citing_papers(publication_id)
         semantic_related = await self.similarity_service.find_similar(search_terms)
-        
+
         return AgentMessage(
             message_type="discovery_result",
             payload={
@@ -195,14 +195,14 @@ from ..agents.publication_discovery import PublicationDiscoveryAgent
 class DiscoveryWebSocketHandler:
     def __init__(self):
         self.discovery_agent = PublicationDiscoveryAgent("ws-discovery")
-        
+
     async def handle_connection(self, websocket: WebSocket):
         await websocket.accept()
-        
+
         try:
             while True:
                 data = await websocket.receive_json()
-                
+
                 if data["type"] == "start_discovery":
                     # Start discovery process
                     message = AgentMessage(
@@ -210,14 +210,14 @@ class DiscoveryWebSocketHandler:
                         payload=data["payload"],
                         sender_id="websocket-client"
                     )
-                    
+
                     # Process in background and send updates
                     result = await self.discovery_agent.process_message(message)
                     await websocket.send_json({
                         "type": "discovery_progress",
                         "data": result.payload
                     })
-                    
+
         except Exception as e:
             await websocket.send_json({
                 "type": "error",
@@ -238,28 +238,28 @@ class StatisticalValidationWorkflow:
     def __init__(self):
         self.extraction_agent = StatisticalExtractionAgent("stats-extractor")
         self.validation_agent = ValidationAgent("stats-validator")
-    
+
     async def process_document(self, document_id: str):
         """Complete statistical extraction and validation workflow"""
-        
+
         # Step 1: Extract statistics
         extraction_message = AgentMessage(
             message_type="extract_statistics",
             payload={"document_id": document_id},
             sender_id="workflow-orchestrator"
         )
-        
+
         extraction_result = await self.extraction_agent.process_message(extraction_message)
-        
+
         # Step 2: Validate extracted statistics
         validation_message = AgentMessage(
             message_type="validate_statistics",
             payload={"statistics": extraction_result.payload},
             sender_id="workflow-orchestrator"
         )
-        
+
         validation_result = await self.validation_agent.process_message(validation_message)
-        
+
         # Step 3: Return combined result
         return StatisticalResult(
             document_id=document_id,
@@ -279,7 +279,7 @@ import json
 
 class VisualizationComponents:
     """Modular visualization component system"""
-    
+
     @staticmethod
     def render_network_graph(data: Dict[str, Any]) -> str:
         """Render D3.js network graph for publications"""
@@ -291,7 +291,7 @@ class VisualizationComponents:
             </script>
         </div>
         """
-    
+
     @staticmethod
     def render_statistical_charts(stats: List[Dict[str, Any]]) -> str:
         """Render statistical visualization charts"""
@@ -303,7 +303,7 @@ class VisualizationComponents:
             </script>
         </div>
         """
-    
+
     @staticmethod
     def render_timeline_visualization(timeline_data: Dict[str, Any]) -> str:
         """Render publication timeline visualization"""
@@ -326,11 +326,11 @@ class RealTimeVisualization {
         this.charts = new Map();
         this.setupWebSocketHandlers();
     }
-    
+
     setupWebSocketHandlers() {
         this.websocket.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            
+
             if (data.type === 'statistics_update') {
                 this.updateStatisticalCharts(data.payload);
             } else if (data.type === 'network_update') {
@@ -340,21 +340,21 @@ class RealTimeVisualization {
             }
         };
     }
-    
+
     updateStatisticalCharts(data) {
         // Update existing charts with new data
         if (this.charts.has('statistics')) {
             this.charts.get('statistics').update(data);
         }
     }
-    
+
     updateNetworkGraph(data) {
         // Update network graph with new nodes/edges
         if (this.charts.has('network')) {
             this.charts.get('network').updateData(data);
         }
     }
-    
+
     updateTimeline(data) {
         // Update timeline with new events
         if (this.charts.has('timeline')) {
@@ -376,17 +376,17 @@ agents:
     instances: 3
     memory_limit: "2GB"
     processing_timeout: 300
-    
+
   publication_discovery:
     instances: 2
     memory_limit: "1GB"
     cache_size: 1000
-    
+
   statistical_extraction:
     instances: 2
     memory_limit: "1.5GB"
     validation_enabled: true
-    
+
   visualization:
     instances: 1
     memory_limit: "512MB"
@@ -396,7 +396,7 @@ communication:
   message_broker: "redis"
   message_ttl: 3600
   max_retries: 3
-  
+
 performance:
   concurrent_jobs: 10
   queue_size: 100
@@ -501,7 +501,7 @@ def setup_monitoring():
 
 1. **Begin Interface Consolidation** following the Consolidation Guide
 2. **Implement Text Extraction Module** as the foundation
-3. **Establish Agent Communication** patterns and protocols  
+3. **Establish Agent Communication** patterns and protocols
 4. **Integrate Discovery and Statistics** modules in parallel
 5. **Deploy Visualization Components** with real-time capabilities
 6. **Conduct Comprehensive Testing** throughout integration process

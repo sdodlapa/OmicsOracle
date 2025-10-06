@@ -125,7 +125,7 @@ The "Analyze with AI" button sends your search results to GPT-4 (or GPT-3.5-turb
 ### **System Message (Sets AI Persona)**
 
 ```
-You are an expert bioinformatics advisor helping researchers understand 
+You are an expert bioinformatics advisor helping researchers understand
 and select genomics datasets. Provide clear, actionable insights.
 ```
 
@@ -141,31 +141,31 @@ User searched for: "joint DNA methylation and HiC profiling"
 Found 2 relevant datasets:
 
 1. **GSE281238** (Relevance: 10%)
-   Title: Generalization of the sci-L3 method to achieve high-throughput 
-   linear amplification for replication template strand sequencing, 
-   genome conformation capture, and the joint profiling of RNA and 
+   Title: Generalization of the sci-L3 method to achieve high-throughput
+   linear amplification for replication template strand sequencing,
+   genome conformation capture, and the joint profiling of RNA and
    chromatin accessibility
    Organism: N/A, Samples: 7
-   Summary: Single-cell combinatorial indexing (sci-) methods have 
-   addressed major limitations of throughput and cost for many single 
-   cell modalities. With the incorporation of linear amplification 
-   and 3-level barcoding in our suite of methods called sci-L3, we 
-   further addressed the limitations of uniformity in single cell 
-   genome amplification. Here, we build on the generalizability of 
+   Summary: Single-cell combinatorial indexing (sci-) methods have
+   addressed major limitations of throughput and cost for many single
+   cell modalities. With the incorporation of linear amplification
+   and 3-level barcoding in our suite of methods called sci-L3, we
+   further addressed the limitations of uniformity in single cell
+   genome amplification. Here, we build on the generalizability of
    sci-L3 by extending it to template strand sequencing...
 
 2. **GSE189158** (Relevance: 5%)
-   Title: NOMe-HiC: joint profiling of genetic variants, DNA 
-   methylation, chromatin accessibility, and 3D genome in the same 
+   Title: NOMe-HiC: joint profiling of genetic variants, DNA
+   methylation, chromatin accessibility, and 3D genome in the same
    DNA molecule
    Organism: N/A, Samples: 12
-   Summary: Cis-regulatory elements coordinate the regulation of 
-   their targeted genes' expression. However, the joint measurement 
-   of cis-regulatory elements' activities and their interactions in 
-   spatial proximity is limited by the current sequencing approaches. 
-   We describe a method, NOMe-HiC, which simultaneously captures 
-   single nucleotide polymorphisms, DNA methylation, chromatin 
-   accessibility (GpC methyltransferase footprints), and chromosome 
+   Summary: Cis-regulatory elements coordinate the regulation of
+   their targeted genes' expression. However, the joint measurement
+   of cis-regulatory elements' activities and their interactions in
+   spatial proximity is limited by the current sequencing approaches.
+   We describe a method, NOMe-HiC, which simultaneously captures
+   single nucleotide polymorphisms, DNA methylation, chromatin
+   accessibility (GpC methyltransferase footprints), and chromosome
    conformation changes from the same DNA molecule...
 
 Analyze these datasets and provide:
@@ -377,25 +377,25 @@ Analyze and provide: Overview, Comparison, Insights, Recommendations
 ```markdown
 ### Overview
 
-Based on your query for "joint DNA methylation and HiC profiling," 
-the most relevant dataset is **GSE189158**. This dataset directly 
-addresses the simultaneous profiling of DNA methylation, chromatin 
+Based on your query for "joint DNA methylation and HiC profiling,"
+the most relevant dataset is **GSE189158**. This dataset directly
+addresses the simultaneous profiling of DNA methylation, chromatin
 accessibility, and 3D genome organization...
 
 ### Comparison
 
-**GSE281238** employs the sci-L3 method, which is an advancement in 
+**GSE281238** employs the sci-L3 method, which is an advancement in
 single-cell combinatorial indexing strategies...
 
-**GSE189158**, on the other hand, introduces NOMe-HiC, a novel 
+**GSE189158**, on the other hand, introduces NOMe-HiC, a novel
 methodology specifically designed for the concurrent examination...
 
 ### Key Insights
 
-- **GSE281238** highlights the versatility and efficiency of the 
+- **GSE281238** highlights the versatility and efficiency of the
   sci-L3 method in capturing a wide range of genomic information...
 
-- **GSE189158** provides critical insights into the interplay 
+- **GSE189158** provides critical insights into the interplay
   between cis-regulatory elements and gene expression...
 
 ### Recommendations

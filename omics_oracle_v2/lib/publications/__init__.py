@@ -16,15 +16,12 @@ Week 3: Enhanced publications (Scholar, citations)
 Week 4: PDF processing and full-text extraction
 """
 
+from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
 from omics_oracle_v2.lib.publications.models import (
     Publication,
-    PublicationSearchResult,
     PublicationResult,
+    PublicationSearchResult,
     PublicationSource,
-)
-from omics_oracle_v2.lib.publications.config import (
-    PubMedConfig,
-    PublicationSearchConfig,
 )
 from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
 

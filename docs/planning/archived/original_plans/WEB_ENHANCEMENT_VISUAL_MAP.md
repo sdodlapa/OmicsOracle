@@ -289,10 +289,10 @@ omics_oracle_v2/lib/web/
 async def search(self, query: str):
     # Existing: PubMed + PMC
     pubmed_results = await self.pubmed_client.search(query)
-    
+
     # 🆕 Add: Google Scholar
     scholar_results = await self.scholar_client.search(query)
-    
+
     # Merge with citation data
     enriched_results = self._merge_with_citations(
         pubmed_results,
@@ -308,14 +308,14 @@ async def download(self, pmid, pmcid, doi, url):
     # Try existing sources first
     if pdf := await self._download_from_pmc(pmcid):
         return pdf
-    
+
     # 🆕 Fallback to web scraping
     web_sources = await self.web_scraper.find_pdf_sources(
         title=article.title,
         authors=article.authors,
         doi=doi
     )
-    
+
     for source in web_sources:
         if pdf := await self.web_scraper.download_pdf(source):
             return pdf
@@ -327,10 +327,10 @@ async def download(self, pmid, pmcid, doi, url):
 async def enhance(self, query: str):
     # Existing: MeSH ontology
     ontology_expansion = await self._expand_with_ontology(query)
-    
+
     # 🆕 Add: Web trends
     web_trends = await self.trends_detector.enhance_query_with_trends(query)
-    
+
     return {
         'ontology': ontology_expansion,
         'trending': web_trends['suggestions'],
@@ -344,7 +344,7 @@ async def enhance(self, query: str):
 async def extract_and_enrich(self, text: str):
     # Existing: NER extraction
     entities = await self._extract_with_ner(text)
-    
+
     # 🆕 Add: Web enrichment
     for entity in entities:
         enriched = await self.knowledge_enricher.enrich_entity(
@@ -355,7 +355,7 @@ async def extract_and_enrich(self, text: str):
         entity.canonical_name = enriched['canonical_name']
         entity.wikipedia_url = enriched['wikipedia_url']
         entity.confidence = enriched['confidence']
-    
+
     return entities
 ```
 
@@ -373,7 +373,7 @@ def rank(self, results: List[Result]):
             self._quality_score(result) * 0.05         # 🆕 PDF availability
         )
         result.final_score = score
-    
+
     return sorted(results, key=lambda r: r.final_score, reverse=True)
 ```
 

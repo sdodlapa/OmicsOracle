@@ -92,7 +92,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 cat > "$ARCHIVE_DIR/README.md" << 'EOF'
 # Archived Phase Plans (October 2025)
 
-**Archive Date:** October 6, 2025  
+**Archive Date:** October 6, 2025
 **Reason:** Consolidation and strategic pivot to multi-agent architecture
 
 ---
@@ -120,12 +120,12 @@ This directory contains the original phase-based development plans that guided O
 
 ### What Works (Production-Ready):
 
-✅ **Keyword Search** - GEO database integration  
-✅ **Semantic Search** - AI-powered with query expansion & reranking (code complete, needs dataset index)  
-✅ **AI Analysis** - GPT-4 dataset insights with markdown rendering  
-✅ **Quality Scoring** - 7-dimensional assessment  
-✅ **Authentication** - JWT-based user management  
-✅ **Rate Limiting** - Redis-powered quota system  
+✅ **Keyword Search** - GEO database integration
+✅ **Semantic Search** - AI-powered with query expansion & reranking (code complete, needs dataset index)
+✅ **AI Analysis** - GPT-4 dataset insights with markdown rendering
+✅ **Quality Scoring** - 7-dimensional assessment
+✅ **Authentication** - JWT-based user management
+✅ **Rate Limiting** - Redis-powered quota system
 
 ### Active Codebase:
 
@@ -177,7 +177,7 @@ cat docs/archive/phase-plans-2025-10/PHASE_1_SEMANTIC_SEARCH_PLAN.md
 
 ---
 
-**Archive maintained by:** OmicsOracle Development Team  
+**Archive maintained by:** OmicsOracle Development Team
 **Last updated:** October 6, 2025
 EOF
 
@@ -186,7 +186,7 @@ echo "  ✅ Created $ARCHIVE_DIR/README.md"
 cat > "$ANALYSIS_ARCHIVE/README.md" << 'EOF'
 # Archived Analysis Reports (October 2025)
 
-**Archive Date:** October 6, 2025  
+**Archive Date:** October 6, 2025
 **Purpose:** Historical analysis and review documents
 
 ---
@@ -222,7 +222,7 @@ Active documentation is in `/docs/`:
 
 ---
 
-**Archive maintained by:** OmicsOracle Development Team  
+**Archive maintained by:** OmicsOracle Development Team
 **Last updated:** October 6, 2025
 EOF
 

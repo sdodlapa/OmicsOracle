@@ -224,7 +224,7 @@
 ```
 Single GPU can run:
 - BioMistral-7B (8-bit): ~8GB
-- E5-Mistral-7B (8-bit): ~8GB  
+- E5-Mistral-7B (8-bit): ~8GB
 - Llama-3.1-8B (8-bit): ~9GB
 - Working memory: ~20GB
 - Cache: ~10GB
@@ -281,13 +281,13 @@ This is the ULTIMATE setup! 🚀
 Before LLMs:
   User: "cancer genes"
   System: [keyword search] "cancer genes"
-  
+
 After BioMistral:
   User: "cancer genes"
-  System: "breast carcinoma BRCA1 BRCA2 TP53 tumor suppressor 
-          oncogene gene expression RNA-seq genomic profiling 
+  System: "breast carcinoma BRCA1 BRCA2 TP53 tumor suppressor
+          oncogene gene expression RNA-seq genomic profiling
           somatic mutations driver genes passenger mutations"
-  
+
   Result: +40% more relevant datasets found!
 ```
 
@@ -297,12 +297,12 @@ Before LLMs (sentence-transformers):
   - 512 token limit (truncated descriptions)
   - General-purpose embeddings
   - Single similarity score
-  
+
 After E5-Mistral:
   - 32K token context (full descriptions!)
   - Task-specific instructions
   - Biomedical optimization
-  
+
   Result: +35% better semantic matching!
 ```
 
@@ -311,20 +311,20 @@ After E5-Mistral:
 Before LLMs (MiniLM cross-encoder):
   Dataset A: Score 0.82 (no explanation)
   Dataset B: Score 0.79 (no explanation)
-  
+
 After Llama-3.1-8B:
   Dataset A: Score 0.95
-    Explanation: "Highly relevant - breast cancer RNA-seq 
+    Explanation: "Highly relevant - breast cancer RNA-seq
                   with BRCA1/2 gene expression analysis"
     Matches: [breast cancer, BRCA genes, RNA-seq]
     Issues: [None]
-  
+
   Dataset B: Score 0.73
-    Explanation: "Partially relevant - cancer study but 
+    Explanation: "Partially relevant - cancer study but
                   focused on lung tissue, not breast"
     Matches: [cancer, gene expression]
     Issues: [Different tissue type]
-  
+
   Result: +20% nDCG + user understanding!
 ```
 
@@ -333,14 +333,14 @@ After Llama-3.1-8B:
 Multi-Paper Synthesis (Meditron-70B):
   Input: 10 papers about "CRISPR off-target effects"
   Output:
-    ✅ Consensus: "Most studies agree off-targets occur 
+    ✅ Consensus: "Most studies agree off-targets occur
                   at 1-3 mismatch sites..."
-    ✅ Contradictions: "Frequency estimates vary 10x 
+    ✅ Contradictions: "Frequency estimates vary 10x
                        between studies..."
-    ✅ Timeline: [2016: First detection, 2019: Improved 
+    ✅ Timeline: [2016: First detection, 2019: Improved
                  methods, 2023: AI prediction]
     ✅ Gaps: "Unknown: Long-term in vivo effects"
-  
+
   This was IMPOSSIBLE before! 🎉
 
 Hypothesis Generation (Falcon-180B):
@@ -351,7 +351,7 @@ Hypothesis Generation (Falcon-180B):
     ✅ Feasibility assessment
     ✅ Expected outcomes
     ✅ Potential challenges
-  
+
   AI becomes your research brainstorming partner! 🧠
 ```
 
@@ -373,7 +373,7 @@ python scripts/download_llm_models.py
 # - meta-llama/Llama-3.1-8B-Instruct (~16GB)
 # - epfl-llm/meditron-70b (~140GB)
 # - tiiuae/falcon-180B (~360GB)
-# 
+#
 # Total: ~550GB storage
 
 # Optional: Use model caching
@@ -411,26 +411,26 @@ from omics_oracle_v2.lib.llm import (
 class LLMEnhancedSearchAgent(SearchAgent):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        
+
         # Initialize LLM components
         self.query_reformulator = BiomedicalQueryReformulator()
         self.advanced_embedder = AdvancedBiomedicalEmbeddings()
         self.llm_reranker = LLMReranker()
-    
+
     async def search(self, user_query: str):
         # Step 1: Reformulate
         reformulated = await self.query_reformulator.reformulate(user_query)
-        
+
         # Step 2: Search with advanced embeddings
         results = await self._advanced_semantic_search(
             reformulated.primary_reformulation
         )
-        
+
         # Step 3: LLM reranking
         reranked = await self.llm_reranker.rerank_with_explanation(
             user_query, results, top_k=10
         )
-        
+
         return reranked
 ```
 
@@ -442,7 +442,7 @@ from omics_oracle_v2.lib.llm import MultiPaperSynthesizer
 class SynthesisAgent:
     def __init__(self):
         self.synthesizer = MultiPaperSynthesizer()
-    
+
     async def synthesize(self, query: str, papers: List[Publication]):
         synthesis = await self.synthesizer.synthesize_papers(
             query, papers, max_papers=10
@@ -458,10 +458,10 @@ from omics_oracle_v2.lib.llm import HypothesisGenerator
 class ResearchAgent:
     def __init__(self):
         self.hypothesis_gen = HypothesisGenerator()
-    
+
     async def generate_hypotheses(
-        self, 
-        question: str, 
+        self,
+        question: str,
         papers: List[Publication],
         datasets: List[Dataset]
     ):
@@ -497,11 +497,11 @@ model = AutoModelForCausalLM.from_pretrained(
 class CachedEmbedder:
     def __init__(self):
         self.cache = {}
-    
+
     async def encode(self, text: str):
         if text in self.cache:
             return self.cache[text]
-        
+
         embedding = await self._embed(text)
         self.cache[text] = embedding
         return embedding
@@ -515,12 +515,12 @@ import asyncio
 async def search_with_background_synthesis(query, papers):
     # Fast results first
     quick_results = await quick_search(query)
-    
+
     # LLM synthesis in background
     synthesis_task = asyncio.create_task(
         synthesizer.synthesize_papers(query, papers)
     )
-    
+
     # Return quick results immediately
     return {
         'results': quick_results,
@@ -534,16 +534,16 @@ async def search_with_background_synthesis(query, papers):
 async def progressive_search(query):
     # 1. Fast keyword results (0.1s)
     yield {'stage': 'keyword', 'results': keyword_results}
-    
+
     # 2. LLM reformulation + semantic search (2s)
     reformulated = await reformulate(query)
     semantic_results = await semantic_search(reformulated)
     yield {'stage': 'semantic', 'results': semantic_results}
-    
+
     # 3. LLM reranking (7s)
     reranked = await llm_rerank(query, semantic_results)
     yield {'stage': 'reranked', 'results': reranked}
-    
+
     # 4. Multi-paper synthesis (22s)
     synthesis = await synthesize(query, papers)
     yield {'stage': 'synthesis', 'synthesis': synthesis}
@@ -591,5 +591,5 @@ async def progressive_search(query):
 
 ---
 
-**Status:** ✅ Complete LLM strategy defined  
+**Status:** ✅ Complete LLM strategy defined
 **Next:** Download models and start Week 1 implementation! 🚀

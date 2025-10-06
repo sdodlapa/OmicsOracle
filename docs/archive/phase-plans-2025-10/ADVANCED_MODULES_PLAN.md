@@ -1,8 +1,8 @@
 # 🔬 Advanced Text Extraction & Visualization Modules Plan
 
-**Date**: December 28, 2024  
-**Status**: Strategic Planning for Future Development  
-**Priority**: High - Next Phase Development After Interface Consolidation  
+**Date**: December 28, 2024
+**Status**: Strategic Planning for Future Development
+**Priority**: High - Next Phase Development After Interface Consolidation
 
 ---
 
@@ -36,23 +36,23 @@ src/omics_oracle/text_extraction/
 ```python
 class PublicationFetcher:
     """Orchestrates full-text extraction for GEO datasets"""
-    
+
     async def extract_publication_info(self, geo_id: str) -> PublicationInfo:
         """Extract publication details from GEO dataset"""
         # 1. Get GEO metadata
         geo_data = await self.geo_client.get_dataset_info(geo_id)
-        
+
         # 2. Extract publication references
         pub_refs = self.extract_publication_references(geo_data)
-        
+
         # 3. Resolve DOIs and PMIDs
         resolved_refs = await self.resolve_publication_ids(pub_refs)
-        
+
         return PublicationInfo(
             primary_publication=resolved_refs.primary,
             related_publications=resolved_refs.related
         )
-    
+
     async def fetch_full_text(self, publication: Publication) -> FullTextContent:
         """Fetch full text using multiple strategies"""
         strategies = [
@@ -61,7 +61,7 @@ class PublicationFetcher:
             self.try_publisher_api,
             self.try_web_scraping
         ]
-        
+
         for strategy in strategies:
             try:
                 content = await strategy(publication)
@@ -70,7 +70,7 @@ class PublicationFetcher:
             except Exception as e:
                 self.logger.warning(f"Strategy {strategy.__name__} failed: {e}")
                 continue
-                
+
         raise NoFullTextAvailableError(f"No full text found for {publication.id}")
 ```
 
@@ -78,7 +78,7 @@ class PublicationFetcher:
 ```python
 class MultiSourceTextExtractor:
     """Handles various text extraction methods"""
-    
+
     async def extract_from_pmc(self, pmc_id: str) -> TextContent:
         """Extract from PubMed Central"""
         pmc_data = await self.pmc_client.get_full_text(pmc_id)
@@ -90,7 +90,7 @@ class MultiSourceTextExtractor:
             tables=pmc_data.tables,
             supplementary=pmc_data.supplementary_files
         )
-    
+
     async def extract_from_pdf(self, pdf_url: str) -> TextContent:
         """Extract text from PDF using multiple engines"""
         extractors = [
@@ -98,18 +98,18 @@ class MultiSourceTextExtractor:
             PDFPlumberExtractor(),
             TikaExtractor()
         ]
-        
+
         best_content = None
         best_score = 0
-        
+
         for extractor in extractors:
             content = await extractor.extract(pdf_url)
             score = self.calculate_extraction_quality(content)
-            
+
             if score > best_score:
                 best_content = content
                 best_score = score
-                
+
         return best_content
 ```
 
@@ -140,7 +140,7 @@ class FullTextContent:
     supplementary_files: List[SupplementaryFile]
     extraction_metadata: ExtractionMetadata
     quality_score: float
-    
+
 @dataclass
 class ExtractionMetadata:
     """Metadata about the extraction process"""
@@ -196,39 +196,39 @@ src/omics_oracle/publication_discovery/
 ```python
 class CitationTracker:
     """Track citations and references"""
-    
+
     async def find_citing_papers(self, geo_id: str) -> List[CitingPaper]:
         """Find papers that cite the original publication"""
         # 1. Get original publication PMID
         original_pub = await self.get_original_publication(geo_id)
-        
+
         # 2. Search citation databases
         citing_papers = []
-        
+
         # Google Scholar API
         scholar_results = await self.scholar_client.get_citations(original_pub.pmid)
         citing_papers.extend(scholar_results)
-        
+
         # Crossref API
         crossref_results = await self.crossref_client.get_citations(original_pub.doi)
         citing_papers.extend(crossref_results)
-        
+
         # PubMed citation search
         pubmed_results = await self.pubmed_client.search_citations(original_pub.pmid)
         citing_papers.extend(pubmed_results)
-        
+
         return self.deduplicate_and_rank(citing_papers)
-    
+
     async def analyze_citation_context(self, citing_paper: CitingPaper) -> CitationContext:
         """Analyze how the dataset is used in citing paper"""
         full_text = await self.get_full_text(citing_paper)
-        
+
         # Find mentions of the dataset
         dataset_mentions = self.find_dataset_mentions(full_text, citing_paper.geo_id)
-        
+
         # Classify usage type
         usage_type = self.classify_usage_type(dataset_mentions, full_text)
-        
+
         return CitationContext(
             paper=citing_paper,
             usage_type=usage_type,  # reanalysis, validation, meta-analysis, etc.
@@ -241,7 +241,7 @@ class CitationTracker:
 ```python
 class MLProjectDetector:
     """Detect machine learning and bioinformatics usage"""
-    
+
     def __init__(self):
         self.ml_keywords = [
             "machine learning", "deep learning", "neural network",
@@ -249,29 +249,29 @@ class MLProjectDetector:
             "classification", "regression", "feature selection",
             "cross-validation", "hyperparameter tuning"
         ]
-        
+
         self.bioinformatics_keywords = [
             "differential expression", "pathway analysis", "gene ontology",
             "network analysis", "sequence alignment", "variant calling",
             "transcriptome analysis", "proteomics", "metabolomics"
         ]
-    
+
     async def detect_ml_usage(self, paper: Paper) -> MLUsageAnalysis:
         """Detect and analyze ML usage in paper"""
         full_text = await self.get_full_text(paper)
-        
+
         # Extract methods section
         methods_section = self.extract_methods_section(full_text)
-        
+
         # Detect ML techniques
         ml_techniques = self.detect_techniques(methods_section, self.ml_keywords)
-        
+
         # Extract software/tools mentioned
         software_tools = self.extract_software_mentions(methods_section)
-        
+
         # Analyze code availability
         code_availability = await self.check_code_availability(paper)
-        
+
         return MLUsageAnalysis(
             techniques_used=ml_techniques,
             software_tools=software_tools,
@@ -286,28 +286,28 @@ class MLProjectDetector:
 ```python
 class SemanticSimilarityAnalyzer:
     """Find semantically similar publications"""
-    
+
     def __init__(self):
         self.embedding_model = SentenceTransformer('allenai/scibert_scivocab_uncased')
         self.vector_store = ChromaDB()
-    
+
     async def find_similar_publications(self, target_paper: Paper) -> List[SimilarPaper]:
         """Find semantically similar publications"""
         # Generate embeddings for target paper
         target_embedding = self.generate_paper_embedding(target_paper)
-        
+
         # Search vector store for similar papers
         similar_papers = await self.vector_store.similarity_search(
             target_embedding,
             k=50,
             filter_criteria={"domain": "biomedical"}
         )
-        
+
         # Re-rank based on multiple criteria
         ranked_papers = self.rerank_by_relevance(similar_papers, target_paper)
-        
+
         return ranked_papers[:20]  # Top 20 most relevant
-    
+
     def generate_paper_embedding(self, paper: Paper) -> np.ndarray:
         """Generate dense embeddings for paper"""
         text_components = [
@@ -316,10 +316,10 @@ class SemanticSimilarityAnalyzer:
             " ".join(paper.keywords),
             paper.methods_summary if hasattr(paper, 'methods_summary') else ""
         ]
-        
+
         combined_text = " [SEP] ".join(text_components)
         embedding = self.embedding_model.encode(combined_text)
-        
+
         return embedding
 ```
 
@@ -367,7 +367,7 @@ src/omics_oracle/stats_extraction/
 ```python
 class TextStatsExtractor:
     """Extract statistical information from publication text"""
-    
+
     def __init__(self):
         self.stats_patterns = {
             'sample_size': [
@@ -386,27 +386,27 @@ class TextStatsExtractor:
                 r'effect size\s*[<>=]\s*([\d.]+)'
             ]
         }
-    
+
     async def extract_statistics_from_text(self, publication: Publication) -> TextStatistics:
         """Extract statistical measures from publication text"""
         full_text = await self.get_full_text(publication)
-        
+
         extracted_stats = {}
-        
+
         # Extract different types of statistics
         for stat_type, patterns in self.stats_patterns.items():
             extracted_stats[stat_type] = []
-            
+
             for pattern in patterns:
                 matches = re.findall(pattern, full_text, re.IGNORECASE)
                 extracted_stats[stat_type].extend(matches)
-        
+
         # Extract methodology information
         methods_info = self.extract_methods_info(full_text)
-        
+
         # Extract sample characteristics
         sample_characteristics = self.extract_sample_characteristics(full_text)
-        
+
         return TextStatistics(
             statistical_measures=extracted_stats,
             methodology=methods_info,
@@ -419,43 +419,43 @@ class TextStatsExtractor:
 ```python
 class TableProcessor:
     """Extract and analyze tabular data from publications"""
-    
+
     async def extract_tables_from_publication(self, publication: Publication) -> List[ExtractedTable]:
         """Extract all tables from publication"""
         tables = []
-        
+
         # Extract from different sources
         if publication.pmc_id:
             pmc_tables = await self.extract_from_pmc(publication.pmc_id)
             tables.extend(pmc_tables)
-        
+
         if publication.pdf_url:
             pdf_tables = await self.extract_from_pdf(publication.pdf_url)
             tables.extend(pdf_tables)
-        
+
         # Process and standardize tables
         processed_tables = []
         for table in tables:
             processed_table = await self.process_table(table)
             if processed_table.statistical_content_score > 0.5:
                 processed_tables.append(processed_table)
-        
+
         return processed_tables
-    
+
     async def process_table(self, raw_table: RawTable) -> ExtractedTable:
         """Process and analyze table content"""
         # Clean and standardize table data
         cleaned_data = self.clean_table_data(raw_table.data)
-        
+
         # Detect column types (categorical, numerical, statistical)
         column_types = self.detect_column_types(cleaned_data)
-        
+
         # Extract statistical relationships
         statistical_relationships = self.find_statistical_relationships(cleaned_data)
-        
+
         # Calculate summary statistics
         summary_stats = self.calculate_summary_statistics(cleaned_data, column_types)
-        
+
         return ExtractedTable(
             title=raw_table.title,
             caption=raw_table.caption,
@@ -471,27 +471,27 @@ class TableProcessor:
 ```python
 class DirectDataAnalyzer:
     """Analyze dataset directly from NCBI GEO"""
-    
+
     async def analyze_geo_dataset(self, geo_id: str) -> DatasetStatistics:
         """Compute comprehensive statistics from raw dataset"""
         # Download dataset metadata and sample data
         geo_data = await self.geo_client.get_dataset_with_samples(geo_id)
-        
+
         # Basic dataset characteristics
         basic_stats = self.compute_basic_statistics(geo_data)
-        
+
         # Sample distribution analysis
         sample_distribution = self.analyze_sample_distribution(geo_data.samples)
-        
+
         # Platform and technology analysis
         platform_analysis = self.analyze_platform_characteristics(geo_data.platform_info)
-        
+
         # Experimental design analysis
         experimental_design = self.analyze_experimental_design(geo_data.samples)
-        
+
         # Quality metrics (if expression data available)
         quality_metrics = await self.compute_quality_metrics(geo_data)
-        
+
         return DatasetStatistics(
             basic_statistics=basic_stats,
             sample_distribution=sample_distribution,
@@ -500,7 +500,7 @@ class DirectDataAnalyzer:
             quality_metrics=quality_metrics,
             computational_complexity=self.estimate_computational_complexity(geo_data)
         )
-    
+
     def compute_basic_statistics(self, geo_data: GEODataset) -> BasicStatistics:
         """Compute basic dataset statistics"""
         return BasicStatistics(
@@ -559,49 +559,49 @@ src/omics_oracle/visualization/
 ```python
 class MetadataVisualizer:
     """Create visualizations for search result metadata"""
-    
+
     async def create_search_overview(self, search_results: List[GEODataset]) -> SearchOverviewViz:
         """Create comprehensive search result overview"""
         visualizations = {}
-        
+
         # Organism distribution
         visualizations['organism_distribution'] = self.create_organism_chart(search_results)
-        
+
         # Platform technology distribution
         visualizations['platform_distribution'] = self.create_platform_chart(search_results)
-        
+
         # Publication timeline
         visualizations['publication_timeline'] = self.create_timeline_chart(search_results)
-        
+
         # Sample size distribution
         visualizations['sample_size_distribution'] = self.create_sample_size_chart(search_results)
-        
+
         # Geographic distribution
         visualizations['geographic_distribution'] = self.create_geographic_chart(search_results)
-        
+
         return SearchOverviewViz(
             charts=visualizations,
             summary_statistics=self.compute_search_summary_stats(search_results),
             interactive_filters=self.create_filter_interface(search_results)
         )
-    
+
     def create_organism_chart(self, datasets: List[GEODataset]) -> PlotlyChart:
         """Create organism distribution chart"""
         organism_counts = Counter([d.organism for d in datasets])
-        
+
         fig = px.pie(
             values=list(organism_counts.values()),
             names=list(organism_counts.keys()),
             title="Dataset Distribution by Organism"
         )
-        
+
         fig.update_traces(
             hovertemplate="<b>%{label}</b><br>" +
                          "Count: %{value}<br>" +
                          "Percentage: %{percent}<br>" +
                          "<extra></extra>"
         )
-        
+
         return PlotlyChart(
             figure=fig,
             chart_type="pie",
@@ -614,45 +614,45 @@ class MetadataVisualizer:
 ```python
 class StatisticsVisualizer:
     """Create visualizations for extracted statistics"""
-    
+
     async def create_statistics_dashboard(self, dataset_stats: DatasetStatistics) -> StatsDashboard:
         """Create comprehensive statistics dashboard"""
         dashboard_components = {}
-        
+
         # Sample characteristics heatmap
         dashboard_components['sample_heatmap'] = self.create_sample_heatmap(dataset_stats)
-        
+
         # Quality metrics radar chart
         dashboard_components['quality_radar'] = self.create_quality_radar(dataset_stats)
-        
+
         # Statistical distribution plots
         dashboard_components['distributions'] = self.create_distribution_plots(dataset_stats)
-        
+
         # Experimental design visualization
         dashboard_components['experimental_design'] = self.create_design_visualization(dataset_stats)
-        
+
         return StatsDashboard(
             components=dashboard_components,
             metadata=dataset_stats,
             export_options=self.get_export_options()
         )
-    
+
     def create_sample_heatmap(self, stats: DatasetStatistics) -> PlotlyChart:
         """Create sample characteristics heatmap"""
         # Prepare data matrix for heatmap
         characteristics_matrix = self.prepare_characteristics_matrix(stats.sample_distribution)
-        
+
         fig = px.imshow(
             characteristics_matrix,
             title="Sample Characteristics Overview",
             color_continuous_scale="Viridis"
         )
-        
+
         fig.update_layout(
             xaxis_title="Sample Characteristics",
             yaxis_title="Sample Groups"
         )
-        
+
         return PlotlyChart(
             figure=fig,
             chart_type="heatmap",
@@ -665,50 +665,50 @@ class StatisticsVisualizer:
 ```python
 class InteractiveDashboard:
     """Create interactive dashboard components"""
-    
+
     async def create_publication_network(self, related_pubs: List[RelatedPublication]) -> NetworkViz:
         """Create interactive publication relationship network"""
         # Build network graph
         G = nx.Graph()
-        
+
         # Add nodes (publications)
         for pub in related_pubs:
-            G.add_node(pub.pmid, 
+            G.add_node(pub.pmid,
                       title=pub.title,
                       authors=pub.authors,
                       citation_count=pub.citation_count,
                       relevance_score=pub.relevance_score)
-        
+
         # Add edges (relationships)
         for pub in related_pubs:
             for related in pub.related_publications:
-                G.add_edge(pub.pmid, related.pmid, 
+                G.add_edge(pub.pmid, related.pmid,
                           relationship_type=related.relationship_type,
                           strength=related.relationship_strength)
-        
+
         # Create interactive visualization
         network_viz = self.create_interactive_network(G)
-        
+
         return NetworkViz(
             graph=G,
             visualization=network_viz,
             interaction_callbacks=self.get_network_callbacks(),
             export_formats=['png', 'svg', 'html']
         )
-    
+
     def create_temporal_analysis(self, temporal_data: TemporalData) -> TemporalViz:
         """Create temporal analysis visualizations"""
         components = {}
-        
+
         # Publication timeline
         components['publication_timeline'] = self.create_publication_timeline(temporal_data)
-        
+
         # Citation trends
         components['citation_trends'] = self.create_citation_trends(temporal_data)
-        
+
         # Technology evolution
         components['technology_evolution'] = self.create_technology_evolution(temporal_data)
-        
+
         return TemporalViz(
             components=components,
             time_range=temporal_data.time_range,
@@ -904,7 +904,7 @@ src/components/
 
 **Estimated Development Time**:
 - Text extraction system: 6-8 weeks
-- Publication discovery: 4-6 weeks  
+- Publication discovery: 4-6 weeks
 - Statistics extraction: 6-8 weeks
 - Visualization dashboard: 4-6 weeks
 - Integration and testing: 4-6 weeks

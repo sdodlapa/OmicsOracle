@@ -1,6 +1,6 @@
 # Archived Analysis Reports (October 2025)
 
-**Archive Date:** October 6, 2025  
+**Archive Date:** October 6, 2025
 **Purpose:** Historical analysis and review documents
 
 ---
@@ -36,5 +36,5 @@ Active documentation is in `/docs/`:
 
 ---
 
-**Archive maintained by:** OmicsOracle Development Team  
+**Archive maintained by:** OmicsOracle Development Team
 **Last updated:** October 6, 2025

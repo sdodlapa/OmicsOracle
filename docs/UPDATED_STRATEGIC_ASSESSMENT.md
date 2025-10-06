@@ -1,7 +1,7 @@
 # UPDATED STRATEGIC ASSESSMENT - Code Audit Edition
 
-**Date:** October 6, 2025  
-**Status:** CRITICAL REVISION - Previous assessment was INCOMPLETE  
+**Date:** October 6, 2025
+**Status:** CRITICAL REVISION - Previous assessment was INCOMPLETE
 **Confidence:** 98% (based on comprehensive code review)
 
 ---
@@ -50,7 +50,7 @@ The codebase reveals:
 # lib/embeddings/service.py (282 lines)
 class EmbeddingService:
     """OpenAI text-embedding-3-small with MD5 caching."""
-    
+
     def embed_text(self, text: str) -> List[float]:
         # Check cache first
         if cached := self._get_from_cache(text):
@@ -74,13 +74,13 @@ class EmbeddingService:
 # lib/vector_db/faiss_db.py (interface + FAISS implementation)
 class FAISSVectorDB(VectorDB):
     """FAISS vector database with persistence."""
-    
+
     def search(self, query_embedding, k=100):
         distances, indices = self.index.search(
             np.array([query_embedding]), k
         )
         return results
-    
+
     def save(self, path: str):
         # Persist index to disk
         faiss.write_index(self.index, path)
@@ -97,15 +97,15 @@ class FAISSVectorDB(VectorDB):
 # lib/search/hybrid.py
 class HybridSearchEngine:
     """TF-IDF (40%) + Semantic (60%) fusion search."""
-    
+
     def search(self, query: str, k=20):
         # Keyword search
         keyword_results = self._tfidf_search(query)
-        
+
         # Semantic search
         embedding = self.embedding_service.embed_text(query)
         semantic_results = self.vector_db.search(embedding, k)
-        
+
         # Reciprocal rank fusion
         return self._fuse_results(keyword_results, semantic_results)
 ```
@@ -120,14 +120,14 @@ class HybridSearchEngine:
 # lib/nlp/query_expander.py
 class QueryExpander:
     """Biomedical synonym expansion with 200+ ontology mappings."""
-    
+
     def expand_query(self, query: str):
         # Extract entities
         entities = self._extract_biomedical_entities(query)
-        
+
         # Add synonyms from UMLS/GO/other ontologies
         synonyms = self._get_synonyms(entities)
-        
+
         return {
             "original": query,
             "expanded": expanded_query,
@@ -145,14 +145,14 @@ class QueryExpander:
 # lib/ranking/cross_encoder.py (383 lines)
 class CrossEncoderReranker:
     """MS-MARCO MiniLM-L-6-v2 reranker (90.9MB model)."""
-    
+
     def rerank(self, query: str, results: List[Dict], top_k=10):
         # Create query-document pairs
         pairs = [(query, r['text']) for r in results]
-        
+
         # Score with cross-encoder
         scores = self.model.predict(pairs)
-        
+
         # Combine with original scores
         reranked = self._combine_scores(results, scores)
         return reranked[:top_k]
@@ -168,20 +168,20 @@ class CrossEncoderReranker:
 # lib/rag/pipeline.py
 class RAGPipeline:
     """Multi-provider LLM with citations and confidence scoring."""
-    
+
     def generate_answer(self, query: str, context_docs: List[Dict]):
         # Build context from retrieved docs
         context = self._format_context(context_docs)
-        
+
         # Generate answer with LLM
         response = self.llm_client.generate(
             system="You are a biomedical research assistant...",
             messages=[{"role": "user", "content": prompt}]
         )
-        
+
         # Extract citations
         citations = self._extract_citations(response, context_docs)
-        
+
         return {
             "answer": response.text,
             "citations": citations,
@@ -207,7 +207,7 @@ class AdvancedSearchPipeline:
     - RAG-based answers
     - Performance caching
     """
-    
+
     def __init__(self, config: AdvancedSearchConfig):
         # Initialize all components
         self.query_expander = QueryExpander()
@@ -217,23 +217,23 @@ class AdvancedSearchPipeline:
         self.reranker = CrossEncoderReranker()
         self.rag_pipeline = RAGPipeline()
         self.optimizer = SearchOptimizer()  # Caching
-    
+
     def search(self, query: str, top_k=20, return_answer=True):
         start = time.time()
-        
+
         # 1. Query expansion
         expanded = self.query_expander.expand_query(query)
-        
+
         # 2. Hybrid search
         results = self.search_engine.search(expanded.query, k=50)
-        
+
         # 3. Cross-encoder reranking
         reranked = self.reranker.rerank(query, results, top_k=top_k)
-        
+
         # 4. RAG answer generation (optional)
         if return_answer:
             answer = self.rag_pipeline.generate_answer(query, reranked)
-        
+
         return SearchResult(
             query=query,
             expanded_query=expanded.query,
@@ -256,26 +256,26 @@ class AdvancedSearchPipeline:
 # agents/search_agent.py (lines 35-623)
 class SearchAgent(Agent[SearchInput, SearchOutput]):
     """GEO dataset search with OPTIONAL semantic search."""
-    
+
     def __init__(self, settings: Settings, enable_semantic: bool = False):
         super().__init__(settings)
         self._geo_client = None
         self._ranker = KeywordRanker(settings.ranking)
-        
+
         # SEMANTIC SEARCH SUPPORT
         self._enable_semantic = enable_semantic
         self._semantic_pipeline: Optional[AdvancedSearchPipeline] = None
         self._semantic_index_loaded = False
-    
+
     def _initialize_resources(self):
         """Initialize GEO client and optionally semantic search."""
         self._geo_client = GEOClient(self.settings.geo)
-        
+
         # Initialize semantic search if enabled
         if self._enable_semantic:
             logger.info("Initializing AdvancedSearchPipeline for semantic search")
             self._initialize_semantic_search()
-    
+
     def _initialize_semantic_search(self):
         """Initialize semantic pipeline and load GEO index."""
         # Create pipeline with all features
@@ -287,9 +287,9 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             top_k=50,
             rerank_top_k=20
         )
-        
+
         self._semantic_pipeline = AdvancedSearchPipeline(search_config)
-        
+
         # Try to load GEO dataset index
         index_path = Path("data/vector_db/geo_index.faiss")
         if index_path.exists():
@@ -302,16 +302,16 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
                 "Run 'python -m omics_oracle_v2.scripts.embed_geo_datasets' to create."
             )
             self._semantic_index_loaded = False
-    
+
     def _process(self, input_data: SearchInput, context: AgentContext):
         """Execute search - semantic if enabled, keyword fallback."""
-        
+
         # Try semantic search first if enabled
         if self._enable_semantic and self._semantic_index_loaded:
             logger.info("Using semantic search pipeline")
             query = input_data.original_query or " ".join(input_data.search_terms)
             semantic_results = self._semantic_search(query, input_data, context)
-            
+
             if semantic_results:
                 # Apply filters and return
                 filtered = self._apply_semantic_filters(semantic_results, input_data)
@@ -321,11 +321,11 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
                     search_mode="semantic",
                     ...
                 )
-        
+
         # Fallback to traditional GEO keyword search
         logger.info("Using traditional GEO search")
         # ... existing keyword search logic ...
-    
+
     def _semantic_search(self, query: str, input_data: SearchInput, context):
         """Execute semantic search via AdvancedSearchPipeline."""
         result = self._semantic_pipeline.search(
@@ -333,12 +333,12 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             top_k=input_data.max_results,
             return_answer=False
         )
-        
+
         # Track metrics
         context.set_metric("semantic_search_used", True)
         context.set_metric("semantic_expanded_query", result.expanded_query)
         context.set_metric("semantic_cache_hit", result.cache_hit)
-        
+
         # Convert to RankedDataset format
         return self._convert_semantic_results(result)
 ```
@@ -358,12 +358,12 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
 # api/models/requests.py (line 26)
 class SearchRequest(BaseModel):
     """Search request with semantic toggle."""
-    
+
     search_terms: List[str]
     max_results: int = 20
     organism: Optional[str] = None
     min_samples: Optional[int] = None
-    
+
     # SEMANTIC SEARCH TOGGLE
     enable_semantic: bool = Field(
         default=False,
@@ -377,18 +377,18 @@ class SearchRequest(BaseModel):
 @router.post("/agents/search")
 async def execute_search_agent(request: SearchRequest):
     """Execute search with optional semantic mode."""
-    
+
     settings = get_settings()
-    
+
     # Create SearchAgent with semantic flag
     agent = SearchAgent(
         settings=settings,
         enable_semantic=request.enable_semantic  # ✅ PASSED FROM REQUEST
     )
-    
+
     if request.enable_semantic:
         logger.info("Semantic search enabled for this request")
-    
+
     # Execute search
     input_data = SearchInput(
         search_terms=request.search_terms,
@@ -396,7 +396,7 @@ async def execute_search_agent(request: SearchRequest):
         ...
     )
     result = agent.execute(input_data)
-    
+
     return result
 ```
 
@@ -428,7 +428,7 @@ const searchData = {
     max_results: maxResults,
     organism: organism || null,
     min_samples: minSamples || null,
-    
+
     // SEMANTIC TOGGLE - INTEGRATED!
     enable_semantic: isSemanticMode,  // ✅ Based on UI toggle
     original_query: query
@@ -495,16 +495,16 @@ from omics_oracle_v2.lib.embeddings.geo_pipeline import GEOEmbeddingPipeline
 async def main():
     # Load GEO datasets from DB
     datasets = await load_geo_datasets()
-    
+
     # Initialize pipeline
     pipeline = GEOEmbeddingPipeline()
-    
+
     # Generate embeddings (batched, cached)
     await pipeline.embed_datasets(datasets)
-    
+
     # Save index
     pipeline.save_index("data/vector_db/geo_index.faiss")
-    
+
     print(f"✅ Embedded {len(datasets)} GEO datasets")
 ```
 
@@ -583,12 +583,12 @@ async def main():
    - Generates `data/vector_db/geo_index.faiss`
    - Embeds ~1000-5000 GEO datasets
    - Automatic caching for speed
-   
+
 2. ✅ Test semantic search (30 min)
    - Enable toggle in UI
    - Verify query expansion works
    - Check reranking quality
-   
+
 3. ✅ Documentation (30 min)
    - Update READY_TO_USE.md
    - Add semantic search guide
@@ -676,16 +676,16 @@ async def main():
 
 1. ❌ **"8.75 hours wasted on inaccessible features"**
    - REALITY: 8.75 hours on INTEGRATED, production-ready code
-   
+
 2. ❌ **"Phase 1: 60% complete"**
    - REALITY: Phase 1 is 95% complete
-   
+
 3. ❌ **"Semantic search not accessible to users"**
    - REALITY: UI toggle exists, API integrated, just missing index file
-   
+
 4. ❌ **"Need to integrate SearchAgent"**
    - REALITY: SearchAgent has full semantic support already
-   
+
 5. ❌ **"Shelf-ware problem"**
    - REALITY: Everything is wired up, just need to flip the switch
 

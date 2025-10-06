@@ -1,8 +1,8 @@
 # Open-Source LLM Integration Strategy
 
-**Date:** October 6, 2025  
-**Version:** 1.0  
-**Status:** Innovation Specification  
+**Date:** October 6, 2025
+**Version:** 1.0
+**Status:** Innovation Specification
 **Hardware:** 30B models (single A100), 200B models (H100 cluster)
 
 ---
@@ -75,7 +75,7 @@ User Query → Query Expansion → Hybrid Search → Reranking → RAG Analysis
 
 ### 🆕 LLM-Enhanced Pipeline
 ```
-User Query 
+User Query
   ↓
 [LLM Step 1] Query Understanding (7B model)
   - Intent classification
@@ -123,7 +123,7 @@ Users often express complex biomedical queries in imprecise natural language.
 
 ### LLM Solution: BioMistral-7B Query Reformulator
 
-**Model:** BioMistral-7B (fits on single A100 16GB)  
+**Model:** BioMistral-7B (fits on single A100 16GB)
 **Task:** Transform user query → optimized biomedical search queries
 
 ```python
@@ -149,7 +149,7 @@ class ReformulatedQuery:
 class BiomedicalQueryReformulator:
     """
     Use BioMistral-7B to reformulate user queries into optimal biomedical search queries.
-    
+
     CAPABILITIES:
     - Medical terminology normalization
     - Context-aware synonym expansion
@@ -157,10 +157,10 @@ class BiomedicalQueryReformulator:
     - Intent classification
     - Multi-query generation (covering different aspects)
     """
-    
+
     def __init__(self, model_path: str = "BioMistral/BioMistral-7B"):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        
+
         print(f"Loading {model_path}...")
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -169,7 +169,7 @@ class BiomedicalQueryReformulator:
             device_map="auto",
             load_in_8bit=True  # Quantization for single GPU
         )
-        
+
         self.system_prompt = """You are a biomedical search expert. Reformulate user queries into optimal biomedical database search queries.
 
 Tasks:
@@ -192,17 +192,17 @@ Output JSON format:
   "intent": "find_datasets|compare_methods|discover_relationships",
   "filters": {"organism": "...", "tissue": "...", "method": "..."}
 }"""
-    
+
     async def reformulate(self, user_query: str) -> ReformulatedQuery:
         """
         Reformulate user query using LLM.
-        
+
         Example:
             user_query = "Find datasets about cancer genes in breast tissue"
-            
+
             result = await reformulator.reformulate(user_query)
-            
-            # result.primary_reformulation = 
+
+            # result.primary_reformulation =
             #   "breast cancer gene expression datasets breast carcinoma tumor suppressor oncogene"
             # result.alternative_formulations = [
             #   "mammary carcinoma genomic profiling transcriptomics",
@@ -219,9 +219,9 @@ Output JSON format:
 User Query: "{user_query}"
 
 Reformulate this query:"""
-        
+
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-        
+
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
@@ -231,9 +231,9 @@ Reformulate this query:"""
                 do_sample=True,
                 pad_token_id=self.tokenizer.eos_token_id
             )
-        
+
         response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-        
+
         # Parse JSON response
         import json
         try:
@@ -241,7 +241,7 @@ Reformulate this query:"""
             json_start = response.find('{')
             json_end = response.rfind('}') + 1
             result_json = json.loads(response[json_start:json_end])
-            
+
             return ReformulatedQuery(
                 original=user_query,
                 primary_reformulation=result_json['primary_query'],
@@ -262,7 +262,7 @@ Reformulate this query:"""
                 confidence=0.5,
                 suggested_filters={}
             )
-    
+
     async def generate_multi_aspect_queries(
         self,
         user_query: str,
@@ -270,10 +270,10 @@ Reformulate this query:"""
     ) -> List[str]:
         """
         Generate multiple query variants covering different aspects.
-        
+
         Example:
             query = "CRISPR for cancer treatment"
-            
+
             variants = await reformulator.generate_multi_aspect_queries(query)
             # [
             #   "CRISPR-Cas9 cancer immunotherapy CAR-T gene editing",
@@ -287,15 +287,15 @@ Reformulate this query:"""
 
 Each variant should focus on a different aspect:
 - Clinical applications
-- Molecular mechanisms  
+- Molecular mechanisms
 - Technical methods
 - Related therapies
 - Challenges/limitations
 
 Return only the queries, one per line:"""
-        
+
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-        
+
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
@@ -305,16 +305,16 @@ Return only the queries, one per line:"""
                 do_sample=True,
                 num_return_sequences=1
             )
-        
+
         response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-        
+
         # Extract query variants
         variants = [
-            line.strip() 
+            line.strip()
             for line in response.split('\n')
             if line.strip() and not line.startswith(('Generate', 'Each', 'Return'))
         ]
-        
+
         return variants[:num_variants]
 ```
 
@@ -324,24 +324,24 @@ Return only the queries, one per line:"""
 async def search(self, user_query: str):
     # Step 1: Reformulate query using LLM
     reformulated = await self.query_reformulator.reformulate(user_query)
-    
+
     # Step 2: Search with primary + alternatives
     primary_results = await self._search(reformulated.primary_reformulation)
-    
+
     alternative_results = []
     for alt_query in reformulated.alternative_formulations[:2]:
         results = await self._search(alt_query)
         alternative_results.extend(results)
-    
+
     # Step 3: Merge and deduplicate
     all_results = self._merge_results(primary_results, alternative_results)
-    
+
     # Step 4: Apply suggested filters
     filtered_results = self._apply_filters(
         all_results,
         reformulated.suggested_filters
     )
-    
+
     return filtered_results
 ```
 
@@ -364,7 +364,7 @@ Current semantic search uses general-purpose embeddings (sentence-transformers).
 
 ### LLM Solution: E5-Mistral-7B Embeddings
 
-**Model:** E5-Mistral-7B-Instruct (7B embedding model)  
+**Model:** E5-Mistral-7B-Instruct (7B embedding model)
 **Advantages:**
 - 32K token context (vs 512)
 - Instruction-tuned (task-specific embeddings)
@@ -380,16 +380,16 @@ import torch.nn.functional as F
 class AdvancedBiomedicalEmbeddings:
     """
     Use E5-Mistral-7B for advanced semantic embeddings.
-    
+
     ADVANTAGES:
     - 32K context window (entire papers)
     - Instruction-tuned (customize for different tasks)
     - Biomedical-aware (can fine-tune on PubMed)
     """
-    
+
     def __init__(self, model_path: str = "intfloat/e5-mistral-7b-instruct"):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        
+
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModel.from_pretrained(
             model_path,
@@ -397,7 +397,7 @@ class AdvancedBiomedicalEmbeddings:
             device_map="auto",
             load_in_8bit=True
         )
-        
+
     def get_detailed_instruct(self, task: str, query: str) -> str:
         """Create instruction for task-specific embeddings."""
         task_instructions = {
@@ -407,7 +407,7 @@ class AdvancedBiomedicalEmbeddings:
             'gene_function': f'Instruct: Retrieve information about gene function and regulation\nQuery: {query}',
         }
         return task_instructions.get(task, f'Query: {query}')
-    
+
     async def encode(
         self,
         texts: List[str],
@@ -416,28 +416,28 @@ class AdvancedBiomedicalEmbeddings:
     ) -> torch.Tensor:
         """
         Encode texts into embeddings with task-specific instructions.
-        
+
         Example:
             # Query embedding (with instruction)
             query_emb = await embedder.encode(
                 ["CRISPR gene editing breast cancer"],
                 task='dataset_search'
             )
-            
+
             # Document embeddings (no instruction, just content)
             doc_embs = await embedder.encode(
-                [dataset.title + " " + dataset.description 
+                [dataset.title + " " + dataset.description
                  for dataset in datasets],
                 task='dataset_search'
             )
-            
+
             # Similarity
             scores = query_emb @ doc_embs.T
         """
         # Add task instruction to first text (query)
         if task and len(texts) > 0:
             texts = [self.get_detailed_instruct(task, texts[0])] + texts[1:]
-        
+
         # Tokenize
         inputs = self.tokenizer(
             texts,
@@ -446,7 +446,7 @@ class AdvancedBiomedicalEmbeddings:
             max_length=max_length,
             return_tensors='pt'
         ).to(self.device)
-        
+
         # Get embeddings
         with torch.no_grad():
             outputs = self.model(**inputs)
@@ -457,16 +457,16 @@ class AdvancedBiomedicalEmbeddings:
             )
             # Normalize
             embeddings = F.normalize(embeddings, p=2, dim=1)
-        
+
         return embeddings
-    
+
     def _mean_pooling(self, hidden_states, attention_mask):
         """Mean pooling with attention mask."""
         input_mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size()).float()
         sum_embeddings = torch.sum(hidden_states * input_mask_expanded, 1)
         sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
         return sum_embeddings / sum_mask
-    
+
     async def encode_long_document(
         self,
         text: str,
@@ -475,25 +475,25 @@ class AdvancedBiomedicalEmbeddings:
     ) -> torch.Tensor:
         """
         Encode very long documents (>32K tokens) with chunking + pooling.
-        
+
         Useful for full papers, comprehensive dataset descriptions.
         """
         # Tokenize full text
         tokens = self.tokenizer(text, return_tensors='pt')['input_ids'][0]
-        
+
         # Create overlapping chunks
         chunks = []
         for i in range(0, len(tokens), chunk_size - overlap):
             chunk = tokens[i:i + chunk_size]
             chunks.append(self.tokenizer.decode(chunk, skip_special_tokens=True))
-        
+
         # Encode each chunk
         chunk_embeddings = await self.encode(chunks, task=None)
-        
+
         # Pool chunk embeddings (mean)
         document_embedding = chunk_embeddings.mean(dim=0, keepdim=True)
         document_embedding = F.normalize(document_embedding, p=2, dim=1)
-        
+
         return document_embedding
 ```
 
@@ -503,7 +503,7 @@ class AdvancedBiomedicalEmbeddings:
 class EnhancedSemanticSearch:
     def __init__(self):
         self.embedder = AdvancedBiomedicalEmbeddings()
-        
+
     async def build_index(self, datasets: List[Dataset]):
         """Build vector index with advanced embeddings."""
         # Create rich text representations
@@ -512,17 +512,17 @@ class EnhancedSemanticSearch:
             f"Tissue: {ds.tissue}. Method: {ds.sequencing_method}."
             for ds in datasets
         ]
-        
+
         # Encode with task-specific instruction
         embeddings = await self.embedder.encode(
             texts,
             task='dataset_search',
             max_length=4096  # Much longer than 512!
         )
-        
+
         # Store in FAISS/Qdrant
         self.index.add(embeddings.cpu().numpy())
-    
+
     async def search(self, query: str, top_k: int = 20):
         """Search with instruction-tuned embeddings."""
         # Encode query with task instruction
@@ -530,14 +530,14 @@ class EnhancedSemanticSearch:
             [query],
             task='dataset_search'
         )
-        
+
         # Search index
         scores, indices = self.index.search(
             query_emb.cpu().numpy(),
             top_k
         )
-        
-        return [(self.datasets[idx], scores[0][i]) 
+
+        return [(self.datasets[idx], scores[0][i])
                 for i, idx in enumerate(indices[0])]
 ```
 
@@ -581,17 +581,17 @@ class RerankedResult:
 class LLMReranker:
     """
     Use Llama-3.1-8B for intelligent reranking with explanations.
-    
+
     ADVANTAGES:
     - Biomedical context understanding
     - Generates explanations for ranking
     - Identifies key matches and issues
     - Can detect dataset quality problems
     """
-    
+
     def __init__(self, model_path: str = "meta-llama/Llama-3.1-8B-Instruct"):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        
+
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.model = AutoModelForCausalLM.from_pretrained(
             model_path,
@@ -599,7 +599,7 @@ class LLMReranker:
             device_map="auto",
             load_in_8bit=True
         )
-    
+
     async def rerank_with_explanation(
         self,
         query: str,
@@ -608,13 +608,13 @@ class LLMReranker:
     ) -> List[RerankedResult]:
         """
         Rerank results using LLM with explanations.
-        
+
         Example:
             query = "breast cancer gene expression RNA-seq"
             results = [dataset1, dataset2, ...]
-            
+
             reranked = await reranker.rerank_with_explanation(query, results)
-            
+
             # reranked[0] = RerankedResult(
             #   dataset_id="GSE12345",
             #   relevance_score=0.95,
@@ -624,7 +624,7 @@ class LLMReranker:
             # )
         """
         reranked = []
-        
+
         for dataset in results[:20]:  # Rerank top 20 candidates
             prompt = f"""Evaluate relevance of this dataset to the query.
 
@@ -649,9 +649,9 @@ Score: [0-100]
 Matches: [comma-separated key matches]
 Issues: [comma-separated issues, or "None"]
 Explanation: [1-2 sentence explanation]"""
-            
+
             inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
-            
+
             with torch.no_grad():
                 outputs = self.model.generate(
                     **inputs,
@@ -660,12 +660,12 @@ Explanation: [1-2 sentence explanation]"""
                     do_sample=False,
                     pad_token_id=self.tokenizer.eos_token_id
                 )
-            
+
             response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-            
+
             # Parse response
             score, matches, issues, explanation = self._parse_rerank_response(response)
-            
+
             reranked.append(RerankedResult(
                 dataset_id=dataset.id,
                 relevance_score=score / 100.0,  # Normalize to 0-1
@@ -673,21 +673,21 @@ Explanation: [1-2 sentence explanation]"""
                 key_matches=matches,
                 potential_issues=issues
             ))
-        
+
         # Sort by score
         reranked.sort(key=lambda x: x.relevance_score, reverse=True)
-        
+
         return reranked[:top_k]
-    
+
     def _parse_rerank_response(self, response: str) -> Tuple[float, List[str], List[str], str]:
         """Parse LLM response into structured output."""
         lines = response.split('\n')
-        
+
         score = 50.0  # Default
         matches = []
         issues = []
         explanation = ""
-        
+
         for line in lines:
             if line.startswith('Score:'):
                 try:
@@ -702,7 +702,7 @@ Explanation: [1-2 sentence explanation]"""
                     issues = [i.strip() for i in issue_text.split(',')]
             elif line.startswith('Explanation:'):
                 explanation = line.split(':', 1)[1].strip()
-        
+
         return score, matches, issues, explanation
 ```
 
@@ -731,9 +731,9 @@ Current RAG provides single-paper summaries. Users need cross-paper insights.
 class MultiPaperSynthesizer:
     """
     Use Meditron-70B (or Llama-3.1-70B) for multi-paper synthesis.
-    
+
     Requires: 2x A100 80GB or 4x A100 40GB
-    
+
     CAPABILITIES:
     - Cross-paper evidence synthesis
     - Contradiction detection
@@ -741,7 +741,7 @@ class MultiPaperSynthesizer:
     - Comparative analysis
     - Timeline of discoveries
     """
-    
+
     def __init__(self, model_path: str = "epfl-llm/meditron-70b"):
         # Load with model parallelism
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -752,7 +752,7 @@ class MultiPaperSynthesizer:
             load_in_8bit=False,  # Full precision for 2x A100 80GB
             max_memory={0: "78GB", 1: "78GB"}  # Leave room for activations
         )
-    
+
     async def synthesize_papers(
         self,
         query: str,
@@ -761,13 +761,13 @@ class MultiPaperSynthesizer:
     ) -> Dict:
         """
         Synthesize insights from multiple papers.
-        
+
         Example:
             query = "What are the mechanisms of CRISPR off-target effects?"
             papers = [paper1, paper2, ..., paper10]
-            
+
             synthesis = await synthesizer.synthesize_papers(query, papers)
-            
+
             # synthesis = {
             #   'consensus': "Multiple studies agree that off-target effects occur primarily at sites with 1-3 mismatches...",
             #   'contradictions': [
@@ -799,9 +799,9 @@ Key Findings: {paper.key_findings if hasattr(paper, 'key_findings') else 'N/A'}
 Methods: {paper.methods if hasattr(paper, 'methods') else 'N/A'}
 """
             paper_texts.append(paper_text)
-        
+
         papers_combined = "\n\n".join(paper_texts)
-        
+
         prompt = f"""You are a biomedical research analyst. Synthesize insights from multiple papers about: "{query}"
 
 Papers to analyze:
@@ -817,9 +817,9 @@ Provide comprehensive synthesis:
 6. KEY CITATIONS: Most important papers to read (PMIDs)
 
 Format your response clearly with these sections."""
-        
+
         inputs = self.tokenizer(prompt, return_tensors="pt").to("cuda")
-        
+
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
@@ -828,14 +828,14 @@ Format your response clearly with these sections."""
                 top_p=0.9,
                 do_sample=True
             )
-        
+
         response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-        
+
         # Parse structured response
         synthesis = self._parse_synthesis(response, papers)
-        
+
         return synthesis
-    
+
     async def detect_contradictions(
         self,
         papers: List[Publication],
@@ -843,13 +843,13 @@ Format your response clearly with these sections."""
     ) -> List[Dict]:
         """
         Detect contradictions across papers on specific aspect.
-        
+
         Useful for controversial topics (e.g., safety, efficacy).
         """
         # Implementation similar to synthesize_papers
         # but focused on contradiction detection
         pass
-    
+
     async def comparative_analysis(
         self,
         papers_a: List[Publication],
@@ -858,11 +858,11 @@ Format your response clearly with these sections."""
     ) -> Dict:
         """
         Compare two sets of papers (e.g., Method A vs Method B).
-        
+
         Example:
             papers_a = [CRISPR papers]
             papers_b = [TALENs papers]
-            
+
             comparison = await synthesizer.comparative_analysis(
                 papers_a, papers_b, "gene editing efficiency"
             )
@@ -893,9 +893,9 @@ Users struggle to identify novel research directions from literature.
 class HypothesisGenerator:
     """
     Use Falcon-180B on H100 cluster for novel hypothesis generation.
-    
+
     Requires: H100 cluster (8x H100 80GB)
-    
+
     CAPABILITIES:
     - Generate novel research hypotheses
     - Identify unexplored connections
@@ -903,7 +903,7 @@ class HypothesisGenerator:
     - Predict potential outcomes
     - Assess feasibility
     """
-    
+
     def __init__(self, model_path: str = "tiiuae/falcon-180B"):
         # Distributed loading across H100 cluster
         self.tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -914,7 +914,7 @@ class HypothesisGenerator:
             load_in_8bit=False,
             max_memory={i: "75GB" for i in range(8)}  # 8x H100
         )
-    
+
     async def generate_hypotheses(
         self,
         research_question: str,
@@ -924,17 +924,17 @@ class HypothesisGenerator:
     ) -> List[Dict]:
         """
         Generate novel research hypotheses based on existing knowledge.
-        
+
         Example:
             question = "Can CRISPR be used to treat Alzheimer's disease?"
-            
+
             hypotheses = await generator.generate_hypotheses(
                 research_question=question,
                 context_papers=alzheimers_papers,
                 context_datasets=alzheimers_datasets,
                 num_hypotheses=5
             )
-            
+
             # hypotheses = [
             #   {
             #     'hypothesis': 'CRISPR base editing of APOE4 to APOE3 variant could reduce Alzheimer\'s risk',
@@ -957,7 +957,7 @@ class HypothesisGenerator:
         # Build comprehensive context
         papers_summary = self._summarize_papers(context_papers[:20])
         datasets_summary = self._summarize_datasets(context_datasets[:10])
-        
+
         prompt = f"""You are a creative biomedical research scientist with deep expertise in molecular biology, genetics, and therapeutic development.
 
 Research Question: "{research_question}"
@@ -986,9 +986,9 @@ For each hypothesis, provide:
 - RELATED_WORK: Relevant papers/datasets (PMIDs/GSE IDs)
 
 Be creative but scientifically rigorous. Think about connections between different fields."""
-        
+
         inputs = self.tokenizer(prompt, return_tensors="pt").to("cuda")
-        
+
         with torch.no_grad():
             outputs = self.model.generate(
                 **inputs,
@@ -998,14 +998,14 @@ Be creative but scientifically rigorous. Think about connections between differe
                 do_sample=True,
                 num_return_sequences=1
             )
-        
+
         response = self.tokenizer.decode(outputs[0], skip_special_tokens=True)
-        
+
         # Parse hypotheses
         hypotheses = self._parse_hypotheses(response)
-        
+
         return hypotheses
-    
+
     async def cross_domain_insights(
         self,
         domain_a: str,
@@ -1015,7 +1015,7 @@ Be creative but scientifically rigorous. Think about connections between differe
     ) -> List[Dict]:
         """
         Find insights by connecting different research domains.
-        
+
         Example:
             insights = await generator.cross_domain_insights(
                 domain_a="cancer immunology",
@@ -1023,12 +1023,12 @@ Be creative but scientifically rigorous. Think about connections between differe
                 papers_a=cancer_papers,
                 papers_b=neuro_papers
             )
-            
-            # Might discover: "Immune checkpoint mechanisms in cancer could 
+
+            # Might discover: "Immune checkpoint mechanisms in cancer could
             # be relevant to neuroinflammation in Alzheimer's"
         """
         pass
-    
+
     async def suggest_experimental_design(
         self,
         hypothesis: str,
@@ -1037,7 +1037,7 @@ Be creative but scientifically rigorous. Think about connections between differe
     ) -> Dict:
         """
         Suggest detailed experimental design to test hypothesis.
-        
+
         Includes:
         - Experimental steps
         - Required reagents/equipment
@@ -1068,7 +1068,7 @@ class LLMEnhancedSearchAgent:
     """
     Complete search pipeline with LLM enhancements at every step.
     """
-    
+
     def __init__(self):
         # LLM components (loaded on different GPUs)
         self.query_reformulator = BiomedicalQueryReformulator()  # 7B on GPU 0
@@ -1076,12 +1076,12 @@ class LLMEnhancedSearchAgent:
         self.reranker = LLMReranker()  # 8B on GPU 1
         self.synthesizer = MultiPaperSynthesizer()  # 70B on GPU 2-3
         self.hypothesis_generator = HypothesisGenerator()  # 180B on H100 cluster
-        
+
         # Traditional components
         self.geo_client = GEOClient()
         self.pubmed_client = PubMedClient()
         self.scholar_client = GoogleScholarClient()
-    
+
     async def comprehensive_search(
         self,
         user_query: str,
@@ -1091,33 +1091,33 @@ class LLMEnhancedSearchAgent:
         Complete LLM-enhanced search pipeline.
         """
         results = {}
-        
+
         # Step 1: Query Understanding & Reformulation (BioMistral-7B)
         print("🧬 Reformulating query with BioMistral-7B...")
         reformulated = await self.query_reformulator.reformulate(user_query)
         results['reformulated_query'] = reformulated
-        
+
         # Step 2: Multi-Aspect Query Generation
         print("🔄 Generating query variants...")
         query_variants = await self.query_reformulator.generate_multi_aspect_queries(
             user_query, num_variants=3
         )
         results['query_variants'] = query_variants
-        
+
         # Step 3: Advanced Semantic Search (E5-Mistral-7B)
         print("🔍 Semantic search with E5-Mistral-7B embeddings...")
         dataset_results = await self._semantic_search_datasets(
             reformulated.primary_reformulation,
             reformulated.suggested_filters
         )
-        
+
         # Step 4: Publication Search (PubMed + Scholar)
         print("📚 Searching publications...")
         papers = await self._search_publications(
             reformulated.primary_reformulation,
             max_results=50
         )
-        
+
         # Step 5: LLM Reranking (Llama-3.1-8B)
         print("📊 Reranking with LLM explanations...")
         reranked_datasets = await self.reranker.rerank_with_explanation(
@@ -1126,7 +1126,7 @@ class LLMEnhancedSearchAgent:
             top_k=10
         )
         results['datasets'] = reranked_datasets
-        
+
         # Step 6: Multi-Paper Synthesis (Meditron-70B)
         print("🔬 Synthesizing insights from papers...")
         synthesis = await self.synthesizer.synthesize_papers(
@@ -1134,7 +1134,7 @@ class LLMEnhancedSearchAgent:
             papers[:10]
         )
         results['paper_synthesis'] = synthesis
-        
+
         # Step 7: Hypothesis Generation (Falcon-180B on H100) - Optional
         if generate_hypotheses:
             print("💡 Generating novel hypotheses with Falcon-180B...")
@@ -1145,12 +1145,12 @@ class LLMEnhancedSearchAgent:
                 num_hypotheses=5
             )
             results['novel_hypotheses'] = hypotheses
-        
+
         # Step 8: Generate Final Report
         print("📝 Generating comprehensive report...")
         report = self._generate_final_report(results)
         results['report'] = report
-        
+
         return results
 ```
 
@@ -1380,9 +1380,9 @@ Total: Fits comfortably ✅
 
 ---
 
-**Innovation Status:** ✅ Comprehensive LLM strategy defined  
-**Resource Requirements:** ✅ Fits available hardware  
-**Expected Impact:** ✅ Transformative improvements  
+**Innovation Status:** ✅ Comprehensive LLM strategy defined
+**Resource Requirements:** ✅ Fits available hardware
+**Expected Impact:** ✅ Transformative improvements
 **Recommendation:** **Strongly approved - implement LLM enhancements!** 🚀
 
 The combination of **web scraping + open-source LLMs** makes OmicsOracle a true next-generation biomedical research assistant!

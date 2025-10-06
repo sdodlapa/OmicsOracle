@@ -1,7 +1,7 @@
 # 🤖 Critical Evaluation: Open-Source vs OpenAI for Publication Analysis
 
-**Date:** October 6, 2025  
-**Context:** Publication mining + LLM analysis for OmicsOracle  
+**Date:** October 6, 2025
+**Context:** Publication mining + LLM analysis for OmicsOracle
 **Question:** Should we use open-source biomedical LLMs (on GCP) or OpenAI API?
 
 ---
@@ -351,7 +351,7 @@ Quality: 90/100
 | **BioMistral-7B (L4 GPU)** | 30-60s (load model) | 2-3s | ~1,200 |
 | **BioGPT (L4 GPU)** | 10s (load model) | 1-2s | ~1,800 |
 
-**Winner (Latency):** BioGPT (smallest, fastest)  
+**Winner (Latency):** BioGPT (smallest, fastest)
 **Winner (Throughput):** Biomedical models (4-10x faster than GPT-4)
 
 ### **Scalability:**
@@ -479,7 +479,7 @@ class PublicationAnalyzer:
     def __init__(self):
         self.biomedlm = BioMedLMClient(gcp_endpoint="...")  # Primary
         self.gpt4 = OpenAIClient(api_key="...")             # Fallback
-    
+
     async def analyze_publications(self, papers, task_type):
         # Route based on task complexity
         if task_type in ["summarization", "method_extraction", "factual_qa"]:
@@ -489,11 +489,11 @@ class PublicationAnalyzer:
             except Exception:
                 # Fallback to GPT-4
                 return await self.gpt4.analyze(papers, task_type)
-        
+
         elif task_type in ["synthesis", "gap_identification", "creative"]:
             # Use GPT-4 for complex reasoning
             return await self.gpt4.analyze(papers, task_type)
-        
+
         else:
             # Default to biomedical model, fallback to GPT-4
             return await self._analyze_with_fallback(papers, task_type)
@@ -600,7 +600,7 @@ import aiohttp
 class BiomedicalLLMClient:
     def __init__(self, endpoint: str = "http://biomedical-llm:8000"):
         self.endpoint = endpoint
-    
+
     async def analyze(self, prompt: str, max_tokens: int = 800) -> str:
         async with aiohttp.ClientSession() as session:
             async with session.post(
@@ -623,7 +623,7 @@ class PublicationAnalyzer:
     def __init__(self):
         self.biomedical = BiomedicalLLMClient()
         self.openai = SummarizationClient(settings)
-    
+
     async def summarize_paper(self, paper):
         # Try biomedical model first (cheaper)
         try:
@@ -647,7 +647,7 @@ class PublicationAnalyzer:
    ```python
    # Cache model in GPU memory (avoid reload)
    model_cache = {}
-   
+
    def get_or_load_model(model_id):
        if model_id not in model_cache:
            model_cache[model_id] = load_model(model_id)
@@ -675,7 +675,7 @@ class PublicationAnalyzer:
    ```python
    # Fine-tune on your publication corpus
    from transformers import Trainer
-   
+
    trainer = Trainer(
        model=biomedlm,
        train_dataset=your_papers,
@@ -850,7 +850,7 @@ TASK_ROUTING = {
     "factual_qa": "biomedlm",              # Matches GPT-4
     "citation_analysis": "biomistral",
     "data_extraction": "biomedlm",
-    
+
     # Use GPT-4 (worth the premium)
     "insight_synthesis": "gpt4",           # 15% better
     "gap_identification": "gpt4",          # 20% better
@@ -912,14 +912,14 @@ Savings: $29.60/month (39%)
 
 **The Answer:** **Neither pure approach is optimal. Use a hybrid strategy.**
 
-**Start:** GPT-4 (weeks 1-2)  
-**Optimize:** Add BioMistral (weeks 3-6)  
-**Scale:** Hybrid routing (month 2+)  
+**Start:** GPT-4 (weeks 1-2)
+**Optimize:** Add BioMistral (weeks 3-6)
+**Scale:** Hybrid routing (month 2+)
 **Refine:** Fine-tune BioMistral (month 3+)
 
-**Quality:** 92% (vs 94.6% pure GPT-4)  
-**Cost:** $45-50/month (vs $75 pure GPT-4)  
-**Savings:** 33-40%  
+**Quality:** 92% (vs 94.6% pure GPT-4)
+**Cost:** $45-50/month (vs $75 pure GPT-4)
+**Savings:** 33-40%
 **Trade-off:** Acceptable
 
 **You have excellent biomedical models already implemented. Leverage them for cost savings while keeping GPT-4 as your quality safety net.**

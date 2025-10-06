@@ -147,7 +147,7 @@ async def download_all():
         if pub.pmc_available:
             task = pdf_handler.download_pmc(pub.pmcid)
             tasks.append(task)
-    
+
     pdfs = await asyncio.gather(*tasks)
     return pdfs
 ```
@@ -203,13 +203,13 @@ for pdf_path in downloaded_pdfs:
   "full_text": "...",
   "sections": {
     "abstract": "Cis-regulatory elements coordinate the regulation of their targeted genes' expression. However, the joint measurement of cis-regulatory elements' activities and their interactions in spatial proximity is limited by the current sequencing approaches...",
-    
+
     "methods": "Cell culture and treatment\nK562 cells were cultured in RPMI 1640 medium supplemented with 10% fetal bovine serum...\n\nNOMe-HiC protocol\nWe performed the NOMe-HiC experiment as follows: (1) crosslinking cells with formaldehyde, (2) GpC methyltransferase treatment to label open chromatin...",
-    
+
     "results": "NOMe-HiC simultaneously captures genetic variants, DNA methylation, chromatin accessibility, and 3D genome organization\nWe developed NOMe-HiC to simultaneously measure genetic variants, DNA methylation at CpG sites, chromatin accessibility at GpC sites, and 3D genome architecture...",
-    
+
     "discussion": "In this study, we developed NOMe-HiC, a method that simultaneously captures genetic variants, DNA methylation, chromatin accessibility, and 3D genome organization from the same DNA molecule...",
-    
+
     "figures": [
       "Figure 1: NOMe-HiC experimental workflow",
       "Figure 2: Quality metrics and validation",
@@ -363,7 +363,7 @@ methods_analysis = await llm.generate(prompt, max_tokens=800)
 ## Methods Analysis for GSE189158
 
 ### Overview
-The NOMe-HiC dataset (GSE189158) has been analyzed using diverse computational 
+The NOMe-HiC dataset (GSE189158) has been analyzed using diverse computational
 approaches across 18 published studies. The methods fall into three main categories:
 
 ### 1. Core Analysis Pipeline (Used in 15/18 papers)
@@ -473,25 +473,25 @@ findings = await llm.generate(prompt, max_tokens=1000)
 #### 1. Coordinated Regulation of Cis-Regulatory Elements
 **Consensus finding across 12 papers:**
 
-The integration of DNA methylation, chromatin accessibility, and 3D genome 
-architecture revealed that cis-regulatory elements (enhancers, promoters) show 
-coordinated activity when in spatial proximity, even when separated by megabases 
+The integration of DNA methylation, chromatin accessibility, and 3D genome
+architecture revealed that cis-regulatory elements (enhancers, promoters) show
+coordinated activity when in spatial proximity, even when separated by megabases
 in linear genome sequence.
 
 **Key evidence:**
-- Enhancers contacting promoters via chromatin loops show correlated methylation 
+- Enhancers contacting promoters via chromatin loops show correlated methylation
   patterns (Pearson r > 0.7, p < 0.001)
 - GpC accessibility at enhancers predicts looping frequency (AUC = 0.82)
 - Disruption of loops (CTCF knockout) altered methylation at both enhancer and promoter
 
 **Biological significance:**
-This demonstrates that 3D genome organization is not just structural but has 
+This demonstrates that 3D genome organization is not just structural but has
 functional consequences for epigenetic state.
 
 #### 2. Allele-Specific Regulation
 **Novel finding in 6 papers:**
 
-By leveraging the ability to phase genetic variants, researchers discovered 
+By leveraging the ability to phase genetic variants, researchers discovered
 extensive allelic asymmetry in both chromatin contacts and methylation patterns.
 
 **Quantification:**
@@ -500,13 +500,13 @@ extensive allelic asymmetry in both chromatin contacts and methylation patterns.
 - Parent-of-origin effects detected at 47 imprinted loci
 
 **Example:**
-At the H19-IGF2 locus, maternal and paternal alleles showed completely different 
+At the H19-IGF2 locus, maternal and paternal alleles showed completely different
 Hi-C contact patterns and methylation landscapes, explaining imprinted expression.
 
 #### 3. Cell-Type-Specific 3D Genome Organization
 **Comparative finding across 8 papers:**
 
-Different cell types showed distinct patterns of chromatin loops and methylation, 
+Different cell types showed distinct patterns of chromatin loops and methylation,
 suggesting cell identity is encoded in 3D genome architecture.
 
 **Comparison:**
@@ -539,8 +539,8 @@ GpC footprints are reliable but best validated with orthogonal methods.
 ### Overall Biological Impact
 
 **Paradigm shift:**
-These studies collectively demonstrate that DNA methylation, chromatin accessibility, 
-and 3D genome architecture are intimately interconnected, challenging previous models 
+These studies collectively demonstrate that DNA methylation, chromatin accessibility,
+and 3D genome architecture are intimately interconnected, challenging previous models
 that treated these features independently.
 
 **Clinical relevance (3 papers):**
@@ -554,8 +554,8 @@ that treated these features independently.
 - Method included in 3 review articles as "state-of-the-art"
 
 **Future impact predicted:**
-Expect this approach to become standard for studying gene regulation, particularly 
-in contexts where allele-specific regulation is important (imprinting, cancer, 
+Expect this approach to become standard for studying gene regulation, particularly
+in contexts where allele-specific regulation is important (imprinting, cancer,
 population genetics).
 ```
 
@@ -635,7 +635,7 @@ None of the 18 papers integrated NOMe-HiC with RNA-seq from the same cells.
 - What's the relative contribution of each feature?
 
 **Recommended analysis:**
-Paired NOMe-HiC + RNA-seq, use machine learning to predict expression from 
+Paired NOMe-HiC + RNA-seq, use machine learning to predict expression from
 epigenomic features.
 
 #### 2. Evolutionary Conservation
@@ -728,7 +728,7 @@ Connect genotype → protein → epigenome → phenotype.
 
 ### Conclusion
 
-GSE189158 opened the door to integrated 3D genome + methylation analysis, but 
+GSE189158 opened the door to integrated 3D genome + methylation analysis, but
 many fundamental questions remain:
 
 1. Causality mechanisms
@@ -742,7 +742,7 @@ many fundamental questions remain:
 - 5-10 years for clinical translation
 
 **Researcher advice:**
-This is a rich area with low-hanging fruit. Combining NOMe-HiC with CRISPR 
+This is a rich area with low-hanging fruit. Combining NOMe-HiC with CRISPR
 perturbations would yield high-impact publications.
 ```
 
@@ -779,7 +779,7 @@ Answer: "Based on the 18 papers, the most commonly used cell lines were:
 3. HEK293T (3 papers) - embryonic kidney cells
 4. Primary cells (2 papers) - peripheral blood mononuclear cells (PBMCs)
 
-The majority used K562 cells because this was the original cell line in the 
+The majority used K562 cells because this was the original cell line in the
 primary publication (PMID:34725712)."
 ```
 
@@ -793,7 +793,7 @@ Answer: "Across the 18 papers, sequencing depth varied:
 - Recommendation from 5 papers: minimum 80M for 5kb resolution
 - For higher resolution (1kb): 200M+ read pairs needed
 
-The primary paper (PMID:34725712) used ~120M read pairs and achieved good 
+The primary paper (PMID:34725712) used ~120M read pairs and achieved good
 coverage at 5kb bins."
 ```
 
@@ -827,7 +827,7 @@ Both papers demonstrate causal relationships between methylation and 3D structur
 
 ## Dataset Overview
 - **GEO ID:** GSE189158
-- **Title:** NOMe-HiC: joint profiling of genetic variants, DNA methylation, 
+- **Title:** NOMe-HiC: joint profiling of genetic variants, DNA methylation,
   chromatin accessibility, and 3D genome in the same DNA molecule
 - **Created:** 2021
 - **Primary Paper:** PMID:34725712 (Nature Communications)
@@ -907,7 +907,7 @@ Both papers demonstrate causal relationships between methylation and 3D structur
 ## Key Biological Findings
 
 ### 1. Coordinated Regulation
-**Discovery:** Cis-regulatory elements in spatial proximity show correlated 
+**Discovery:** Cis-regulatory elements in spatial proximity show correlated
 methylation patterns.
 
 **Evidence:** Enhancer-promoter loops exhibit methylation correlation (r > 0.7).

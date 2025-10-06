@@ -1,7 +1,7 @@
 # 🔄 Refactored Integration Strategy
 
-**Status:** Architecture-Aligned Enhancement Plan  
-**Date:** January 2025  
+**Status:** Architecture-Aligned Enhancement Plan
+**Date:** January 2025
 **Purpose:** Refactor enhancement plans to leverage existing modular architecture
 
 ---
@@ -161,10 +161,10 @@ class XYZPipeline:
             self.feature_1 = Feature1(config.feature_1_config)
         else:
             self.feature_1 = None
-        
+
         # Core components (always initialized)
         self.core_component = CoreComponent(config.core_config)
-    
+
     # 3. Clean execution with conditional features
     def execute(self, input_data) -> OutputData:
         # Use features conditionally
@@ -172,7 +172,7 @@ class XYZPipeline:
             result = self.feature_1.process(input_data)
         else:
             result = input_data
-        
+
         return OutputData(...)
 ```
 
@@ -209,7 +209,7 @@ class PDFConfig:
 @dataclass
 class PublicationSearchConfig:
     """Configuration for publication search pipeline"""
-    
+
     # Feature toggles
     enable_pubmed: bool = True
     enable_scholar: bool = False
@@ -217,7 +217,7 @@ class PublicationSearchConfig:
     enable_citations: bool = False
     enable_pdf_download: bool = False
     enable_fulltext: bool = False
-    
+
     # Component configs
     pubmed_config: PubMedConfig = field(default_factory=PubMedConfig)
     scholar_config: ScholarConfig = field(default_factory=ScholarConfig)
@@ -227,7 +227,7 @@ class PublicationSearchConfig:
 class PublicationSearchPipeline:
     """
     Publication search pipeline following AdvancedSearchPipeline pattern.
-    
+
     Features (toggle via config):
     - PubMed search (enable_pubmed)
     - Google Scholar search (enable_scholar)
@@ -236,39 +236,39 @@ class PublicationSearchPipeline:
     - PDF download (enable_pdf_download)
     - Full-text extraction (enable_fulltext)
     """
-    
+
     def __init__(self, config: PublicationSearchConfig):
         self.config = config
-        
+
         # Conditional initialization based on feature toggles
         if config.enable_pubmed:
             self.pubmed_client = PubMedClient(config.pubmed_config)
         else:
             self.pubmed_client = None
-        
+
         if config.enable_scholar:
             self.scholar_client = GoogleScholarClient(config.scholar_config)
         else:
             self.scholar_client = None
-        
+
         if config.enable_citations:
             self.citation_analyzer = CitationAnalyzer()
         else:
             self.citation_analyzer = None
-        
+
         if config.enable_pdf_download:
             self.pdf_downloader = PDFDownloader(config.pdf_config)
         else:
             self.pdf_downloader = None
-        
+
         if config.enable_fulltext:
             self.fulltext_extractor = FullTextExtractor(config.pdf_config)
         else:
             self.fulltext_extractor = None
-        
+
         # Core component (always initialized)
         self.publication_ranker = PublicationRanker()
-    
+
     def search(
         self,
         query: str,
@@ -277,26 +277,26 @@ class PublicationSearchPipeline:
     ) -> PublicationResult:
         """
         Execute publication search with conditional features.
-        
+
         Args:
             query: Search query
             max_results: Maximum results per source
             filters: Optional filters (year, journal, etc.)
-        
+
         Returns:
             PublicationResult with publications
         """
         publications = []
-        
+
         # Step 1: Search PubMed (if enabled)
         if self.pubmed_client:
             pubmed_results = self.pubmed_client.search(
-                query, 
+                query,
                 max_results=max_results,
                 filters=filters
             )
             publications.extend(pubmed_results)
-        
+
         # Step 2: Search Google Scholar (if enabled)
         if self.scholar_client:
             scholar_results = self.scholar_client.search(
@@ -304,22 +304,22 @@ class PublicationSearchPipeline:
                 max_results=max_results
             )
             publications.extend(scholar_results)
-        
+
         # Step 3: Rank and deduplicate (always executed)
         publications = self.publication_ranker.rank(publications, query)
-        
+
         # Step 4: Analyze citations (if enabled)
         if self.citation_analyzer:
             publications = self.citation_analyzer.analyze(publications)
-        
+
         # Step 5: Download PDFs (if enabled)
         if self.pdf_downloader:
             publications = self.pdf_downloader.download(publications)
-        
+
         # Step 6: Extract full text (if enabled)
         if self.fulltext_extractor:
             publications = self.fulltext_extractor.extract(publications)
-        
+
         return PublicationResult(
             query=query,
             publications=publications,
@@ -327,7 +327,7 @@ class PublicationSearchPipeline:
             sources_used=self._get_sources_used(),
             features_enabled=self._get_enabled_features()
         )
-    
+
     def _get_sources_used(self) -> List[str]:
         """Get list of enabled sources"""
         sources = []
@@ -336,7 +336,7 @@ class PublicationSearchPipeline:
         if self.scholar_client:
             sources.append("scholar")
         return sources
-    
+
     def _get_enabled_features(self) -> List[str]:
         """Get list of enabled features"""
         features = []
@@ -382,14 +382,14 @@ class LLMModelConfig:
 @dataclass
 class LLMEnhancedConfig:
     """Configuration for LLM-enhanced search pipeline"""
-    
+
     # Feature toggles
     enable_llm_reformulation: bool = False
     enable_llm_embeddings: bool = False
     enable_llm_reranking: bool = False
     enable_synthesis: bool = False
     enable_hypotheses: bool = False
-    
+
     # LLM model configs
     reformulation_model: LLMModelConfig = field(
         default_factory=lambda: LLMModelConfig(
@@ -417,7 +417,7 @@ class LLMEnhancedConfig:
             gpu_id=2  # Will use 2 GPUs
         )
     )
-    
+
     # Base pipeline config (for non-LLM search)
     base_pipeline_config: Optional[AdvancedSearchConfig] = None
 
@@ -425,7 +425,7 @@ class LLMEnhancedConfig:
 class LLMEnhancedSearchPipeline:
     """
     LLM-enhanced search pipeline following AdvancedSearchPipeline pattern.
-    
+
     LLM Features (toggle via config):
     - Query reformulation (BioMistral-7B) - enable_llm_reformulation
     - Advanced embeddings (E5-Mistral-7B) - enable_llm_embeddings
@@ -433,10 +433,10 @@ class LLMEnhancedSearchPipeline:
     - Multi-paper synthesis (Meditron-70B) - enable_synthesis
     - Hypothesis generation (Falcon-180B) - enable_hypotheses
     """
-    
+
     def __init__(self, config: LLMEnhancedConfig):
         self.config = config
-        
+
         # Conditional LLM component initialization
         if config.enable_llm_reformulation:
             self.query_reformulator = BiomedicalQueryReformulator(
@@ -444,42 +444,42 @@ class LLMEnhancedSearchPipeline:
             )
         else:
             self.query_reformulator = None
-        
+
         if config.enable_llm_embeddings:
             self.llm_embedder = AdvancedBiomedicalEmbeddings(
                 config.embedding_model
             )
         else:
             self.llm_embedder = None
-        
+
         if config.enable_llm_reranking:
             self.llm_reranker = LLMReranker(config.reranking_model)
         else:
             self.llm_reranker = None
-        
+
         if config.enable_synthesis:
             self.synthesizer = MultiPaperSynthesizer(
                 config.synthesis_model
             )
         else:
             self.synthesizer = None
-        
+
         if config.enable_hypotheses:
             self.hypothesis_generator = HypothesisGenerator(
                 config.synthesis_model  # Uses same model as synthesis
             )
         else:
             self.hypothesis_generator = None
-        
+
         # Base pipeline (always initialized, may use LLM embeddings)
         base_config = config.base_pipeline_config or AdvancedSearchConfig()
-        
+
         # If LLM embeddings enabled, override base pipeline embedding service
         if self.llm_embedder:
             base_config.embedding_config.service = self.llm_embedder
-        
+
         self.base_pipeline = AdvancedSearchPipeline(base_config)
-    
+
     def search(
         self,
         query: str,
@@ -488,12 +488,12 @@ class LLMEnhancedSearchPipeline:
     ) -> EnhancedSearchResult:
         """
         Execute LLM-enhanced search with conditional features.
-        
+
         Args:
             query: Original user query
             generate_hypotheses: Whether to generate hypotheses
             **kwargs: Additional arguments for base pipeline
-        
+
         Returns:
             EnhancedSearchResult with LLM-powered enhancements
         """
@@ -503,20 +503,20 @@ class LLMEnhancedSearchPipeline:
         else:
             reformed_query = query
             multi_aspect_queries = [query]
-        
+
         # Step 2: Base search (always executed, may use LLM embeddings)
         base_results = self.base_pipeline.search(reformed_query, **kwargs)
-        
+
         # Step 3: LLM reranking (if enabled)
         if self.llm_reranker:
             reranked_results, explanations = self.llm_reranker.rerank_with_explanation(
-                query, 
+                query,
                 base_results
             )
         else:
             reranked_results = base_results
             explanations = None
-        
+
         # Step 4: Multi-paper synthesis (if enabled)
         synthesis = None
         if self.synthesizer:
@@ -524,7 +524,7 @@ class LLMEnhancedSearchPipeline:
                 query,
                 reranked_results.top_k(10)
             )
-        
+
         # Step 5: Hypothesis generation (if enabled and requested)
         hypotheses = None
         if self.hypothesis_generator and generate_hypotheses:
@@ -533,7 +533,7 @@ class LLMEnhancedSearchPipeline:
                 reranked_results.top_k(5),
                 synthesis
             )
-        
+
         return EnhancedSearchResult(
             query=query,
             reformed_query=reformed_query,
@@ -544,7 +544,7 @@ class LLMEnhancedSearchPipeline:
             hypotheses=hypotheses,
             llm_features_used=self._get_llm_features_used()
         )
-    
+
     def _get_llm_features_used(self) -> List[str]:
         """Get list of enabled LLM features"""
         features = []
@@ -583,14 +583,14 @@ from ..publications.pipeline import PublicationResult
 @dataclass
 class IntegrationConfig:
     """Configuration for integration pipeline"""
-    
+
     # Feature toggles
     enable_cross_reference: bool = True
     enable_unified_ranking: bool = True
     enable_deduplication: bool = True
     enable_entity_extraction: bool = False
     enable_knowledge_graph: bool = False
-    
+
     # Component configs
     fusion_config: Optional[dict] = None
     knowledge_config: Optional[dict] = None
@@ -599,7 +599,7 @@ class IntegrationConfig:
 class IntegrationPipeline:
     """
     Multi-source integration pipeline following AdvancedSearchPipeline pattern.
-    
+
     Features (toggle via config):
     - Cross-reference datasets & publications (enable_cross_reference)
     - Unified ranking (enable_unified_ranking)
@@ -607,33 +607,33 @@ class IntegrationPipeline:
     - Entity extraction (enable_entity_extraction)
     - Knowledge graph (enable_knowledge_graph)
     """
-    
+
     def __init__(self, config: IntegrationConfig):
         self.config = config
-        
+
         # Conditional initialization
         if config.enable_unified_ranking:
             self.unified_ranker = UnifiedRanker()
         else:
             self.unified_ranker = None
-        
+
         if config.enable_deduplication:
             self.deduplicator = CrossSourceDeduplicator()
         else:
             self.deduplicator = None
-        
+
         if config.enable_entity_extraction:
             self.entity_extractor = EntityExtractor()
             self.relationship_extractor = RelationshipExtractor()
         else:
             self.entity_extractor = None
             self.relationship_extractor = None
-        
+
         if config.enable_knowledge_graph:
             self.knowledge_graph = KnowledgeGraph()
         else:
             self.knowledge_graph = None
-    
+
     def integrate(
         self,
         dataset_results: SearchResult,
@@ -642,12 +642,12 @@ class IntegrationPipeline:
     ) -> IntegratedResult:
         """
         Integrate dataset and publication results.
-        
+
         Args:
             dataset_results: Results from SearchAgent
             publication_results: Results from PublicationSearchPipeline
             query: Original query
-        
+
         Returns:
             IntegratedResult with unified ranking and cross-references
         """
@@ -657,13 +657,13 @@ class IntegrationPipeline:
                 dataset_results,
                 publication_results
             )
-        
+
         # Step 2: Cross-reference (always executed)
         cross_refs = self._create_cross_references(
             dataset_results,
             publication_results
         )
-        
+
         # Step 3: Unified ranking (if enabled)
         if self.unified_ranker:
             unified_results = self.unified_ranker.rank(
@@ -677,7 +677,7 @@ class IntegrationPipeline:
                 dataset_results,
                 publication_results
             )
-        
+
         # Step 4: Entity extraction (if enabled)
         entities = None
         relationships = None
@@ -687,12 +687,12 @@ class IntegrationPipeline:
                 entities,
                 unified_results
             )
-        
+
         # Step 5: Knowledge graph (if enabled)
         kg = None
         if self.knowledge_graph and entities:
             kg = self.knowledge_graph.build(entities, relationships)
-        
+
         return IntegratedResult(
             query=query,
             unified_results=unified_results,
@@ -728,13 +728,13 @@ from ..lib.integration.pipeline import IntegrationPipeline
 @dataclass
 class SearchAgentConfig:
     """Configuration for SearchAgent with pipeline toggles"""
-    
+
     # Pipeline toggles
     enable_semantic: bool = False           # Existing
     enable_publications: bool = False       # NEW
     enable_llm: bool = False                # NEW
     enable_integration: bool = False        # NEW
-    
+
     # Pipeline configs (passed through)
     search_config: Optional[AdvancedSearchConfig] = None
     publications_config: Optional[PublicationSearchConfig] = None
@@ -745,7 +745,7 @@ class SearchAgentConfig:
 class SearchAgent(Agent[SearchInput, SearchOutput]):
     """
     Main search agent with optional pipeline composition.
-    
+
     Manages:
     - Core search (GEOClient + KeywordRanker)
     - Semantic search (AdvancedSearchPipeline) - optional
@@ -753,7 +753,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
     - LLM enhancements (LLMEnhancedSearchPipeline) - optional
     - Integration (IntegrationPipeline) - optional
     """
-    
+
     def __init__(
         self,
         settings: Settings,
@@ -761,53 +761,53 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
     ):
         super().__init__(settings, agent_name="SearchAgent")
         self.agent_config = agent_config or SearchAgentConfig()
-    
+
     def _initialize_resources(self) -> None:
         """Initialize resources based on enabled pipelines"""
-        
+
         # Core components (always initialized)
         self.geo_client = GEOClient(self.settings.geo)
         self.keyword_ranker = KeywordRanker(self.settings.ranking)
-        
+
         # Optional pipeline 1: Semantic search
         if self.agent_config.enable_semantic:
             config = self.agent_config.search_config or AdvancedSearchConfig()
             self.semantic_pipeline = AdvancedSearchPipeline(config)
         else:
             self.semantic_pipeline = None
-        
+
         # Optional pipeline 2: Publications
         if self.agent_config.enable_publications:
             config = self.agent_config.publications_config or PublicationSearchConfig()
             self.publication_pipeline = PublicationSearchPipeline(config)
         else:
             self.publication_pipeline = None
-        
+
         # Optional pipeline 3: LLM enhancements
         if self.agent_config.enable_llm:
             config = self.agent_config.llm_config or LLMEnhancedConfig()
             self.llm_pipeline = LLMEnhancedSearchPipeline(config)
         else:
             self.llm_pipeline = None
-        
+
         # Optional pipeline 4: Integration
         if self.agent_config.enable_integration:
             config = self.agent_config.integration_config or IntegrationConfig()
             self.integration_pipeline = IntegrationPipeline(config)
         else:
             self.integration_pipeline = None
-    
+
     def _cleanup_resources(self) -> None:
         """Clean up pipeline resources"""
         # Cleanup handled automatically by pipelines
         pass
-    
+
     def _validate_input(self, input_data: SearchInput) -> SearchInput:
         """Validate search input"""
         if not input_data.search_terms:
             raise AgentValidationError("search_terms required")
         return input_data
-    
+
     def _process(
         self,
         input_data: SearchInput,
@@ -815,7 +815,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
     ) -> SearchOutput:
         """
         Execute search with enabled pipelines.
-        
+
         Flow:
         1. Choose search strategy (LLM > semantic > basic)
         2. Optionally search publications
@@ -831,12 +831,12 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
         else:
             # Basic search
             dataset_results = self._basic_search(input_data, context)
-        
+
         # Step 2: Publication search (if enabled)
         publication_results = None
         if self.publication_pipeline:
             publication_results = self._publication_search(input_data, context)
-        
+
         # Step 3: Integration (if enabled and we have both results)
         if self.integration_pipeline and publication_results:
             integrated = self.integration_pipeline.integrate(
@@ -852,10 +852,10 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
                 search_terms_used=input_data.search_terms,
                 filters_applied={}
             )
-        
+
         # Return dataset results
         return dataset_results
-    
+
     def _basic_search(
         self,
         input_data: SearchInput,
@@ -869,24 +869,24 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             organism=input_data.organism,
             study_type=input_data.study_type
         )
-        
+
         # Rank by keywords
         ranked = self.keyword_ranker.rank(
             datasets,
             input_data.search_terms
         )
-        
+
         # Apply filters
         if input_data.min_samples:
             ranked = [d for d in ranked if d.dataset.sample_count >= input_data.min_samples]
-        
+
         return SearchOutput(
             datasets=ranked,
             total_found=len(ranked),
             search_terms_used=input_data.search_terms,
             filters_applied=self._get_filters(input_data)
         )
-    
+
     def _semantic_search(
         self,
         input_data: SearchInput,
@@ -894,7 +894,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
     ) -> SearchOutput:
         """Semantic search with AdvancedSearchPipeline"""
         query = input_data.original_query or " ".join(input_data.search_terms)
-        
+
         results = self.semantic_pipeline.search(
             query=query,
             max_results=input_data.max_results,
@@ -904,7 +904,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
                 "min_samples": input_data.min_samples
             }
         )
-        
+
         # Convert to SearchOutput
         return SearchOutput(
             datasets=results.datasets,
@@ -912,7 +912,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             search_terms_used=[query],
             filters_applied=self._get_filters(input_data)
         )
-    
+
     def _llm_search(
         self,
         input_data: SearchInput,
@@ -920,7 +920,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
     ) -> SearchOutput:
         """LLM-enhanced search with LLMEnhancedSearchPipeline"""
         query = input_data.original_query or " ".join(input_data.search_terms)
-        
+
         results = self.llm_pipeline.search(
             query=query,
             max_results=input_data.max_results,
@@ -930,7 +930,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
                 "min_samples": input_data.min_samples
             }
         )
-        
+
         # Convert to SearchOutput
         return SearchOutput(
             datasets=results.results.datasets,
@@ -938,7 +938,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             search_terms_used=[results.reformed_query],
             filters_applied=self._get_filters(input_data)
         )
-    
+
     def _publication_search(
         self,
         input_data: SearchInput,
@@ -946,12 +946,12 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
     ) -> PublicationResult:
         """Search publications with PublicationSearchPipeline"""
         query = input_data.original_query or " ".join(input_data.search_terms)
-        
+
         return self.publication_pipeline.search(
             query=query,
             max_results=input_data.max_results
         )
-    
+
     def _get_filters(self, input_data: SearchInput) -> dict:
         """Extract applied filters"""
         filters = {}
@@ -987,25 +987,25 @@ search_agent:
   enable_publications: true
   enable_llm: false        # Start with False, enable when ready
   enable_integration: true
-  
+
   # Pipeline configurations
   search_config:
     enable_query_expansion: true
     enable_reranking: true
     enable_rag: false
     enable_caching: true
-  
+
   publications_config:
     enable_pubmed: true
     enable_scholar: false    # Start with False, add later
     enable_citations: true
     enable_pdf_download: false
     enable_fulltext: false
-    
+
     pubmed_config:
       api_key: ${NCBI_API_KEY}
       max_results: 50
-  
+
   llm_config:
     # Start with basic LLM features
     enable_llm_reformulation: true
@@ -1013,12 +1013,12 @@ search_agent:
     enable_llm_reranking: false
     enable_synthesis: false
     enable_hypotheses: false
-    
+
     reformulation_model:
       model_name: "BioMistral-7B"
       gpu_id: 0
       quantization: "8bit"
-  
+
   integration_config:
     enable_cross_reference: true
     enable_unified_ranking: true
@@ -1133,7 +1133,7 @@ class SearchAgent:
         # Core (always)
         self.geo_client = GEOClient()
         self.keyword_ranker = KeywordRanker()
-        
+
         # Optional pipelines (3-4 total)
         if config.enable_semantic:
             self.semantic_pipeline = AdvancedSearchPipeline()
@@ -1192,19 +1192,19 @@ class SearchAgent:
     def _process(self, input_data, context):
         # 1. Dataset search (core responsibility)
         dataset_results = self._search_datasets(input_data)
-        
+
         # 2. Publication search (optional, delegated to pipeline)
         publication_results = None
         if self.publication_pipeline:
             publication_results = self.publication_pipeline.search(...)
-        
+
         # 3. Integration (optional, delegated to pipeline)
         if self.integration_pipeline and publication_results:
             return self.integration_pipeline.integrate(
                 dataset_results,
                 publication_results
             )
-        
+
         return dataset_results
 ```
 
@@ -1439,20 +1439,20 @@ llm_config:
 
 ### **What Stayed the Same**
 
-✅ **All component designs** - PubMedClient, GoogleScholarClient, etc. remain as designed  
-✅ **All functionality** - Every planned feature is still included  
-✅ **All LLM innovations** - Query reformulation, embeddings, reranking, synthesis, hypotheses  
-✅ **Implementation timeline** - Still 10 weeks, same deliverables  
-✅ **Performance targets** - +150% coverage, +40% accuracy, etc.  
+✅ **All component designs** - PubMedClient, GoogleScholarClient, etc. remain as designed
+✅ **All functionality** - Every planned feature is still included
+✅ **All LLM innovations** - Query reformulation, embeddings, reranking, synthesis, hypotheses
+✅ **Implementation timeline** - Still 10 weeks, same deliverables
+✅ **Performance targets** - +150% coverage, +40% accuracy, etc.
 
 ### **What Got Better**
 
-⭐ **Modularity** - Fewer, better-organized modules  
-⭐ **Simplicity** - Pipeline composition vs flat orchestration  
-⭐ **Flexibility** - Feature toggles enable incremental adoption  
-⭐ **Maintainability** - Follows existing proven patterns  
-⭐ **Testability** - Each pipeline independently testable  
-⭐ **Architecture alignment** - Perfectly fits existing codebase  
+⭐ **Modularity** - Fewer, better-organized modules
+⭐ **Simplicity** - Pipeline composition vs flat orchestration
+⭐ **Flexibility** - Feature toggles enable incremental adoption
+⭐ **Maintainability** - Follows existing proven patterns
+⭐ **Testability** - Each pipeline independently testable
+⭐ **Architecture alignment** - Perfectly fits existing codebase
 
 ---
 
@@ -1466,6 +1466,6 @@ llm_config:
 
 ---
 
-**Refactored Strategy Status:** ✅ Complete and Architecture-Aligned  
-**Ready for Implementation:** Yes - following proven AdvancedSearchPipeline pattern  
+**Refactored Strategy Status:** ✅ Complete and Architecture-Aligned
+**Ready for Implementation:** Yes - following proven AdvancedSearchPipeline pattern
 **Risk Level:** Low - incremental, feature-toggle driven approach

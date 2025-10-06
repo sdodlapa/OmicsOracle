@@ -58,7 +58,7 @@ Be specific. Cite GSE numbers.
 
 **GPT-4's Analysis:**
 > **GSE189158 is MORE relevant** (despite lower search score)
-> 
+>
 > Why? NOMe-HiC **specifically** does joint methylation + Hi-C.
 > GSE281238 focuses on amplification method, not methylation + Hi-C combo.
 >

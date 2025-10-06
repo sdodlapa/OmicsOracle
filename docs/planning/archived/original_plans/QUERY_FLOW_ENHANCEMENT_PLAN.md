@@ -1,8 +1,8 @@
 # Query Flow Enhancement Plan
 
-**Date:** October 6, 2025  
-**Version:** 1.0  
-**Status:** Planning Phase  
+**Date:** October 6, 2025
+**Version:** 1.0
+**Status:** Planning Phase
 **Priority:** High
 
 ---
@@ -13,7 +13,7 @@ This plan outlines comprehensive enhancements to OmicsOracle's query flow capabi
 
 ### Vision
 
-**Current:** Search GEO datasets → Get metadata → AI analysis  
+**Current:** Search GEO datasets → Get metadata → AI analysis
 **Enhanced:** Natural query → Dataset discovery → Publication mining → Full-text analysis → Citation network → Comprehensive insights
 
 ### Key Capabilities to Add
@@ -196,7 +196,7 @@ Enhanced Results
 ```python
 class PubMedClient:
     """Client for PubMed/NCBI E-utilities API."""
-    
+
     async def search(query: str, max_results: int) -> List[PubMedArticle]
     async def get_article(pmid: str) -> PubMedArticle
     async def get_related(pmid: str) -> List[str]  # Related PMIDs
@@ -207,7 +207,7 @@ class PubMedClient:
 ```python
 class PMCClient:
     """Client for PubMed Central full-text articles."""
-    
+
     async def get_full_text(pmcid: str) -> FullTextArticle
     async def download_pdf(pmcid: str) -> bytes
     async def get_sections(pmcid: str) -> Dict[str, str]
@@ -218,7 +218,7 @@ class PMCClient:
 ```python
 class EuropePMCClient:
     """Client for Europe PMC (broader coverage)."""
-    
+
     async def search(query: str) -> List[Article]
     async def get_full_text(pmcid: str) -> str
     async def get_citations(pmid: str) -> CitationNetwork
@@ -228,7 +228,7 @@ class EuropePMCClient:
 ```python
 class PreprintClient:
     """Client for bioRxiv, medRxiv, arXiv."""
-    
+
     async def search_biorxiv(query: str) -> List[Preprint]
     async def search_medrxiv(query: str) -> List[Preprint]
     async def download_pdf(doi: str) -> bytes
@@ -248,7 +248,7 @@ class PubMedArticle:
     pmcid: Optional[str]
     mesh_terms: List[str]
     keywords: List[str]
-    
+
 @dataclass
 class FullTextArticle:
     pmcid: str
@@ -271,7 +271,7 @@ class FullTextArticle:
 ```python
 class PDFDownloader:
     """Download PDFs from various sources."""
-    
+
     async def download_from_pmc(pmcid: str) -> bytes
     async def download_from_doi(doi: str) -> bytes  # via Unpaywall
     async def download_from_url(url: str) -> bytes
@@ -282,7 +282,7 @@ class PDFDownloader:
 ```python
 class PDFParser:
     """Parse PDF files using multiple methods."""
-    
+
     def parse_with_pypdf(pdf_bytes: bytes) -> str
     def parse_with_pdfminer(pdf_bytes: bytes) -> str
     def parse_with_grobid(pdf_bytes: bytes) -> StructuredDocument  # Best quality
@@ -294,7 +294,7 @@ class PDFParser:
 ```python
 class GROBIDClient:
     """Client for GROBID (scientific PDF parser)."""
-    
+
     async def parse_pdf(pdf_bytes: bytes) -> TEIDocument
     async def extract_header(pdf_bytes: bytes) -> Metadata
     async def extract_citations(pdf_bytes: bytes) -> List[Citation]
@@ -304,7 +304,7 @@ class GROBIDClient:
 ```python
 class FigureExtractor:
     """Extract figures and tables from PDFs."""
-    
+
     def extract_figures(pdf_bytes: bytes) -> List[Figure]
     def extract_tables(pdf_bytes: bytes) -> List[Table]
     def extract_captions(pdf_bytes: bytes) -> List[str]
@@ -322,7 +322,7 @@ class FigureExtractor:
 ```python
 class QueryAnalyzer:
     """Analyze and understand user queries."""
-    
+
     def detect_intent(query: str) -> QueryIntent  # search/analyze/compare
     def extract_entities(query: str) -> Dict[str, List[str]]
     def identify_concepts(query: str) -> List[Concept]
@@ -333,7 +333,7 @@ class QueryAnalyzer:
 ```python
 class QueryEnhancer:
     """Enhance queries for better search results."""
-    
+
     def expand_with_ontology(query: str) -> List[str]  # MeSH, GO, etc.
     def add_context(query: str) -> str  # Add implicit context
     def generate_variants(query: str) -> List[str]  # Multiple strategies
@@ -344,7 +344,7 @@ class QueryEnhancer:
 ```python
 class OntologyMapper:
     """Map terms to biomedical ontologies."""
-    
+
     def map_to_mesh(term: str) -> List[MeSHTerm]
     def map_to_go(gene: str) -> List[GOTerm]
     def map_to_hpo(phenotype: str) -> List[HPOTerm]
@@ -355,7 +355,7 @@ class OntologyMapper:
 ```python
 class QueryValidator:
     """Validate and optimize queries."""
-    
+
     def check_feasibility(query: str) -> bool
     def estimate_results(query: str) -> int
     def suggest_improvements(query: str) -> List[str]
@@ -373,7 +373,7 @@ class QueryValidator:
 ```python
 class EntityExtractor:
     """Extract biomedical entities using NER."""
-    
+
     def extract_genes(text: str) -> List[Gene]
     def extract_diseases(text: str) -> List[Disease]
     def extract_chemicals(text: str) -> List[Chemical]
@@ -385,7 +385,7 @@ class EntityExtractor:
 ```python
 class RelationshipExtractor:
     """Extract relationships between entities."""
-    
+
     def extract_gene_disease(text: str) -> List[Relationship]
     def extract_protein_protein(text: str) -> List[Interaction]
     def extract_method_comparison(text: str) -> List[Comparison]
@@ -396,7 +396,7 @@ class RelationshipExtractor:
 ```python
 class CitationAnalyzer:
     """Analyze citation networks."""
-    
+
     def build_citation_graph(papers: List[Paper]) -> nx.DiGraph
     def find_seminal_papers(graph: nx.DiGraph) -> List[Paper]
     def detect_research_trends(graph: nx.DiGraph) -> List[Trend]
@@ -407,7 +407,7 @@ class CitationAnalyzer:
 ```python
 class KnowledgeGraph:
     """Build and query knowledge graphs."""
-    
+
     def add_entities(entities: List[Entity]) -> None
     def add_relationships(relations: List[Relationship]) -> None
     def query(query: str) -> List[Result]
@@ -426,7 +426,7 @@ class KnowledgeGraph:
 ```python
 class DatasetPublicationLinker:
     """Link datasets to publications."""
-    
+
     def find_publications_for_dataset(geo_id: str) -> List[Publication]
     def find_datasets_in_publication(pmid: str) -> List[Dataset]
     def validate_links(links: List[Link]) -> List[Link]
@@ -437,7 +437,7 @@ class DatasetPublicationLinker:
 ```python
 class MultiSourceRanker:
     """Rank results across multiple sources."""
-    
+
     def rank_by_relevance(items: List[Item], query: str) -> List[RankedItem]
     def rank_by_citation_impact(papers: List[Paper]) -> List[RankedPaper]
     def rank_by_recency(items: List[Item]) -> List[RankedItem]
@@ -448,12 +448,12 @@ class MultiSourceRanker:
 ```python
 class ResultFusion:
     """Fuse results from multiple sources."""
-    
+
     def merge_datasets_publications(
         datasets: List[Dataset],
         publications: List[Publication]
     ) -> IntegratedResults
-    
+
     def deduplicate(results: List[Result]) -> List[Result]
     def cross_validate(results: List[Result]) -> List[ValidatedResult]
 ```
@@ -893,14 +893,14 @@ This comprehensive enhancement will transform OmicsOracle into a complete biomed
 - ✅ Building citation networks
 - ✅ Providing comprehensive AI-powered insights
 
-**Total Effort:** 8 weeks (320 hours)  
-**Value:** High - Significant competitive advantage  
-**Complexity:** Medium-High - Manageable with existing expertise  
+**Total Effort:** 8 weeks (320 hours)
+**Value:** High - Significant competitive advantage
+**Complexity:** Medium-High - Manageable with existing expertise
 **ROI:** Excellent - Core differentiator for OmicsOracle
 
 **Ready to proceed with Phase 1 implementation.**
 
 ---
 
-**Plan Status:** ✅ Complete - Ready for Review  
+**Plan Status:** ✅ Complete - Ready for Review
 **Next:** Get approval → Begin Phase 1
