@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmicsOracle - AI-Powered Semantic Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-800: #1f2937;
+            --gray-900: #111827;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header-left h1 {
+            color: var(--primary);
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+
+        .header-left .subtitle {
+            color: var(--gray-600);
+            font-size: 1em;
+        }
+
+        .header-right {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn-secondary {
+            padding: 10px 20px;
+            background: white;
+            border: 2px solid var(--primary);
+            color: var(--primary);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Search Section */
+        .search-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+
+        .search-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .search-header h2 {
+            color: var(--gray-800);
+            font-size: 1.5em;
+        }
+
+        /* Search Mode Toggle */
+        .search-mode-toggle {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            background: var(--gray-100);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+
+        .toggle-label {
+            font-weight: 600;
+            color: var(--gray-700);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 60px;
+            height: 30px;
+            background: var(--gray-300);
+            border-radius: 15px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary);
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            width: 24px;
+            height: 24px;
+            background: white;
+            border-radius: 50%;
+            transition: left 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .toggle-switch.active .toggle-slider {
+            left: 33px;
+        }
+
+        .mode-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        .mode-keyword {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .mode-semantic {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Search Input */
+        .search-input-group {
+            margin-bottom: 20px;
+        }
+
+        .search-input-wrapper {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 18px 60px 18px 20px;
+            font-size: 1.1em;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-btn {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            padding: 10px 25px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .search-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .search-btn:disabled {
+            background: var(--gray-400);
+            cursor: not-allowed;
+        }
+
+        /* Filters */
+        .filters-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .filter-label {
+            font-size: 0.9em;
+            color: var(--gray-600);
+            font-weight: 600;
+        }
+
+        .filter-select {
+            padding: 10px;
+            border: 2px solid var(--gray-200);
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Semantic Info Box */
+        .semantic-info {
+            background: linear-gradient(135deg, #667eea20, #764ba220);
+            border: 2px solid var(--primary);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            display: none;
+        }
+
+        .semantic-info.active {
+            display: block;
+        }
+
+        .semantic-info-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .semantic-info-text {
+            color: var(--gray-700);
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        /* Loading State */
+        .loading-overlay {
+            display: none;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .loading-overlay.active {
+            display: block;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--gray-200);
+            border-top: 4px solid var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: var(--gray-700);
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .loading-subtext {
+            color: var(--gray-500);
+            font-size: 0.9em;
+        }
+
+        /* Results Section */
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .results-header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .results-stats {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 0.85em;
+            color: var(--gray-600);
+            margin-bottom: 2px;
+        }
+
+        .stat-value {
+            font-size: 1.3em;
+            font-weight: 700;
+            color: var(--gray-800);
+        }
+
+        /* Expanded Query */
+        .expanded-query {
+            background: linear-gradient(135deg, #667eea15, #764ba215);
+            border-left: 4px solid var(--primary);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .expanded-query.active {
+            display: block;
+        }
+
+        .expanded-query-title {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .expanded-query-terms {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .query-term {
+            background: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            border: 1px solid var(--gray-300);
+        }
+
+        .query-term.original {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Dataset Cards */
+        .results-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .dataset-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            border-left: 4px solid transparent;
+        }
+
+        .dataset-card:hover {
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transform: translateY(-2px);
+            border-left-color: var(--primary);
+        }
+
+        .dataset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+
+        .dataset-id {
+            font-size: 1.1em;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .relevance-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #10b98120, #059669 20);
+            padding: 8px 15px;
+            border-radius: 20px;
+        }
+
+        .relevance-score {
+            font-weight: 700;
+            color: var(--success);
+            font-size: 1.1em;
+        }
+
+        .relevance-label {
+            font-size: 0.85em;
+            color: var(--gray-600);
+        }
+
+        .dataset-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--gray-800);
+            margin-bottom: 10px;
+            line-height: 1.4;
+        }
+
+        .dataset-summary {
+            color: var(--gray-600);
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
+        .dataset-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+            color: var(--gray-600);
+        }
+
+        .meta-icon {
+            font-weight: 700;
+        }
+
+        .meta-value {
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .match-reasons {
+            background: var(--gray-50);
+            padding: 12px;
+            border-radius: 8px;
+        }
+
+        .match-reasons-title {
+            font-size: 0.85em;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 8px;
+        }
+
+        .reasons-list {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .reason-item {
+            font-size: 0.9em;
+            color: var(--gray-600);
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .reason-item:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--success);
+            font-weight: 700;
+        }
+
+        /* Empty State */
+        .empty-state {
+            background: white;
+            padding: 60px 30px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .empty-state-icon {
+            font-size: 4em;
+            margin-bottom: 20px;
+        }
+
+        .empty-state-title {
+            font-size: 1.5em;
+            color: var(--gray-800);
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+
+        .empty-state-text {
+            color: var(--gray-600);
+            line-height: 1.6;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        /* Error State */
+        .error-alert {
+            background: #fee2e2;
+            border: 2px solid var(--danger);
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-alert.active {
+            display: block;
+        }
+
+        .error-title {
+            font-weight: 600;
+            color: var(--danger);
+            margin-bottom: 5px;
+        }
+
+        .error-text {
+            color: #991b1b;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .search-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .results-header {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .results-stats {
+                width: 100%;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <h1>🔬 AI-Powered Dataset Search</h1>
+                <p class="subtitle">Discover biomedical datasets with semantic understanding</p>
+            </div>
+            <div class="header-right">
+                <a href="/static/dashboard.html" class="btn-secondary">← Dashboard</a>
+            </div>
+        </div>
+
+        <!-- Search Card -->
+        <div class="search-card">
+            <div class="search-header">
+                <h2>Search Datasets</h2>
+                <div class="search-mode-toggle">
+                    <span class="toggle-label">
+                        <span>Keyword</span>
+                    </span>
+                    <div class="toggle-switch" id="searchModeToggle">
+                        <div class="toggle-slider"></div>
+                    </div>
+                    <span class="toggle-label">
+                        <span>🤖 Semantic</span>
+                        <span class="mode-badge mode-keyword" id="modeBadge">Keyword</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Search Input -->
+            <div class="search-input-group">
+                <div class="search-input-wrapper">
+                    <input
+                        type="text"
+                        class="search-input"
+                        id="searchInput"
+                        placeholder="e.g., 'breast cancer RNA-seq studies' or 'immune response in viral infections'"
+                        value="breast cancer RNA-seq"
+                    >
+                    <button class="search-btn" id="searchBtn">
+                        🔍 Search
+                    </button>
+                </div>
+
+                <!-- Filters -->
+                <div class="filters-row">
+                    <div class="filter-group">
+                        <label class="filter-label">Organism</label>
+                        <select class="filter-select" id="organismFilter">
+                            <option value="">All organisms</option>
+                            <option value="Homo sapiens">Homo sapiens</option>
+                            <option value="Mus musculus">Mus musculus</option>
+                            <option value="Rattus norvegicus">Rattus norvegicus</option>
+                            <option value="Drosophila melanogaster">Drosophila melanogaster</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Min Samples</label>
+                        <select class="filter-select" id="minSamplesFilter">
+                            <option value="">Any</option>
+                            <option value="10">10+</option>
+                            <option value="20">20+</option>
+                            <option value="50">50+</option>
+                            <option value="100">100+</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label class="filter-label">Max Results</label>
+                        <select class="filter-select" id="maxResultsFilter">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Semantic Info -->
+            <div class="semantic-info" id="semanticInfo">
+                <div class="semantic-info-title">
+                    🤖 Semantic Search Active
+                </div>
+                <div class="semantic-info-text">
+                    AI will expand your query with related scientific terms, use hybrid ranking (keyword + vector similarity),
+                    and apply cross-encoder reranking for higher precision. Results may include datasets without exact keyword matches.
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Alert -->
+        <div class="error-alert" id="errorAlert">
+            <div class="error-title">Search Error</div>
+            <div class="error-text" id="errorText"></div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner"></div>
+            <div class="loading-text" id="loadingText">Searching datasets...</div>
+            <div class="loading-subtext" id="loadingSubtext">This may take a few seconds</div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="results-section" id="resultsSection">
+            <!-- Results Header -->
+            <div class="results-header">
+                <div class="results-stats">
+                    <div class="stat">
+                        <span class="stat-label">Results Found</span>
+                        <span class="stat-value" id="totalResults">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Search Time</span>
+                        <span class="stat-value" id="searchTime">0ms</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">Mode</span>
+                        <span class="stat-value" id="searchMode">Keyword</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expanded Query (Semantic Only) -->
+            <div class="expanded-query" id="expandedQuery">
+                <div class="expanded-query-title">
+                    🔍 Expanded Query Terms
+                </div>
+                <div class="expanded-query-terms" id="expandedQueryTerms">
+                    <!-- Terms will be added dynamically -->
+                </div>
+            </div>
+
+            <!-- Results Grid -->
+            <div class="results-grid" id="resultsGrid">
+                <!-- Dataset cards will be added dynamically -->
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="empty-state" id="emptyState">
+            <div class="empty-state-icon">🔍</div>
+            <h3 class="empty-state-title">Start Your Search</h3>
+            <p class="empty-state-text">
+                Enter your research query above and choose between keyword search for exact matches
+                or semantic search for AI-powered understanding of your research intent.
+            </p>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let isSemanticMode = false;
+        let authToken = null;
+
+        // Elements
+        const searchModeToggle = document.getElementById('searchModeToggle');
+        const modeBadge = document.getElementById('modeBadge');
+        const semanticInfo = document.getElementById('semanticInfo');
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+        const loadingText = document.getElementById('loadingText');
+        const loadingSubtext = document.getElementById('loadingSubtext');
+        const errorAlert = document.getElementById('errorAlert');
+        const errorText = document.getElementById('errorText');
+        const resultsSection = document.getElementById('resultsSection');
+        const emptyState = document.getElementById('emptyState');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const expandedQuery = document.getElementById('expandedQuery');
+        const expandedQueryTerms = document.getElementById('expandedQueryTerms');
+        const totalResults = document.getElementById('totalResults');
+        const searchTime = document.getElementById('searchTime');
+        const searchMode = document.getElementById('searchMode');
+        const organismFilter = document.getElementById('organismFilter');
+        const minSamplesFilter = document.getElementById('minSamplesFilter');
+        const maxResultsFilter = document.getElementById('maxResultsFilter');
+
+        // Initialize
+        async function initialize() {
+            // Try to get auth token
+            authToken = localStorage.getItem('authToken');
+            if (!authToken) {
+                // Try to create a test token (for demo purposes)
+                try {
+                    const response = await fetch('/api/v2/auth/demo-token', {
+                        method: 'POST'
+                    });
+                    if (response.ok) {
+                        const data = await response.json();
+                        authToken = data.access_token;
+                        localStorage.setItem('authToken', authToken);
+                    }
+                } catch (e) {
+                    console.warn('Could not get demo token:', e);
+                }
+            }
+        }
+
+        // Toggle search mode
+        searchModeToggle.addEventListener('click', () => {
+            isSemanticMode = !isSemanticMode;
+            searchModeToggle.classList.toggle('active');
+
+            if (isSemanticMode) {
+                modeBadge.textContent = 'Semantic';
+                modeBadge.classList.remove('mode-keyword');
+                modeBadge.classList.add('mode-semantic');
+                semanticInfo.classList.add('active');
+            } else {
+                modeBadge.textContent = 'Keyword';
+                modeBadge.classList.remove('mode-semantic');
+                modeBadge.classList.add('mode-keyword');
+                semanticInfo.classList.remove('active');
+            }
+        });
+
+        // Search function
+        async function performSearch() {
+            const query = searchInput.value.trim();
+            if (!query) {
+                showError('Please enter a search query');
+                return;
+            }
+
+            // Hide error and empty state
+            errorAlert.classList.remove('active');
+            emptyState.style.display = 'none';
+            resultsSection.classList.remove('active');
+
+            // Show loading
+            loadingOverlay.classList.add('active');
+            if (isSemanticMode) {
+                loadingText.textContent = 'AI is expanding your query...';
+                loadingSubtext.textContent = 'Using semantic understanding to find relevant datasets';
+            } else {
+                loadingText.textContent = 'Searching datasets...';
+                loadingSubtext.textContent = 'Performing keyword search';
+            }
+
+            // Disable search button
+            searchBtn.disabled = true;
+
+            try {
+                const startTime = performance.now();
+
+                // Build filters
+                const filters = {};
+                if (organismFilter.value) filters.organism = organismFilter.value;
+                if (minSamplesFilter.value) filters.min_samples = minSamplesFilter.value;
+
+                // Make API request
+                const response = await fetch('/api/v1/agents/search', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                    },
+                    body: JSON.stringify({
+                        search_terms: [query],
+                        enable_semantic: isSemanticMode,
+                        max_results: parseInt(maxResultsFilter.value),
+                        filters: Object.keys(filters).length > 0 ? filters : null
+                    })
+                });
+
+                const endTime = performance.now();
+                const duration = Math.round(endTime - startTime);
+
+                if (!response.ok) {
+                    throw new Error(`Search failed: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.error || 'Search failed');
+                }
+
+                // Display results
+                displayResults(data, duration);
+
+            } catch (error) {
+                showError(error.message || 'An error occurred during search');
+            } finally {
+                loadingOverlay.classList.remove('active');
+                searchBtn.disabled = false;
+            }
+        }
+
+        // Display results
+        function displayResults(data, duration) {
+            // Update stats
+            totalResults.textContent = data.total_found || 0;
+            searchTime.textContent = `${duration}ms`;
+            searchMode.textContent = data.filters_applied?.search_mode || 'keyword';
+
+            // Show/hide expanded query (semantic mode only)
+            if (isSemanticMode && data.filters_applied?.semantic_expanded_query) {
+                expandedQueryTerms.innerHTML = '';
+                const terms = data.filters_applied.semantic_expanded_query.split(',').map(t => t.trim());
+                const originalTerms = searchInput.value.toLowerCase().split(' ');
+
+                terms.forEach(term => {
+                    const span = document.createElement('span');
+                    span.className = 'query-term';
+                    if (originalTerms.some(orig => term.toLowerCase().includes(orig))) {
+                        span.classList.add('original');
+                    }
+                    span.textContent = term;
+                    expandedQueryTerms.appendChild(span);
+                });
+
+                expandedQuery.classList.add('active');
+            } else {
+                expandedQuery.classList.remove('active');
+            }
+
+            // Clear and populate results
+            resultsGrid.innerHTML = '';
+
+            if (!data.datasets || data.datasets.length === 0) {
+                resultsGrid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📭</div>
+                        <h3 class="empty-state-title">No Results Found</h3>
+                        <p class="empty-state-text">
+                            Try adjusting your search query or filters, or switch to
+                            ${isSemanticMode ? 'keyword' : 'semantic'} search mode.
+                        </p>
+                    </div>
+                `;
+            } else {
+                data.datasets.forEach(dataset => {
+                    const card = createDatasetCard(dataset);
+                    resultsGrid.appendChild(card);
+                });
+            }
+
+            // Show results section
+            resultsSection.classList.add('active');
+        }
+
+        // Create dataset card
+        function createDatasetCard(dataset) {
+            const card = document.createElement('div');
+            card.className = 'dataset-card';
+
+            const relevancePercent = Math.round(dataset.relevance_score * 100);
+
+            card.innerHTML = `
+                <div class="dataset-header">
+                    <div class="dataset-id">${dataset.geo_id}</div>
+                    <div class="relevance-badge">
+                        <span class="relevance-score">${relevancePercent}%</span>
+                        <span class="relevance-label">Relevant</span>
+                    </div>
+                </div>
+                <h3 class="dataset-title">${escapeHtml(dataset.title)}</h3>
+                <p class="dataset-summary">${escapeHtml(dataset.summary || 'No summary available')}</p>
+                <div class="dataset-meta">
+                    <div class="meta-item">
+                        <span class="meta-icon">🧬</span>
+                        <span class="meta-value">${escapeHtml(dataset.organism || 'N/A')}</span>
+                    </div>
+                    <div class="meta-item">
+                        <span class="meta-icon">📊</span>
+                        <span class="meta-value">${dataset.sample_count || 0} samples</span>
+                    </div>
+                    ${dataset.platform ? `
+                    <div class="meta-item">
+                        <span class="meta-icon">🔬</span>
+                        <span class="meta-value">${escapeHtml(dataset.platform)}</span>
+                    </div>
+                    ` : ''}
+                </div>
+                ${dataset.match_reasons && dataset.match_reasons.length > 0 ? `
+                <div class="match-reasons">
+                    <div class="match-reasons-title">Why this matched:</div>
+                    <div class="reasons-list">
+                        ${dataset.match_reasons.map(reason =>
+                            `<div class="reason-item">${escapeHtml(reason)}</div>`
+                        ).join('')}
+                    </div>
+                </div>
+                ` : ''}
+            `;
+
+            return card;
+        }
+
+        // Show error
+        function showError(message) {
+            errorText.textContent = message;
+            errorAlert.classList.add('active');
+            setTimeout(() => {
+                errorAlert.classList.remove('active');
+            }, 5000);
+        }
+
+        // Utility: Escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Event listeners
+        searchBtn.addEventListener('click', performSearch);
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Initialize on load
+        initialize();
+    </script>
+</body>
+</html>

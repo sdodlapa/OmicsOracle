@@ -5,7 +5,6 @@ Creates and configures the FastAPI application for the agent API.
 """
 
 import logging
-import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 
@@ -199,6 +198,18 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
             content={"error": "Dashboard not found"},
         )
 
+    # Semantic Search UI endpoint
+    @app.get("/search", tags=["Dashboard"])
+    async def semantic_search_ui():
+        """Serve the semantic search interface."""
+        search_path = static_dir / "semantic_search.html"
+        if search_path.exists():
+            return FileResponse(search_path)
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Search interface not found"},
+        )
+
     # Root endpoint
     @app.get("/", tags=["Root"])
     async def root():
@@ -209,6 +220,7 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
             "description": api_settings.description,
             "docs": "/docs",
             "dashboard": "/dashboard",
+            "search": "/search",
             "health": "/health",
         }
 
