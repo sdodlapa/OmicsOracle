@@ -73,6 +73,12 @@
             align-items: center;
         }
 
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
         .btn-secondary {
             padding: 10px 20px;
             background: white;
@@ -179,6 +185,7 @@
         /* Search Input */
         .search-input-group {
             margin-bottom: 20px;
+            position: relative;
         }
 
         .search-input-wrapper {
@@ -254,6 +261,229 @@
         .filter-select:focus {
             outline: none;
             border-color: var(--primary);
+        }
+
+        /* Query Enhancement Styles */
+        .query-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            margin-top: 5px;
+        }
+
+        .query-suggestions.active {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--gray-100);
+            transition: background 0.2s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item:hover {
+            background: var(--gray-50);
+        }
+
+        .suggestion-text {
+            flex: 1;
+            color: var(--gray-700);
+        }
+
+        .suggestion-type {
+            font-size: 0.75em;
+            color: var(--gray-500);
+            padding: 2px 8px;
+            background: var(--gray-100);
+            border-radius: 4px;
+        }
+
+        .example-queries {
+            margin-bottom: 15px;
+            padding: 15px;
+            background: var(--gray-50);
+            border-radius: 8px;
+        }
+
+        .example-queries-title {
+            font-size: 0.9em;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .example-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .example-chip {
+            padding: 6px 12px;
+            background: white;
+            border: 1px solid var(--gray-300);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85em;
+            color: var(--gray-700);
+            transition: all 0.2s;
+        }
+
+        .example-chip:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-1px);
+        }
+
+        .search-history {
+            position: fixed;
+            right: 20px;
+            top: 120px;
+            width: 300px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 100;
+            display: none;
+        }
+
+        .search-history.active {
+            display: block;
+        }
+
+        .search-history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .search-history-title {
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .clear-history-btn {
+            background: none;
+            border: none;
+            color: var(--danger);
+            cursor: pointer;
+            font-size: 0.85em;
+            padding: 4px 8px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .clear-history-btn:hover {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .history-item {
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            background: var(--gray-50);
+            transition: all 0.2s;
+        }
+
+        .history-item:hover {
+            background: var(--primary);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .history-query {
+            font-size: 0.9em;
+            margin-bottom: 4px;
+        }
+
+        .history-meta {
+            font-size: 0.75em;
+            opacity: 0.7;
+        }
+
+        .history-empty {
+            text-align: center;
+            color: var(--gray-500);
+            padding: 20px;
+            font-size: 0.9em;
+        }
+
+        .query-validation {
+            margin-top: 10px;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        .query-validation.active {
+            display: block;
+        }
+
+        .query-validation.error {
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
+            border-left: 3px solid var(--danger);
+        }
+
+        .query-validation.warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning);
+            border-left: 3px solid var(--warning);
+        }
+
+        .query-validation.success {
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border-left: 3px solid var(--success);
+        }
+
+        .history-toggle-btn {
+            padding: 10px 15px;
+            background: white;
+            border: 2px solid var(--gray-300);
+            color: var(--gray-700);
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-toggle-btn:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: var(--gray-50);
         }
 
         /* Semantic Info Box */
@@ -895,6 +1125,9 @@
                 <p class="subtitle">Discover biomedical datasets with semantic understanding</p>
             </div>
             <div class="header-right">
+                <button class="history-toggle-btn" id="historyToggleBtn">
+                    📜 History
+                </button>
                 <a href="/static/dashboard.html" class="btn-secondary">← Dashboard</a>
             </div>
         </div>
@@ -917,6 +1150,20 @@
                 </div>
             </div>
 
+            <!-- Example Queries -->
+            <div class="example-queries">
+                <div class="example-queries-title">
+                    💡 Example Queries
+                </div>
+                <div class="example-chips" id="exampleChips">
+                    <div class="example-chip" data-query="breast cancer RNA-seq">breast cancer RNA-seq</div>
+                    <div class="example-chip" data-query="ATAC-seq in human heart tissue">ATAC-seq in human heart tissue</div>
+                    <div class="example-chip" data-query="single cell transcriptomics immune cells">single cell transcriptomics immune cells</div>
+                    <div class="example-chip" data-query="ChIP-seq histone modifications">ChIP-seq histone modifications</div>
+                    <div class="example-chip" data-query="DNA methylation cancer">DNA methylation cancer</div>
+                </div>
+            </div>
+
             <!-- Search Input -->
             <div class="search-input-group">
                 <div class="search-input-wrapper">
@@ -925,12 +1172,17 @@
                         class="search-input"
                         id="searchInput"
                         placeholder="e.g., 'breast cancer RNA-seq studies' or 'immune response in viral infections'"
-                        value="breast cancer RNA-seq"
+                        value=""
                     >
                     <button class="search-btn" id="searchBtn">
                         🔍 Search
                     </button>
+                    <!-- Query Suggestions Dropdown -->
+                    <div class="query-suggestions" id="querySuggestions"></div>
                 </div>
+
+                <!-- Query Validation -->
+                <div class="query-validation" id="queryValidation"></div>
 
                 <!-- Filters -->
                 <div class="filters-row">
@@ -1111,6 +1363,17 @@
         </div>
     </div>
 
+    <!-- Search History Panel -->
+    <div class="search-history" id="searchHistory">
+        <div class="search-history-header">
+            <div class="search-history-title">Recent Searches</div>
+            <button class="clear-history-btn" id="clearHistoryBtn">Clear All</button>
+        </div>
+        <div id="historyList">
+            <div class="history-empty">No search history yet</div>
+        </div>
+    </div>
+
     <script>
         // State
         let isSemanticMode = false;
@@ -1118,6 +1381,7 @@
         let currentResults = null;
         let scoreDistChart = null;
         let topMatchesChart = null;
+        let searchHistory = JSON.parse(localStorage.getItem('searchHistory') || '[]');
 
         // Elements
         const searchModeToggle = document.getElementById('searchModeToggle');
@@ -1150,6 +1414,15 @@
         const comparisonPanel = document.getElementById('comparisonPanel');
         const toggleComparisonBtn = document.getElementById('toggleComparisonBtn');
         const closeComparisonBtn = document.getElementById('closeComparisonBtn');
+
+        // Task 3: Query Enhancement elements
+        const querySuggestions = document.getElementById('querySuggestions');
+        const queryValidation = document.getElementById('queryValidation');
+        const exampleChips = document.querySelectorAll('.example-chip');
+        const historyToggleBtn = document.getElementById('historyToggleBtn');
+        const searchHistoryPanel = document.getElementById('searchHistory');
+        const historyList = document.getElementById('historyList');
+        const clearHistoryBtn = document.getElementById('clearHistoryBtn');
 
         // Initialize
         async function initialize() {
@@ -1195,6 +1468,214 @@
                 }
             }
         }
+
+        // ============================================
+        // TASK 3: QUERY ENHANCEMENT FUNCTIONALITY
+        // ============================================
+
+        // Query Suggestions Database
+        const querySuggestionsDB = [
+            { text: 'RNA-seq in [organism]', type: 'Template' },
+            { text: 'ATAC-seq [tissue] studies', type: 'Template' },
+            { text: 'single cell transcriptomics', type: 'Technique' },
+            { text: 'ChIP-seq histone modifications', type: 'Technique' },
+            { text: 'DNA methylation profiling', type: 'Technique' },
+            { text: 'genome-wide association study', type: 'Study Type' },
+            { text: 'differential gene expression', type: 'Analysis' },
+            { text: 'pathway enrichment analysis', type: 'Analysis' },
+            { text: 'immune response viral infection', type: 'Biological Process' },
+            { text: 'cancer biomarker discovery', type: 'Research Area' },
+        ];
+
+        // Real-time Query Validation
+        function validateQuery(query) {
+            const trimmed = query.trim();
+            queryValidation.classList.remove('active', 'error', 'warning', 'success');
+
+            if (!trimmed) {
+                return;
+            }
+
+            if (trimmed.length < 3) {
+                queryValidation.textContent = '⚠️ Query too short. Enter at least 3 characters.';
+                queryValidation.classList.add('active', 'warning');
+            } else if (trimmed.length > 200) {
+                queryValidation.textContent = '❌ Query too long. Maximum 200 characters.';
+                queryValidation.classList.add('active', 'error');
+            } else if (trimmed.split(' ').length === 1) {
+                queryValidation.textContent = '💡 Tip: Try adding more specific terms for better results.';
+                queryValidation.classList.add('active', 'warning');
+            } else {
+                queryValidation.textContent = '✅ Query looks good!';
+                queryValidation.classList.add('active', 'success');
+            }
+        }
+
+        // Show Query Suggestions
+        function showSuggestions(query) {
+            const trimmed = query.trim().toLowerCase();
+
+            if (trimmed.length < 2) {
+                querySuggestions.classList.remove('active');
+                return;
+            }
+
+            const matches = querySuggestionsDB.filter(s =>
+                s.text.toLowerCase().includes(trimmed)
+            );
+
+            if (matches.length === 0) {
+                querySuggestions.classList.remove('active');
+                return;
+            }
+
+            querySuggestions.innerHTML = matches.map(s => `
+                <div class="suggestion-item" data-query="${s.text}">
+                    <span class="suggestion-text">${s.text}</span>
+                    <span class="suggestion-type">${s.type}</span>
+                </div>
+            `).join('');
+
+            // Add click handlers to suggestions
+            querySuggestions.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    searchInput.value = item.dataset.query;
+                    querySuggestions.classList.remove('active');
+                    validateQuery(item.dataset.query);
+                });
+            });
+
+            querySuggestions.classList.add('active');
+        }
+
+        // Add to Search History
+        function addToSearchHistory(query, resultsCount) {
+            const entry = {
+                query,
+                resultsCount,
+                timestamp: new Date().toISOString(),
+                mode: isSemanticMode ? 'Semantic' : 'Keyword'
+            };
+
+            // Remove duplicates
+            searchHistory = searchHistory.filter(h => h.query !== query);
+
+            // Add to beginning
+            searchHistory.unshift(entry);
+
+            // Keep only last 10
+            searchHistory = searchHistory.slice(0, 10);
+
+            // Save to localStorage
+            localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+
+            // Update UI
+            updateHistoryUI();
+        }
+
+        // Update History UI
+        function updateHistoryUI() {
+            if (searchHistory.length === 0) {
+                historyList.innerHTML = '<div class="history-empty">No search history yet</div>';
+                return;
+            }
+
+            historyList.innerHTML = searchHistory.map(h => {
+                const date = new Date(h.timestamp);
+                const timeAgo = getTimeAgo(date);
+
+                return `
+                    <div class="history-item" data-query="${h.query}">
+                        <div class="history-query">${h.query}</div>
+                        <div class="history-meta">
+                            ${h.resultsCount} results • ${h.mode} • ${timeAgo}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Add click handlers
+            historyList.querySelectorAll('.history-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    searchInput.value = item.dataset.query;
+                    searchHistoryPanel.classList.remove('active');
+                    performSearch();
+                });
+            });
+        }
+
+        // Get Time Ago String
+        function getTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+
+            let interval = seconds / 31536000;
+            if (interval > 1) return Math.floor(interval) + ' years ago';
+
+            interval = seconds / 2592000;
+            if (interval > 1) return Math.floor(interval) + ' months ago';
+
+            interval = seconds / 86400;
+            if (interval > 1) return Math.floor(interval) + ' days ago';
+
+            interval = seconds / 3600;
+            if (interval > 1) return Math.floor(interval) + ' hours ago';
+
+            interval = seconds / 60;
+            if (interval > 1) return Math.floor(interval) + ' minutes ago';
+
+            return 'Just now';
+        }
+
+        // Event Listeners for Task 3
+
+        // Search Input - Real-time validation and suggestions
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value;
+            validateQuery(query);
+            showSuggestions(query);
+        });
+
+        // Search Input - Hide suggestions on blur (with delay for click)
+        searchInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                querySuggestions.classList.remove('active');
+            }, 200);
+        });
+
+        // Example Query Chips - Click to search
+        exampleChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                searchInput.value = chip.dataset.query;
+                validateQuery(chip.dataset.query);
+                performSearch();
+            });
+        });
+
+        // History Toggle Button
+        historyToggleBtn.addEventListener('click', () => {
+            searchHistoryPanel.classList.toggle('active');
+            updateHistoryUI();
+        });
+
+        // Clear History Button
+        clearHistoryBtn.addEventListener('click', () => {
+            if (confirm('Clear all search history?')) {
+                searchHistory = [];
+                localStorage.removeItem('searchHistory');
+                updateHistoryUI();
+            }
+        });
+
+        // Click outside to close history panel
+        document.addEventListener('click', (e) => {
+            if (!searchHistoryPanel.contains(e.target) && e.target !== historyToggleBtn) {
+                searchHistoryPanel.classList.remove('active');
+            }
+        });
+
+        // ============================================
+        // END TASK 3 FUNCTIONALITY
+        // ============================================
 
         // Toggle search mode
         searchModeToggle.addEventListener('click', () => {
@@ -1296,6 +1777,9 @@
             totalResults.textContent = data.total_found || 0;
             searchTime.textContent = `${duration}ms`;
             searchMode.textContent = data.filters_applied?.search_mode || 'keyword';
+
+            // Add to search history (Task 3)
+            addToSearchHistory(query, data.total_found || 0);
 
             // Show/hide expanded query (semantic mode only)
             if (isSemanticMode && data.filters_applied?.semantic_expanded_query) {
