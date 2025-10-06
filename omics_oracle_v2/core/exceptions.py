@@ -11,6 +11,7 @@ Exception Hierarchy:
     +-- NLPError - NLP processing errors
     +-- GEOError - GEO data access errors
     +-- AIError - AI service errors
+    +-- PublicationSearchError - Publication search errors (Week 3)
 
 Example:
     >>> from omics_oracle_v2.core.exceptions import GEOError
@@ -47,5 +48,11 @@ class GEOError(OmicsOracleError):
 
 class AIError(OmicsOracleError):
     """Raised when AI services fail."""
+
+    pass
+
+
+class PublicationSearchError(OmicsOracleError):
+    """Raised when publication search or retrieval fails."""
 
     pass

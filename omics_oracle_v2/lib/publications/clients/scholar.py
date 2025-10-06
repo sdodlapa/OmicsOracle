@@ -42,7 +42,7 @@ except ImportError:
 from ..models import Publication, PublicationSource
 from ..config import GoogleScholarConfig
 from .base import BasePublicationClient
-from ...core.exceptions import PublicationSearchError
+from omics_oracle_v2.core.exceptions import PublicationSearchError
 
 
 class GoogleScholarClient(BasePublicationClient):
@@ -84,7 +84,7 @@ class GoogleScholarClient(BasePublicationClient):
                 "Install with: pip install scholarly"
             )
         
-        super().__init__()
+        super().__init__(config)
         self.config = config
         self.logger = logging.getLogger(__name__)
         
@@ -95,6 +95,11 @@ class GoogleScholarClient(BasePublicationClient):
         self.logger.info(
             f"GoogleScholarClient initialized (rate limit: {config.rate_limit_seconds}s)"
         )
+    
+    @property
+    def source_name(self) -> str:
+        """Get the name of this publication source."""
+        return "google_scholar"
     
     def _configure_proxy(self):
         """Configure proxy for scholarly library."""
@@ -174,6 +179,27 @@ class GoogleScholarClient(BasePublicationClient):
             error_msg = f"Google Scholar search failed: {e}"
             self.logger.error(error_msg)
             raise PublicationSearchError(error_msg)
+    
+    def fetch_by_id(self, identifier: str) -> Optional[Publication]:
+        """
+        Fetch a single publication by identifier (DOI or title).
+        
+        This is an alias for fetch_by_doi for compatibility with the
+        base class interface. Scholar doesn't have its own ID system,
+        so we use DOI or search by title.
+        
+        Args:
+            identifier: DOI or publication title
+            
+        Returns:
+            Publication if found, None otherwise
+        """
+        # Try as DOI first
+        if identifier.startswith("10."):
+            return self.fetch_by_doi(identifier)
+        
+        # Otherwise search by exact title
+        return self.fetch_by_doi(identifier)  # Will search by title
     
     def fetch_by_doi(self, doi: str) -> Optional[Publication]:
         """
@@ -283,7 +309,7 @@ class GoogleScholarClient(BasePublicationClient):
             citations=result.get('num_citations', 0),
             
             # Source
-            source=PublicationSource.SCHOLAR,
+            source=PublicationSource.GOOGLE_SCHOLAR,
             
             # Scholar-specific metadata
             metadata={
