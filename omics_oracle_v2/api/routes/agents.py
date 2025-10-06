@@ -274,7 +274,7 @@ async def execute_search_agent(
                 summary=ranked.dataset.summary,
                 organism=ranked.dataset.organism,
                 sample_count=ranked.dataset.sample_count,
-                platform=ranked.dataset.platform,
+                platform=ranked.dataset.platforms[0] if ranked.dataset.platforms else None,
                 relevance_score=ranked.relevance_score,
                 match_reasons=ranked.match_reasons,
             )
