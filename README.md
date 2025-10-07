@@ -45,14 +45,15 @@ OmicsOracle is a **production-ready** platform that revolutionizes biomedical re
 ### Prerequisites
 
 - Python 3.11 or higher
-- Redis (optional, for rate limiting)
-- OpenAI API key (optional, for AI analysis)
+- Redis (optional, for caching)
+- OpenAI API key (for AI analysis)
+- NCBI API key (for PubMed access)
 
 ### Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/OmicsOracle.git
+git clone https://github.com/sdodlapati3/OmicsOracle.git
 cd OmicsOracle
 
 # Create virtual environment
@@ -64,19 +65,38 @@ pip install -r requirements.txt
 
 # Set up environment variables
 cp .env.example .env
-# Edit .env and add your OPENAI_API_KEY (optional)
+# Edit .env and add your API keys:
+#   - NCBI_EMAIL (required)
+#   - NCBI_API_KEY (required)
+#   - OPENAI_API_KEY (required for AI features)
+```
 
-# Start the development server
-./start.sh --dev
+### Start OmicsOracle
+
+**Option 1: Unified Startup (Recommended)**
+```bash
+# Start both API server and Dashboard with one command
+./start_omics_oracle.sh
+```
+
+**Option 2: Separate Processes**
+```bash
+# Terminal 1 - Start API server (port 8000)
+./start_dev_server.sh
+
+# Terminal 2 - Start Dashboard (port 8502)
+python scripts/run_dashboard.py --port 8502
 ```
 
 ### Access Points
 
-After starting the server:
+After starting:
 
-- **Web Interface**: http://localhost:8000/static/semantic_search.html
-- **API Documentation**: http://localhost:8000/docs
-- **Health Check**: http://localhost:8000/health
+- **📊 Streamlit Dashboard**: http://localhost:8502 ← **Primary Interface**
+- **🔌 API Server**: http://localhost:8000
+- **📖 API Documentation**: http://localhost:8000/docs
+- **❤️  Health Check**: http://localhost:8000/health
+- **🐛 Debug Panel**: http://localhost:8000/debug/dashboard
 
 📖 **Detailed guide:** [docs/STARTUP_GUIDE.md](docs/STARTUP_GUIDE.md)
 

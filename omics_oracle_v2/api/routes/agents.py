@@ -531,6 +531,8 @@ class AIAnalysisRequest(BaseModel):
 class AIAnalysisResponse(BaseModel):
     """Response from AI analysis."""
 
+    model_config = {"protected_namespaces": ()}
+
     success: bool = Field(..., description="Whether analysis succeeded")
     execution_time_ms: float = Field(..., description="Execution time in milliseconds")
     timestamp: datetime = Field(..., description="Response timestamp")
