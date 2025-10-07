@@ -11,6 +11,39 @@ from typing import Optional
 from pydantic import BaseModel, Field, validator
 
 
+class RedisConfig(BaseModel):
+    """
+    Configuration for Redis caching (Day 26).
+
+    Attributes:
+        enable: Enable Redis caching
+        host: Redis server host
+        port: Redis server port
+        db: Redis database number (0-15)
+        password: Redis password (optional)
+        default_ttl: Default TTL in seconds (1 hour)
+        search_ttl: TTL for search results (1 hour)
+        llm_ttl: TTL for LLM responses (24 hours)
+    """
+
+    enable: bool = Field(True, description="Enable Redis caching")
+    host: str = Field("localhost", description="Redis server host")
+    port: int = Field(6379, ge=1, le=65535, description="Redis server port")
+    db: int = Field(0, ge=0, le=15, description="Redis database number")
+    password: Optional[str] = Field(None, description="Redis password (if required)")
+
+    # TTL settings (in seconds)
+    default_ttl: int = Field(3600, ge=60, description="Default TTL (1 hour)")
+    search_ttl: int = Field(3600, ge=60, description="Search results TTL (1 hour)")
+    llm_ttl: int = Field(86400, ge=3600, description="LLM responses TTL (24 hours)")
+    citation_ttl: int = Field(604800, ge=3600, description="Citation data TTL (1 week)")
+
+    class Config:
+        """Pydantic config."""
+
+        validate_assignment = True
+
+
 class PubMedConfig(BaseModel):
     """
     Configuration for PubMed/Entrez API integration.
@@ -218,6 +251,7 @@ class PublicationSearchConfig:
     enable_pdf_download: bool = True  # Week 4 - ENABLED
     enable_fulltext: bool = True  # Week 4 - ENABLED
     enable_institutional_access: bool = True  # Week 4 - NEW
+    enable_cache: bool = True  # Day 26 - Redis caching
 
     # Component configurations
     pubmed_config: PubMedConfig = field(default_factory=lambda: PubMedConfig(email="user@example.com"))
@@ -227,6 +261,7 @@ class PublicationSearchConfig:
     fuzzy_dedup_config: FuzzyDeduplicationConfig = field(
         default_factory=FuzzyDeduplicationConfig
     )  # Week 3 Day 14
+    redis_config: RedisConfig = field(default_factory=RedisConfig)  # Day 26 - Redis caching
 
     # Institutional access (Week 4 - NEW)
     primary_institution: str = "gatech"  # "gatech" or "odu"

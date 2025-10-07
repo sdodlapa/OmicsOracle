@@ -1,0 +1,9 @@
+"""
+Cache layer for OmicsOracle.
+
+Provides Redis-based caching for search results and LLM responses.
+"""
+
+from omics_oracle_v2.lib.cache.redis_client import AsyncRedisCache
+
+__all__ = ["AsyncRedisCache"]

@@ -7,11 +7,13 @@ This pipeline follows the AdvancedSearchPipeline pattern with:
 - Configuration-driven design
 """
 
+import asyncio
 import logging
 import time
 from pathlib import Path
 from typing import List
 
+from omics_oracle_v2.lib.cache import AsyncRedisCache
 from omics_oracle_v2.lib.llm.client import LLMClient
 from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
 from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
@@ -180,6 +182,19 @@ class PublicationSearchPipeline:
         logger.info("Initializing Semantic Scholar client for citation enrichment")
         self.semantic_scholar_client = SemanticScholarClient(SemanticScholarConfig(enable=True))
 
+        # Day 26: Redis caching for 10-100x speedup
+        if config.enable_cache:
+            logger.info(f"Initializing Redis cache: {config.redis_config.host}:{config.redis_config.port}")
+            self.cache = AsyncRedisCache(
+                host=config.redis_config.host,
+                port=config.redis_config.port,
+                db=config.redis_config.db,
+                password=config.redis_config.password,
+                default_ttl=config.redis_config.default_ttl,
+            )
+        else:
+            self.cache = None
+
         # Core components (always initialized)
         self.ranker = PublicationRanker(config)
 
@@ -190,7 +205,8 @@ class PublicationSearchPipeline:
             f"citations={config.enable_citations}, "
             f"pdf={config.enable_pdf_download}, "
             f"fulltext={config.enable_fulltext}, "
-            f"fuzzy_dedup={config.fuzzy_dedup_config.enable}"
+            f"fuzzy_dedup={config.fuzzy_dedup_config.enable}, "
+            f"cache={config.enable_cache}"
         )
 
     def initialize(self) -> None:
@@ -219,6 +235,37 @@ class PublicationSearchPipeline:
 
         if self.scholar_client:
             self.scholar_client.cleanup()
+
+        # Close cache connection (Day 26)
+        # Note: cache.close() is async, call it from async context
+        # For sync cleanup, we just set to None (connection will close on garbage collection)
+        if self.cache:
+            self.cache = None
+            logger.info("Redis cache marked for cleanup")
+
+        self._initialized = False
+        logger.info("PublicationSearchPipeline cleaned up")
+
+    async def cleanup_async(self) -> None:
+        """
+        Async cleanup for pipeline resources (Day 26).
+
+        Use this instead of cleanup() when in async context to properly close Redis.
+        """
+        if not self._initialized:
+            return
+
+        # Cleanup clients
+        if self.pubmed_client:
+            self.pubmed_client.cleanup()
+
+        if self.scholar_client:
+            self.scholar_client.cleanup()
+
+        # Close cache connection properly
+        if self.cache:
+            await self.cache.close()
+            logger.info("Redis cache connection closed")
 
         self._initialized = False
         logger.info("PublicationSearchPipeline cleaned up")
@@ -396,6 +443,103 @@ class PublicationSearchPipeline:
         )
 
         return result
+
+    async def search_async(
+        self, query: str, max_results: int = 50, min_relevance_score: float = None, **kwargs
+    ) -> PublicationResult:
+        """
+        Async search with Redis caching for 10-100x speedup (Day 26).
+
+        Cache Strategy:
+        - First query: 5-10 seconds (async search + ranking)
+        - Cached query: <100ms (Redis lookup only)
+
+        Args:
+            query: Search query
+            max_results: Maximum total results to return
+            min_relevance_score: Minimum relevance score filter
+            **kwargs: Additional search parameters
+
+        Returns:
+            PublicationResult with ranked publications (cached or fresh)
+        """
+        start_time = time.time()
+
+        # Check cache first
+        if self.cache:
+            cache_key = self.cache.generate_key(
+                "search", query, max_results=max_results, min_score=min_relevance_score, **kwargs
+            )
+
+            cached_result = await self.cache.get(cache_key)
+            if cached_result:
+                cache_time_ms = (time.time() - start_time) * 1000
+                logger.info(f"Cache HIT for query '{query}' ({cache_time_ms:.2f}ms)")
+
+                # Add cache metadata
+                cached_result.metadata["cached"] = True
+                cached_result.metadata["cache_time_ms"] = cache_time_ms
+                cached_result.search_time_ms = cache_time_ms
+
+                return cached_result
+
+            logger.info(f"Cache MISS for query '{query}' - performing search...")
+
+        # Cache miss - perform regular search
+        # Note: Running sync search in executor to avoid blocking
+        loop = asyncio.get_event_loop()
+        result = await loop.run_in_executor(
+            None, lambda: self.search(query, max_results, min_relevance_score, **kwargs)
+        )
+
+        # Store in cache
+        if self.cache:
+            ttl = self.config.redis_config.search_ttl
+            await self.cache.set(cache_key, result, ttl=ttl)
+            logger.info(f"Cached search result for query '{query}' (TTL: {ttl}s)")
+
+        # Add cache metadata
+        result.metadata["cached"] = False
+        result.metadata["cache_ttl"] = self.config.redis_config.search_ttl if self.cache else None
+
+        return result
+
+    async def get_cache_stats(self) -> dict:
+        """
+        Get cache statistics (Day 26).
+
+        Returns:
+            Dict with hits, misses, and hit rate
+        """
+        if not self.cache:
+            return {
+                "enabled": False,
+                "message": "Caching is disabled",
+            }
+
+        stats = self.cache.get_stats()
+        stats["enabled"] = True
+        stats["ttl_search"] = self.config.redis_config.search_ttl
+        stats["ttl_llm"] = self.config.redis_config.llm_ttl
+        return stats
+
+    async def clear_cache(self, pattern: str = None):
+        """
+        Clear cache (Day 26).
+
+        Args:
+            pattern: Pattern to match (e.g., "search:*"). If None, clears all.
+        """
+        if not self.cache:
+            logger.warning("Caching is disabled - nothing to clear")
+            return
+
+        if pattern:
+            await self.cache.clear_pattern(pattern)
+            logger.info(f"Cleared cache pattern: {pattern}")
+        else:
+            await self.cache.clear_all()
+            logger.info("Cleared all cache")
 
     def _deduplicate_publications(self, publications: List[Publication]) -> List[Publication]:
         """
