@@ -4,7 +4,6 @@ Main dashboard application.
 Streamlit-based web application for biomarker search and analysis.
 """
 
-import asyncio
 from datetime import datetime
 from typing import Any, Dict, Optional
 
@@ -293,19 +292,17 @@ class DashboardApp:
                 # Execute search
                 pipeline = PublicationSearchPipeline(pipeline_config)
 
-                # Run async search
-                loop = asyncio.new_event_loop()
-                asyncio.set_event_loop(loop)
+                # Run synchronous search (pipeline.search is NOT async)
                 search_start = datetime.now()
-                results = loop.run_until_complete(
-                    pipeline.search(
-                        query=query,
-                        sources=params["databases"],
-                        max_results=params["max_results"],
-                    )
+                search_result = pipeline.search(
+                    query=query,
+                    max_results=params["max_results"],
                 )
                 search_end = datetime.now()
                 execution_time = (search_end - search_start).total_seconds()
+
+                # Extract publications from result
+                results = search_result.publications if hasattr(search_result, "publications") else []
 
                 # Save to history manager
                 record = SearchRecord(
