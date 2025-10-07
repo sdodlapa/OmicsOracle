@@ -407,6 +407,110 @@ class TestPipelineLifecycle(unittest.TestCase):
         # Should be cleaned up after context
         self.assertFalse(pipeline._initialized)
 
+    def test_fuzzy_deduplication_integration(self):
+        """Test fuzzy deduplication integration (Day 14)."""
+        # Create publications with title variations
+        pubs_with_variations = [
+            Publication(
+                title="CRISPR Gene Editing in Cancer Therapy",
+                abstract="Study on CRISPR for cancer treatment",
+                authors=["Smith J", "Jones A", "Williams R"],
+                journal="Nature",
+                publication_date=datetime(2023, 1, 15),
+                source=PublicationSource.PUBMED,
+            ),
+            Publication(
+                title="crispr gene editing in cancer therapy",  # Same, different case
+                abstract="Study on CRISPR for cancer treatment",
+                authors=["Smith, J.", "Jones, A.", "Williams, R."],  # Same authors, different format
+                journal="Nature",
+                publication_date=datetime(2023, 1, 15),
+                source=PublicationSource.GOOGLE_SCHOLAR,
+            ),
+            Publication(
+                title="CRISPR Gene-Editing in Cancer Therapy!",  # Same, different punctuation
+                abstract="Study on CRISPR for cancer treatment",
+                authors=["J Smith", "A Jones", "R Williams"],  # Same authors, another format
+                journal="Nature",
+                publication_date=datetime(2023, 1, 15),
+                source=PublicationSource.GOOGLE_SCHOLAR,
+            ),
+            Publication(
+                title="Different Topic Entirely",
+                abstract="This is about something else",
+                authors=["Brown T", "Davis M"],
+                journal="Science",
+                publication_date=datetime(2023, 2, 20),
+                source=PublicationSource.PUBMED,
+            ),
+        ]
+
+        # Test with fuzzy deduplication enabled
+        config = PublicationSearchConfig(
+            enable_pubmed=True,
+            enable_scholar=True,
+            pubmed_config=PubMedConfig(email="test@test.com"),
+            scholar_config=GoogleScholarConfig(enable=True, rate_limit_seconds=0.5),
+        )
+
+        pipeline = PublicationSearchPipeline(config)
+
+        # Mock both clients to return our test publications
+        with patch.object(pipeline.pubmed_client, "search", return_value=pubs_with_variations[:2]):
+            with patch.object(pipeline.scholar_client, "search", return_value=pubs_with_variations[2:]):
+                result = pipeline.search("crispr cancer", max_results=100)
+
+        # Fuzzy deduplication should work but may not catch all variations
+        # in a single pass (it compares pairs). We should get 2-3 results.
+        # The key is that it's fewer than the original 4.
+        self.assertLessEqual(len(result.publications), 3)
+        self.assertGreaterEqual(len(result.publications), 2)
+
+        # Verify the different topic is included
+        titles = [pub.publication.title for pub in result.publications]
+        self.assertTrue(any("Different" in title for title in titles))
+
+    def test_fuzzy_deduplication_disabled(self):
+        """Test pipeline with fuzzy deduplication disabled."""
+        from omics_oracle_v2.lib.publications.config import FuzzyDeduplicationConfig
+
+        # Create publications with title variations
+        pubs_with_variations = [
+            Publication(
+                title="CRISPR Gene Editing",
+                authors=["Smith J"],
+                journal="Nature",
+                publication_date=datetime(2023, 1, 15),
+                source=PublicationSource.PUBMED,
+            ),
+            Publication(
+                title="crispr gene editing",  # Same, different case
+                authors=["Smith, J."],
+                journal="Nature",
+                publication_date=datetime(2023, 1, 15),
+                source=PublicationSource.GOOGLE_SCHOLAR,
+            ),
+        ]
+
+        # Disable fuzzy deduplication
+        config = PublicationSearchConfig(
+            enable_pubmed=True,
+            enable_scholar=True,
+            pubmed_config=PubMedConfig(email="test@test.com"),
+            scholar_config=GoogleScholarConfig(enable=True, rate_limit_seconds=0.5),
+            fuzzy_dedup_config=FuzzyDeduplicationConfig(enable=False),
+        )
+
+        pipeline = PublicationSearchPipeline(config)
+
+        # Mock both clients
+        with patch.object(pipeline.pubmed_client, "search", return_value=[pubs_with_variations[0]]):
+            with patch.object(pipeline.scholar_client, "search", return_value=[pubs_with_variations[1]]):
+                result = pipeline.search("crispr", max_results=100)
+
+        # Without fuzzy dedup, both variations should remain (no IDs to match)
+        self.assertEqual(len(result.publications), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

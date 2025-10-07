@@ -6,7 +6,7 @@ feature toggle pattern from AdvancedSearchPipeline.
 """
 
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -92,7 +92,7 @@ class GoogleScholarConfig(BaseModel):
     user_agent: str = Field(
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
         "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        description="User agent string"
+        description="User agent string",
     )
 
     class Config:
@@ -126,6 +126,27 @@ class PDFConfig(BaseModel):
 
 
 @dataclass
+class FuzzyDeduplicationConfig:
+    """
+    Configuration for advanced fuzzy deduplication (Week 3 Day 14).
+
+    Uses fuzzy string matching to identify duplicates beyond exact ID matching.
+    Handles title variations, author name differences, and preprint/published pairs.
+
+    Attributes:
+        enable: Enable fuzzy deduplication
+        title_threshold: Minimum fuzzy ratio for title match (0-100)
+        author_threshold: Minimum fuzzy ratio for author match (0-100)
+        year_tolerance: Max year difference for same publication (handles preprints)
+    """
+
+    enable: bool = True
+    title_threshold: float = 85.0  # 0-100 fuzzy ratio
+    author_threshold: float = 80.0  # 0-100 fuzzy ratio
+    year_tolerance: int = 1  # Years
+
+
+@dataclass
 class PublicationSearchConfig:
     """
     Main configuration for publication search pipeline.
@@ -149,6 +170,7 @@ class PublicationSearchConfig:
         pubmed_config: PubMed configuration
         scholar_config: Google Scholar configuration
         pdf_config: PDF processing configuration
+        fuzzy_dedup_config: Fuzzy deduplication configuration (Week 3 Day 14)
 
         primary_institution: Primary institution for access ("gatech" or "odu")
         secondary_institution: Fallback institution
@@ -169,6 +191,9 @@ class PublicationSearchConfig:
     pubmed_config: PubMedConfig = field(default_factory=lambda: PubMedConfig(email="user@example.com"))
     scholar_config: GoogleScholarConfig = field(default_factory=GoogleScholarConfig)
     pdf_config: PDFConfig = field(default_factory=PDFConfig)
+    fuzzy_dedup_config: FuzzyDeduplicationConfig = field(
+        default_factory=FuzzyDeduplicationConfig
+    )  # Week 3 Day 14
 
     # Institutional access (Week 4 - NEW)
     primary_institution: str = "gatech"  # "gatech" or "odu"

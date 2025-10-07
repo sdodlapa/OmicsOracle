@@ -18,6 +18,7 @@ from omics_oracle_v2.lib.publications.clients.institutional_access import (
 from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
 from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
+from omics_oracle_v2.lib.publications.deduplication import AdvancedDeduplicator
 from omics_oracle_v2.lib.publications.models import Publication, PublicationResult, PublicationSearchResult
 from omics_oracle_v2.lib.publications.ranking.ranker import PublicationRanker
 
@@ -100,6 +101,18 @@ class PublicationSearchPipeline:
         else:
             self.fulltext_extractor = None
 
+        # Week 3 Day 14: Advanced fuzzy deduplication
+        if config.fuzzy_dedup_config.enable:
+            logger.info("Initializing fuzzy deduplication")
+            self.fuzzy_deduplicator = AdvancedDeduplicator(
+                title_similarity_threshold=config.fuzzy_dedup_config.title_threshold,
+                author_similarity_threshold=config.fuzzy_dedup_config.author_threshold,
+                year_tolerance=config.fuzzy_dedup_config.year_tolerance,
+                enable_fuzzy_matching=True,
+            )
+        else:
+            self.fuzzy_deduplicator = None
+
         # Week 4: Institutional access (NEW)
         if config.enable_institutional_access:
             logger.info(f"Initializing institutional access: {config.primary_institution}")
@@ -134,7 +147,8 @@ class PublicationSearchPipeline:
             f"scholar={config.enable_scholar}, "
             f"citations={config.enable_citations}, "
             f"pdf={config.enable_pdf_download}, "
-            f"fulltext={config.enable_fulltext}"
+            f"fulltext={config.enable_fulltext}, "
+            f"fuzzy_dedup={config.fuzzy_dedup_config.enable}"
         )
 
     def initialize(self) -> None:
@@ -322,12 +336,16 @@ class PublicationSearchPipeline:
 
     def _deduplicate_publications(self, publications: List[Publication]) -> List[Publication]:
         """
-        Remove duplicate publications based on ALL identifiers (PMID, PMCID, DOI).
+        Remove duplicate publications using ID-based and fuzzy matching.
 
-        Week 3 Enhancement: Multi-source deduplication
-        - Checks PMID, PMCID, and DOI separately
-        - Keeps first occurrence (e.g., prefers PubMed over Scholar)
-        - Essential for multi-source aggregation
+        Week 3 Enhancement: Multi-pass deduplication
+        - Pass 1: ID-based (PMID, PMCID, DOI) - fast exact matching
+        - Pass 2: Fuzzy matching (title, authors, year) - catches variations (Day 14)
+
+        Fuzzy matching handles:
+        - Title variations (case, punctuation, typos)
+        - Author name differences ("Smith, J." vs "J. Smith")
+        - Preprint vs published pairs (year tolerance)
 
         Args:
             publications: List of publications
@@ -335,6 +353,10 @@ class PublicationSearchPipeline:
         Returns:
             Deduplicated list
         """
+        if not publications:
+            return []
+
+        # Pass 1: ID-based deduplication (fast, exact)
         seen_pmids = set()
         seen_pmcids = set()
         seen_dois = set()
@@ -361,9 +383,21 @@ class PublicationSearchPipeline:
                 if pub.doi:
                     seen_dois.add(pub.doi)
 
-        duplicates_removed = len(publications) - len(unique_pubs)
-        if duplicates_removed > 0:
-            logger.info(f"Removed {duplicates_removed} duplicate publications")
+        id_duplicates_removed = len(publications) - len(unique_pubs)
+        if id_duplicates_removed > 0:
+            logger.info(f"Pass 1 (ID-based): Removed {id_duplicates_removed} duplicates")
+
+        # Pass 2: Fuzzy deduplication (Day 14)
+        if self.fuzzy_deduplicator:
+            before_fuzzy = len(unique_pubs)
+            unique_pubs = self.fuzzy_deduplicator.deduplicate(unique_pubs)
+            fuzzy_duplicates_removed = before_fuzzy - len(unique_pubs)
+            if fuzzy_duplicates_removed > 0:
+                logger.info(f"Pass 2 (Fuzzy): Removed {fuzzy_duplicates_removed} additional duplicates")
+
+        total_removed = len(publications) - len(unique_pubs)
+        if total_removed > 0:
+            logger.info(f"Total duplicates removed: {total_removed}/{len(publications)}")
 
         return unique_pubs
 
