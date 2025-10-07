@@ -9,13 +9,14 @@ This pipeline follows the AdvancedSearchPipeline pattern with:
 
 import logging
 import time
-from typing import List, Optional
+from typing import List
 
 from omics_oracle_v2.lib.publications.clients.institutional_access import (
     InstitutionalAccessManager,
     InstitutionType,
 )
 from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
+from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationResult, PublicationSearchResult
 from omics_oracle_v2.lib.publications.ranking.ranker import PublicationRanker
@@ -71,10 +72,10 @@ class PublicationSearchPipeline:
         else:
             self.pubmed_client = None
 
-        # Week 3: Google Scholar (disabled for now)
+        # Week 3: Google Scholar (Day 13 - NOW IMPLEMENTED)
         if config.enable_scholar:
-            logger.info("Google Scholar client not yet implemented (Week 3)")
-            self.scholar_client = None  # TODO: Week 3
+            logger.info("Initializing Google Scholar client")
+            self.scholar_client = GoogleScholarClient(config.scholar_config)
         else:
             self.scholar_client = None
 
@@ -145,6 +146,9 @@ class PublicationSearchPipeline:
         if self.pubmed_client:
             self.pubmed_client.initialize()
 
+        if self.scholar_client:
+            self.scholar_client.initialize()
+
         self._initialized = True
         logger.info("PublicationSearchPipeline initialized")
 
@@ -156,6 +160,9 @@ class PublicationSearchPipeline:
         # Cleanup clients
         if self.pubmed_client:
             self.pubmed_client.cleanup()
+
+        if self.scholar_client:
+            self.scholar_client.cleanup()
 
         self._initialized = False
         logger.info("PublicationSearchPipeline cleaned up")
@@ -315,7 +322,12 @@ class PublicationSearchPipeline:
 
     def _deduplicate_publications(self, publications: List[Publication]) -> List[Publication]:
         """
-        Remove duplicate publications based on primary identifiers.
+        Remove duplicate publications based on ALL identifiers (PMID, PMCID, DOI).
+
+        Week 3 Enhancement: Multi-source deduplication
+        - Checks PMID, PMCID, and DOI separately
+        - Keeps first occurrence (e.g., prefers PubMed over Scholar)
+        - Essential for multi-source aggregation
 
         Args:
             publications: List of publications
@@ -323,14 +335,31 @@ class PublicationSearchPipeline:
         Returns:
             Deduplicated list
         """
-        seen_ids = set()
+        seen_pmids = set()
+        seen_pmcids = set()
+        seen_dois = set()
         unique_pubs = []
 
         for pub in publications:
-            pub_id = pub.primary_id
-            if pub_id not in seen_ids:
-                seen_ids.add(pub_id)
+            # Check if we've seen this publication by any identifier
+            is_duplicate = False
+
+            if pub.pmid and pub.pmid in seen_pmids:
+                is_duplicate = True
+            if pub.pmcid and pub.pmcid in seen_pmcids:
+                is_duplicate = True
+            if pub.doi and pub.doi in seen_dois:
+                is_duplicate = True
+
+            if not is_duplicate:
+                # Add this publication and record its identifiers
                 unique_pubs.append(pub)
+                if pub.pmid:
+                    seen_pmids.add(pub.pmid)
+                if pub.pmcid:
+                    seen_pmcids.add(pub.pmcid)
+                if pub.doi:
+                    seen_dois.add(pub.doi)
 
         duplicates_removed = len(publications) - len(unique_pubs)
         if duplicates_removed > 0:
