@@ -25,6 +25,7 @@ set -e  # Exit on error
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration
@@ -32,16 +33,39 @@ API_PORT=8000
 DASHBOARD_PORT=8502
 API_LOG="/tmp/omics_api.log"
 DASHBOARD_LOG="/tmp/omics_dashboard.log"
-
-# ⚠️ SSL BYPASS (TESTING ONLY)
-echo -e "${YELLOW}⚠️  SSL VERIFICATION DISABLED (for institutional networks)${NC}"
-export PYTHONHTTPSVERIFY=0
-export SSL_CERT_FILE=""
+VENV_PATH="venv"
 
 echo "=========================================="
 echo "  OmicsOracle Unified Startup"
 echo "  (SSL Bypass Mode)"
 echo "=========================================="
+echo ""
+
+# Step 1: Activate virtual environment
+echo -e "${BLUE}[1/5]${NC} Activating virtual environment..."
+if [ ! -d "$VENV_PATH" ]; then
+    echo -e "${RED}[ERROR]${NC} Virtual environment not found at: $VENV_PATH"
+    echo "  Create it with: python3 -m venv venv"
+    exit 1
+fi
+
+# Activate venv
+source $VENV_PATH/bin/activate
+
+if [ -z "$VIRTUAL_ENV" ]; then
+    echo -e "${RED}[ERROR]${NC} Failed to activate virtual environment"
+    exit 1
+fi
+
+echo -e "${GREEN}[OK]${NC} Virtual environment activated: $VIRTUAL_ENV"
+echo ""
+
+# Step 2: Set SSL bypass
+echo -e "${BLUE}[2/5]${NC} Configuring SSL bypass..."
+echo -e "${YELLOW}⚠️  SSL VERIFICATION DISABLED (for institutional networks)${NC}"
+export PYTHONHTTPSVERIFY=0
+export SSL_CERT_FILE=""
+echo -e "${GREEN}[OK]${NC} SSL bypass enabled"
 echo ""
 
 # Function to check if port is available
@@ -78,7 +102,7 @@ cleanup() {
 trap cleanup SIGINT SIGTERM EXIT
 
 # Check port availability
-echo "Checking port availability..."
+echo -e "${BLUE}[3/5]${NC} Checking port availability..."
 
 if ! check_port $API_PORT; then
     echo -e "${RED}[ERROR]${NC} Port $API_PORT is already in use"
@@ -96,7 +120,7 @@ echo -e "${GREEN}[OK]${NC} Ports available"
 echo ""
 
 # Start API Server
-echo "Starting API server (port $API_PORT)..."
+echo -e "${BLUE}[4/5]${NC} Starting API server (port $API_PORT)..."
 export OMICS_DB_URL="sqlite+aiosqlite:///./omics_oracle.db"
 export OMICS_RATE_LIMIT_FALLBACK_TO_MEMORY=true
 python -m omics_oracle_v2.api.main > $API_LOG 2>&1 &
@@ -115,7 +139,7 @@ echo "  - Logs: $API_LOG"
 echo ""
 
 # Start Dashboard
-echo "Starting dashboard (port $DASHBOARD_PORT)..."
+echo -e "${BLUE}[5/5]${NC} Starting dashboard (port $DASHBOARD_PORT)..."
 python scripts/run_dashboard.py --port $DASHBOARD_PORT > $DASHBOARD_LOG 2>&1 &
 DASHBOARD_PID=$!
 sleep 3

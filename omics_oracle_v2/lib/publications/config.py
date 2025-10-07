@@ -215,8 +215,8 @@ class PublicationSearchConfig:
     enable_pubmed: bool = True
     enable_scholar: bool = False  # Week 3
     enable_citations: bool = False  # Week 3
-    enable_pdf_download: bool = False  # Week 4
-    enable_fulltext: bool = False  # Week 4
+    enable_pdf_download: bool = True  # Week 4 - ENABLED
+    enable_fulltext: bool = True  # Week 4 - ENABLED
     enable_institutional_access: bool = True  # Week 4 - NEW
 
     # Component configurations

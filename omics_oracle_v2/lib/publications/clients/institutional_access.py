@@ -80,10 +80,10 @@ INSTITUTIONAL_CONFIGS = {
     ),
     InstitutionType.GEORGIA_TECH: InstitutionalConfig(
         institution=InstitutionType.GEORGIA_TECH,
-        ezproxy_url="https://login.ezproxy.gatech.edu/login?url=",
-        openurl_resolver="https://buzzport.gatech.edu/sfx_local",
+        ezproxy_url="",  # Georgia Tech uses VPN, not EZProxy
+        openurl_resolver="https://gatech-primo.hosted.exlibrisgroup.com/primo-explore/search",
         shibboleth_idp="https://login.gatech.edu/idp/shibboleth",
-        fallback_methods=["unpaywall", "ezproxy", "openurl", "direct"],
+        fallback_methods=["unpaywall", "direct", "openurl"],  # Direct DOI/URL for VPN access
     ),
 }
 
@@ -164,7 +164,11 @@ class InstitutionalAccessManager:
                 elif method == "openurl":
                     url = self._try_openurl(publication)
                 elif method == "direct":
-                    url = publication.url
+                    # For Georgia Tech VPN access, prefer DOI links
+                    if self.config.institution == InstitutionType.GEORGIA_TECH and publication.doi:
+                        url = f"https://doi.org/{publication.doi}"
+                    else:
+                        url = publication.url
                 else:
                     continue
 
@@ -268,15 +272,27 @@ class InstitutionalAccessManager:
         """
         Generate EZProxy URL for institutional access.
 
-        EZProxy rewrites publisher URLs to route through institutional proxy,
-        automatically authenticating and providing access.
+        For Georgia Tech: Returns direct DOI/URL (access via VPN)
+        For other institutions: Generates EZProxy wrapped URL
 
         Args:
             publication: Publication to access
 
         Returns:
-            EZProxy URL or None
+            EZProxy URL, direct URL (if GT), or None
         """
+        # Georgia Tech uses VPN instead of EZProxy
+        if self.config.institution == InstitutionType.GEORGIA_TECH:
+            # Return direct DOI or publisher URL
+            # User needs to connect via VPN first
+            if publication.doi:
+                return f"https://doi.org/{publication.doi}"
+            elif publication.url:
+                return publication.url
+            else:
+                return None
+        
+        # Other institutions: use EZProxy if configured
         if not self.config.ezproxy_url:
             return None
 
@@ -410,7 +426,16 @@ class InstitutionalAccessManager:
 
         # Check each method
         status["unpaywall"] = bool(self._try_unpaywall(publication))
-        status["ezproxy"] = bool(self.config.ezproxy_url and (publication.doi or publication.url))
+        
+        # For Georgia Tech, check if VPN access is possible (DOI or URL exists)
+        # For other institutions, check EZProxy
+        if self.config.institution == InstitutionType.GEORGIA_TECH:
+            status["vpn"] = bool(publication.doi or publication.url)
+            status["ezproxy"] = False  # GT doesn't use EZProxy
+        else:
+            status["ezproxy"] = bool(self.config.ezproxy_url and (publication.doi or publication.url))
+            status["vpn"] = False
+            
         status["openurl"] = bool(self.config.openurl_resolver and publication.title)
         status["direct"] = bool(publication.url)
         status["pmc"] = bool(publication.pmcid)

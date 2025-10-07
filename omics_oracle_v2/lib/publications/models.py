@@ -69,6 +69,13 @@ class Publication(BaseModel):
     url: Optional[str] = None
     pdf_url: Optional[str] = None
 
+    # Full-text content (Week 4 - PDF download feature)
+    full_text: Optional[str] = None
+    pdf_path: Optional[str] = None
+    full_text_source: Optional[str] = None  # "pdf", "html", "pmc"
+    text_length: Optional[int] = None
+    extraction_date: Optional[datetime] = None
+
     # Additional metadata
     metadata: Dict = Field(default_factory=dict)
 

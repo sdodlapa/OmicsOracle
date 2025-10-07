@@ -9,6 +9,7 @@ This pipeline follows the AdvancedSearchPipeline pattern with:
 
 import logging
 import time
+from pathlib import Path
 from typing import List
 
 from omics_oracle_v2.lib.llm.client import LLMClient
@@ -20,6 +21,10 @@ from omics_oracle_v2.lib.publications.clients.institutional_access import (
 )
 from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
 from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
+from omics_oracle_v2.lib.publications.clients.semantic_scholar import (
+    SemanticScholarClient,
+    SemanticScholarConfig,
+)
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 from omics_oracle_v2.lib.publications.deduplication import AdvancedDeduplicator
 from omics_oracle_v2.lib.publications.models import Publication, PublicationResult, PublicationSearchResult
@@ -107,33 +112,7 @@ class PublicationSearchPipeline:
             self.citation_analyzer = None
             self.llm_citation_analyzer = None
 
-        # Week 4: PDF processing (disabled for now)
-        if config.enable_pdf_download:
-            logger.info("PDF downloader not yet implemented (Week 4)")
-            self.pdf_downloader = None  # TODO: Week 4
-        else:
-            self.pdf_downloader = None
-
-        # Week 4: Full-text extraction (disabled for now)
-        if config.enable_fulltext:
-            logger.info("Full-text extractor not yet implemented (Week 4)")
-            self.fulltext_extractor = None  # TODO: Week 4
-        else:
-            self.fulltext_extractor = None
-
-        # Week 3 Day 14: Advanced fuzzy deduplication
-        if config.fuzzy_dedup_config.enable:
-            logger.info("Initializing fuzzy deduplication")
-            self.fuzzy_deduplicator = AdvancedDeduplicator(
-                title_similarity_threshold=config.fuzzy_dedup_config.title_threshold,
-                author_similarity_threshold=config.fuzzy_dedup_config.author_threshold,
-                year_tolerance=config.fuzzy_dedup_config.year_tolerance,
-                enable_fuzzy_matching=True,
-            )
-        else:
-            self.fuzzy_deduplicator = None
-
-        # Week 4: Institutional access (NEW)
+        # Week 4: Institutional access (NEW) - Initialize FIRST before PDF downloader
         if config.enable_institutional_access:
             logger.info(f"Initializing institutional access: {config.primary_institution}")
             # Primary institution
@@ -157,6 +136,46 @@ class PublicationSearchPipeline:
         else:
             self.institutional_manager = None
             self.institutional_manager_fallback = None
+
+        # Week 4: PDF processing (after institutional access)
+        if config.enable_pdf_download:
+            from omics_oracle_v2.lib.publications.pdf_downloader import PDFDownloader
+            from pathlib import Path
+            
+            logger.info("Initializing PDF downloader")
+            download_dir = Path("data/pdfs")
+            self.pdf_downloader = PDFDownloader(
+                download_dir=download_dir,
+                institutional_manager=self.institutional_manager if config.enable_institutional_access else None
+            )
+        else:
+            self.pdf_downloader = None
+
+        # Week 4: Full-text extraction
+        if config.enable_fulltext:
+            from omics_oracle_v2.lib.publications.fulltext_extractor import FullTextExtractor
+            
+            logger.info("Initializing full-text extractor")
+            self.fulltext_extractor = FullTextExtractor()
+        else:
+            self.fulltext_extractor = None
+
+        # Week 3 Day 14: Advanced fuzzy deduplication
+        if config.fuzzy_dedup_config.enable:
+            logger.info("Initializing fuzzy deduplication")
+            self.fuzzy_deduplicator = AdvancedDeduplicator(
+                title_similarity_threshold=config.fuzzy_dedup_config.title_threshold,
+                author_similarity_threshold=config.fuzzy_dedup_config.author_threshold,
+                year_tolerance=config.fuzzy_dedup_config.year_tolerance,
+                enable_fuzzy_matching=True,
+            )
+        else:
+            self.fuzzy_deduplicator = None
+
+        # Semantic Scholar for citation enrichment (FREE alternative to Google Scholar)
+        # Always enabled for citation metrics - no blocking/rate limit issues
+        logger.info("Initializing Semantic Scholar client for citation enrichment")
+        self.semantic_scholar_client = SemanticScholarClient(SemanticScholarConfig(enable=True))
 
         # Core components (always initialized)
         self.ranker = PublicationRanker(config)
@@ -298,6 +317,25 @@ class PublicationSearchPipeline:
                 ranked_results = self._enrich_citations(ranked_results)
             except Exception as e:
                 logger.error(f"Citation enrichment failed: {e}")
+
+        # Step 5.5: Enrich with Semantic Scholar citations (FREE alternative to Google Scholar)
+        if self.semantic_scholar_client and ranked_results:
+            try:
+                logger.info("Enriching with Semantic Scholar citation data...")
+                # Extract publications from ranked results
+                publications = [result.publication for result in ranked_results]
+                
+                # Enrich with citations (batch processing with rate limiting)
+                enriched_pubs = self.semantic_scholar_client.enrich_publications(publications)
+                
+                # Update ranked results with enriched publications
+                for i, enriched_pub in enumerate(enriched_pubs):
+                    ranked_results[i].publication = enriched_pub
+                
+                enriched_count = sum(1 for p in enriched_pubs if p.citations > 0)
+                logger.info(f"Semantic Scholar enrichment complete: {enriched_count}/{len(enriched_pubs)} publications have citation data")
+            except Exception as e:
+                logger.error(f"Semantic Scholar enrichment failed: {e}")
 
         # Step 6: PDF download (Week 4 - conditional execution)
         if self.pdf_downloader and ranked_results:
@@ -510,42 +548,65 @@ class PublicationSearchPipeline:
 
     def _download_pdfs(self, results: List[PublicationSearchResult]) -> None:
         """
-        Download PDFs for publications (Week 4).
+        Download PDFs and extract full text for publications (Week 4).
 
-        Uses institutional access to get PDFs from paywalled sources.
+        Uses institutional access to get PDFs from paywalled sources,
+        downloads them, and extracts full text.
 
         Args:
             results: Publication results
         """
-        for result in results:
-            pub = result.publication
+        if not self.pdf_downloader:
+            logger.warning("PDF downloader not initialized - skipping PDF download")
+            return
 
-            try:
-                # Try to get PDF URL via institutional access
-                pdf_url = None
-
-                # Try primary institution
-                if self.institutional_manager:
-                    pdf_url = self.institutional_manager.get_pdf_url(pub)
-                    if pdf_url:
-                        logger.info(f"PDF found via {self.config.primary_institution}: {pdf_url[:80]}...")
-
-                # Try fallback institution
-                if not pdf_url and self.institutional_manager_fallback:
-                    pdf_url = self.institutional_manager_fallback.get_pdf_url(pub)
-                    if pdf_url:
-                        logger.info(f"PDF found via {self.config.secondary_institution}: {pdf_url[:80]}...")
-
-                # Store PDF URL in metadata
-                if pdf_url:
-                    pub.metadata["institutional_pdf_url"] = pdf_url
-                    # TODO: Actual download logic when PDFDownloader is implemented
-                    logger.info(f"PDF URL ready for download: {pub.title[:50]}...")
-                else:
-                    logger.debug(f"No PDF access for: {pub.title[:50]}...")
-
-            except Exception as e:
-                logger.warning(f"Failed to get PDF for {pub.title[:50]}...: {e}")
+        publications = [result.publication for result in results]
+        
+        # Download PDFs in batch
+        logger.info(f"Downloading PDFs for {len(publications)} publications...")
+        downloaded = self.pdf_downloader.download_batch(
+            publications, 
+            max_workers=5
+        )
+        
+        # Extract full text if enabled
+        if self.fulltext_extractor and self.config.enable_fulltext:
+            logger.info(f"Extracting full text from {len(downloaded)} PDFs...")
+            
+            for pub in publications:
+                if pub.pdf_path and Path(pub.pdf_path).exists():
+                    try:
+                        from datetime import datetime
+                        
+                        # Extract text
+                        full_text = self.fulltext_extractor.extract_from_pdf(Path(pub.pdf_path))
+                        
+                        if full_text:
+                            pub.full_text = full_text
+                            pub.full_text_source = "pdf"
+                            pub.text_length = len(full_text)
+                            pub.extraction_date = datetime.now()
+                            
+                            # Get text stats
+                            stats = self.fulltext_extractor.get_text_stats(full_text)
+                            pub.metadata["text_stats"] = stats
+                            
+                            logger.info(
+                                f"Extracted {stats['words']} words from {pub.title[:50]}..."
+                            )
+                        else:
+                            logger.warning(f"No text extracted from {pub.title[:50]}...")
+                            
+                    except Exception as e:
+                        logger.error(f"Text extraction failed for {pub.title[:50]}...: {e}")
+        
+        # Log download statistics
+        if downloaded:
+            stats = self.pdf_downloader.get_download_stats()
+            logger.info(
+                f"PDF download complete: {stats['total_pdfs']} PDFs, "
+                f"{stats['total_size_mb']} MB total"
+            )
 
     def _extract_fulltext(self, results: List[PublicationSearchResult]) -> List[PublicationSearchResult]:
         """

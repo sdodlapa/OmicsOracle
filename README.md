@@ -73,20 +73,24 @@ cp .env.example .env
 
 ### Start OmicsOracle
 
-**Option 1: Unified Startup (Recommended)**
+**🎯 SINGLE STARTUP METHOD (Use This!)**
+
 ```bash
-# Start both API server and Dashboard with one command
-./start_omics_oracle.sh
+# Start both API server and Dashboard with SSL bypass
+# (Required for Georgia Tech/institutional networks)
+./start_omics_oracle_ssl_bypass.sh
 ```
 
-**Option 2: Separate Processes**
-```bash
-# Terminal 1 - Start API server (port 8000)
-./start_dev_server.sh
+**What it does:**
+1. ✅ Activates virtual environment automatically
+2. ✅ Configures SSL bypass for institutional networks
+3. ✅ Starts API server (port 8000)
+4. ✅ Starts Dashboard (port 8502)
+5. ✅ Monitors both services and auto-restarts if needed
 
-# Terminal 2 - Start Dashboard (port 8502)
-python scripts/run_dashboard.py --port 8502
-```
+**To stop:** Press `CTRL+C` (stops both services cleanly)
+
+> ⚠️ **DO NOT** use other startup scripts - they're deprecated and may cause issues!
 
 ### Access Points
 
@@ -96,7 +100,15 @@ After starting:
 - **🔌 API Server**: http://localhost:8000
 - **📖 API Documentation**: http://localhost:8000/docs
 - **❤️  Health Check**: http://localhost:8000/health
-- **🐛 Debug Panel**: http://localhost:8000/debug/dashboard
+
+**View Logs:**
+```bash
+# API logs
+tail -f /tmp/omics_api.log
+
+# Dashboard logs  
+tail -f /tmp/omics_dashboard.log
+```
 
 📖 **Detailed guide:** [docs/STARTUP_GUIDE.md](docs/STARTUP_GUIDE.md)
 

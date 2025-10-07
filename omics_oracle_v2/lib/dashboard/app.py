@@ -321,6 +321,10 @@ class DashboardApp:
                         "pmid": pub.pmid,
                         "doi": pub.doi,
                         "url": pub.url,
+                        # Institutional access info (Week 4)
+                        "access_url": pub.metadata.get("access_url") if pub.metadata else None,
+                        "has_access": pub.metadata.get("has_access") if pub.metadata else False,
+                        "access_status": pub.metadata.get("access_status") if pub.metadata else {},
                     }
                     results_dicts.append(pub_dict)
 

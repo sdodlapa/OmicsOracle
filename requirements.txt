@@ -86,3 +86,9 @@ networkx>=3.2.1
 matplotlib>=3.8.0
 seaborn>=0.13.0
 kaleido>=0.2.1  # Static image export for plotly
+
+# PDF & Full-text extraction (Week 4)
+pdfplumber>=0.10.0  # Modern PDF extraction (primary)
+PyPDF2>=3.0.0  # PDF extraction fallback
+beautifulsoup4>=4.12.0  # HTML extraction (PMC, arXiv)
+lxml>=4.9.0  # XML/HTML parsing

@@ -1,30 +1,35 @@
 """
-Google Scholar client for publication search.
+Enhanced Google Scholar client using scholarly library for citation metrics.
 
-This module provides a client for searching academic publications via Google Scholar,
-complementing PubMed with additional sources like preprints, conference papers, and theses.
+This module provides a robust client for Google Scholar with:
+- Citation counts and metrics
+- Cited-by paper lists
+- Author profile data
+- Rate limiting and retry logic
+- Proxy support for avoiding blocks
 
 Features:
-- Broader coverage than PubMed (preprints, conferences, theses)
-- Citation counts and metrics
+- Full citation metrics (count, h-index, i10-index)
+- Access to cited-by papers list
 - Related papers discovery
-- Author profile integration
-
-Rate Limits:
-- No official API (uses web scraping via scholarly library)
-- Recommended: 1 request per 3-5 seconds to avoid blocking
-- Optional proxy support for higher volume
+- Author information and profiles
+- Robust error handling and retry logic
 
 Example:
     >>> from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
     >>> from omics_oracle_v2.lib.publications.config import GoogleScholarConfig
     >>>
-    >>> config = GoogleScholarConfig(enable=True, rate_limit_seconds=3.0)
+    >>> config = GoogleScholarConfig(enable=True, rate_limit_seconds=5.0)
     >>> client = GoogleScholarClient(config)
+    >>> 
+    >>> # Search with citation enrichment
     >>> results = client.search("CRISPR cancer therapy", max_results=10)
-    >>>
     >>> for pub in results:
     ...     print(f"{pub.title} - Citations: {pub.citations}")
+    >>>
+    >>> # Get cited-by papers
+    >>> cited_by = client.get_cited_by_papers(results[0], max_papers=20)
+    >>> print(f"Papers citing this work: {len(cited_by)}")
 """
 
 import logging
@@ -39,12 +44,13 @@ if os.getenv("PYTHONHTTPSVERIFY", "1") == "0":
     ssl._create_default_https_context = ssl._create_unverified_context
 
 try:
-    from scholarly import scholarly
+    from scholarly import scholarly, ProxyGenerator
 
     SCHOLARLY_AVAILABLE = True
 except ImportError:
     SCHOLARLY_AVAILABLE = False
     scholarly = None
+    ProxyGenerator = None
 
 from omics_oracle_v2.core.exceptions import PublicationSearchError
 
@@ -55,30 +61,25 @@ from .base import BasePublicationClient
 
 class GoogleScholarClient(BasePublicationClient):
     """
-    Google Scholar client for academic publication search.
+    Enhanced Google Scholar client with citation metrics and cited-by access.
 
-    This client uses the scholarly library to search Google Scholar,
-    providing broader coverage than PubMed alone, including:
-    - Preprints and working papers
-    - Conference proceedings
-    - Theses and dissertations
-    - Technical reports
-    - Book chapters
+    This client uses the scholarly library to provide:
+    - Publication search with citation counts
+    - Cited-by paper lists (papers that cite a given work)
+    - Author profiles and metrics
+    - Rate limiting to avoid blocking
+    - Optional proxy support
 
     Attributes:
         config: Google Scholar configuration
         logger: Logger instance
-
-    Note:
-        Google Scholar does not provide an official API. This client uses
-        web scraping via the scholarly library, which may be blocked if
-        requests are too frequent. Use rate limiting and consider proxies
-        for production use.
+        retry_count: Number of retries on failure (default: 3)
+        retry_delay: Delay between retries in seconds (default: 10)
     """
 
     def __init__(self, config: GoogleScholarConfig):
         """
-        Initialize Google Scholar client.
+        Initialize enhanced Google Scholar client.
 
         Args:
             config: Google Scholar configuration
@@ -95,12 +96,17 @@ class GoogleScholarClient(BasePublicationClient):
         super().__init__(config)
         self.config = config
         self.logger = logging.getLogger(__name__)
+        self.retry_count = 3
+        self.retry_delay = 10  # seconds
 
         # Configure proxy if provided
         if self.config.use_proxy and self.config.proxy_url:
             self._configure_proxy()
 
-        self.logger.info(f"GoogleScholarClient initialized (rate limit: {config.rate_limit_seconds}s)")
+        self.logger.info(
+            f"Enhanced GoogleScholarClient initialized "
+            f"(rate_limit={config.rate_limit_seconds}s, retries={self.retry_count})"
+        )
 
     @property
     def source_name(self) -> str:
@@ -108,13 +114,57 @@ class GoogleScholarClient(BasePublicationClient):
         return "google_scholar"
 
     def _configure_proxy(self):
-        """Configure proxy for scholarly library."""
+        """Configure proxy for scholarly library to avoid blocking."""
         try:
-            # Note: scholarly proxy configuration would go here
-            # For Week 3, we'll keep it simple without proxy
-            self.logger.info(f"Proxy configured: {self.config.proxy_url}")
+            if ProxyGenerator and self.config.proxy_url:
+                pg = ProxyGenerator()
+                # Set up proxy (free or paid service)
+                if "luminati" in self.config.proxy_url or "scraperapi" in self.config.proxy_url:
+                    pg.ScraperAPI(self.config.proxy_url)
+                else:
+                    pg.SingleProxy(http=self.config.proxy_url, https=self.config.proxy_url)
+                
+                scholarly.use_proxy(pg)
+                self.logger.info(f"Proxy configured: {self.config.proxy_url}")
         except Exception as e:
             self.logger.warning(f"Failed to configure proxy: {e}")
+
+    def _retry_on_block(self, func, *args, **kwargs):
+        """
+        Retry a function call if it fails due to blocking.
+
+        Args:
+            func: Function to call
+            *args: Positional arguments for func
+            **kwargs: Keyword arguments for func
+
+        Returns:
+            Result of func call
+
+        Raises:
+            PublicationSearchError: If all retries fail
+        """
+        for attempt in range(self.retry_count):
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                error_str = str(e).lower()
+                if "block" in error_str or "429" in error_str or "captcha" in error_str:
+                    if attempt < self.retry_count - 1:
+                        wait_time = self.retry_delay * (attempt + 1)  # Exponential backoff
+                        self.logger.warning(
+                            f"Blocked by Google Scholar (attempt {attempt + 1}/{self.retry_count}). "
+                            f"Waiting {wait_time}s before retry..."
+                        )
+                        time.sleep(wait_time)
+                        continue
+                    else:
+                        raise PublicationSearchError(
+                            "Google Scholar blocked requests after multiple retries. "
+                            "Try again later or use a proxy."
+                        )
+                else:
+                    raise
 
     def search(
         self,
@@ -124,7 +174,7 @@ class GoogleScholarClient(BasePublicationClient):
         year_to: Optional[int] = None,
     ) -> List[Publication]:
         """
-        Search Google Scholar for publications.
+        Search Google Scholar with citation enrichment.
 
         Args:
             query: Search query string
@@ -133,27 +183,24 @@ class GoogleScholarClient(BasePublicationClient):
             year_to: Filter publications up to this year
 
         Returns:
-            List of Publication objects
+            List of Publication objects with citation counts
 
         Raises:
-            PublicationSearchError: If search fails
-
-        Example:
-            >>> results = client.search("machine learning genomics", max_results=20)
-            >>> print(f"Found {len(results)} publications")
+            PublicationSearchError: If search fails after retries
         """
         self.logger.info(
-            f"Searching Scholar: '{query}', max_results={max_results}, " f"year_range={year_from}-{year_to}"
+            f"Searching Scholar: '{query}', max_results={max_results}, "
+            f"year_range={year_from}-{year_to}"
         )
 
         try:
-            # Build year range string for Scholar
-            year_range = None
-            if year_from or year_to:
-                year_range = f"{year_from or ''}-{year_to or ''}"
-
-            # Perform search using scholarly
-            search_generator = scholarly.search_pubs(query, year_low=year_from, year_high=year_to)
+            # Perform search with retry logic
+            search_generator = self._retry_on_block(
+                scholarly.search_pubs,
+                query,
+                year_low=year_from,
+                year_high=year_to,
+            )
 
             publications = []
             for i, result in enumerate(search_generator):
@@ -161,19 +208,22 @@ class GoogleScholarClient(BasePublicationClient):
                     break
 
                 try:
-                    # Parse Scholar result into Publication model
+                    # Parse and enrich with citations
                     pub = self._parse_scholar_result(result)
                     publications.append(pub)
 
-                    # Rate limiting between results
-                    if i < max_results - 1:  # Don't sleep after last result
+                    # Rate limiting
+                    if i < max_results - 1:
                         time.sleep(self.config.rate_limit_seconds)
 
                 except Exception as e:
                     self.logger.warning(f"Failed to parse result {i}: {e}")
                     continue
 
-            self.logger.info(f"Found {len(publications)} publications from Scholar")
+            self.logger.info(
+                f"Found {len(publications)} publications from Scholar "
+                f"(avg citations: {sum(p.citations for p in publications) / len(publications) if publications else 0:.1f})"
+            )
             return publications
 
         except Exception as e:
@@ -181,13 +231,165 @@ class GoogleScholarClient(BasePublicationClient):
             self.logger.error(error_msg)
             raise PublicationSearchError(error_msg)
 
+    def get_cited_by_papers(
+        self, publication: Publication, max_papers: int = 50
+    ) -> List[Publication]:
+        """
+        Get list of papers that cite the given publication.
+
+        Args:
+            publication: Publication to get citations for
+            max_papers: Maximum number of citing papers to return
+
+        Returns:
+            List of Publication objects that cite the given work
+
+        Example:
+            >>> pub = client.search("CRISPR")[0]
+            >>> citing_papers = client.get_cited_by_papers(pub, max_papers=20)
+            >>> print(f"{len(citing_papers)} papers cite this work")
+        """
+        self.logger.info(f"Fetching cited-by papers for: {publication.title[:60]}...")
+
+        try:
+            # Get the citedby_url from metadata
+            citedby_url = publication.metadata.get("citedby_url")
+            
+            if not citedby_url:
+                # Search for publication first to get citedby_url
+                search_results = self._retry_on_block(
+                    scholarly.search_pubs,
+                    f'"{publication.title}"',
+                )
+                result = next(search_results, None)
+                if result:
+                    citedby_url = result.get("citedby_url")
+
+            if not citedby_url:
+                self.logger.warning(f"No citedby_url found for: {publication.title[:60]}")
+                return []
+
+            # Fetch citing papers using citedby_url
+            citing_pubs = []
+            cited_by_generator = self._retry_on_block(
+                scholarly.citedby,
+                citedby_url,
+            )
+
+            for i, result in enumerate(cited_by_generator):
+                if i >= max_papers:
+                    break
+
+                try:
+                    pub = self._parse_scholar_result(result)
+                    citing_pubs.append(pub)
+
+                    # Rate limiting
+                    if i < max_papers - 1:
+                        time.sleep(self.config.rate_limit_seconds)
+
+                except Exception as e:
+                    self.logger.warning(f"Failed to parse citing paper {i}: {e}")
+                    continue
+
+            self.logger.info(
+                f"Found {len(citing_pubs)} papers citing: {publication.title[:60]}"
+            )
+            return citing_pubs
+
+        except Exception as e:
+            self.logger.error(f"Failed to get cited-by papers: {e}")
+            return []
+
+    def enrich_with_citations(self, publication: Publication) -> Publication:
+        """
+        Enrich a publication with citation metrics from Google Scholar.
+
+        Args:
+            publication: Publication to enrich
+
+        Returns:
+            Publication with updated citation count and metadata
+
+        Example:
+            >>> pub = Publication(title="CRISPR-Cas9", ...)
+            >>> enriched = client.enrich_with_citations(pub)
+            >>> print(f"Citations: {enriched.citations}")
+        """
+        try:
+            # Search by title to get citation info
+            search_query = f'"{publication.title}"'
+            search_results = self._retry_on_block(scholarly.search_pubs, search_query)
+            
+            result = next(search_results, None)
+            if result:
+                # Update citation count
+                publication.citations = result.get("num_citations", 0)
+                
+                # Add Scholar-specific metadata
+                publication.metadata.update({
+                    "scholar_id": result.get("scholar_id"),
+                    "scholar_url": result.get("pub_url"),
+                    "citedby_url": result.get("citedby_url"),
+                    "num_versions": result.get("num_versions", 0),
+                    "url_related_articles": result.get("url_related_articles"),
+                })
+                
+                self.logger.debug(
+                    f"Enriched '{publication.title[:50]}...' with {publication.citations} citations"
+                )
+            else:
+                self.logger.warning(f"No Scholar match for: {publication.title[:60]}")
+
+            return publication
+
+        except Exception as e:
+            self.logger.warning(f"Failed to enrich with citations: {e}")
+            return publication
+
+    def get_author_info(self, author_name: str) -> Optional[Dict[str, Any]]:
+        """
+        Get author profile information from Google Scholar.
+
+        Args:
+            author_name: Name of the author to search for
+
+        Returns:
+            Dictionary with author information (h-index, citations, etc.)
+
+        Example:
+            >>> info = client.get_author_info("Jennifer Doudna")
+            >>> print(f"H-index: {info['hindex']}, Citations: {info['citedby']}")
+        """
+        try:
+            search_query = self._retry_on_block(scholarly.search_author, author_name)
+            author = next(search_query, None)
+            
+            if author:
+                # Fill in author details
+                filled_author = self._retry_on_block(scholarly.fill, author)
+                
+                return {
+                    "name": filled_author.get("name"),
+                    "affiliation": filled_author.get("affiliation"),
+                    "email": filled_author.get("email"),
+                    "interests": filled_author.get("interests", []),
+                    "citedby": filled_author.get("citedby", 0),
+                    "hindex": filled_author.get("hindex", 0),
+                    "i10index": filled_author.get("i10index", 0),
+                    "scholar_id": filled_author.get("scholar_id"),
+                    "url_picture": filled_author.get("url_picture"),
+                }
+            
+            return None
+
+        except Exception as e:
+            self.logger.error(f"Failed to get author info for '{author_name}': {e}")
+            return None
+
     def fetch_by_id(self, identifier: str) -> Optional[Publication]:
         """
         Fetch a single publication by identifier (DOI or title).
-
-        This is an alias for fetch_by_doi for compatibility with the
-        base class interface. Scholar doesn't have its own ID system,
-        so we use DOI or search by title.
 
         Args:
             identifier: DOI or publication title
@@ -195,12 +397,12 @@ class GoogleScholarClient(BasePublicationClient):
         Returns:
             Publication if found, None otherwise
         """
-        # Try as DOI first
         if identifier.startswith("10."):
             return self.fetch_by_doi(identifier)
-
-        # Otherwise search by exact title
-        return self.fetch_by_doi(identifier)  # Will search by title
+        else:
+            # Search by exact title
+            results = self.search(f'"{identifier}"', max_results=1)
+            return results[0] if results else None
 
     def fetch_by_doi(self, doi: str) -> Optional[Publication]:
         """
@@ -211,78 +413,26 @@ class GoogleScholarClient(BasePublicationClient):
 
         Returns:
             Publication if found, None otherwise
-
-        Example:
-            >>> pub = client.fetch_by_doi("10.1038/nature12345")
-            >>> if pub:
-            ...     print(f"Found: {pub.title}")
         """
         self.logger.info(f"Fetching Scholar publication by DOI: {doi}")
 
         try:
-            # Search Scholar by DOI
             results = self.search(f"doi:{doi}", max_results=1)
-
-            if results:
-                return results[0]
-
-            self.logger.warning(f"No Scholar result found for DOI: {doi}")
-            return None
+            return results[0] if results else None
 
         except Exception as e:
             self.logger.error(f"Failed to fetch by DOI {doi}: {e}")
             return None
 
-    def get_citations(self, publication: Publication) -> int:
-        """
-        Get citation count for a publication.
-
-        Args:
-            publication: Publication to get citations for
-
-        Returns:
-            Citation count (0 if unavailable)
-
-        Note:
-            If the publication already has a Scholar ID in metadata,
-            this method will use it. Otherwise, it searches by title.
-        """
-        try:
-            scholar_id = publication.metadata.get("scholar_id")
-
-            if scholar_id:
-                # Use Scholar ID to get citations
-                pub_info = scholarly.search_pubs(scholar_id)
-                result = next(pub_info, None)
-                if result:
-                    return result.get("num_citations", 0)
-            else:
-                # Search by title
-                search_query = f'"{publication.title}"'
-                search_results = scholarly.search_pubs(search_query)
-                result = next(search_results, None)
-                if result:
-                    return result.get("num_citations", 0)
-
-            return 0
-
-        except Exception as e:
-            self.logger.warning(f"Failed to get citations: {e}")
-            return 0
-
     def _parse_scholar_result(self, result: Dict[str, Any]) -> Publication:
         """
-        Convert Google Scholar result to Publication model.
+        Convert Google Scholar result to Publication model with full metadata.
 
         Args:
             result: Raw result dictionary from scholarly library
 
         Returns:
-            Publication object
-
-        Note:
-            Scholar results have a different structure than PubMed.
-            This method normalizes them to our Publication model.
+            Publication object with citation metrics
         """
         bib = result.get("bib", {})
 
@@ -292,7 +442,7 @@ class GoogleScholarClient(BasePublicationClient):
         # Parse publication date
         pub_date = self._parse_date(bib.get("pub_year"))
 
-        # Build publication
+        # Build publication with full metadata
         return Publication(
             # Core fields
             title=bib.get("title", ""),
@@ -302,21 +452,22 @@ class GoogleScholarClient(BasePublicationClient):
             publication_date=pub_date,
             # Identifiers
             doi=result.get("doi"),
-            pmid=None,  # Scholar doesn't provide PMID
+            pmid=None,
             pmcid=None,
-            # Metrics
+            # Metrics (KEY FEATURE!)
             citations=result.get("num_citations", 0),
             # Source
             source=PublicationSource.GOOGLE_SCHOLAR,
-            # Scholar-specific metadata
+            # Scholar-specific metadata (for cited-by access)
             metadata={
                 "scholar_id": result.get("scholar_id"),
                 "scholar_url": result.get("pub_url"),
                 "eprint_url": result.get("eprint_url"),
-                "pdf_url": result.get("eprint_url"),  # Often points to PDF
+                "pdf_url": result.get("eprint_url"),
                 "num_versions": result.get("num_versions", 0),
                 "url_related_articles": result.get("url_related_articles"),
-                "citedby_url": result.get("citedby_url"),
+                "citedby_url": result.get("citedby_url"),  # KEY for cited-by access!
+                "cites_id": result.get("cites_id", []),  # Papers this work cites
             },
         )
 
@@ -364,4 +515,4 @@ class GoogleScholarClient(BasePublicationClient):
 
     def cleanup(self):
         """Clean up resources."""
-        self.logger.info("GoogleScholarClient cleanup complete")
+        self.logger.info("Enhanced GoogleScholarClient cleanup complete")
