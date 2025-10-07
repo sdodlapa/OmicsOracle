@@ -174,7 +174,7 @@ class DashboardApp:
         """Render main dashboard content."""
         # Search panel
         if self.config.enable_search:
-            search_panel = SearchPanel()
+            search_panel = SearchPanel(self.config)
             search_params = search_panel.render()
 
             # Execute search
@@ -194,19 +194,19 @@ class DashboardApp:
 
             # Results tab
             with tabs[0]:
-                results_panel = ResultsPanel()
+                results_panel = ResultsPanel(self.config)
                 results_panel.render(st.session_state.search_results.get("publications", []))
 
             # Visualization tab
             if self.config.enable_visualizations and len(tabs) > 1:
                 with tabs[1]:
-                    viz_panel = VisualizationPanel()
+                    viz_panel = VisualizationPanel(self.config)
                     viz_panel.render(st.session_state.search_results)
 
             # Analytics tab
             if self.config.enable_analytics and len(tabs) > 2:
                 with tabs[-1]:
-                    analytics_panel = AnalyticsPanel()
+                    analytics_panel = AnalyticsPanel(self.config)
                     analytics_panel.render(st.session_state.search_results)
 
             # Export button
