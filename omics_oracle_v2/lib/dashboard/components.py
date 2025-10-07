@@ -120,6 +120,9 @@ class VisualizationPanel(BasePanel):
             "Temporal Trends",
             "Statistical Distribution",
             "Multi-Panel Report",
+            "Biomarker Heatmap",
+            "Research Flow (Sankey)",
+            "Abstract Word Cloud",
         ]
 
     def render(self, results: Optional[Dict[str, Any]] = None) -> None:
@@ -152,6 +155,12 @@ class VisualizationPanel(BasePanel):
             self._render_statistics(results)
         elif viz_type == "Multi-Panel Report":
             self._render_report(results)
+        elif viz_type == "Biomarker Heatmap":
+            self._render_heatmap(results)
+        elif viz_type == "Research Flow (Sankey)":
+            self._render_sankey(results)
+        elif viz_type == "Abstract Word Cloud":
+            self._render_wordcloud(results)
 
     def _render_network(self, results: Dict[str, Any]) -> None:
         """Render citation network visualization."""
@@ -199,6 +208,252 @@ class VisualizationPanel(BasePanel):
                 st.plotly_chart(fig, use_container_width=True)
             except Exception as e:
                 st.error(f"Error generating report: {str(e)}")
+
+    def _render_heatmap(self, results: Dict[str, Any]) -> None:
+        """Render biomarker correlation heatmap."""
+        with st.spinner("Generating biomarker heatmap..."):
+            try:
+                import numpy as np
+                import plotly.graph_objects as go
+
+                # Extract biomarkers and publications
+                publications = results.get("publications", [])
+                if not publications:
+                    st.warning("No data available for heatmap")
+                    return
+
+                # Build biomarker co-occurrence matrix
+                biomarkers = set()
+                for pub in publications:
+                    biomarkers.update(pub.get("biomarkers", []))
+
+                biomarker_list = sorted(list(biomarkers))[:20]  # Limit to top 20
+                n = len(biomarker_list)
+
+                # Create co-occurrence matrix
+                matrix = np.zeros((n, n))
+                for pub in publications:
+                    pub_biomarkers = pub.get("biomarkers", [])
+                    for i, bio1 in enumerate(biomarker_list):
+                        if bio1 in pub_biomarkers:
+                            for j, bio2 in enumerate(biomarker_list):
+                                if bio2 in pub_biomarkers:
+                                    matrix[i][j] += 1
+
+                # Create heatmap
+                fig = go.Figure(
+                    data=go.Heatmap(
+                        z=matrix,
+                        x=biomarker_list,
+                        y=biomarker_list,
+                        colorscale="Blues",
+                        hoverongaps=False,
+                        hovertemplate="<b>%{x}</b> & <b>%{y}</b><br>Co-occurrences: %{z}<extra></extra>",
+                    )
+                )
+
+                fig.update_layout(
+                    title="Biomarker Co-occurrence Heatmap",
+                    xaxis_title="Biomarkers",
+                    yaxis_title="Biomarkers",
+                    height=600,
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+                # Add filter controls
+                st.caption("Filter by minimum co-occurrences:")
+                st.slider("Minimum", 1, 10, 2, key="heatmap_filter")
+
+            except Exception as e:
+                st.error(f"Error generating heatmap: {str(e)}")
+
+    def _render_sankey(self, results: Dict[str, Any]) -> None:
+        """Render research flow Sankey diagram."""
+        with st.spinner("Generating research flow diagram..."):
+            try:
+                import plotly.graph_objects as go
+
+                publications = results.get("publications", [])
+                if not publications:
+                    st.warning("No data available for Sankey diagram")
+                    return
+
+                # Build flow data: Year -> Database -> Biomarker
+                nodes = []
+                node_dict = {}
+                links = {"source": [], "target": [], "value": []}
+
+                def get_node_index(label, category):
+                    key = f"{category}:{label}"
+                    if key not in node_dict:
+                        node_dict[key] = len(nodes)
+                        nodes.append({"label": label, "category": category})
+                    return node_dict[key]
+
+                # Process publications
+                for pub in publications[:50]:  # Limit for clarity
+                    year = pub.get("year", "Unknown")
+                    source_db = pub.get("source", "Unknown")
+                    biomarkers = pub.get("biomarkers", [])
+
+                    year_idx = get_node_index(str(year), "year")
+                    db_idx = get_node_index(source_db, "database")
+
+                    # Year -> Database
+                    links["source"].append(year_idx)
+                    links["target"].append(db_idx)
+                    links["value"].append(1)
+
+                    # Database -> Biomarkers
+                    for biomarker in biomarkers[:3]:  # Top 3 biomarkers
+                        bio_idx = get_node_index(biomarker, "biomarker")
+                        links["source"].append(db_idx)
+                        links["target"].append(bio_idx)
+                        links["value"].append(1)
+
+                # Create Sankey diagram
+                fig = go.Figure(
+                    data=[
+                        go.Sankey(
+                            node=dict(
+                                pad=15,
+                                thickness=20,
+                                line=dict(color="black", width=0.5),
+                                label=[n["label"] for n in nodes],
+                                color=[
+                                    "#1f77b4"
+                                    if n["category"] == "year"
+                                    else "#ff7f0e"
+                                    if n["category"] == "database"
+                                    else "#2ca02c"
+                                    for n in nodes
+                                ],
+                            ),
+                            link=dict(source=links["source"], target=links["target"], value=links["value"]),
+                        )
+                    ]
+                )
+
+                fig.update_layout(
+                    title="Research Flow: Year -> Database -> Biomarker",
+                    font_size=12,
+                    height=600,
+                )
+
+                st.plotly_chart(fig, use_container_width=True)
+
+            except Exception as e:
+                st.error(f"Error generating Sankey diagram: {str(e)}")
+
+    def _render_wordcloud(self, results: Dict[str, Any]) -> None:
+        """Render word cloud from abstracts."""
+        with st.spinner("Generating word cloud..."):
+            try:
+                publications = results.get("publications", [])
+                if not publications:
+                    st.warning("No data available for word cloud")
+                    return
+
+                # Combine all abstracts
+                text = " ".join([pub.get("abstract", "") for pub in publications])
+
+                if not text.strip():
+                    st.warning("No abstract text available")
+                    return
+
+                # Try to use wordcloud library
+                try:
+                    import matplotlib.pyplot as plt
+                    from wordcloud import WordCloud
+
+                    # Create word cloud
+                    wordcloud = WordCloud(
+                        width=800,
+                        height=400,
+                        background_color="white",
+                        colormap="viridis",
+                        stopwords=set(
+                            [
+                                "the",
+                                "a",
+                                "an",
+                                "and",
+                                "or",
+                                "but",
+                                "in",
+                                "on",
+                                "at",
+                                "to",
+                                "for",
+                                "of",
+                                "with",
+                                "by",
+                                "from",
+                                "as",
+                                "is",
+                                "was",
+                                "are",
+                                "were",
+                                "been",
+                                "be",
+                                "have",
+                                "has",
+                                "had",
+                                "do",
+                                "does",
+                                "did",
+                            ]
+                        ),
+                    ).generate(text)
+
+                    # Display
+                    fig, ax = plt.subplots(figsize=(10, 5))
+                    ax.imshow(wordcloud, interpolation="bilinear")
+                    ax.axis("off")
+                    st.pyplot(fig)
+
+                    # Add filter controls
+                    st.caption("Common terms in abstracts")
+
+                except ImportError:
+                    # Fallback: simple word frequency chart
+                    from collections import Counter
+
+                    import plotly.express as px
+
+                    words = text.lower().split()
+                    # Filter short words and common terms
+                    words = [
+                        w
+                        for w in words
+                        if len(w) > 4
+                        and w
+                        not in [
+                            "these",
+                            "their",
+                            "there",
+                            "which",
+                            "could",
+                            "would",
+                            "should",
+                        ]
+                    ]
+
+                    word_freq = Counter(words).most_common(30)
+
+                    fig = px.bar(
+                        x=[w[0] for w in word_freq],
+                        y=[w[1] for w in word_freq],
+                        labels={"x": "Word", "y": "Frequency"},
+                        title="Top 30 Words in Abstracts",
+                    )
+
+                    st.plotly_chart(fig, use_container_width=True)
+                    st.info("Install wordcloud package for enhanced visualization: pip install wordcloud")
+
+            except Exception as e:
+                st.error(f"Error generating word cloud: {str(e)}")
 
 
 class AnalyticsPanel(BasePanel):

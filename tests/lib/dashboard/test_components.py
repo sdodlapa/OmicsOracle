@@ -114,6 +114,9 @@ class TestVisualizationPanel:
             "Temporal Trends",
             "Statistical Distribution",
             "Multi-Panel Report",
+            "Biomarker Heatmap",
+            "Research Flow (Sankey)",
+            "Abstract Word Cloud",
         ]
 
     @patch("streamlit.selectbox")
@@ -159,6 +162,68 @@ class TestVisualizationPanel:
         with patch.object(panel, "_render_trends") as mock_render:
             panel.render(data)
             mock_render.assert_called_once_with(data)
+
+    @patch("streamlit.selectbox")
+    @patch("streamlit.plotly_chart")
+    @patch("streamlit.slider")
+    @patch("streamlit.caption")
+    def test_render_heatmap(self, mock_caption, mock_slider, mock_plotly, mock_selectbox):
+        """Test rendering biomarker heatmap."""
+        config = DashboardConfig()
+        panel = VisualizationPanel(config)
+
+        mock_selectbox.return_value = "Biomarker Heatmap"
+        mock_slider.return_value = 2
+
+        data = {
+            "publications": [
+                {"biomarkers": ["BRCA1", "TP53"], "year": 2020},
+                {"biomarkers": ["BRCA1", "EGFR"], "year": 2021},
+            ]
+        }
+
+        panel.render(data)
+        assert mock_plotly.called or mock_caption.called  # Should attempt rendering
+
+    @patch("streamlit.selectbox")
+    @patch("streamlit.plotly_chart")
+    def test_render_sankey(self, mock_plotly, mock_selectbox):
+        """Test rendering Sankey diagram."""
+        config = DashboardConfig()
+        panel = VisualizationPanel(config)
+
+        mock_selectbox.return_value = "Research Flow (Sankey)"
+
+        data = {
+            "publications": [
+                {"year": 2020, "source": "pubmed", "biomarkers": ["BRCA1"]},
+                {"year": 2021, "source": "pmc", "biomarkers": ["TP53"]},
+            ]
+        }
+
+        panel.render(data)
+        assert mock_plotly.called  # Should create Sankey
+
+    @patch("streamlit.selectbox")
+    @patch("streamlit.plotly_chart")
+    @patch("streamlit.info")
+    def test_render_wordcloud_fallback(self, mock_info, mock_plotly, mock_selectbox):
+        """Test rendering word cloud with fallback."""
+        config = DashboardConfig()
+        panel = VisualizationPanel(config)
+
+        mock_selectbox.return_value = "Abstract Word Cloud"
+
+        data = {
+            "publications": [
+                {"abstract": "This is a test abstract about biomarkers and cancer research"},
+                {"abstract": "Another abstract discussing genetic mutations and treatments"},
+            ]
+        }
+
+        panel.render(data)
+        # Should use either wordcloud or plotly fallback
+        assert mock_plotly.called or mock_info.called
 
 
 class TestAnalyticsPanel:
