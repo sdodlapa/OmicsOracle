@@ -11,6 +11,9 @@ import logging
 import time
 from typing import List
 
+from omics_oracle_v2.lib.llm.client import LLMClient
+from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
+from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
 from omics_oracle_v2.lib.publications.clients.institutional_access import (
     InstitutionalAccessManager,
     InstitutionType,
@@ -80,12 +83,29 @@ class PublicationSearchPipeline:
         else:
             self.scholar_client = None
 
-        # Week 3: Citation analysis (disabled for now)
+        # Week 3: Citation analysis (Day 16-17 - NOW IMPLEMENTED)
         if config.enable_citations:
-            logger.info("Citation analyzer not yet implemented (Week 3)")
-            self.citation_analyzer = None  # TODO: Week 3
+            logger.info("Initializing citation analyzer")
+            if self.scholar_client:
+                self.citation_analyzer = CitationAnalyzer(self.scholar_client)
+                
+                # Initialize LLM-powered analysis if Scholar is available
+                logger.info(f"Initializing LLM citation analyzer (provider={config.llm_config.provider})")
+                # API keys come from environment variables
+                self.llm_client = LLMClient(
+                    provider=config.llm_config.provider,
+                    model=config.llm_config.model,
+                    cache_enabled=config.llm_config.cache_enabled,
+                    temperature=config.llm_config.temperature,
+                )
+                self.llm_citation_analyzer = LLMCitationAnalyzer(self.llm_client)
+            else:
+                logger.warning("Citation analysis requires Google Scholar - disabling")
+                self.citation_analyzer = None
+                self.llm_citation_analyzer = None
         else:
             self.citation_analyzer = None
+            self.llm_citation_analyzer = None
 
         # Week 4: PDF processing (disabled for now)
         if config.enable_pdf_download:
@@ -403,17 +423,90 @@ class PublicationSearchPipeline:
 
     def _enrich_citations(self, results: List[PublicationSearchResult]) -> List[PublicationSearchResult]:
         """
-        Enrich results with citation data (Week 3).
+        Enrich results with citation data (Week 3 Day 16-17).
+
+        Two-phase enrichment:
+        1. Extract citing papers using CitationAnalyzer
+        2. Analyze citations semantically using LLMCitationAnalyzer
 
         Args:
             results: Publication results
 
         Returns:
-            Enriched results
+            Enriched results with citation analysis
         """
-        # TODO: Week 3 implementation
-        logger.warning("Citation enrichment not yet implemented (Week 3)")
-        return results
+        if not self.citation_analyzer:
+            logger.warning("Citation analyzer not available - skipping enrichment")
+            return results
+
+        logger.info(f"Enriching {len(results)} publications with citation data...")
+        enriched_results = []
+
+        for result in results:
+            try:
+                pub = result.publication
+
+                # Phase 1: Get citing papers
+                logger.debug(f"Finding citations for: {pub.title[:50]}...")
+                citing_papers = self.citation_analyzer.get_citing_papers(
+                    pub, max_results=min(100, self.config.llm_config.batch_size * 10)
+                )
+
+                # Store citation count
+                pub.metadata["citing_papers_count"] = len(citing_papers)
+
+                # Phase 2: LLM analysis of citations (if available and papers found)
+                if self.llm_citation_analyzer and citing_papers:
+                    logger.debug(f"Analyzing {len(citing_papers)} citations with LLM...")
+
+                    # Get citation contexts
+                    contexts = []
+                    for citing_paper in citing_papers[: self.config.llm_config.batch_size * 2]:
+                        citation_contexts = self.citation_analyzer.get_citation_contexts(pub, citing_paper)
+                        for ctx in citation_contexts:
+                            contexts.append((ctx, pub, citing_paper))
+
+                    # Analyze in batches
+                    if contexts:
+                        usage_analyses = self.llm_citation_analyzer.analyze_batch(
+                            contexts, batch_size=self.config.llm_config.batch_size
+                        )
+
+                        # Store analyses
+                        pub.metadata["citation_analyses"] = [
+                            {
+                                "paper_id": a.paper_id,
+                                "paper_title": a.paper_title,
+                                "dataset_reused": a.dataset_reused,
+                                "usage_type": a.usage_type,
+                                "confidence": a.confidence,
+                                "key_findings": a.key_findings,
+                                "novel_biomarkers": a.novel_biomarkers,
+                                "clinical_relevance": a.clinical_relevance,
+                            }
+                            for a in usage_analyses
+                        ]
+
+                        # Count dataset reuse
+                        reuse_count = sum(1 for a in usage_analyses if a.dataset_reused)
+                        pub.metadata["dataset_reuse_count"] = reuse_count
+
+                        logger.info(
+                            f"Citation analysis complete: {len(citing_papers)} citations, "
+                            f"{reuse_count} dataset reuses detected"
+                        )
+                else:
+                    pub.metadata["citation_analyses"] = []
+
+                enriched_results.append(result)
+
+            except Exception as e:
+                logger.error(f"Failed to enrich citations for {result.publication.title[:50]}...: {e}")
+                # Add publication anyway without citation enrichment
+                enriched_results.append(result)
+
+        logger.info(f"Citation enrichment complete for {len(enriched_results)} publications")
+        return enriched_results
 
     def _download_pdfs(self, results: List[PublicationSearchResult]) -> None:
         """

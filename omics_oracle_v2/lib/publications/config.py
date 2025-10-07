@@ -125,6 +125,38 @@ class PDFConfig(BaseModel):
         validate_assignment = True
 
 
+class LLMConfig(BaseModel):
+    """
+    Configuration for LLM-powered citation analysis (Week 3 Day 15-17).
+
+    Enables deep semantic understanding of how datasets are used in citing papers.
+
+    Attributes:
+        provider: LLM provider ("openai", "anthropic", "ollama")
+        model: Model name
+        api_key: API key (for cloud providers)
+        base_url: Base URL (for Ollama)
+        cache_enabled: Enable response caching
+        batch_size: Papers to analyze per batch
+        max_tokens: Maximum tokens per response
+        temperature: Generation temperature
+    """
+
+    provider: str = Field("openai", description="LLM provider")
+    model: str = Field("gpt-4-turbo-preview", description="Model name")
+    api_key: Optional[str] = Field(None, description="API key for cloud providers")
+    base_url: Optional[str] = Field(None, description="Base URL for Ollama")
+    cache_enabled: bool = Field(True, description="Enable response caching")
+    batch_size: int = Field(5, ge=1, le=20, description="Papers per batch")
+    max_tokens: int = Field(2000, ge=100, le=4000, description="Max tokens per response")
+    temperature: float = Field(0.1, ge=0.0, le=1.0, description="Generation temperature")
+
+    class Config:
+        """Pydantic config."""
+
+        validate_assignment = True
+
+
 @dataclass
 class FuzzyDeduplicationConfig:
     """
@@ -191,6 +223,7 @@ class PublicationSearchConfig:
     pubmed_config: PubMedConfig = field(default_factory=lambda: PubMedConfig(email="user@example.com"))
     scholar_config: GoogleScholarConfig = field(default_factory=GoogleScholarConfig)
     pdf_config: PDFConfig = field(default_factory=PDFConfig)
+    llm_config: LLMConfig = field(default_factory=LLMConfig)  # Week 3 Day 15-17
     fuzzy_dedup_config: FuzzyDeduplicationConfig = field(
         default_factory=FuzzyDeduplicationConfig
     )  # Week 3 Day 14

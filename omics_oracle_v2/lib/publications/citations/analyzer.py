@@ -79,14 +79,15 @@ class CitationAnalyzer:
         """
         contexts = []
 
-        # Google Scholar provides snippets in search results
+        # Google Scholar provides snippets in search results (stored in metadata)
         # These are the citation contexts
-        if hasattr(citing_publication, "snippet") and citing_publication.snippet:
+        snippet = citing_publication.metadata.get("snippet")
+        if snippet:
             context = CitationContext(
                 citing_paper_id=citing_publication.doi or citing_publication.title,
                 cited_paper_id=cited_publication.doi or cited_publication.title,
-                context_text=citing_publication.snippet,
-                sentence=citing_publication.snippet,
+                context_text=snippet,
+                sentence=snippet,
             )
             contexts.append(context)
 
