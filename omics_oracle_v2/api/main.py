@@ -34,10 +34,13 @@ from omics_oracle_v2.api.metrics import PrometheusMetricsMiddleware
 from omics_oracle_v2.api.middleware import ErrorHandlingMiddleware, RequestLoggingMiddleware
 from omics_oracle_v2.api.routes import (
     agents_router,
+    analytics_router,
     auth_router,
     batch_router,
     health_router,
     metrics_router,
+    predictions_router,
+    recommendations_router,
     users_router,
     websocket_router,
     workflows_router,
@@ -175,6 +178,11 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     app.include_router(batch_router, prefix="/api", tags=["Batch"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
     app.include_router(metrics_router, tags=["Metrics"])
+
+    # ML-enhanced routes (Day 29)
+    app.include_router(recommendations_router, prefix="/api/recommendations", tags=["ML - Recommendations"])
+    app.include_router(predictions_router, prefix="/api/predictions", tags=["ML - Predictions"])
+    app.include_router(analytics_router, prefix="/api/analytics", tags=["ML - Analytics"])
 
     # Legacy v1 routes for backwards compatibility (will be removed after frontend updates)
     app.include_router(auth_router, prefix="/api/v1")
