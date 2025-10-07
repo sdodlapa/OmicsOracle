@@ -1,0 +1,99 @@
+version: '3.8'
+
+services:
+  # Main API service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.production
+    container_name: omics_oracle_api
+    ports:
+      - "8000:8000"
+    environment:
+      - ENV=production
+      - DEBUG=false
+      - SECRET_KEY=${SECRET_KEY:-changeme_in_production}
+      - DATABASE_URL=${DATABASE_URL:-sqlite:///./omics_oracle.db}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - NCBI_EMAIL=${NCBI_EMAIL:-your.email@example.com}
+      - NCBI_API_KEY=${NCBI_API_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - CORS_ORIGINS=${CORS_ORIGINS:-https://omicsoracle.com}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    depends_on:
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    labels:
+      - "com.omicsoracle.service=api"
+      - "com.omicsoracle.version=1.0.0"
+
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: omics_oracle_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Prometheus metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: omics_oracle_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    restart: unless-stopped
+    depends_on:
+      - api
+
+  # Grafana dashboards
+  grafana:
+    image: grafana/grafana:latest
+    container_name: omics_oracle_grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+volumes:
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  default:
+    name: omics_oracle_network

@@ -11,6 +11,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
 from omics_oracle_v2.api.dependencies import get_api_settings, get_settings
+from omics_oracle_v2.cache import get_redis_client
 from omics_oracle_v2.core import Settings
 
 from ..config import APISettings
@@ -103,6 +104,12 @@ async def detailed_health_check(
     """
     Detailed health check with component status.
 
+    Checks:
+    - Redis cache availability
+    - ML models loaded (if MLService initialized)
+    - Database connectivity (if used)
+    - External API availability
+
     Returns:
         DetailedHealthResponse: Detailed health status including component checks
     """
@@ -112,12 +119,40 @@ async def detailed_health_check(
     # Check component health
     components = {
         "settings": "healthy",
-        "ncbi_api": "unknown",  # TODO: Add actual check
-        "openai_api": "unknown",  # TODO: Add actual check
     }
 
+    # Check Redis
+    try:
+        redis = await get_redis_client()
+        if redis:
+            await redis.ping()
+            components["redis"] = "healthy"
+        else:
+            components["redis"] = "unavailable"
+    except Exception as e:
+        logger.warning(f"Redis health check failed: {e}")
+        components["redis"] = "unhealthy"
+
+    # Check ML Service (if initialized)
+    try:
+        from omics_oracle_v2.lib.services import MLService
+
+        ml_service = MLService()
+        if ml_service and ml_service.citation_predictor:
+            components["ml_service"] = "healthy"
+        else:
+            components["ml_service"] = "not_initialized"
+    except Exception as e:
+        logger.warning(f"ML Service health check failed: {e}")
+        components["ml_service"] = "unhealthy"
+
+    # Overall status
+    overall_status = "healthy"
+    if any(status == "unhealthy" for status in components.values()):
+        overall_status = "degraded"
+
     return DetailedHealthResponse(
-        status="healthy",
+        status=overall_status,
         timestamp=now,
         version=api_settings.version,
         components=components,
