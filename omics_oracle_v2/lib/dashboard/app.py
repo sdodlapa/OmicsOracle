@@ -5,6 +5,7 @@ Streamlit-based web application for biomarker search and analysis.
 """
 
 import asyncio
+from datetime import datetime
 from typing import Any, Dict, Optional
 
 try:
@@ -19,6 +20,7 @@ from omics_oracle_v2.lib.dashboard.components import (
     VisualizationPanel,
 )
 from omics_oracle_v2.lib.dashboard.config import DashboardConfig
+from omics_oracle_v2.lib.dashboard.search_history import SearchHistoryManager, SearchRecord, SearchTemplate
 
 
 class DashboardApp:
@@ -34,6 +36,7 @@ class DashboardApp:
             raise ImportError("Streamlit is required for dashboard")
 
         self.config = config or DashboardConfig()
+        self.history_manager = SearchHistoryManager()
         self._setup_page()
         self._init_session_state()
 
@@ -105,12 +108,50 @@ class DashboardApp:
             st.divider()
 
             # Search history
-            if st.session_state.search_history:
-                st.subheader("Recent Searches")
-                for query in st.session_state.search_history[-5:]:
-                    if st.button(query, key=f"history_{query}"):
-                        st.session_state.current_query = query
+            st.subheader(":clock3: Search History")
+
+            # Recent searches
+            recent_queries = self.history_manager.get_recent_queries(limit=5)
+            if recent_queries:
+                st.caption("Recent searches:")
+                for query in recent_queries:
+                    col1, col2 = st.columns([4, 1])
+                    with col1:
+                        if st.button(
+                            f":mag: {query[:40]}..." if len(query) > 40 else f":mag: {query}",
+                            key=f"history_{query}",
+                            use_container_width=True,
+                        ):
+                            st.session_state.current_query = query
+                            st.rerun()
+                    with col2:
+                        if st.button(
+                            ":floppy_disk:",
+                            key=f"save_{query}",
+                            help="Save as template",
+                        ):
+                            st.session_state.save_template_query = query
+                            st.rerun()
+
+            # Saved templates
+            templates = self.history_manager.get_templates()
+            if templates:
+                st.caption("Saved templates:")
+                for template in templates[:3]:
+                    if st.button(
+                        f":bookmark: {template.name}",
+                        key=f"template_{template.name}",
+                        use_container_width=True,
+                        help=template.description,
+                    ):
+                        st.session_state.current_query = template.query
                         st.rerun()
+
+            # History stats
+            stats = self.history_manager.get_stats()
+            if stats["total_searches"] > 0:
+                st.caption("Statistics:")
+                st.metric("Total Searches", stats["total_searches"])
 
             st.divider()
 
@@ -171,11 +212,50 @@ class DashboardApp:
                 st.divider()
                 col1, col2, col3 = st.columns([1, 1, 2])
                 with col1:
-                    if st.button(":inbox_tray: Export JSON"):
+                    if st.button("Export JSON"):
                         self._export_results("json")
                 with col2:
-                    if st.button(":page_facing_up: Export CSV"):
+                    if st.button("Export CSV"):
                         self._export_results("csv")
+
+        # Template save dialog
+        if "save_template_query" in st.session_state:
+            self._show_template_dialog(st.session_state.save_template_query)
+
+    def _show_template_dialog(self, query: str) -> None:
+        """Show dialog to save search as template.
+
+        Args:
+            query: Query to save as template
+        """
+        with st.form("save_template_form"):
+            st.subheader("Save as Template")
+
+            name = st.text_input(
+                "Template Name", value=f"Template_{len(self.history_manager.get_templates()) + 1}"
+            )
+            description = st.text_area("Description", value=f"Search for: {query}")
+            tags_input = st.text_input("Tags (comma-separated)", value="")
+
+            submitted = st.form_submit_button("Save Template")
+
+            if submitted and name:
+                tags = [tag.strip() for tag in tags_input.split(",") if tag.strip()]
+
+                template = SearchTemplate(
+                    name=name,
+                    description=description,
+                    query=query,
+                    databases=["pubmed"],
+                    year_range=(2000, 2024),
+                    max_results=100,
+                    tags=tags,
+                )
+
+                self.history_manager.save_template(template)
+                st.success(f"Template '{name}' saved!")
+                if "save_template_query" in st.session_state:
+                    del st.session_state.save_template_query
 
     def _execute_search(self, params: Dict[str, Any]) -> None:
         """Execute search with given parameters.
@@ -185,7 +265,7 @@ class DashboardApp:
         """
         query = params["query"]
 
-        # Add to history
+        # Add to session history
         if query not in st.session_state.search_history:
             st.session_state.search_history.append(query)
 
@@ -201,6 +281,7 @@ class DashboardApp:
                 # Run async search
                 loop = asyncio.new_event_loop()
                 asyncio.set_event_loop(loop)
+                search_start = datetime.now()
                 results = loop.run_until_complete(
                     pipeline.search(
                         query=query,
@@ -208,12 +289,27 @@ class DashboardApp:
                         max_results=params["max_results"],
                     )
                 )
+                search_end = datetime.now()
+                execution_time = (search_end - search_start).total_seconds()
+
+                # Save to history manager
+                record = SearchRecord(
+                    query=query,
+                    databases=params["databases"],
+                    year_range=params.get("year_range", (2000, 2024)),
+                    max_results=params["max_results"],
+                    timestamp=search_start.isoformat(),
+                    result_count=len(results),
+                    execution_time=execution_time,
+                    use_llm=params.get("use_llm", False),
+                )
+                self.history_manager.add_search(record)
 
                 # Process results
                 st.session_state.search_results = self._process_results(results, params)
                 st.session_state.current_query = query
 
-                st.success(f"Found {len(results)} results!")
+                st.success(f"Found {len(results)} results in {execution_time:.2f}s!")
 
             except Exception as e:
                 st.error(f"Search failed: {str(e)}")
@@ -393,7 +489,7 @@ class DashboardApp:
         if format == "json":
             data = json.dumps(st.session_state.search_results, indent=2)
             st.download_button(
-                "📥 Download JSON",
+                "Download JSON",
                 data=data,
                 file_name=filename,
                 mime="application/json",
@@ -403,7 +499,7 @@ class DashboardApp:
 
             df = pd.DataFrame(st.session_state.search_results.get("publications", []))
             csv = df.to_csv(index=False)
-            st.download_button("📥 Download CSV", data=csv, file_name=filename, mime="text/csv")
+            st.download_button("Download CSV", data=csv, file_name=filename, mime="text/csv")
 
 
 def main():
