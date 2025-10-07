@@ -1,0 +1,70 @@
+{
+  "type": "TrendVisualizer",
+  "config": {
+    "width": 1200,
+    "height": 800,
+    "theme": "plotly_white",
+    "color_scheme": "default",
+    "font_family": "Arial, sans-serif",
+    "font_size": 12,
+    "show_legend": true,
+    "interactive": true,
+    "export_format": "html"
+  },
+  "data": {
+    "citation_timeline": {
+      "dates": [
+        "2020-01-01",
+        "2020-01-31",
+        "2020-03-01",
+        "2020-03-31",
+        "2020-04-30",
+        "2020-05-30",
+        "2020-06-29",
+        "2020-07-29",
+        "2020-08-28",
+        "2020-09-27",
+        "2020-10-27",
+        "2020-11-26"
+      ],
+      "counts": [
+        10,
+        15,
+        22,
+        28,
+        35,
+        42,
+        38,
+        45,
+        52,
+        48,
+        55,
+        60
+      ],
+      "peaks": [
+        {
+          "date": "2020-06-29",
+          "count": 45,
+          "reason": "Major conference"
+        },
+        {
+          "date": "2020-10-27",
+          "count": 55,
+          "reason": "Review publication"
+        }
+      ],
+      "forecast": {
+        "dates": [
+          "2020-12-26",
+          "2021-01-25",
+          "2021-02-24"
+        ],
+        "values": [
+          65,
+          70,
+          72
+        ]
+      }
+    }
+  }
+}

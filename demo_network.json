@@ -1,0 +1,137 @@
+{
+  "type": "CitationNetworkVisualizer",
+  "config": {
+    "width": 1200,
+    "height": 800,
+    "theme": "plotly_white",
+    "color_scheme": "default",
+    "font_family": "Arial, sans-serif",
+    "font_size": 12,
+    "show_legend": true,
+    "interactive": true,
+    "export_format": "html"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "CA-125",
+        "type": "biomarker",
+        "label": "CA-125 (Ovarian Cancer Marker)",
+        "citations": 850,
+        "impact": 9.2
+      },
+      {
+        "id": "HE4",
+        "type": "biomarker",
+        "label": "HE4 (Human Epididymis Protein 4)",
+        "citations": 620,
+        "impact": 8.5
+      },
+      {
+        "id": "PSA",
+        "type": "biomarker",
+        "label": "PSA (Prostate-Specific Antigen)",
+        "citations": 1200,
+        "impact": 9.8
+      },
+      {
+        "id": "study_2020",
+        "type": "paper",
+        "label": "Smith et al. (2020): CA-125 Diagnostic Value",
+        "citations": 145,
+        "impact": 7.8
+      },
+      {
+        "id": "study_2021",
+        "type": "paper",
+        "label": "Jones et al. (2021): HE4 in Ovarian Cancer",
+        "citations": 98,
+        "impact": 6.9
+      },
+      {
+        "id": "study_2022",
+        "type": "paper",
+        "label": "Brown et al. (2022): Combined Biomarkers",
+        "citations": 76,
+        "impact": 7.2
+      },
+      {
+        "id": "ovarian_cancer",
+        "type": "disease",
+        "label": "Ovarian Cancer",
+        "citations": 2500,
+        "impact": 10.0
+      },
+      {
+        "id": "prostate_cancer",
+        "type": "disease",
+        "label": "Prostate Cancer",
+        "citations": 3200,
+        "impact": 10.0
+      },
+      {
+        "id": "dataset_tcga",
+        "type": "dataset",
+        "label": "TCGA Ovarian Cancer Dataset",
+        "citations": 450,
+        "impact": 8.9
+      }
+    ],
+    "edges": [
+      {
+        "source": "study_2020",
+        "target": "CA-125",
+        "relationship": "studies",
+        "strength": 0.95
+      },
+      {
+        "source": "study_2021",
+        "target": "HE4",
+        "relationship": "studies",
+        "strength": 0.92
+      },
+      {
+        "source": "study_2022",
+        "target": "CA-125",
+        "relationship": "studies",
+        "strength": 0.88
+      },
+      {
+        "source": "study_2022",
+        "target": "HE4",
+        "relationship": "studies",
+        "strength": 0.85
+      },
+      {
+        "source": "CA-125",
+        "target": "ovarian_cancer",
+        "relationship": "associated_with",
+        "strength": 0.98
+      },
+      {
+        "source": "HE4",
+        "target": "ovarian_cancer",
+        "relationship": "associated_with",
+        "strength": 0.94
+      },
+      {
+        "source": "PSA",
+        "target": "prostate_cancer",
+        "relationship": "associated_with",
+        "strength": 0.99
+      },
+      {
+        "source": "dataset_tcga",
+        "target": "ovarian_cancer",
+        "relationship": "contains_data_for",
+        "strength": 0.9
+      },
+      {
+        "source": "study_2020",
+        "target": "dataset_tcga",
+        "relationship": "uses",
+        "strength": 0.75
+      }
+    ]
+  }
+}
