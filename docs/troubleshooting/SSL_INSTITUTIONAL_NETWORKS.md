@@ -73,7 +73,7 @@ Results: 5 publications found in 1.8s
    ```bash
    # Find certifi location
    python -c "import certifi; print(certifi.where())"
-   
+
    # Append institution cert
    cat ~/Downloads/gatech-ca.crt >> $(python -c "import certifi; print(certifi.where())")
    ```
@@ -136,7 +136,7 @@ Then open http://localhost:8502 and search!
 4. **Workaround:** `PYTHONHTTPSVERIFY=0` tells Python to skip verification
 5. **Result:** PubMed works!
 
-⚠️ **Security Note:** 
+⚠️ **Security Note:**
 - This disables SSL verification completely
 - Only use on trusted networks (like campus network)
 - For production, install proper certificates

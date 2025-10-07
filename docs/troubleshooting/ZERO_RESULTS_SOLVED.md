@@ -1,6 +1,6 @@
 # Zero Results Issue - SOLVED! ✅
 
-**Date:** October 7, 2025  
+**Date:** October 7, 2025
 **Status:** ✅ **ROOT CAUSE IDENTIFIED AND FIXED**
 
 ---
@@ -36,7 +36,7 @@ $ python test_search_debug.py
 
 PubMed search error: SSL: CERTIFICATE_VERIFY_FAILED
   Cause: self-signed certificate in certificate chain
-  
+
 Google Scholar search failed: Cannot Fetch from Google Scholar
   Cause: Rate limiting / IP blocking
 
@@ -104,7 +104,7 @@ Found: 5 publications in 1.8s
    ```bash
    # Find certifi location
    python -c "import certifi; print(certifi.where())"
-   
+
    # Append institution cert
    cat ~/Downloads/gatech-ca.crt >> $(python -c "import certifi; print(certifi.where())")
    ```
@@ -127,7 +127,7 @@ Results:
   - Publications found: 0
   - Sources used: []
   - Search time: 30.39s
-  
+
 Error: Both sources failed
 ```
 
@@ -140,7 +140,7 @@ Results:
   - Publications found: 5
   - Sources used: ['pubmed']
   - Search time: 1.8s
-  
+
 ✅ PubMed working!
 ```
 
@@ -190,7 +190,7 @@ PubMed/NCBI
 
 ### What's Working ✅
 - ✅ PubMed search (with SSL bypass)
-- ✅ Search pipeline 
+- ✅ Search pipeline
 - ✅ Result ranking
 - ✅ Dashboard UI
 - ✅ API server
@@ -363,10 +363,10 @@ Result: Only PubMed results (Scholar blocked)
 
 ## Summary
 
-**Problem:** Zero search results due to both sources failing  
-**Cause:** Institutional SSL certificate + Google Scholar blocking  
-**Solution:** SSL bypass for testing, proper cert for production  
-**Status:** ✅ **PubMed working!**  
+**Problem:** Zero search results due to both sources failing
+**Cause:** Institutional SSL certificate + Google Scholar blocking
+**Solution:** SSL bypass for testing, proper cert for production
+**Status:** ✅ **PubMed working!**
 
 **Next Action:**
 ```bash

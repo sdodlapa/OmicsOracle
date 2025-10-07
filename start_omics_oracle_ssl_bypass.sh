@@ -57,19 +57,19 @@ check_port() {
 cleanup() {
     echo ""
     echo "Shutting down services..."
-    
+
     # Kill API server
     if [ ! -z "$API_PID" ] && kill -0 $API_PID 2>/dev/null; then
         kill $API_PID
         echo "  - API server stopped"
     fi
-    
+
     # Kill dashboard
     if [ ! -z "$DASHBOARD_PID" ] && kill -0 $DASHBOARD_PID 2>/dev/null; then
         kill $DASHBOARD_PID
         echo "  - Dashboard stopped"
     fi
-    
+
     echo "All services stopped."
     exit 0
 }
@@ -97,9 +97,11 @@ echo ""
 
 # Start API Server
 echo "Starting API server (port $API_PORT)..."
-python scripts/run_api.py --port $API_PORT > $API_LOG 2>&1 &
+export OMICS_DB_URL="sqlite+aiosqlite:///./omics_oracle.db"
+export OMICS_RATE_LIMIT_FALLBACK_TO_MEMORY=true
+python -m omics_oracle_v2.api.main > $API_LOG 2>&1 &
 API_PID=$!
-sleep 2
+sleep 3
 
 if ! kill -0 $API_PID 2>/dev/null; then
     echo -e "${RED}[ERROR]${NC} API server failed to start"
@@ -170,11 +172,11 @@ while true; do
         echo -e "${RED}[ERROR]${NC} API server died unexpectedly"
         exit 1
     fi
-    
+
     if ! kill -0 $DASHBOARD_PID 2>/dev/null; then
         echo -e "${RED}[ERROR]${NC} Dashboard died unexpectedly"
         exit 1
     fi
-    
+
     sleep 5
 done

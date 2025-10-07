@@ -6,9 +6,15 @@ through NCBI's E-utilities API.
 """
 
 import logging
+import os
+import ssl
 import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+
+# Disable SSL verification if environment variable is set (for institutional networks)
+if os.getenv("PYTHONHTTPSVERIFY", "1") == "0":
+    ssl._create_default_https_context = ssl._create_unverified_context
 
 try:
     from Bio import Entrez, Medline
@@ -29,6 +35,10 @@ from omics_oracle_v2.lib.publications.config import PubMedConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
 
 logger = logging.getLogger(__name__)
+
+# Log SSL bypass status after logger is defined
+if os.getenv("PYTHONHTTPSVERIFY", "1") == "0":
+    logger.info("SSL verification disabled for PubMed (PYTHONHTTPSVERIFY=0)")
 
 
 class PubMedClient(BasePublicationClient):

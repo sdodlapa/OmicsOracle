@@ -240,12 +240,12 @@ Found 0 results in 30.39s!
 ```
 Found 0 results in 30.39s!
 
-⚠️ Search returned 0 results. 
-   Sources used: [] 
+⚠️ Search returned 0 results.
+   Sources used: []
    Total found before ranking: 0
 
-❌ No search sources were successful. 
-   PubMed may have SSL certificate issues (see logs). 
+❌ No search sources were successful.
+   PubMed may have SSL certificate issues (see logs).
    Try unchecking PubMed and using only Google Scholar.
 ```
 

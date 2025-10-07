@@ -28,9 +28,15 @@ Example:
 """
 
 import logging
+import os
+import ssl
 import time
 from typing import List, Optional, Dict, Any
 from datetime import datetime
+
+# Disable SSL verification if environment variable is set (for institutional networks)
+if os.getenv("PYTHONHTTPSVERIFY", "1") == "0":
+    ssl._create_default_https_context = ssl._create_unverified_context
 
 try:
     from scholarly import scholarly
