@@ -304,6 +304,26 @@ class DashboardApp:
                 # Extract publications from result
                 results = search_result.publications if hasattr(search_result, "publications") else []
 
+                # Convert PublicationSearchResult objects to dictionaries for processing
+                results_dicts = []
+                for search_res in results:
+                    pub = search_res.publication
+                    pub_dict = {
+                        "id": pub.pmid or pub.doi or pub.title,
+                        "title": pub.title,
+                        "abstract": pub.abstract or "",
+                        "authors": pub.authors,
+                        "journal": pub.journal,
+                        "year": pub.publication_date.year if pub.publication_date else None,
+                        "citations": pub.citations,
+                        "source": pub.source.value,
+                        "relevance_score": search_res.relevance_score,
+                        "pmid": pub.pmid,
+                        "doi": pub.doi,
+                        "url": pub.url,
+                    }
+                    results_dicts.append(pub_dict)
+
                 # Debug logging
                 if len(results) == 0:
                     st.warning(
@@ -331,8 +351,8 @@ class DashboardApp:
                 )
                 self.history_manager.add_search(record)
 
-                # Process results
-                st.session_state.search_results = self._process_results(results, params)
+                # Process results (using dictionaries)
+                st.session_state.search_results = self._process_results(results_dicts, params)
                 st.session_state.current_query = query
 
                 st.success(f"Found {len(results)} results in {execution_time:.2f}s!")

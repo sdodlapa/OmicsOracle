@@ -2,8 +2,8 @@
 
 ## Status: READY TO TEST
 
-**Dashboard:** http://localhost:8502  
-**API:** http://localhost:8000  
+**Dashboard:** http://localhost:8502
+**API:** http://localhost:8000
 
 **SSL Bypass:** ✅ Active (`PYTHONHTTPSVERIFY=0`)
 
@@ -18,7 +18,7 @@ http://localhost:8502
 
 ### Step 2: Configure Search
 - **Query:** `JOint profiling of HiC and DNA methylation`
-- **Databases:** 
+- **Databases:**
   - ✅ **PubMed** (CHECK THIS)
   - ☐ Google Scholar (UNCHECK - it's blocked)
 - **Max Results:** 10
@@ -46,7 +46,7 @@ Example publications:
    ```bash
    tail -20 /tmp/omics_dashboard.log
    ```
-   
+
 2. **Look for:**
    - ❌ SSL errors → SSL bypass not working
    - ✅ "Sources used: ['pubmed']" → Working!
@@ -94,10 +94,10 @@ Publications found: 5
 
 ## Current Process Status
 
-✅ API Server: PID 50625 (http://localhost:8000)  
-✅ Dashboard: PID 50629 (http://localhost:8502)  
-✅ SSL Bypass: Active in process environment  
-✅ Logs: /tmp/omics_*.log  
+✅ API Server: PID 50625 (http://localhost:8000)
+✅ Dashboard: PID 50629 (http://localhost:8502)
+✅ SSL Bypass: Active in process environment
+✅ Logs: /tmp/omics_*.log
 
 ---
 
