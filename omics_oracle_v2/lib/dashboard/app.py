@@ -71,13 +71,17 @@ class DashboardApp:
     def _init_session_state(self) -> None:
         """Initialize session state variables."""
         if "search_results" not in st.session_state:
-            st.session_state["search_results"] = None
+            st.session_state.search_results = None
         if "current_query" not in st.session_state:
-            st.session_state["current_query"] = ""
+            st.session_state.current_query = ""
         if "search_history" not in st.session_state:
-            st.session_state["search_history"] = []
+            st.session_state.search_history = []
         if "viz_data" not in st.session_state:
-            st.session_state["viz_data"] = None
+            st.session_state.viz_data = None
+        if "preferences_loaded" not in st.session_state:
+            st.session_state.preferences_loaded = False
+        if "history_loaded" not in st.session_state:
+            st.session_state.history_loaded = False
 
     def run(self) -> None:
         """Run the dashboard application."""
@@ -275,10 +279,19 @@ class DashboardApp:
         with st.spinner(f"Searching for: {query}..."):
             try:
                 # Import search functionality
+                from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
                 from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
 
+                # Create pipeline config
+                pipeline_config = PublicationSearchConfig(
+                    enable_pubmed="pubmed" in params["databases"],
+                    enable_scholar="scholar" in params["databases"],
+                    enable_citations=params.get("use_llm", False),
+                    max_total_results=params["max_results"],
+                )
+
                 # Execute search
-                pipeline = PublicationSearchPipeline()
+                pipeline = PublicationSearchPipeline(pipeline_config)
 
                 # Run async search
                 loop = asyncio.new_event_loop()

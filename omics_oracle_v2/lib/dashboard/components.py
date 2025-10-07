@@ -53,6 +53,7 @@ class SearchPanel(BasePanel):
             "Search Query",
             placeholder="Enter biomarker search query...",
             help="Search for biomarkers, publications, or research topics",
+            key="search_query_input",
         )
 
         col1, col2 = st.columns(2)
@@ -64,6 +65,7 @@ class SearchPanel(BasePanel):
                 self.config.default_databases,
                 default=self.config.default_databases,
                 help="Select databases to search",
+                key="search_databases",
             )
 
         with col2:
@@ -74,6 +76,7 @@ class SearchPanel(BasePanel):
                 2025,
                 (2015, 2024),
                 help="Filter publications by year",
+                key="search_year_range",
             )
 
         # Advanced options
@@ -87,6 +90,7 @@ class SearchPanel(BasePanel):
                     max_value=self.config.max_results,
                     value=50,
                     step=10,
+                    key="search_max_results",
                 )
 
             with col4:
@@ -94,10 +98,13 @@ class SearchPanel(BasePanel):
                     "Enable LLM Analysis",
                     value=False,
                     disabled=not self.config.enable_llm_analysis,
+                    key="search_enable_llm",
                 )
 
         # Search button
-        search_clicked = st.button(":mag: Search", type="primary", use_container_width=True)
+        search_clicked = st.button(
+            ":mag: Search", type="primary", use_container_width=True, key="search_button"
+        )
 
         return {
             "query": query,
@@ -144,6 +151,7 @@ class VisualizationPanel(BasePanel):
         viz_type = st.selectbox(
             "Visualization Type",
             self.viz_types,
+            key="viz_type_selector",
         )
 
         # Render based on type
