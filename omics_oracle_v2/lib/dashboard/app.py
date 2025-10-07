@@ -20,6 +20,7 @@ from omics_oracle_v2.lib.dashboard.components import (
     VisualizationPanel,
 )
 from omics_oracle_v2.lib.dashboard.config import DashboardConfig
+from omics_oracle_v2.lib.dashboard.preferences import PreferencesManager
 from omics_oracle_v2.lib.dashboard.search_history import SearchHistoryManager, SearchRecord, SearchTemplate
 
 
@@ -37,6 +38,7 @@ class DashboardApp:
 
         self.config = config or DashboardConfig()
         self.history_manager = SearchHistoryManager()
+        self.preferences_manager = PreferencesManager()
         self._setup_page()
         self._init_session_state()
 
