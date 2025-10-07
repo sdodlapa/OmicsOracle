@@ -304,6 +304,20 @@ class DashboardApp:
                 # Extract publications from result
                 results = search_result.publications if hasattr(search_result, "publications") else []
 
+                # Debug logging
+                if len(results) == 0:
+                    st.warning(
+                        f"Search returned 0 results. Sources used: {search_result.sources_used}. "
+                        f"Total found before ranking: {search_result.total_found}"
+                    )
+                    # Check if it's just SSL errors
+                    if not search_result.sources_used:
+                        st.error(
+                            "No search sources were successful. "
+                            "PubMed may have SSL certificate issues (see logs). "
+                            "Try unchecking PubMed and using only Google Scholar."
+                        )
+
                 # Save to history manager
                 record = SearchRecord(
                     query=query,
