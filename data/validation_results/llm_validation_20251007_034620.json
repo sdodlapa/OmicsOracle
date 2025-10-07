@@ -1,0 +1,174 @@
+{
+  "baseline": {
+    "metrics": {
+      "accuracy": 0.625,
+      "precision": 1.0,
+      "recall": 0.25,
+      "f1_score": 0.4,
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 3
+    },
+    "time": 0.0005369186401367188,
+    "time_per_paper": 6.711483001708984e-05,
+    "predictions": [
+      {
+        "dataset_reused": true,
+        "confidence": 0.6,
+        "usage_type": "novel_application",
+        "methodology": "machine learning",
+        "key_findings": [
+          "found 15 genes associated with survival"
+        ],
+        "reasoning": "Keyword matching based on 1 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [
+          "bulk rna-seq approaches from tcga showed less granularity in capturing tumor heterogeneity"
+        ],
+        "reasoning": "Keyword matching based on 1 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "deep learning",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      }
+    ]
+  },
+  "llm": {
+    "metrics": {
+      "accuracy": 0.625,
+      "precision": 0.6666666666666666,
+      "recall": 0.5,
+      "f1_score": 0.5714285714285715,
+      "true_positives": 2,
+      "false_positives": 1,
+      "false_negatives": 2
+    },
+    "time": 114.83709502220154,
+    "time_per_paper": 14.354636877775192,
+    "predictions": [
+      {
+        "dataset_reused": true,
+        "confidence": 0.95,
+        "usage_type": "novel_application",
+        "methodology": "machine learning - random forest",
+        "key_findings": [
+          "Identified 15 genes associated with survival in breast cancer."
+        ],
+        "reasoning": "The citing paper explicitly states that they 'downloaded TCGA breast cancer data and performed differential expression analysis,' which indicates that they not only accessed but also analyzed the data to identify prognostic biomarkers. This suggests a novel application of the TCGA dataset to discover new biomarkers using machine learning techniques. The confidence in this analysis is high due to the clear statement of data usage."
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.95,
+        "usage_type": "review",
+        "methodology": null,
+        "key_findings": [],
+        "reasoning": "The citing paper is a review of major cancer databases, including TCGA, focusing on their structure and utility for research. The citation context does not indicate that the authors downloaded, analyzed, or processed raw data from TCGA. Instead, it suggests that TCGA was mentioned as part of a broader discussion on cancer genomics databases. There is no evidence of direct data usage or analysis, which aligns more with a review of existing resources rather than a novel analysis or validation of data from TCGA."
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.95,
+        "usage_type": "citation_only",
+        "methodology": null,
+        "key_findings": [],
+        "reasoning": "The citing paper mentions that their method is 'compatible with TCGA data' but does not provide any evidence of downloading, analyzing, or processing data from TCGA. This statement suggests a potential for application rather than an actual application, indicating that they have not directly used the dataset for analysis in their study. The language used ('compatible with') falls into the category of discussing potential use rather than demonstrating actual use, leading to the conclusion that the dataset was not reused."
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.95,
+        "usage_type": "citation_only",
+        "methodology": null,
+        "key_findings": [
+          "Significant associations found between tumor mutational burden and immunotherapy response.",
+          "PD-L1 expression correlates with immunotherapy effectiveness in melanoma."
+        ],
+        "reasoning": "The citing paper mentions using patient samples obtained through institutional collaboration and references genomic profiles from publicly available sources, but does not explicitly state that they downloaded, analyzed, or reanalyzed data from TCGA. The language used ('referenced from') suggests they may have used TCGA data for background or comparison rather than direct analysis or validation of their own dataset. Without clear evidence of downloading or direct analysis of TCGA data, it cannot be confidently stated that the dataset was reused."
+      },
+      {
+        "dataset_reused": true,
+        "confidence": 0.9,
+        "usage_type": "comparison_only",
+        "methodology": "single-cell RNA sequencing",
+        "key_findings": [
+          "Single-cell RNA-seq provides more granularity in capturing tumor heterogeneity compared to bulk RNA-seq approaches."
+        ],
+        "reasoning": "The citing paper explicitly mentions comparing their single-cell data to TCGA bulk sequencing, indicating they have accessed and directly used TCGA data for comparison purposes. This suggests an actual analysis of TCGA data to validate or contrast their findings against the bulk sequencing data available from TCGA. The specific mention of 'comparing our single-cell data to TCGA bulk sequencing' strongly implies that TCGA data was reanalyzed or at least directly compared in a manner that goes beyond mere citation or methodological reference, leading to the conclusion that the dataset was reused."
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.95,
+        "usage_type": "citation_only",
+        "methodology": null,
+        "key_findings": [],
+        "reasoning": "The citation context provided ('Model performance was validated across multiple cohorts showing consistent results.') does not explicitly mention downloading, obtaining, analyzing, or processing data from The Cancer Genome Atlas (TCGA). The language used is vague and does not provide clear evidence of actual data usage from TCGA. It suggests that the citing paper validated their model's performance but does not specify that this validation used TCGA data directly. Therefore, based on the provided information, it is classified as a citation for background or methodological reference rather than direct data reuse."
+      },
+      {
+        "dataset_reused": true,
+        "confidence": 0.9,
+        "usage_type": "novel_application",
+        "methodology": null,
+        "key_findings": [
+          "TP53 is the most frequently mutated gene across cancers.",
+          "Identification of hotspot residues in TP53 mutations."
+        ],
+        "reasoning": "The citing paper mentions analyzing mutation patterns in 10,000 samples across multiple cancer types, which implies direct usage of a large-scale genomic dataset. Given the context of leveraging 'large-scale genomic efforts' and the focus on TP53 mutations, it is highly likely that the TCGA database was used for obtaining and analyzing the raw data on TP53 mutations across cancers. The specific mention of 'our analysis spans multiple cancer types' supports the conclusion that the authors not only cited TCGA for background but actively used its data for their research. However, without explicit statements of downloading or processing TCGA data, there remains a slight uncertainty, hence the confidence level is not at the maximum."
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.95,
+        "usage_type": "methodological_reference",
+        "methodology": null,
+        "key_findings": [],
+        "reasoning": "The citing paper references TCGA's quality control metrics as a benchmark for sample preparation and sequencing, indicating they are discussing the dataset's protocol/methodology without explicitly stating they used the data themselves for analysis, reanalysis, or validation. The citation context ('Following TCGA protocols ensures data quality and reproducibility.') suggests they are endorsing the protocols rather than indicating they have directly engaged with the dataset for their research."
+      }
+    ]
+  }
+}

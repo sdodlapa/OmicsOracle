@@ -1,0 +1,44 @@
+{
+  "baseline": {
+    "metrics": {
+      "accuracy": 1.0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1_score": 1.0,
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 0
+    },
+    "time": 0.0002288818359375,
+    "time_per_paper": 7.62939453125e-05,
+    "predictions": [
+      {
+        "dataset_reused": true,
+        "confidence": 0.6,
+        "usage_type": "novel_application",
+        "methodology": "machine learning",
+        "key_findings": [
+          "found 15 genes associated with survival"
+        ],
+        "reasoning": "Keyword matching based on 1 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      }
+    ]
+  },
+  "llm": {}
+}

@@ -10,18 +10,32 @@ Contains carefully crafted prompts for:
 """
 
 # Citation Context Analysis
-CITATION_CONTEXT_ANALYSIS = """You are a biomedical research analyst. Analyze this citation to understand how a dataset/paper was used.
+CITATION_CONTEXT_ANALYSIS = """You are a biomedical research analyst. Analyze this citation to determine if they ACTUALLY USED/DOWNLOADED/ANALYZED the data, or just cited it for background/methods/comparison.
 
 CITED PAPER (original dataset paper):
 Title: {cited_title}
 Abstract: {cited_abstract}
 
-CITING PAPER (paper that used the dataset):
+CITING PAPER (paper that cited the above):
 Title: {citing_title}
 Abstract: {citing_abstract}
 
-6. **Citation context** -> Sentence/paragraph mentioning the dataset:
+CITATION CONTEXT (sentence/paragraph mentioning the dataset):
 {citation_context}
+
+CRITICAL DISTINCTION - dataset_reused should be TRUE only if:
+✅ They DOWNLOADED or OBTAINED the data
+✅ They ANALYZED or PROCESSED the raw data
+✅ They REANALYZED or VALIDATED findings using the data
+✅ Clear evidence of actual data usage (e.g., "We used TCGA data...", "Samples were obtained from...", "Data was downloaded from...")
+
+dataset_reused should be FALSE if:
+❌ Just citing as background/related work
+❌ Comparing their method to the dataset conceptually
+❌ Discussing the dataset's protocol/methodology without using data
+❌ Reviewing or summarizing the dataset
+❌ Vague language like "compatible with" or "similar to"
+❌ Only using the paper's conclusions, not the raw data
 
 Analyze and return JSON with the following structure:
 {{
@@ -41,8 +55,8 @@ Analyze and return JSON with the following structure:
 }}
 
 Field definitions:
-- dataset_reused: Did they actually use/analyze the data from the cited paper?
-- usage_type: "validation", "novel_application", "comparison", "meta_analysis", "methodology", "review"
+- dataset_reused: TRUE only if they actually downloaded/analyzed the data (not just cited it)
+- usage_type: If reused: "validation", "novel_application", "reanalysis", "meta_analysis". If NOT reused: "citation_only", "methodological_reference", "comparison_only", "review"
 - confidence: 0-1 confidence in your analysis
 - research_question: What specific question did they investigate?
 - application_domain: e.g., "breast cancer biomarker discovery", "drug response prediction"
@@ -53,9 +67,10 @@ Field definitions:
 - clinical_details: If clinically relevant, explain how (trials, validation, FDA, etc.)
 - novel_biomarkers: Any new biomarkers/genes/proteins identified
 - validation_status: "validated", "in_progress", "proposed", "none"
-- reasoning: Brief explanation of your analysis
+- reasoning: Brief explanation - specifically state WHY you classified dataset_reused as true/false
 
-Be precise and evidence-based. Only include information explicitly stated or strongly implied.
+IMPORTANT: Be CONSERVATIVE. If you're not confident they actually used the data, set dataset_reused=false.
+Only include information explicitly stated or strongly implied by concrete evidence.
 If information is not available, use null or empty arrays."""
 
 # Dataset Impact Synthesis

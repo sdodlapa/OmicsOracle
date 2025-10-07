@@ -1,0 +1,86 @@
+{
+  "baseline": {
+    "metrics": {
+      "accuracy": 0.625,
+      "precision": 1.0,
+      "recall": 0.25,
+      "f1_score": 0.4,
+      "true_positives": 1,
+      "false_positives": 0,
+      "false_negatives": 3
+    },
+    "time": 0.0005769729614257812,
+    "time_per_paper": 7.212162017822266e-05,
+    "predictions": [
+      {
+        "dataset_reused": true,
+        "confidence": 0.6,
+        "usage_type": "novel_application",
+        "methodology": "machine learning",
+        "key_findings": [
+          "found 15 genes associated with survival"
+        ],
+        "reasoning": "Keyword matching based on 1 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [
+          "bulk rna-seq approaches from tcga showed less granularity in capturing tumor heterogeneity"
+        ],
+        "reasoning": "Keyword matching based on 1 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "deep learning",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      },
+      {
+        "dataset_reused": false,
+        "confidence": 0.4,
+        "usage_type": "citation_only",
+        "methodology": "unknown",
+        "key_findings": [],
+        "reasoning": "Keyword matching based on 0 markers"
+      }
+    ]
+  },
+  "llm": {}
+}
