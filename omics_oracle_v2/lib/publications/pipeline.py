@@ -93,7 +93,7 @@ class PublicationSearchPipeline:
             logger.info("Initializing citation analyzer")
             if self.scholar_client:
                 self.citation_analyzer = CitationAnalyzer(self.scholar_client)
-                
+
                 # Initialize LLM-powered analysis if Scholar is available
                 logger.info(f"Initializing LLM citation analyzer (provider={config.llm_config.provider})")
                 # API keys come from environment variables
@@ -139,14 +139,17 @@ class PublicationSearchPipeline:
 
         # Week 4: PDF processing (after institutional access)
         if config.enable_pdf_download:
-            from omics_oracle_v2.lib.publications.pdf_downloader import PDFDownloader
             from pathlib import Path
-            
+
+            from omics_oracle_v2.lib.publications.pdf_downloader import PDFDownloader
+
             logger.info("Initializing PDF downloader")
             download_dir = Path("data/pdfs")
             self.pdf_downloader = PDFDownloader(
                 download_dir=download_dir,
-                institutional_manager=self.institutional_manager if config.enable_institutional_access else None
+                institutional_manager=self.institutional_manager
+                if config.enable_institutional_access
+                else None,
             )
         else:
             self.pdf_downloader = None
@@ -154,7 +157,7 @@ class PublicationSearchPipeline:
         # Week 4: Full-text extraction
         if config.enable_fulltext:
             from omics_oracle_v2.lib.publications.fulltext_extractor import FullTextExtractor
-            
+
             logger.info("Initializing full-text extractor")
             self.fulltext_extractor = FullTextExtractor()
         else:
@@ -324,16 +327,18 @@ class PublicationSearchPipeline:
                 logger.info("Enriching with Semantic Scholar citation data...")
                 # Extract publications from ranked results
                 publications = [result.publication for result in ranked_results]
-                
+
                 # Enrich with citations (batch processing with rate limiting)
                 enriched_pubs = self.semantic_scholar_client.enrich_publications(publications)
-                
+
                 # Update ranked results with enriched publications
                 for i, enriched_pub in enumerate(enriched_pubs):
                     ranked_results[i].publication = enriched_pub
-                
+
                 enriched_count = sum(1 for p in enriched_pubs if p.citations > 0)
-                logger.info(f"Semantic Scholar enrichment complete: {enriched_count}/{len(enriched_pubs)} publications have citation data")
+                logger.info(
+                    f"Semantic Scholar enrichment complete: {enriched_count}/{len(enriched_pubs)} publications have citation data"
+                )
             except Exception as e:
                 logger.error(f"Semantic Scholar enrichment failed: {e}")
 
@@ -561,51 +566,45 @@ class PublicationSearchPipeline:
             return
 
         publications = [result.publication for result in results]
-        
+
         # Download PDFs in batch
         logger.info(f"Downloading PDFs for {len(publications)} publications...")
-        downloaded = self.pdf_downloader.download_batch(
-            publications, 
-            max_workers=5
-        )
-        
+        downloaded = self.pdf_downloader.download_batch(publications, max_workers=5)
+
         # Extract full text if enabled
         if self.fulltext_extractor and self.config.enable_fulltext:
             logger.info(f"Extracting full text from {len(downloaded)} PDFs...")
-            
+
             for pub in publications:
                 if pub.pdf_path and Path(pub.pdf_path).exists():
                     try:
                         from datetime import datetime
-                        
+
                         # Extract text
                         full_text = self.fulltext_extractor.extract_from_pdf(Path(pub.pdf_path))
-                        
+
                         if full_text:
                             pub.full_text = full_text
                             pub.full_text_source = "pdf"
                             pub.text_length = len(full_text)
                             pub.extraction_date = datetime.now()
-                            
+
                             # Get text stats
                             stats = self.fulltext_extractor.get_text_stats(full_text)
                             pub.metadata["text_stats"] = stats
-                            
-                            logger.info(
-                                f"Extracted {stats['words']} words from {pub.title[:50]}..."
-                            )
+
+                            logger.info(f"Extracted {stats['words']} words from {pub.title[:50]}...")
                         else:
                             logger.warning(f"No text extracted from {pub.title[:50]}...")
-                            
+
                     except Exception as e:
                         logger.error(f"Text extraction failed for {pub.title[:50]}...: {e}")
-        
+
         # Log download statistics
         if downloaded:
             stats = self.pdf_downloader.get_download_stats()
             logger.info(
-                f"PDF download complete: {stats['total_pdfs']} PDFs, "
-                f"{stats['total_size_mb']} MB total"
+                f"PDF download complete: {stats['total_pdfs']} PDFs, " f"{stats['total_size_mb']} MB total"
             )
 
     def _extract_fulltext(self, results: List[PublicationSearchResult]) -> List[PublicationSearchResult]:

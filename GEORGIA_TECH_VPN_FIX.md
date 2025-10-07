@@ -226,7 +226,7 @@ Access URL: https://doi.org/10.1038/nbt.2808  ✅ Direct DOI link
 📄 NOMe-HiC: joint profiling of genetic variant...
    🏛️ Institutional
    📥 Access via Georgia Tech Library
-   
+
    Link: https://login.ezproxy.gatech.edu/login?url=...
    Error: DNS_PROBE_FINISHED_NXDOMAIN ❌
 ```
@@ -236,7 +236,7 @@ Access URL: https://doi.org/10.1038/nbt.2808  ✅ Direct DOI link
 📄 NOMe-HiC: joint profiling of genetic variant...
    🔐 VPN Required
    📥 Access via GT Library
-   
+
    Tooltip: "Connect to GT VPN first (vpn.gatech.edu), then click to access"
    Link: https://doi.org/10.1038/nbt.3956
    Result: Works with VPN! ✅
@@ -287,7 +287,7 @@ Access URL: https://doi.org/10.1038/nbt.2808  ✅ Direct DOI link
 
 **Cause:** Old EZProxy URLs in cache
 
-**Solution:** 
+**Solution:**
 1. ✅ **FIXED** - Code now uses direct DOI links
 2. Clear browser cache
 3. Refresh dashboard (Ctrl+F5)
@@ -313,12 +313,12 @@ Access URL: https://doi.org/10.1038/nbt.2808  ✅ Direct DOI link
 
 ## Summary of Changes
 
-✅ **Removed:** Broken EZProxy URLs for GT  
-✅ **Added:** VPN-based access with direct DOI links  
-✅ **Updated:** Dashboard badges (🔐 VPN Required)  
-✅ **Improved:** Access instructions and tooltips  
-✅ **Maintained:** EZProxy for other institutions (ODU)  
-✅ **Tested:** Working with real DOIs  
+✅ **Removed:** Broken EZProxy URLs for GT
+✅ **Added:** VPN-based access with direct DOI links
+✅ **Updated:** Dashboard badges (🔐 VPN Required)
+✅ **Improved:** Access instructions and tooltips
+✅ **Maintained:** EZProxy for other institutions (ODU)
+✅ **Tested:** Working with real DOIs
 
 ---
 
@@ -341,9 +341,9 @@ Access URL: https://doi.org/10.1038/nbt.2808  ✅ Direct DOI link
 
 ---
 
-**Status:** ✅ **FIXED AND TESTED**  
-**Last Updated:** 2024  
-**Applies to:** Georgia Tech institutional access  
+**Status:** ✅ **FIXED AND TESTED**
+**Last Updated:** 2024
+**Applies to:** Georgia Tech institutional access
 **Other Institutions:** Still use EZProxy (no changes needed)
 
 ---

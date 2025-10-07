@@ -62,17 +62,17 @@ Showing 5 results
 1. NOMe-HiC: joint profiling of genetic variant...
    Authors: Fu H, Zheng H, Chen X
    Year: 2023    Citations: 7
-   
+
    ┌────────────────┬──────────────────────────────────┐
    │ 🔐 VPN Required│  📥 Access via GT Library       │
    │                │  (Hover: Connect to GT VPN first)│
    └────────────────┴──────────────────────────────────┘
-   
+
    [Abstract ▼]
-   
+
    Click "Access via GT Library" opens:
    https://doi.org/10.1038/nbt.3956
-   
+
    ✅ Works with VPN connected!
 ```
 
@@ -299,11 +299,11 @@ Access URL: https://doi.org/10.1038/nbt.2808
 
 ### What Works Now
 
-✅ Direct DOI links (not broken EZProxy)  
-✅ VPN-based authentication for GT subscriptions  
-✅ Clear badges showing access type  
-✅ Helpful tooltips with instructions  
-✅ Open access articles (no VPN needed!)  
+✅ Direct DOI links (not broken EZProxy)
+✅ VPN-based authentication for GT subscriptions
+✅ Clear badges showing access type
+✅ Helpful tooltips with instructions
+✅ Open access articles (no VPN needed!)
 
 ### What You Need to Do
 
@@ -330,8 +330,8 @@ Access URL: https://doi.org/10.1038/nbt.2808
 
 ---
 
-**Last Updated:** October 7, 2025  
-**Status:** ✅ Working and Tested  
-**Dashboard:** http://localhost:8502  
+**Last Updated:** October 7, 2025
+**Status:** ✅ Working and Tested
+**Dashboard:** http://localhost:8502
 
 **Happy Researching! 🚀📚**

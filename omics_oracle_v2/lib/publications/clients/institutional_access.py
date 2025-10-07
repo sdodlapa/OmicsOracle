@@ -291,7 +291,7 @@ class InstitutionalAccessManager:
                 return publication.url
             else:
                 return None
-        
+
         # Other institutions: use EZProxy if configured
         if not self.config.ezproxy_url:
             return None
@@ -426,7 +426,7 @@ class InstitutionalAccessManager:
 
         # Check each method
         status["unpaywall"] = bool(self._try_unpaywall(publication))
-        
+
         # For Georgia Tech, check if VPN access is possible (DOI or URL exists)
         # For other institutions, check EZProxy
         if self.config.institution == InstitutionType.GEORGIA_TECH:
@@ -435,7 +435,7 @@ class InstitutionalAccessManager:
         else:
             status["ezproxy"] = bool(self.config.ezproxy_url and (publication.doi or publication.url))
             status["vpn"] = False
-            
+
         status["openurl"] = bool(self.config.openurl_resolver and publication.title)
         status["direct"] = bool(publication.url)
         status["pmc"] = bool(publication.pmcid)

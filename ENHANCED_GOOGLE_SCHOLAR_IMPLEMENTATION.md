@@ -1,7 +1,7 @@
 # 🎓 Enhanced Google Scholar Implementation
 
-**Date:** October 7, 2025  
-**Status:** COMPLETE - Enhanced with Citation Metrics & Cited-By Access  
+**Date:** October 7, 2025
+**Status:** COMPLETE - Enhanced with Citation Metrics & Cited-By Access
 **Location:** `omics_oracle_v2/lib/publications/clients/scholar.py`
 
 ---
@@ -10,11 +10,11 @@
 
 Replaced the basic Google Scholar client with an **enhanced version** that provides:
 
-✅ **Citation Metrics** - Full citation counts from Google Scholar  
-✅ **Cited-By Papers** - Access to papers that cite a given work  
-✅ **Author Profiles** - H-index, i10-index, and author metrics  
-✅ **Retry Logic** - Automatic retries with exponential backoff  
-✅ **Proxy Support** - Optional proxy configuration to avoid blocking  
+✅ **Citation Metrics** - Full citation counts from Google Scholar
+✅ **Cited-By Papers** - Access to papers that cite a given work
+✅ **Author Profiles** - H-index, i10-index, and author metrics
+✅ **Retry Logic** - Automatic retries with exponential backoff
+✅ **Proxy Support** - Optional proxy configuration to avoid blocking
 
 ---
 
@@ -130,26 +130,26 @@ client = GoogleScholarClient(config)
 ```python
 class GoogleScholarClient(BasePublicationClient):
     """Enhanced Google Scholar client with citation metrics."""
-    
+
     def __init__(self, config: GoogleScholarConfig):
         self.retry_count = 3
         self.retry_delay = 10  # seconds
         # Configure proxy if provided
         if config.use_proxy:
             self._configure_proxy()
-    
+
     # Core search with citations
     def search(query, max_results, year_from, year_to) -> List[Publication]
-    
+
     # Citation enrichment
     def enrich_with_citations(publication) -> Publication
-    
+
     # Cited-by analysis
     def get_cited_by_papers(publication, max_papers) -> List[Publication]
-    
+
     # Author metrics
     def get_author_info(author_name) -> Dict[str, Any]
-    
+
     # Retry logic
     def _retry_on_block(func, *args, **kwargs)
 ```
@@ -377,21 +377,21 @@ config = GoogleScholarConfig(
 ## 🔄 Comparison: Old vs Enhanced
 
 ### Old Implementation
-❌ Basic search only  
-❌ No cited-by access  
-❌ No author profiles  
-❌ No retry logic  
-❌ No proxy support  
-❌ Poor error handling  
+❌ Basic search only
+❌ No cited-by access
+❌ No author profiles
+❌ No retry logic
+❌ No proxy support
+❌ Poor error handling
 
 ### Enhanced Implementation
-✅ Search with citations  
-✅ Cited-by paper lists  
-✅ Author profile metrics  
-✅ Retry with exponential backoff  
-✅ Proxy support (ScraperAPI, etc.)  
-✅ Robust error handling  
-✅ Full metadata extraction  
+✅ Search with citations
+✅ Cited-by paper lists
+✅ Author profile metrics
+✅ Retry with exponential backoff
+✅ Proxy support (ScraperAPI, etc.)
+✅ Robust error handling
+✅ Full metadata extraction
 
 ---
 
@@ -410,9 +410,9 @@ config = GoogleScholarConfig(
 def test_search_with_citations():
     config = GoogleScholarConfig(enable=True, rate_limit_seconds=5.0)
     client = GoogleScholarClient(config)
-    
+
     results = client.search("CRISPR", max_results=5)
-    
+
     assert len(results) > 0
     assert all(pub.citations >= 0 for pub in results)
     assert all("citedby_url" in pub.metadata for pub in results)
@@ -422,15 +422,15 @@ def test_cited_by_papers():
         title="CRISPR-Cas9",
         metadata={"citedby_url": "https://scholar.google.com/..."}
     )
-    
+
     citing = client.get_cited_by_papers(pub, max_papers=10)
-    
+
     assert len(citing) > 0
     assert all(isinstance(p, Publication) for p in citing)
 
 def test_author_info():
     info = client.get_author_info("Jennifer Doudna")
-    
+
     assert info is not None
     assert info["hindex"] > 0
     assert info["citedby"] > 0
@@ -474,17 +474,17 @@ for pub in results:
 ## 🎓 Benefits Over Semantic Scholar
 
 ### Google Scholar Advantages:
-✅ **More comprehensive** - Indexes more sources than Semantic Scholar  
-✅ **Better coverage** - Includes preprints, theses, conference papers  
-✅ **Cited-by lists** - Direct access to citing papers  
-✅ **Author profiles** - H-index, i10-index, affiliation  
-✅ **Free (with limits)** - No API key required  
+✅ **More comprehensive** - Indexes more sources than Semantic Scholar
+✅ **Better coverage** - Includes preprints, theses, conference papers
+✅ **Cited-by lists** - Direct access to citing papers
+✅ **Author profiles** - H-index, i10-index, affiliation
+✅ **Free (with limits)** - No API key required
 
 ### Semantic Scholar Advantages:
-✅ **Official API** - More reliable, less likely to block  
-✅ **Higher rate limits** - 100 requests per 5 min (free tier)  
-✅ **Structured data** - Cleaner, more consistent  
-✅ **No proxy needed** - Works on institutional networks  
+✅ **Official API** - More reliable, less likely to block
+✅ **Higher rate limits** - 100 requests per 5 min (free tier)
+✅ **Structured data** - Cleaner, more consistent
+✅ **No proxy needed** - Works on institutional networks
 
 ### **Recommendation:**
 Use **both** in parallel:
@@ -493,6 +493,6 @@ Use **both** in parallel:
 
 ---
 
-**Status:** 🟢 COMPLETE - Enhanced Google Scholar Ready for Production  
-**Last Updated:** October 7, 2025  
+**Status:** 🟢 COMPLETE - Enhanced Google Scholar Ready for Production
+**Last Updated:** October 7, 2025
 **Archived Old Version:** `backups/deprecated_clients/scholar_old.py`

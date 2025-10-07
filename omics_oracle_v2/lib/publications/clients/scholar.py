@@ -21,7 +21,7 @@ Example:
     >>>
     >>> config = GoogleScholarConfig(enable=True, rate_limit_seconds=5.0)
     >>> client = GoogleScholarClient(config)
-    >>> 
+    >>>
     >>> # Search with citation enrichment
     >>> results = client.search("CRISPR cancer therapy", max_results=10)
     >>> for pub in results:
@@ -44,7 +44,7 @@ if os.getenv("PYTHONHTTPSVERIFY", "1") == "0":
     ssl._create_default_https_context = ssl._create_unverified_context
 
 try:
-    from scholarly import scholarly, ProxyGenerator
+    from scholarly import ProxyGenerator, scholarly
 
     SCHOLARLY_AVAILABLE = True
 except ImportError:
@@ -123,7 +123,7 @@ class GoogleScholarClient(BasePublicationClient):
                     pg.ScraperAPI(self.config.proxy_url)
                 else:
                     pg.SingleProxy(http=self.config.proxy_url, https=self.config.proxy_url)
-                
+
                 scholarly.use_proxy(pg)
                 self.logger.info(f"Proxy configured: {self.config.proxy_url}")
         except Exception as e:
@@ -189,8 +189,7 @@ class GoogleScholarClient(BasePublicationClient):
             PublicationSearchError: If search fails after retries
         """
         self.logger.info(
-            f"Searching Scholar: '{query}', max_results={max_results}, "
-            f"year_range={year_from}-{year_to}"
+            f"Searching Scholar: '{query}', max_results={max_results}, " f"year_range={year_from}-{year_to}"
         )
 
         try:
@@ -231,9 +230,7 @@ class GoogleScholarClient(BasePublicationClient):
             self.logger.error(error_msg)
             raise PublicationSearchError(error_msg)
 
-    def get_cited_by_papers(
-        self, publication: Publication, max_papers: int = 50
-    ) -> List[Publication]:
+    def get_cited_by_papers(self, publication: Publication, max_papers: int = 50) -> List[Publication]:
         """
         Get list of papers that cite the given publication.
 
@@ -254,7 +251,7 @@ class GoogleScholarClient(BasePublicationClient):
         try:
             # Get the citedby_url from metadata
             citedby_url = publication.metadata.get("citedby_url")
-            
+
             if not citedby_url:
                 # Search for publication first to get citedby_url
                 search_results = self._retry_on_block(
@@ -292,9 +289,7 @@ class GoogleScholarClient(BasePublicationClient):
                     self.logger.warning(f"Failed to parse citing paper {i}: {e}")
                     continue
 
-            self.logger.info(
-                f"Found {len(citing_pubs)} papers citing: {publication.title[:60]}"
-            )
+            self.logger.info(f"Found {len(citing_pubs)} papers citing: {publication.title[:60]}")
             return citing_pubs
 
         except Exception as e:
@@ -320,21 +315,23 @@ class GoogleScholarClient(BasePublicationClient):
             # Search by title to get citation info
             search_query = f'"{publication.title}"'
             search_results = self._retry_on_block(scholarly.search_pubs, search_query)
-            
+
             result = next(search_results, None)
             if result:
                 # Update citation count
                 publication.citations = result.get("num_citations", 0)
-                
+
                 # Add Scholar-specific metadata
-                publication.metadata.update({
-                    "scholar_id": result.get("scholar_id"),
-                    "scholar_url": result.get("pub_url"),
-                    "citedby_url": result.get("citedby_url"),
-                    "num_versions": result.get("num_versions", 0),
-                    "url_related_articles": result.get("url_related_articles"),
-                })
-                
+                publication.metadata.update(
+                    {
+                        "scholar_id": result.get("scholar_id"),
+                        "scholar_url": result.get("pub_url"),
+                        "citedby_url": result.get("citedby_url"),
+                        "num_versions": result.get("num_versions", 0),
+                        "url_related_articles": result.get("url_related_articles"),
+                    }
+                )
+
                 self.logger.debug(
                     f"Enriched '{publication.title[:50]}...' with {publication.citations} citations"
                 )
@@ -364,11 +361,11 @@ class GoogleScholarClient(BasePublicationClient):
         try:
             search_query = self._retry_on_block(scholarly.search_author, author_name)
             author = next(search_query, None)
-            
+
             if author:
                 # Fill in author details
                 filled_author = self._retry_on_block(scholarly.fill, author)
-                
+
                 return {
                     "name": filled_author.get("name"),
                     "affiliation": filled_author.get("affiliation"),
@@ -380,7 +377,7 @@ class GoogleScholarClient(BasePublicationClient):
                     "scholar_id": filled_author.get("scholar_id"),
                     "url_picture": filled_author.get("url_picture"),
                 }
-            
+
             return None
 
         except Exception as e:

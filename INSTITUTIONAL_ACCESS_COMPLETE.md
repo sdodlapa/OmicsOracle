@@ -83,9 +83,9 @@ enable_institutional_access: bool = True  # Week 4 feature
    📄 CRISPR-Cas9 genome editing
       Authors: Zhang, F., et al.
       Year: 2014    Citations: 5432
-      
+
       🏛️ Institutional    📥 Access via Georgia Tech Library
-      
+
       [Abstract ▼]
    ```
 4. **User clicks** "Access via Georgia Tech Library"
@@ -144,7 +144,7 @@ Access URL: https://login.ezproxy.gatech.edu/login?url=https%3A%2F%2Fdoi.org%2F1
 📄 CRISPR-Cas9 genome editing
    Authors: Zhang, F., Wen, Y., Guo, X.
    Year: 2014    Citations: 5432
-   
+
    🏛️ Institutional    📥 Access via Georgia Tech Library
 ```
 
@@ -162,7 +162,7 @@ https://login.ezproxy.gatech.edu/login?url=https%3A%2F%2Fdoi.org%2F10.1038%2Fnbt
 📄 COVID-19 transmission dynamics
    Authors: Smith, J., Doe, A.
    Year: 2020    Citations: 234
-   
+
    ✅ Open Access    📥 Access via Georgia Tech Library
 ```
 
@@ -180,7 +180,7 @@ https://journals.plos.org/plosone/article/file?id=10.1371/journal.pone.0234567
 📄 Novel cancer biomarkers
    Authors: Author, O., et al.
    Year: 2021    Citations: 56
-   
+
    ✅ Open Access    📥 Access via Georgia Tech Library
 ```
 
@@ -213,8 +213,8 @@ https://www.ncbi.nlm.nih.gov/pmc/articles/PMC1234567/pdf/
 
 ### EZProxy URL Format
 
-**Original DOI:** `10.1038/nbt.2808`  
-**Target URL:** `https://doi.org/10.1038/nbt.2808`  
+**Original DOI:** `10.1038/nbt.2808`
+**Target URL:** `https://doi.org/10.1038/nbt.2808`
 **EZProxy URL:** `https://login.ezproxy.gatech.edu/login?url=https%3A%2F%2Fdoi.org%2F10.1038%2Fnbt.2808`
 
 **URL Encoding:**
@@ -244,13 +244,13 @@ publication.metadata = {
 if result.get("has_access"):
     access_status = result.get("access_status", {})
     access_url = result.get("access_url")
-    
+
     # Badge selection
     if access_status.get("unpaywall"):
         st.success("✅ Open Access")
     elif access_status.get("ezproxy"):
         st.info("🏛️ Institutional")
-    
+
     # Access link
     st.markdown(f"**[📥 Access via Georgia Tech Library]({access_url})**")
 ```

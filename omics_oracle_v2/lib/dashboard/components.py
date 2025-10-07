@@ -615,10 +615,10 @@ class ResultsPanel(BasePanel):
                 if result.get("has_access"):
                     access_status = result.get("access_status", {})
                     access_url = result.get("access_url")
-                    
+
                     # Show access status badges
                     access_col1, access_col2 = st.columns([1, 3])
-                    
+
                     with access_col1:
                         if access_status.get("unpaywall"):
                             st.success("✅ Open Access")
@@ -626,21 +626,21 @@ class ResultsPanel(BasePanel):
                             st.info("🔐 VPN Required")
                         elif access_status.get("ezproxy"):
                             st.info("🏛️ Institutional")
-                    
+
                     with access_col2:
                         if access_url:
                             # Different message for VPN vs EZProxy
                             if access_status.get("vpn"):
                                 st.markdown(
                                     f"**[📥 Access via GT Library]({access_url})**",
-                                    help="Connect to GT VPN first (vpn.gatech.edu), then click to access"
+                                    help="Connect to GT VPN first (vpn.gatech.edu), then click to access",
                                 )
                             else:
                                 st.markdown(
                                     f"**[📥 Access via Georgia Tech Library]({access_url})**",
-                                    help="Click to access through institutional subscription"
+                                    help="Click to access through institutional subscription",
                                 )
-                
+
                 # Source link (fallback)
                 elif "url" in result:
                     st.caption(f"[View Source]({result['url']})")

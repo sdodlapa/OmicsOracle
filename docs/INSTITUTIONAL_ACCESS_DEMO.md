@@ -5,7 +5,7 @@
 OmicsOracle now provides seamless access to publications through **Georgia Tech Library** institutional subscriptions using multiple access methods:
 
 1. **EZProxy URL Rewriting** - Primary method for off-campus access
-2. **OpenURL Link Resolver** - Library's SFX service for finding all access options  
+2. **OpenURL Link Resolver** - Library's SFX service for finding all access options
 3. **Unpaywall API** - Free, legal open access versions
 4. **Direct Publisher URLs** - Fallback to original source
 
@@ -143,9 +143,9 @@ class SearchConfig:
 📄 CRISPR-Cas9 genome editing
    Authors: Zhang, F., et al.
    Year: 2014    Citations: 5432
-   
+
    ✅ Open Access    📥 Access via Georgia Tech Library
-   
+
    [Abstract ▼]
 ```
 
@@ -165,10 +165,10 @@ if self.institutional_manager and len(all_publications) > 0:
     for pub in all_publications:
         # Check what access methods are available
         access_status = self.institutional_manager.check_access_status(pub)
-        
+
         # Get the best access URL
         access_url = self.institutional_manager.get_access_url(pub)
-        
+
         # Add to publication metadata
         pub.metadata["access_status"] = access_status
         pub.metadata["has_access"] = any(access_status.values())
@@ -182,7 +182,7 @@ if self.institutional_manager and len(all_publications) > 0:
 # Lines 307-325: Extract institutional access data
 pub_dict = {
     # ... existing fields ...
-    
+
     # Institutional access info (Week 4)
     "access_url": pub.metadata.get("access_url") if pub.metadata else None,
     "has_access": pub.metadata.get("has_access") if pub.metadata else False,
@@ -197,16 +197,16 @@ pub_dict = {
 if result.get("has_access"):
     access_status = result.get("access_status", {})
     access_url = result.get("access_url")
-    
+
     # Show access status badges
     access_col1, access_col2 = st.columns([1, 3])
-    
+
     with access_col1:
         if access_status.get("unpaywall"):
             st.success("✅ Open Access")
         elif access_status.get("ezproxy"):
             st.info("🏛️ Institutional")
-    
+
     with access_col2:
         if access_url:
             st.markdown(
@@ -298,7 +298,7 @@ Browser opens: https://login.ezproxy.gatech.edu/login?url=...
 
 **Cause:** Publication missing DOI or URL
 
-**Solution:** 
+**Solution:**
 - Check if `pub.doi` or `pub.url` exists
 - Enable more data sources (Semantic Scholar, Google Scholar)
 - Some older publications may not have DOIs
@@ -481,7 +481,7 @@ pdf_url = manager.get_pdf_url(publication)
 
 ---
 
-**Documentation Version:** 1.0  
-**Date:** 2024  
-**Author:** OmicsOracle Development Team  
+**Documentation Version:** 1.0
+**Date:** 2024
+**Author:** OmicsOracle Development Team
 **Status:** ✅ COMPLETE - Ready for demonstration

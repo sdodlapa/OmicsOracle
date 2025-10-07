@@ -393,7 +393,7 @@ if result.get("has_access"):
         st.success("✅ Open Access")
     elif access_status.get("ezproxy"):
         st.info("🏛️ Institutional")
-    
+
     st.markdown(f"**[📥 Access via Georgia Tech Library]({access_url})**")
 ```
 
@@ -478,6 +478,6 @@ print(f"Access status: {pub.metadata.get('access_status')}")
 
 ---
 
-**Last Updated:** 2024  
-**View in Dashboard:** http://localhost:8502  
+**Last Updated:** 2024
+**View in Dashboard:** http://localhost:8502
 **Test Command:** `python test_institutional_access.py`

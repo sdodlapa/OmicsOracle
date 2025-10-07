@@ -15,7 +15,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 
 try:
     from scholarly import scholarly
-    
+
     SCHOLARLY_AVAILABLE = True
 except ImportError:
     SCHOLARLY_AVAILABLE = False
@@ -31,21 +31,21 @@ print(f"\nTime: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
 # Test 1: Simple search
 print("Test 1: Basic search...")
 try:
-    search_query = scholarly.search_pubs('cancer', year_low=2024)
+    search_query = scholarly.search_pubs("cancer", year_low=2024)
     result = next(search_query)
-    
+
     print("✅ Google Scholar is WORKING!")
     print(f"\nSample result:")
     print(f"  Title: {result['bib']['title'][:60]}...")
     print(f"  Year: {result['bib'].get('pub_year', 'N/A')}")
     print(f"  Citations: {result.get('num_citations', 0)}")
-    
+
     scholar_working = True
-    
+
 except StopIteration:
     print("⚠️  Search returned no results (possibly blocked)")
     scholar_working = False
-    
+
 except Exception as e:
     error_msg = str(e)
     if "Cannot Fetch" in error_msg:
@@ -61,17 +61,17 @@ print("\n" + "-" * 60)
 if scholar_working:
     print("\nTest 2: Citation extraction...")
     try:
-        search_query = scholarly.search_pubs('deep learning', year_low=2020)
+        search_query = scholarly.search_pubs("deep learning", year_low=2020)
         result = next(search_query)
-        
-        citations = result.get('num_citations', 0)
+
+        citations = result.get("num_citations", 0)
         print(f"✅ Citation count: {citations}")
-        
+
         if citations > 0:
             print("✅ Citation metrics are available!")
         else:
             print("⚠️  No citations (may be recent paper)")
-            
+
     except Exception as e:
         print(f"❌ Citation test failed: {e}")
 
@@ -87,7 +87,7 @@ if scholar_working:
     print("\n2. Search example:")
     print("   Query: cancer genomics")
     print("   Expected: Citations > 0")
-    
+
 else:
     print("\n⏰ Google Scholar is still blocked.")
     print("\nOptions:")

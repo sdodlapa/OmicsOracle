@@ -10,10 +10,10 @@ Rate Limits: 100 requests per 5 minutes (free tier)
 Example:
     >>> from omics_oracle_v2.lib.publications.clients.semantic_scholar import SemanticScholarClient
     >>> from omics_oracle_v2.lib.publications.config import SemanticScholarConfig
-    >>> 
+    >>>
     >>> config = SemanticScholarConfig()
     >>> client = SemanticScholarClient(config)
-    >>> 
+    >>>
     >>> # Enrich publication with citations
     >>> pub = Publication(doi="10.1038/nature12345", ...)
     >>> enriched_pub = client.enrich_publication(pub)
@@ -26,8 +26,8 @@ from typing import Dict, List, Optional
 
 import requests
 
-from omics_oracle_v2.lib.publications.models import Publication
 from omics_oracle_v2.lib.publications.clients.base import BasePublicationClient
+from omics_oracle_v2.lib.publications.models import Publication
 
 logger = logging.getLogger(__name__)
 
@@ -137,9 +137,7 @@ class SemanticScholarClient(BasePublicationClient):
                     continue
 
                 else:
-                    logger.warning(
-                        f"Semantic Scholar API error {response.status_code} for {doi}"
-                    )
+                    logger.warning(f"Semantic Scholar API error {response.status_code} for {doi}")
                     return None
 
             except requests.exceptions.Timeout:
@@ -281,15 +279,15 @@ class SemanticScholarClient(BasePublicationClient):
     def search(self, query: str, max_results: int = 100, **kwargs) -> List[Publication]:
         """
         Search for publications (not primary use case for Semantic Scholar).
-        
+
         Note: Semantic Scholar is primarily used for enrichment, not search.
         This method is implemented to satisfy the BasePublicationClient interface.
-        
+
         Args:
             query: Search query string
             max_results: Maximum number of results
             **kwargs: Additional parameters
-            
+
         Returns:
             Empty list (use PubMed or Google Scholar for search)
         """
@@ -302,25 +300,25 @@ class SemanticScholarClient(BasePublicationClient):
     def fetch_by_id(self, identifier: str) -> Optional[Publication]:
         """
         Fetch a publication by DOI.
-        
+
         Args:
             identifier: DOI of the publication
-            
+
         Returns:
             Publication if found, None otherwise
         """
         if not identifier:
             return None
-            
+
         # Assume identifier is DOI
         paper_data = self.get_paper_by_doi(identifier)
-        
+
         if not paper_data:
             return None
-            
+
         # Create minimal Publication object from Semantic Scholar data
         from omics_oracle_v2.lib.publications.models import PublicationSource
-        
+
         pub = Publication(
             title=paper_data.get("title", ""),
             abstract=paper_data.get("abstract", ""),
@@ -332,7 +330,7 @@ class SemanticScholarClient(BasePublicationClient):
             metadata={
                 "influential_citations": paper_data.get("influentialCitationCount", 0),
                 "semantic_scholar_id": paper_data.get("paperId"),
-            }
+            },
         )
-        
+
         return pub

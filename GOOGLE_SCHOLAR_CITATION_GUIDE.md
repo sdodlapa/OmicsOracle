@@ -1,13 +1,13 @@
 # Google Scholar Access & Citation Metrics Guide
 
-**Issue:** Citations showing as 0 - PubMed doesn't provide citation counts  
+**Issue:** Citations showing as 0 - PubMed doesn't provide citation counts
 **Solution:** Enable Google Scholar (currently blocked/rate-limited)
 
 ---
 
 ## 🔍 Current Status
 
-**PubMed:** ✅ Working - Provides publications but **NO citation counts**  
+**PubMed:** ✅ Working - Provides publications but **NO citation counts**
 **Google Scholar:** ❌ Blocked - "Cannot Fetch from Google Scholar"
 
 **Result:** Citations show as 0 for all publications
@@ -46,7 +46,7 @@ print(f'Citations: {result.get(\"num_citations\", 0)}')
 
 ### Option 2: Slow Down Requests 🐌 (FREE - Quick Fix!)
 
-Current: 3 seconds between requests (too fast)  
+Current: 3 seconds between requests (too fast)
 Solution: Increase to 10 seconds
 
 **Method A: Environment Variable**
@@ -99,7 +99,7 @@ rate_limit_seconds: float = Field(
    ```python
    import os
    from scholarly import scholarly, ProxyGenerator
-   
+
    # In __init__ method
    if os.getenv("SCHOLAR_USE_PROXY") == "true":
        pg = ProxyGenerator()

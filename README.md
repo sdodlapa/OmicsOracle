@@ -106,7 +106,7 @@ After starting:
 # API logs
 tail -f /tmp/omics_api.log
 
-# Dashboard logs  
+# Dashboard logs
 tail -f /tmp/omics_dashboard.log
 ```
 
