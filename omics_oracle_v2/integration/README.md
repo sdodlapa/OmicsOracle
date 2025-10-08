@@ -1,7 +1,7 @@
 # OmicsOracle Integration Layer
 
-**Version:** 2.0.0  
-**Status:** ✅ Production Ready  
+**Version:** 2.0.0
+**Status:** ✅ Production Ready
 **Purpose:** Clean abstraction between backend API and multiple frontend implementations
 
 ---
@@ -28,7 +28,7 @@ async def main():
     async with SearchClient() as search:
         results = await search.search("CRISPR gene editing", max_results=50)
         print(f"Found {results.metadata.total_results} papers")
-        
+
         # Analyze with LLM (NEW FEATURE!)
         async with AnalysisClient() as analysis:
             insights = await analysis.analyze_with_llm(
@@ -77,7 +77,7 @@ async with AnalysisClient() as client:
         query="cancer immunotherapy",
         results=search_results.results[:10]
     )
-    
+
     print(analysis.overview)           # High-level summary
     print(analysis.key_findings)       # Main discoveries
     print(analysis.research_gaps)      # Identified gaps
@@ -105,7 +105,7 @@ async with MLClient() as client:
         seed_papers=["PMID:12345", "PMID:67890"],
         count=20
     )
-    
+
     for rec in recs.recommendations:
         print(f"{rec.publication.title} (score: {rec.score:.2f})")
 ```
@@ -204,10 +204,10 @@ async def test_full_workflow():
         async with AnalysisClient() as analysis:
             # Search
             results = await search.search("CRISPR")
-            
+
             # Analyze
             insights = await analysis.analyze_with_llm("CRISPR", results.results)
-            
+
             assert insights.overview is not None
 ```
 
@@ -354,6 +354,6 @@ Built with:
 
 ---
 
-**Version:** 2.0.0  
-**Last Updated:** October 8, 2025  
+**Version:** 2.0.0
+**Last Updated:** October 8, 2025
 **Status:** ✅ Production Ready

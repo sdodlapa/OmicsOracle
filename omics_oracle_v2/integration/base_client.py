@@ -118,7 +118,7 @@ class APIClient:
     def _build_url(self, endpoint: str) -> str:
         """
         Build full URL from endpoint.
-        
+
         Note: Backend uses /api/ paths (not /api/v1/), so we pass endpoints through as-is.
         The api_version parameter is kept for future use but currently unused.
         """

@@ -1,7 +1,7 @@
 # API Endpoint Mapping
 
-**Date:** October 8, 2025  
-**Status:** Phase 3 - Validation & Testing  
+**Date:** October 8, 2025
+**Status:** Phase 3 - Validation & Testing
 **Purpose:** Map integration layer methods to actual backend API endpoints
 
 ---
@@ -174,8 +174,8 @@ RecommendationRequest(
 
 ---
 
-**Key Discovery:**  
+**Key Discovery:**
 The integration layer was designed with the *ideal* API in mind, but the backend uses different schemas. We need an **adapter layer** to bridge the gap!
 
-**Solution:**  
+**Solution:**
 Add request/response transformers in each client to adapt between the user-friendly integration layer API and the actual backend API.

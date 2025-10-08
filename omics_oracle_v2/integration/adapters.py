@@ -1,18 +1,15 @@
 """
 Response adapter - maps backend responses to integration layer models
 """
-from typing import Any, Dict, List
-from omics_oracle_v2.integration.models import (
-    Publication,
-    SearchResponse,
-    SearchMetadata
-)
+from typing import Any, Dict
+
+from omics_oracle_v2.integration.models import Publication, SearchMetadata, SearchResponse
 
 
 def adapt_search_response(backend_response: Dict[str, Any]) -> SearchResponse:
     """
     Adapt backend search response to integration layer SearchResponse model.
-    
+
     Backend format:
     {
         "success": true,
@@ -32,7 +29,7 @@ def adapt_search_response(backend_response: Dict[str, Any]) -> SearchResponse:
         "search_terms_used": ["CRISPR"],
         "filters_applied": {}
     }
-    
+
     Integration layer format:
     SearchResponse(
         results=[Publication(...)],
@@ -45,7 +42,7 @@ def adapt_search_response(backend_response: Dict[str, Any]) -> SearchResponse:
     """
     # Extract datasets (GEO database results)
     datasets = backend_response.get("datasets", [])
-    
+
     # Convert to Publication objects
     publications = []
     for dataset in datasets:
@@ -66,15 +63,15 @@ def adapt_search_response(backend_response: Dict[str, Any]) -> SearchResponse:
                 "sample_count": dataset.get("sample_count"),
                 "platform": dataset.get("platform"),
                 "relevance_score": dataset.get("relevance_score"),
-                "match_reasons": dataset.get("match_reasons", [])
-            }
+                "match_reasons": dataset.get("match_reasons", []),
+            },
         )
         publications.append(pub)
-    
+
     # Build metadata
     search_terms = backend_response.get("search_terms_used", [])
     query_string = " ".join(search_terms) if search_terms else ""
-    
+
     metadata = SearchMetadata(
         total_results=backend_response.get("total_found", 0),
         page=1,
@@ -82,13 +79,10 @@ def adapt_search_response(backend_response: Dict[str, Any]) -> SearchResponse:
         query=query_string,
         databases=["GEO"],  # This endpoint searches GEO
         execution_time_ms=backend_response.get("execution_time_ms"),
-        timestamp=backend_response.get("timestamp")
+        timestamp=backend_response.get("timestamp"),
     )
-    
-    return SearchResponse(
-        results=publications,
-        metadata=metadata
-    )
+
+    return SearchResponse(results=publications, metadata=metadata)
 
 
 def adapt_analysis_response(backend_response: Dict[str, Any]):

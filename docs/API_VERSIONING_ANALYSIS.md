@@ -1,7 +1,7 @@
 # API Versioning Analysis: Design Feature or Flaw?
 
-**Date:** October 8, 2025  
-**Status:** Phase 3 - Architecture Validation  
+**Date:** October 8, 2025
+**Status:** Phase 3 - Architecture Validation
 **Question:** Why do we have both `/api/` and `/api/v1/` endpoints?
 
 ---
@@ -40,7 +40,7 @@ app.include_router(workflows_router, prefix="/api/v1/workflows")
 app.include_router(batch_router, prefix="/api/v1")
 ```
 
-**Key Comment:** 
+**Key Comment:**
 > "Legacy v1 routes for backwards compatibility **(will be removed after frontend updates)**"
 
 ---

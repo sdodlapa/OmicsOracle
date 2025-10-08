@@ -7,9 +7,9 @@ Provides high-level interface for search operations.
 import logging
 from typing import Any, Dict, List, Optional
 
+from .adapters import adapt_search_response
 from .base_client import APIClient
 from .models import Publication, SearchRequest, SearchResponse
-from .adapters import adapt_search_response
 
 logger = logging.getLogger(__name__)
 
@@ -78,16 +78,16 @@ class SearchClient(APIClient):
         # Backend expects: {search_terms: [str], max_results: int, enable_semantic: bool}
         search_terms = query.split() if isinstance(query, str) else query
         enable_semantic = "semantic_scholar" in (databases or [])
-        
+
         backend_request = {
             "search_terms": search_terms,
             "max_results": max_results,
             "enable_semantic": enable_semantic,
-            "filters": filters or {}
+            "filters": filters or {},
         }
 
         response = await self.post("/api/agents/search", json=backend_request)
-        
+
         # Transform backend response to integration layer format
         return adapt_search_response(response)
         # Build request

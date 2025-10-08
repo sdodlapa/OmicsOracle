@@ -1,7 +1,7 @@
 # Rate Limiting Analysis & Solutions
 
-**Date:** October 8, 2025  
-**Status:** Phase 3 - Testing Challenges  
+**Date:** October 8, 2025
+**Status:** Phase 3 - Testing Challenges
 **Question:** Why are we hitting rate limits, and how can we avoid them?
 
 ---
@@ -38,7 +38,7 @@ OmicsOracle uses a **sophisticated multi-tier rate limiting system**:
 async def dispatch(request, call_next):
     # 1. Try to get authenticated user
     user = await get_optional_user(request)
-    
+
     # 2. Determine tier
     if user:
         tier = user.tier  # "free", "pro", or "enterprise"
@@ -46,7 +46,7 @@ async def dispatch(request, call_next):
     else:
         tier = "anonymous"  # ⚠️ This is our problem!
         user_id = None
-    
+
     # 3. Check quota (uses Redis or in-memory cache)
     rate_info = await check_rate_limit(
         user_id=user_id,
@@ -54,7 +54,7 @@ async def dispatch(request, call_next):
         tier=tier,
         window="hour"
     )
-    
+
     # 4. Block if exceeded
     if rate_info.quota_exceeded:
         return JSONResponse(status_code=429, ...)  # 😞
@@ -132,14 +132,14 @@ class APIClient:
         self.base_url = base_url
         self.api_key = api_key  # Store token
         # ...
-    
+
     async def _request(self, method, endpoint, **kwargs):
         # Add auth header if token exists
         if self.api_key:
             headers = kwargs.get("headers", {})
             headers["Authorization"] = f"Bearer {self.api_key}"
             kwargs["headers"] = headers
-        
+
         # ... rest of request logic
 ```
 
@@ -309,7 +309,7 @@ async def authenticated_client():
                 "full_name": "Integration Test User"
             }
         )
-        
+
         # Login
         response = await client.post(
             "http://localhost:8000/api/auth/login",
@@ -319,7 +319,7 @@ async def authenticated_client():
             }
         )
         token = response.json()["access_token"]
-    
+
     # Create authenticated integration client
     from omics_oracle_v2.integration import SearchClient
     client = SearchClient(api_key=token)
