@@ -546,6 +546,7 @@
         // Search state
         let currentResults = [];
         let selectedDataset = null;
+        let currentQuery = '';  // Store search query for analysis
 
         // Use example query
         function useExample(element) {
@@ -557,6 +558,9 @@
         async function performSearch() {
             const query = document.getElementById('search-query').value.trim();
             if (!query) return;
+
+            // Store query for analysis
+            currentQuery = query;
 
             const searchBtn = document.getElementById('search-btn');
             searchBtn.disabled = true;
@@ -672,13 +676,14 @@
             `;
 
             try {
-                // Call analysis API
-                const response = await authenticatedFetch('http://localhost:8000/api/agents/analysis', {
+                // Call AI analysis API
+                const response = await authenticatedFetch('http://localhost:8000/api/agents/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        dataset_id: dataset.accession || dataset.id,
-                        metadata: dataset
+                        datasets: [dataset],  // Send as array
+                        query: currentQuery,   // Original search query
+                        max_datasets: 1        // Analyzing single dataset
                     })
                 });
 
@@ -707,12 +712,12 @@
         function displayAnalysis(analysis, dataset) {
             const content = document.getElementById('analysis-content');
 
-            const summary = analysis.summary || analysis.analysis || 'No analysis available';
-            const findings = analysis.key_findings || analysis.findings || [];
+            const summary = analysis.analysis || analysis.summary || 'No analysis available';
+            const findings = analysis.insights || analysis.key_findings || analysis.findings || [];
             const recommendations = analysis.recommendations || [];
-            const scores = analysis.scores || {
-                relevance: dataset.quality || 0.85,
-                quality: dataset.quality || 0.85,
+            const scores = {
+                relevance: dataset.relevance_score || 0.85,
+                quality: dataset.relevance_score || 0.85,  // Using relevance as proxy
                 confidence: 0.90
             };
 
