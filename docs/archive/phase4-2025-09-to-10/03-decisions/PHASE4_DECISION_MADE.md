@@ -1,7 +1,7 @@
 # Architectural Decision: Option A - GEO Focus
 
-**Date:** October 8, 2025  
-**Decision:** Option A - Double Down on GEO Datasets  
+**Date:** October 8, 2025
+**Decision:** Option A - Double Down on GEO Datasets
 **Status:** ✅ APPROVED
 
 ---
@@ -193,7 +193,7 @@ After comprehensive Week 1 analysis, we have chosen **Option A: Focus on GEO Dat
 7. **Clustering**: Group related datasets
 8. **Ranking Optimization**: ML-powered result ranking
 
-**Timeline:** Weeks 3-4 (2 weeks)  
+**Timeline:** Weeks 3-4 (2 weeks)
 **Effort:** Model retraining + endpoint adaptation
 
 ---
@@ -447,5 +447,5 @@ After comprehensive Week 1 analysis, we have chosen **Option A: Focus on GEO Dat
 
 **Let's build the best GEO dataset discovery tool! 🚀**
 
-*Decision made: October 8, 2025*  
+*Decision made: October 8, 2025*
 *Status: APPROVED - Implementation begins now*
