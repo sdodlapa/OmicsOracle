@@ -196,6 +196,29 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
         app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
         logger.info(f"Mounted static files from {static_dir}")
 
+    # Authentication UI endpoints
+    @app.get("/login", tags=["Dashboard"])
+    async def login_page():
+        """Serve the login page."""
+        login_path = static_dir / "login.html"
+        if login_path.exists():
+            return FileResponse(login_path)
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Login page not found"},
+        )
+
+    @app.get("/register", tags=["Dashboard"])
+    async def register_page():
+        """Serve the registration page."""
+        register_path = static_dir / "register.html"
+        if register_path.exists():
+            return FileResponse(register_path)
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Registration page not found"},
+        )
+
     # Dashboard endpoint
     @app.get("/dashboard", tags=["Dashboard"])
     async def dashboard():

@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - OmicsOracle</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            animation: slideUp 0.4s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .logo h1 {
+            color: #667eea;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .logo p {
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #495057;
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background: #f8f9fa;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+        }
+
+        .form-group input.error {
+            border-color: #dc3545;
+        }
+
+        .form-group .help-text {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 4px;
+        }
+
+        .form-group .error-text {
+            font-size: 12px;
+            color: #dc3545;
+            margin-top: 4px;
+            display: none;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .error-message {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c33;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: #efe;
+            border: 1px solid #cfc;
+            color: #3c3;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+        }
+
+        .divider {
+            text-align: center;
+            margin: 25px 0;
+            color: #adb5bd;
+            font-size: 14px;
+        }
+
+        .login-link {
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+
+        .login-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .login-link a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .form-footer {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .password-strength {
+            height: 4px;
+            background: #e9ecef;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s;
+        }
+
+        .strength-weak { 
+            background: #dc3545; 
+            width: 33%;
+        }
+
+        .strength-medium { 
+            background: #ffc107; 
+            width: 66%;
+        }
+
+        .strength-strong { 
+            background: #28a745; 
+            width: 100%;
+        }
+
+        @media (max-width: 480px) {
+            .auth-container {
+                padding: 30px 20px;
+            }
+            
+            .logo h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">
+            <h1>🧬 OmicsOracle</h1>
+            <p>Create your account</p>
+        </div>
+
+        <div id="success-message" class="success-message"></div>
+        <div id="error-message" class="error-message"></div>
+
+        <form id="register-form">
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    placeholder="Enter your full name" 
+                    required 
+                    autocomplete="name"
+                    autofocus
+                    minlength="2"
+                >
+                <div class="error-text" id="name-error">Name must be at least 2 characters</div>
+            </div>
+
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    placeholder="Enter your email" 
+                    required 
+                    autocomplete="email"
+                >
+                <div class="error-text" id="email-error">Please enter a valid email</div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    placeholder="Create a password" 
+                    required 
+                    autocomplete="new-password"
+                    minlength="8"
+                >
+                <div class="password-strength">
+                    <div class="password-strength-bar" id="password-strength-bar"></div>
+                </div>
+                <div class="help-text">At least 8 characters with 1 uppercase, 1 number</div>
+                <div class="error-text" id="password-error">Password doesn't meet requirements</div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm-password">Confirm Password</label>
+                <input 
+                    type="password" 
+                    id="confirm-password" 
+                    name="confirm-password" 
+                    placeholder="Re-enter your password" 
+                    required 
+                    autocomplete="new-password"
+                >
+                <div class="error-text" id="confirm-error">Passwords do not match</div>
+            </div>
+
+            <button type="submit" class="btn-primary" id="register-btn">
+                Create Account
+            </button>
+        </form>
+
+        <div class="form-footer">
+            <div class="login-link">
+                Already have an account? <a href="/login">Login here</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Password strength checker
+        function checkPasswordStrength(password) {
+            let strength = 0;
+            
+            if (password.length >= 8) strength++;
+            if (password.length >= 12) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[^a-zA-Z0-9]/.test(password)) strength++;
+            
+            return strength;
+        }
+
+        function updatePasswordStrength() {
+            const password = document.getElementById('password').value;
+            const strengthBar = document.getElementById('password-strength-bar');
+            const strength = checkPasswordStrength(password);
+            
+            strengthBar.className = 'password-strength-bar';
+            
+            if (strength < 3) {
+                strengthBar.classList.add('strength-weak');
+            } else if (strength < 5) {
+                strengthBar.classList.add('strength-medium');
+            } else {
+                strengthBar.classList.add('strength-strong');
+            }
+        }
+
+        document.getElementById('password').addEventListener('input', updatePasswordStrength);
+
+        // Validation functions
+        function validateName(name) {
+            return name.length >= 2;
+        }
+
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        function validatePassword(password) {
+            // At least 8 chars, 1 uppercase, 1 number
+            return password.length >= 8 && 
+                   /[A-Z]/.test(password) && 
+                   /[0-9]/.test(password);
+        }
+
+        function validatePasswordMatch(password, confirm) {
+            return password === confirm;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('success-message');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
+
+        function showFieldError(fieldId, show = true) {
+            const field = document.getElementById(fieldId);
+            const errorText = document.getElementById(`${fieldId}-error`);
+            
+            if (show) {
+                field.classList.add('error');
+                errorText.style.display = 'block';
+            } else {
+                field.classList.remove('error');
+                errorText.style.display = 'none';
+            }
+        }
+
+        // Real-time validation
+        document.getElementById('name').addEventListener('blur', (e) => {
+            showFieldError('name', !validateName(e.target.value));
+        });
+
+        document.getElementById('email').addEventListener('blur', (e) => {
+            showFieldError('email', !validateEmail(e.target.value));
+        });
+
+        document.getElementById('password').addEventListener('blur', (e) => {
+            showFieldError('password', !validatePassword(e.target.value));
+        });
+
+        document.getElementById('confirm-password').addEventListener('blur', (e) => {
+            const password = document.getElementById('password').value;
+            showFieldError('confirm-password', !validatePasswordMatch(password, e.target.value));
+        });
+
+        // Form submission
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const name = document.getElementById('name').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const confirm = document.getElementById('confirm-password').value;
+            
+            // Validate all fields
+            let isValid = true;
+            
+            if (!validateName(name)) {
+                showFieldError('name', true);
+                isValid = false;
+            }
+            
+            if (!validateEmail(email)) {
+                showFieldError('email', true);
+                isValid = false;
+            }
+            
+            if (!validatePassword(password)) {
+                showFieldError('password', true);
+                isValid = false;
+            }
+            
+            if (!validatePasswordMatch(password, confirm)) {
+                showFieldError('confirm-password', true);
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                showError('Please fix the errors above');
+                return;
+            }
+            
+            const registerBtn = document.getElementById('register-btn');
+            
+            // Disable button and show loading
+            registerBtn.disabled = true;
+            registerBtn.innerHTML = '<span class="loading"></span>';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: name,
+                        email: email,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Registration failed');
+                }
+                
+                // Show success and redirect
+                showSuccess('Registration successful! Redirecting to login...');
+                setTimeout(() => {
+                    window.location.href = '/login?registered=true';
+                }, 1500);
+                
+            } catch (error) {
+                showError(error.message);
+                registerBtn.disabled = false;
+                registerBtn.textContent = 'Create Account';
+            }
+        });
+    </script>
+</body>
+</html>
