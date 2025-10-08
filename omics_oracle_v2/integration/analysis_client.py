@@ -96,7 +96,7 @@ class AnalysisClient(APIClient):
 
         # Call API
         response_data = await self.post(
-            "/agents/analyze",
+            "/api/agents/analyze",
             json=request.dict(),
         )
 
@@ -144,7 +144,7 @@ class AnalysisClient(APIClient):
 
         # Call API
         response_data = await self.post(
-            "/agents/qa",
+            "/api/agents/query",
             json=request.dict(),
         )
 
@@ -184,7 +184,7 @@ class AnalysisClient(APIClient):
 
         # Call API
         response_data = await self.post(
-            "/analytics/trends",
+            "/api/predictions/trends",
             json={
                 "publications": [pub.dict() for pub in results],
             },
@@ -231,7 +231,7 @@ class AnalysisClient(APIClient):
 
         # Call API
         response_data = await self.post(
-            "/analytics/network",
+            "/api/analytics/network",
             json={
                 "publications": [pub.dict() for pub in results],
                 "min_citations": min_citations,
@@ -267,7 +267,7 @@ class AnalysisClient(APIClient):
         logger.info(f"Getting citation analysis for {pub_id}...")
 
         response_data = await self.get(
-            f"/analytics/citations/{pub_id}",
+            f"/api/analytics/citations/{pub_id}",
             use_cache=True,
         )
 
@@ -291,7 +291,7 @@ class AnalysisClient(APIClient):
         logger.info(f"Analyzing biomarkers from {len(results)} publications...")
 
         response_data = await self.post(
-            "/analytics/biomarkers",
+            "/api/analytics/biomarkers",
             json={
                 "publications": [pub.dict() for pub in results],
             },
@@ -322,7 +322,7 @@ class AnalysisClient(APIClient):
         logger.info("Generating comprehensive report...")
 
         response_data = await self.post(
-            "/analytics/report",
+            "/api/agents/report",
             json={
                 "query": query,
                 "publications": [pub.dict() for pub in results],
