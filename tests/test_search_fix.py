@@ -25,15 +25,9 @@ def test_search_endpoint():
         if response.status_code == 200:
             health_data = response.json()
             print(f"   ✅ Health check passed")
-            print(
-                f"   - Pipeline initialized: {health_data.get('pipeline_initialized', 'unknown')}"
-            )
-            print(
-                f"   - Config loaded: {health_data.get('config_loaded', 'unknown')}"
-            )
-            print(
-                f"   - Active queries: {health_data.get('active_queries', 'unknown')}"
-            )
+            print(f"   - Pipeline initialized: {health_data.get('pipeline_initialized', 'unknown')}")
+            print(f"   - Config loaded: {health_data.get('config_loaded', 'unknown')}")
+            print(f"   - Active queries: {health_data.get('active_queries', 'unknown')}")
         else:
             print(f"   ❌ Health check failed: {response.status_code}")
             return False
@@ -78,9 +72,7 @@ def test_search_endpoint():
                     metadata = data["metadata"]
                     if metadata:
                         sample_result = metadata[0]
-                        print(
-                            f"   - Sample result: {sample_result.get('title', 'No title')[:50]}..."
-                        )
+                        print(f"   - Sample result: {sample_result.get('title', 'No title')[:50]}...")
                 else:
                     print("   ⚠️  No metadata in response")
 
@@ -112,9 +104,7 @@ def test_search_endpoint():
 
             # Check required fields for frontend
             required_fields = ["metadata", "total_count", "query_id", "status"]
-            missing_fields = [
-                field for field in required_fields if field not in data
-            ]
+            missing_fields = [field for field in required_fields if field not in data]
 
             if not missing_fields:
                 print(f"   ✅ All required fields present")
@@ -123,11 +113,7 @@ def test_search_endpoint():
                 if data.get("metadata"):
                     metadata_item = data["metadata"][0]
                     metadata_fields = ["id", "title", "summary"]
-                    present_fields = [
-                        field
-                        for field in metadata_fields
-                        if field in metadata_item
-                    ]
+                    present_fields = [field for field in metadata_fields if field in metadata_item]
                     print(f"   - Metadata fields present: {present_fields}")
 
                 print(f"   - Response structure looks compatible with frontend")

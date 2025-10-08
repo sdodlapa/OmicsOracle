@@ -32,9 +32,7 @@ def main() -> int:
     print("=== Testing Error Handling ===")
 
     # Test with a command that doesn't exist
-    result = run_check(
-        ["nonexistent_command", "--version"], "Non-existent Command"
-    )
+    result = run_check(["nonexistent_command", "--version"], "Non-existent Command")
 
     if not result:
         print("[SUCCESS] Error handling works correctly")

@@ -113,10 +113,8 @@ class SecurityTestSuite:
                             timeout=10,
                         )
 
-                        vulnerability_detected = (
-                            self._analyze_injection_response(
-                                response, attack_type, payload
-                            )
+                        vulnerability_detected = self._analyze_injection_response(
+                            response, attack_type, payload
                         )
 
                         test_results[attack_type].append(
@@ -138,10 +136,8 @@ class SecurityTestSuite:
                             timeout=10,
                         )
 
-                        vulnerability_detected = (
-                            self._analyze_injection_response(
-                                response, attack_type, payload
-                            )
+                        vulnerability_detected = self._analyze_injection_response(
+                            response, attack_type, payload
                         )
 
                         test_results[attack_type].append(
@@ -191,9 +187,7 @@ class SecurityTestSuite:
                 "schema",
                 "syntax error",
             ]
-            return any(
-                pattern in response_text for pattern in sql_error_patterns
-            )
+            return any(pattern in response_text for pattern in sql_error_patterns)
 
         # XSS indicators
         elif attack_type == "xss_injection":
@@ -210,9 +204,7 @@ class SecurityTestSuite:
                 "permission denied",
                 "command not found",
             ]
-            return any(
-                indicator in response_text for indicator in command_indicators
-            )
+            return any(indicator in response_text for indicator in command_indicators)
 
         # NoSQL injection indicators
         elif attack_type == "nosql_injection":
@@ -225,9 +217,7 @@ class SecurityTestSuite:
                 "path",
                 "kind",
             ]
-            return any(
-                indicator in response_text for indicator in nosql_indicators
-            )
+            return any(indicator in response_text for indicator in nosql_indicators)
 
         # LDAP injection indicators
         elif attack_type == "ldap_injection":
@@ -238,9 +228,7 @@ class SecurityTestSuite:
                 "ldap_bind",
                 "ldap_search",
             ]
-            return any(
-                indicator in response_text for indicator in ldap_indicators
-            )
+            return any(indicator in response_text for indicator in ldap_indicators)
 
         return False
 
@@ -286,10 +274,7 @@ class SecurityTestSuite:
                         "database",
                     ]
 
-                    vulnerable = any(
-                        indicator in response_text
-                        for indicator in injection_indicators
-                    )
+                    vulnerable = any(indicator in response_text for indicator in injection_indicators)
 
                     ai_results.append(
                         {
@@ -454,9 +439,7 @@ class SecurityTestSuite:
                         )
                     }
 
-                    response = self.session.post(
-                        endpoint, files=files, timeout=10
-                    )
+                    response = self.session.post(endpoint, files=files, timeout=10)
 
                     # Check if upload was accepted (potential vulnerability)
                     upload_accepted = response.status_code in [200, 201, 202]
@@ -528,9 +511,7 @@ class SecurityTestSuite:
                     "nginx",
                 ]
 
-                sensitive_info_found = any(
-                    pattern in response_text for pattern in sensitive_patterns
-                )
+                sensitive_info_found = any(pattern in response_text for pattern in sensitive_patterns)
 
                 info_results.append(
                     {
@@ -539,9 +520,7 @@ class SecurityTestSuite:
                         "accessible": response.status_code == 200,
                         "sensitive_info_found": sensitive_info_found,
                         "response_size": len(response.content),
-                        "content_type": response.headers.get(
-                            "content-type", "unknown"
-                        ),
+                        "content_type": response.headers.get("content-type", "unknown"),
                     }
                 )
 
@@ -568,40 +547,27 @@ class SecurityTestSuite:
         """Generate comprehensive security report."""
 
         # Calculate vulnerability statistics
-        total_injection_tests = sum(
-            len(tests) for tests in injection_tests.values()
-        )
+        total_injection_tests = sum(len(tests) for tests in injection_tests.values())
         vulnerable_injection_tests = sum(
-            sum(1 for test in tests if test.get("vulnerable", False))
-            for tests in injection_tests.values()
+            sum(1 for test in tests if test.get("vulnerable", False)) for tests in injection_tests.values()
         )
 
         total_ai_tests = len(ai_injection_tests.get("ai_prompt_injection", []))
         vulnerable_ai_tests = sum(
-            1
-            for test in ai_injection_tests.get("ai_prompt_injection", [])
-            if test.get("vulnerable", False)
+            1 for test in ai_injection_tests.get("ai_prompt_injection", []) if test.get("vulnerable", False)
         )
 
-        successful_auth_bypasses = sum(
-            1 for test in auth_tests if test.get("bypass_successful", False)
-        )
+        successful_auth_bypasses = sum(1 for test in auth_tests if test.get("bypass_successful", False))
 
-        successful_uploads = sum(
-            1 for test in upload_tests if test.get("upload_accepted", False)
-        )
+        successful_uploads = sum(1 for test in upload_tests if test.get("upload_accepted", False))
 
-        disclosed_endpoints = sum(
-            1 for test in info_tests if test.get("sensitive_info_found", False)
-        )
+        disclosed_endpoints = sum(1 for test in info_tests if test.get("sensitive_info_found", False))
 
         # Generate recommendations
         recommendations = []
 
         if vulnerable_injection_tests > 0:
-            recommendations.append(
-                "Implement input validation and parameterized queries"
-            )
+            recommendations.append("Implement input validation and parameterized queries")
         if vulnerable_ai_tests > 0:
             recommendations.append("Add AI prompt injection filtering")
         if successful_auth_bypasses > 0:
@@ -709,9 +675,7 @@ def run_security_tests():
     with open("security_test_results.json", "w", encoding="utf-8") as f:
         json.dump(security_report, f, indent=2)
 
-    print(
-        f"Security testing completed. Risk level: {security_report['risk_level']}"
-    )
+    print(f"Security testing completed. Risk level: {security_report['risk_level']}")
     print(f"Results saved to: security_test_results.json")
 
     return security_report

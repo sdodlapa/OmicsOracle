@@ -24,18 +24,10 @@ class SystemValidator:
         self.test_results = []
         self.start_time = datetime.now()
 
-    def log_test(
-        self, test_name: str, status: str, message: str = "", details: str = ""
-    ):
+    def log_test(self, test_name: str, status: str, message: str = "", details: str = ""):
         """Log test results with colors"""
         timestamp = datetime.now().strftime("%H:%M:%S")
-        color = (
-            Fore.GREEN
-            if status == "PASS"
-            else Fore.RED
-            if status == "FAIL"
-            else Fore.YELLOW
-        )
+        color = Fore.GREEN if status == "PASS" else Fore.RED if status == "FAIL" else Fore.YELLOW
 
         print(f"{color}[{timestamp}] {status:<4} {test_name}{Style.RESET_ALL}")
         if message:
@@ -63,19 +55,13 @@ class SystemValidator:
                     self.log_test("Backend Health", "PASS", "Server is healthy")
                     return True
                 else:
-                    self.log_test(
-                        "Backend Health", "FAIL", f"Unhealthy status: {data}"
-                    )
+                    self.log_test("Backend Health", "FAIL", f"Unhealthy status: {data}")
                     return False
             else:
-                self.log_test(
-                    "Backend Health", "FAIL", f"HTTP {response.status_code}"
-                )
+                self.log_test("Backend Health", "FAIL", f"HTTP {response.status_code}")
                 return False
         except Exception as e:
-            self.log_test(
-                "Backend Health", "FAIL", f"Connection error: {str(e)}"
-            )
+            self.log_test("Backend Health", "FAIL", f"Connection error: {str(e)}")
             return False
 
     def test_frontend_accessibility(self):
@@ -83,19 +69,13 @@ class SystemValidator:
         try:
             response = requests.get(self.frontend_url, timeout=5)
             if response.status_code == 200:
-                self.log_test(
-                    "Frontend Access", "PASS", "Frontend is accessible"
-                )
+                self.log_test("Frontend Access", "PASS", "Frontend is accessible")
                 return True
             else:
-                self.log_test(
-                    "Frontend Access", "FAIL", f"HTTP {response.status_code}"
-                )
+                self.log_test("Frontend Access", "FAIL", f"HTTP {response.status_code}")
                 return False
         except Exception as e:
-            self.log_test(
-                "Frontend Access", "FAIL", f"Connection error: {str(e)}"
-            )
+            self.log_test("Frontend Access", "FAIL", f"Connection error: {str(e)}")
             return False
 
     def test_search_functionality(self):
@@ -142,9 +122,7 @@ class SystemValidator:
                     all_passed = False
 
             except Exception as e:
-                self.log_test(
-                    f"Search: '{query[:20]}...'", "FAIL", f"Error: {str(e)}"
-                )
+                self.log_test(f"Search: '{query[:20]}...'", "FAIL", f"Error: {str(e)}")
                 all_passed = False
 
         return all_passed
@@ -177,9 +155,7 @@ class SystemValidator:
                 )
                 return None  # Skip
             else:
-                self.log_test(
-                    "Query Refinement", "FAIL", f"HTTP {response.status_code}"
-                )
+                self.log_test("Query Refinement", "FAIL", f"HTTP {response.status_code}")
                 return False
 
         except requests.exceptions.ConnectionError:
@@ -222,9 +198,7 @@ class SystemValidator:
                 )
                 return None  # Skip
             else:
-                self.log_test(
-                    "Enhanced Search", "FAIL", f"HTTP {response.status_code}"
-                )
+                self.log_test("Enhanced Search", "FAIL", f"HTTP {response.status_code}")
                 return False
 
         except requests.exceptions.ConnectionError:
@@ -246,13 +220,9 @@ class SystemValidator:
         for endpoint, method in endpoints:
             try:
                 if method == "GET":
-                    response = requests.get(
-                        f"{self.backend_url}{endpoint}", timeout=5
-                    )
+                    response = requests.get(f"{self.backend_url}{endpoint}", timeout=5)
                 else:
-                    response = requests.post(
-                        f"{self.backend_url}{endpoint}", timeout=5
-                    )
+                    response = requests.post(f"{self.backend_url}{endpoint}", timeout=5)
 
                 if response.status_code in [
                     200,
@@ -285,9 +255,7 @@ class SystemValidator:
 
             payload = {"query": "cancer genomics", "max_results": 20}
 
-            response = requests.post(
-                f"{self.backend_url}/api/search", json=payload, timeout=30
-            )
+            response = requests.post(f"{self.backend_url}/api/search", json=payload, timeout=30)
 
             end_time = time.time()
             response_time = end_time - start_time
@@ -315,15 +283,9 @@ class SystemValidator:
     def generate_report(self):
         """Generate comprehensive test report"""
         total_tests = len(self.test_results)
-        passed_tests = len(
-            [r for r in self.test_results if r["status"] == "PASS"]
-        )
-        failed_tests = len(
-            [r for r in self.test_results if r["status"] == "FAIL"]
-        )
-        warned_tests = len(
-            [r for r in self.test_results if r["status"] == "WARN"]
-        )
+        passed_tests = len([r for r in self.test_results if r["status"] == "PASS"])
+        failed_tests = len([r for r in self.test_results if r["status"] == "FAIL"])
+        warned_tests = len([r for r in self.test_results if r["status"] == "WARN"])
 
         end_time = datetime.now()
         duration = (end_time - self.start_time).total_seconds()
@@ -339,9 +301,7 @@ class SystemValidator:
         print(f"{Fore.YELLOW}Warnings: {warned_tests}{Style.RESET_ALL}")
         print(f"{Fore.RED}Failed: {failed_tests}{Style.RESET_ALL}")
 
-        success_rate = (
-            (passed_tests / total_tests * 100) if total_tests > 0 else 0
-        )
+        success_rate = (passed_tests / total_tests * 100) if total_tests > 0 else 0
         print(f"\nSuccess Rate: {success_rate:.1f}%")
 
         if failed_tests > 0:
@@ -366,8 +326,7 @@ class SystemValidator:
         }
 
         report_file = (
-            Path("test_results")
-            / f"validation_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            Path("test_results") / f"validation_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         )
         report_file.parent.mkdir(exist_ok=True)
 
@@ -380,9 +339,7 @@ class SystemValidator:
 
     def run_all_tests(self):
         """Run all validation tests"""
-        print(
-            f"{Fore.CYAN}Starting OmicsOracle System Validation...{Style.RESET_ALL}\n"
-        )
+        print(f"{Fore.CYAN}Starting OmicsOracle System Validation...{Style.RESET_ALL}\n")
 
         # Core functionality tests
         self.test_backend_health()
@@ -404,25 +361,17 @@ def main():
     try:
         success = validator.run_all_tests()
         if success:
-            print(
-                f"\n{Fore.GREEN}✅ All tests passed! System is working properly.{Style.RESET_ALL}"
-            )
+            print(f"\n{Fore.GREEN}✅ All tests passed! System is working properly.{Style.RESET_ALL}")
             sys.exit(0)
         else:
-            print(
-                f"\n{Fore.RED}❌ Some tests failed. Please check the issues above.{Style.RESET_ALL}"
-            )
+            print(f"\n{Fore.RED}❌ Some tests failed. Please check the issues above.{Style.RESET_ALL}")
             sys.exit(1)
 
     except KeyboardInterrupt:
-        print(
-            f"\n{Fore.YELLOW}⚠️  Testing interrupted by user.{Style.RESET_ALL}"
-        )
+        print(f"\n{Fore.YELLOW}⚠️  Testing interrupted by user.{Style.RESET_ALL}")
         sys.exit(1)
     except Exception as e:
-        print(
-            f"\n{Fore.RED}❌ Testing failed with error: {str(e)}{Style.RESET_ALL}"
-        )
+        print(f"\n{Fore.RED}❌ Testing failed with error: {str(e)}{Style.RESET_ALL}")
         sys.exit(1)
 
 

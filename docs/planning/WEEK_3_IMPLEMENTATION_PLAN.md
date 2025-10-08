@@ -2,8 +2,8 @@
 
 **Goal:** Increase coverage from 90% → 95%+ by adding Google Scholar and citation metrics
 
-**Timeline:** 10 days (Days 11-20)  
-**Branch:** phase-4-production-features  
+**Timeline:** 10 days (Days 11-20)
+**Branch:** phase-4-production-features
 **Dependencies:** Week 1-2 complete ✅
 
 ---
@@ -86,40 +86,40 @@ from .base import BasePublicationClient
 class GoogleScholarClient(BasePublicationClient):
     """
     Google Scholar client using scholarly library.
-    
+
     Provides:
     - Broader coverage (preprints, conference papers, theses)
     - Citation counts
     - Related papers
     - Author profiles
-    
+
     Rate Limits:
     - No official API (web scraping)
     - Recommended: 1 request per 3-5 seconds
     - Use proxies for higher volume
     """
-    
+
     def __init__(self, config: GoogleScholarConfig):
         super().__init__()
         self.config = config
         self._rate_limiter = RateLimiter(
             calls_per_second=1/3  # 1 call every 3 seconds
         )
-        
+
     def search(
-        self, 
-        query: str, 
+        self,
+        query: str,
         max_results: int = 50,
         year_from: Optional[int] = None,
         year_to: Optional[int] = None
     ) -> List[Publication]:
         """Search Google Scholar."""
         pass
-        
+
     def fetch_by_doi(self, doi: str) -> Optional[Publication]:
         """Fetch single paper by DOI."""
         pass
-        
+
     def get_citations(self, publication: Publication) -> int:
         """Get citation count for a paper."""
         pass
@@ -130,7 +130,7 @@ class GoogleScholarClient(BasePublicationClient):
 # config.py
 class GoogleScholarConfig(BaseModel):
     """Google Scholar client configuration."""
-    
+
     enable: bool = False
     max_results: int = 50
     rate_limit_seconds: float = 3.0
@@ -154,27 +154,27 @@ class GoogleScholarConfig(BaseModel):
 def search(self, query: str, max_results: int = 50) -> List[Publication]:
     """Search Google Scholar with rate limiting."""
     self.logger.info(f"Searching Scholar: '{query}', max={max_results}")
-    
+
     try:
         with self._rate_limiter:
             # Search using scholarly
             search_query = scholarly.search_pubs(query)
-            
+
             publications = []
             for i, result in enumerate(search_query):
                 if i >= max_results:
                     break
-                    
+
                 # Parse result into Publication model
                 pub = self._parse_scholar_result(result)
                 publications.append(pub)
-                
+
                 # Rate limit between results
                 time.sleep(self.config.rate_limit_seconds)
-            
+
             self.logger.info(f"Found {len(publications)} publications")
             return publications
-            
+
     except Exception as e:
         self.logger.error(f"Scholar search failed: {e}")
         raise PublicationSearchError(f"Failed to search Scholar: {e}")
@@ -217,7 +217,7 @@ def _initialize_clients(self):
     # Existing PubMed
     if self.config.enable_pubmed:
         self.pubmed_client = PubMedClient(self.config.pubmed_config)
-    
+
     # NEW - Google Scholar
     if self.config.enable_scholar:
         self.scholar_client = GoogleScholarClient(self.config.scholar_config)
@@ -228,25 +228,25 @@ def search(self, query: str, max_results: int = 50) -> PublicationSearchResult:
     """Search all enabled sources."""
     all_publications = []
     sources_used = []
-    
+
     # PubMed search
     if self.pubmed_client:
         pubmed_pubs = self.pubmed_client.search(query, max_results)
         all_publications.extend(pubmed_pubs)
         sources_used.append('pubmed')
-    
+
     # NEW - Scholar search
     if self.scholar_client:
         scholar_pubs = self.scholar_client.search(query, max_results)
         all_publications.extend(scholar_pubs)
         sources_used.append('scholar')
-    
+
     # Deduplicate (DOI + title matching)
     unique_pubs = self._deduplicate(all_publications)
-    
+
     # Rank
     ranked_pubs = self.ranker.rank(unique_pubs, query, top_k=max_results)
-    
+
     return PublicationSearchResult(
         query=query,
         publications=ranked_pubs,
@@ -265,9 +265,9 @@ def test_scholar_search():
     """Test Scholar search."""
     config = GoogleScholarConfig(enable=True)
     client = GoogleScholarClient(config)
-    
+
     results = client.search("CRISPR cancer", max_results=5)
-    
+
     assert len(results) > 0
     assert all(pub.source == PublicationSource.SCHOLAR for pub in results)
 
@@ -302,7 +302,7 @@ from ..models import Publication, CitationMetrics
 class CitationAnalyzer:
     """
     Analyzes citation metrics for publications.
-    
+
     Provides:
     - Citation count
     - Citation velocity (citations per year)
@@ -310,23 +310,23 @@ class CitationAnalyzer:
     - Relative citation ratio (RCR)
     - Field-normalized metrics
     """
-    
+
     def __init__(self, config: CitationAnalysisConfig):
         self.config = config
         self.logger = logging.getLogger(__name__)
-        
+
     def analyze(self, publication: Publication) -> CitationMetrics:
         """Analyze citation metrics for a publication."""
         pass
-        
+
     def batch_analyze(self, publications: List[Publication]) -> Dict[str, CitationMetrics]:
         """Analyze multiple publications."""
         pass
-        
+
     def get_citation_velocity(self, publication: Publication) -> float:
         """Calculate citations per year."""
         pass
-        
+
     def get_relative_citation_ratio(self, publication: Publication) -> float:
         """Calculate field-normalized RCR."""
         pass
@@ -337,31 +337,31 @@ class CitationAnalyzer:
 # models.py
 class CitationMetrics(BaseModel):
     """Citation analysis metrics."""
-    
+
     citation_count: int = 0
     citation_velocity: float = 0.0  # Citations per year
     h_index: Optional[int] = None
     relative_citation_ratio: Optional[float] = None  # Field-normalized
     percentile: Optional[float] = None  # Compared to similar papers
-    
+
     # Temporal
     citations_recent_year: int = 0
     citations_peak_year: Optional[int] = None
-    
+
     # Influence
     influential_citations: int = 0  # Highly influential citations
     self_citations: int = 0
-    
+
     # Sources
     citation_sources: Dict[str, int] = Field(default_factory=dict)
-    
+
     # Metadata
     last_updated: datetime = Field(default_factory=datetime.now)
 
 
 class Publication(BaseModel):
     # ... existing fields ...
-    
+
     # NEW - Citation metrics
     citation_metrics: Optional[CitationMetrics] = None
 ```
@@ -379,19 +379,19 @@ class Publication(BaseModel):
 ```python
 def analyze(self, publication: Publication) -> CitationMetrics:
     """Analyze all citation metrics."""
-    
+
     # Get base citation count (from Scholar or PubMed)
     citation_count = publication.citations or 0
-    
+
     # Calculate citation velocity
     velocity = self.get_citation_velocity(publication)
-    
+
     # Calculate RCR (if available)
     rcr = self.get_relative_citation_ratio(publication)
-    
+
     # Determine percentile
     percentile = self._calculate_percentile(publication)
-    
+
     return CitationMetrics(
         citation_count=citation_count,
         citation_velocity=velocity,
@@ -405,28 +405,28 @@ def get_citation_velocity(self, publication: Publication) -> float:
     """Citations per year since publication."""
     if not publication.publication_date or not publication.citations:
         return 0.0
-    
+
     years_since_pub = (datetime.now() - publication.publication_date).days / 365
     if years_since_pub < 0.1:  # Avoid division by zero
         return 0.0
-    
+
     return publication.citations / years_since_pub
 
 
 def get_relative_citation_ratio(self, publication: Publication) -> float:
     """
     Field-normalized RCR.
-    
+
     RCR > 1.0: Above average for field
     RCR = 1.0: Average for field
     RCR < 1.0: Below average for field
     """
     # For Week 3, use simple normalization
     # Week 5: Use NIH iCite API for real RCR
-    
+
     if not publication.citations or not publication.publication_date:
         return 1.0
-    
+
     # Simple normalization by age
     years = (datetime.now() - publication.publication_date).days / 365
     if years < 1:
@@ -435,7 +435,7 @@ def get_relative_citation_ratio(self, publication: Publication) -> float:
         expected = 15
     else:
         expected = 30
-    
+
     return publication.citations / expected
 ```
 
@@ -455,16 +455,16 @@ def get_relative_citation_ratio(self, publication: Publication) -> float:
 def search(self, query: str, max_results: int = 50) -> PublicationSearchResult:
     """Search with citation analysis."""
     # ... existing search logic ...
-    
+
     # NEW - Citation analysis
     if self.config.enable_citations and self.citation_analyzer:
         self.logger.info("Analyzing citations...")
         for pub in unique_pubs:
             pub.citation_metrics = self.citation_analyzer.analyze(pub)
-    
+
     # Rank (now includes citation metrics)
     ranked_pubs = self.ranker.rank(unique_pubs, query, top_k=max_results)
-    
+
     return result
 ```
 
@@ -475,18 +475,18 @@ def _calculate_citation_score(self, pub: Publication) -> float:
     """Score based on citation metrics."""
     if not pub.citation_metrics:
         return 0.5  # Neutral score
-    
+
     metrics = pub.citation_metrics
-    
+
     # Velocity score (0-1)
     velocity_score = min(metrics.citation_velocity / 50, 1.0)
-    
+
     # RCR score (0-1)
     rcr_score = min(metrics.relative_citation_ratio or 0, 1.0)
-    
+
     # Citation count score (0-1)
     count_score = min(metrics.citation_count / 500, 1.0)
-    
+
     # Weighted combination
     return (
         0.4 * velocity_score +
@@ -499,7 +499,7 @@ def rank(self, publications: List[Publication], query: str, top_k: int = 50):
     """Rank with enhanced citation scoring."""
     for pub in publications:
         # ... existing scores ...
-        
+
         # NEW - Citation score
         citation_score = self._calculate_citation_score(pub)
         total_score += self.config.ranking_weights.get('citations', 0.1) * citation_score
@@ -545,20 +545,20 @@ With PubMed + Scholar, same papers appear multiple times:
 def _deduplicate(self, publications: List[Publication]) -> List[Publication]:
     """
     Deduplicate across multiple sources.
-    
+
     Priority:
     1. PubMed (official records)
     2. Scholar (additional metadata, citations)
-    
+
     Matching:
     - DOI exact match
     - Title fuzzy match (>90% similarity)
     - PMID match
     """
     from difflib import SequenceMatcher
-    
+
     unique_pubs = {}
-    
+
     for pub in publications:
         # Match by DOI
         if pub.doi:
@@ -567,40 +567,40 @@ def _deduplicate(self, publications: List[Publication]) -> List[Publication]:
                 # Merge metadata (keep PubMed, add Scholar citations)
                 unique_pubs[key] = self._merge_publications(unique_pubs[key], pub)
                 continue
-        
+
         # Match by PMID
         if pub.pmid:
             key = f"pmid:{pub.pmid}"
             if key in unique_pubs:
                 unique_pubs[key] = self._merge_publications(unique_pubs[key], pub)
                 continue
-        
+
         # Match by title fuzzy match
         title_key = None
         for existing_key, existing_pub in unique_pubs.items():
-            similarity = SequenceMatcher(None, 
-                pub.title.lower(), 
+            similarity = SequenceMatcher(None,
+                pub.title.lower(),
                 existing_pub.title.lower()
             ).ratio()
-            
+
             if similarity > 0.9:  # 90% similar
                 title_key = existing_key
                 break
-        
+
         if title_key:
             unique_pubs[title_key] = self._merge_publications(unique_pubs[title_key], pub)
         else:
             # New unique publication
             key = pub.doi or pub.pmid or pub.title
             unique_pubs[key] = pub
-    
+
     return list(unique_pubs.values())
 
 
 def _merge_publications(self, primary: Publication, secondary: Publication) -> Publication:
     """
     Merge two publications (same paper, different sources).
-    
+
     Strategy:
     - Keep PubMed as primary (official metadata)
     - Add Scholar citations if higher
@@ -614,10 +614,10 @@ def _merge_publications(self, primary: Publication, secondary: Publication) -> P
             merged.citations = secondary.citations
     else:
         merged = primary
-    
+
     # Merge metadata
     merged.metadata = {**primary.metadata, **secondary.metadata}
-    
+
     return merged
 ```
 
@@ -648,21 +648,21 @@ def test_multi_source_search():
         pubmed_config=PubMedConfig(email="test@example.com"),
         scholar_config=GoogleScholarConfig(enable=True)
     )
-    
+
     pipeline = PublicationSearchPipeline(config)
     result = pipeline.search("CRISPR cancer therapy", max_results=20)
-    
+
     # Verify multi-source
     assert 'pubmed' in result.metadata['sources_used']
     assert 'scholar' in result.metadata['sources_used']
-    
+
     # Verify deduplication
     dois = [pub.publication.doi for pub in result.publications if pub.publication.doi]
     assert len(dois) == len(set(dois))  # No duplicate DOIs
-    
+
     # Verify citations
     assert all(pub.publication.citation_metrics for pub in result.publications)
-    
+
     # Verify ranking considers citations
     # Higher cited papers should rank higher (all else equal)
     pass
@@ -674,7 +674,7 @@ def test_coverage_improvement():
     config_week1 = PublicationSearchConfig(enable_pubmed=True)
     pipeline_week1 = PublicationSearchPipeline(config_week1)
     result_week1 = pipeline_week1.search("genomics", max_results=100)
-    
+
     # Week 3: PubMed + Scholar
     config_week3 = PublicationSearchConfig(
         enable_pubmed=True,
@@ -682,7 +682,7 @@ def test_coverage_improvement():
     )
     pipeline_week3 = PublicationSearchPipeline(config_week3)
     result_week3 = pipeline_week3.search("genomics", max_results=100)
-    
+
     # Week 3 should find more unique papers
     assert result_week3.total_found >= result_week1.total_found
 ```
@@ -742,7 +742,7 @@ result = pipeline.search("machine learning genomics", max_results=50)
 for pub_result in result.publications[:10]:
     pub = pub_result.publication
     metrics = pub.citation_metrics
-    
+
     print(f"{pub.title}")
     print(f"  Citations: {metrics.citation_count}")
     print(f"  Velocity: {metrics.citation_velocity:.1f} citations/year")
@@ -809,7 +809,7 @@ result = pipeline.search("CRISPR cancer")
 
 ### Google Scholar Rate Limits
 - **Risk:** Scholar blocks frequent requests
-- **Mitigation:** 
+- **Mitigation:**
   - Rate limiting (1 req/3s)
   - Caching results
   - Optional proxy support
@@ -865,6 +865,6 @@ result = pipeline.search("CRISPR cancer")
 4. Run tests after each component
 5. Document as you go
 
-**Branch:** `phase-4-production-features`  
-**Starting Point:** Week 1-2 complete, validation passed  
+**Branch:** `phase-4-production-features`
+**Starting Point:** Week 1-2 complete, validation passed
 **Timeline:** 10 days total for Week 3

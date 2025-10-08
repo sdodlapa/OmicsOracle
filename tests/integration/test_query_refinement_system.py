@@ -40,10 +40,7 @@ class QueryRefinementTester:
         """Test backend health endpoint."""
         try:
             response = self.session.get(f"{self.base_url}/health")
-            success = (
-                response.status_code == 200
-                and response.json().get("status") == "healthy"
-            )
+            success = response.status_code == 200 and response.json().get("status") == "healthy"
             self.log_test(
                 "Backend Health Check",
                 success,
@@ -73,26 +70,18 @@ class QueryRefinementTester:
                     "result_count": test_query["result_count"],
                 }
 
-                response = self.session.post(
-                    f"{self.base_url}/api/refinement/suggestions", json=payload
-                )
+                response = self.session.post(f"{self.base_url}/api/refinement/suggestions", json=payload)
 
                 if response.status_code == 200:
                     data = response.json()
                     has_suggestions = len(data.get("suggestions", [])) > 0
-                    has_alternatives = (
-                        len(data.get("alternative_queries", [])) > 0
-                    )
+                    has_alternatives = len(data.get("alternative_queries", [])) > 0
                     has_explanation = bool(data.get("explanation"))
 
-                    success = (
-                        has_explanation  # At minimum should have explanation
-                    )
+                    success = has_explanation  # At minimum should have explanation
                     details = f"Query: '{test_query['query']}' -> Suggestions: {len(data.get('suggestions', []))}, Alternatives: {len(data.get('alternative_queries', []))}"
 
-                    self.log_test(
-                        f"Query Suggestions Test {i+1}", success, details
-                    )
+                    self.log_test(f"Query Suggestions Test {i+1}", success, details)
                     all_success = all_success and success
                 else:
                     self.log_test(
@@ -128,9 +117,7 @@ class QueryRefinementTester:
                     success = True  # Even empty results are valid
                     details = f"Query: '{query}' -> Similar: {len(data.get('similar_queries', []))}, Patterns: {len(data.get('success_patterns', []))}"
 
-                    self.log_test(
-                        f"Similar Queries Test {i+1}", success, details
-                    )
+                    self.log_test(f"Similar Queries Test {i+1}", success, details)
                 else:
                     self.log_test(
                         f"Similar Queries Test {i+1}",
@@ -181,9 +168,7 @@ class QueryRefinementTester:
                     success = has_query_id  # Should always have query_id
                     details = f"Query: '{test_query['query']}' -> Results: {len(data.get('results', []))}, Query ID: {data.get('query_id', 'None')}"
 
-                    self.log_test(
-                        f"Enhanced Search Test {i+1}", success, details
-                    )
+                    self.log_test(f"Enhanced Search Test {i+1}", success, details)
                     all_success = all_success and success
                 else:
                     self.log_test(
@@ -227,9 +212,7 @@ class QueryRefinementTester:
 
             all_success = True
             for i, feedback in enumerate(test_feedback):
-                response = self.session.post(
-                    f"{self.base_url}/api/refinement/feedback", json=feedback
-                )
+                response = self.session.post(f"{self.base_url}/api/refinement/feedback", json=feedback)
 
                 if response.status_code == 200:
                     data = response.json()
@@ -240,9 +223,7 @@ class QueryRefinementTester:
                     success = has_feedback_id and has_status and has_message
                     details = f"Feedback ID: {data.get('feedback_id')}, Status: {data.get('status')}"
 
-                    self.log_test(
-                        f"Feedback Submission Test {i+1}", success, details
-                    )
+                    self.log_test(f"Feedback Submission Test {i+1}", success, details)
                     all_success = all_success and success
                 else:
                     self.log_test(
@@ -261,9 +242,7 @@ class QueryRefinementTester:
     def test_analytics_endpoint(self) -> bool:
         """Test analytics endpoint."""
         try:
-            response = self.session.get(
-                f"{self.base_url}/api/refinement/analytics"
-            )
+            response = self.session.get(f"{self.base_url}/api/refinement/analytics")
 
             if response.status_code == 200:
                 data = response.json()
@@ -329,13 +308,9 @@ class QueryRefinementTester:
             all_success = True
             for i, test in enumerate(error_tests):
                 if test["method"] == "POST":
-                    response = self.session.post(
-                        f"{self.base_url}{test['endpoint']}", json=test["data"]
-                    )
+                    response = self.session.post(f"{self.base_url}{test['endpoint']}", json=test["data"])
                 else:
-                    response = self.session.get(
-                        f"{self.base_url}{test['endpoint']}"
-                    )
+                    response = self.session.get(f"{self.base_url}{test['endpoint']}")
 
                 success = response.status_code == test["expected_status"]
                 details = f"Expected {test['expected_status']}, got {response.status_code}"
@@ -371,9 +346,7 @@ class QueryRefinementTester:
 
         # Calculate summary
         total_tests = len(self.test_results)
-        passed_tests = sum(
-            1 for result in self.test_results if result["success"]
-        )
+        passed_tests = sum(1 for result in self.test_results if result["success"])
         failed_tests = total_tests - passed_tests
 
         print("=" * 60)

@@ -1,9 +1,9 @@
 # 📊 Module 4: Advanced Visualization System
 
-**Date**: December 28, 2024  
-**Module**: Interactive Data Visualization & Dashboards  
-**Priority**: High - User Experience & Insights  
-**Estimated Timeline**: 4-6 weeks  
+**Date**: December 28, 2024
+**Module**: Interactive Data Visualization & Dashboards
+**Priority**: High - User Experience & Insights
+**Estimated Timeline**: 4-6 weeks
 
 ---
 
@@ -135,7 +135,7 @@ class ChartConfig:
     responsive: bool = True
     export_formats: List[str] = None
     custom_config: Dict[str, Any] = None
-    
+
     def __post_init__(self):
         if self.export_formats is None:
             self.export_formats = ['png', 'svg', 'html']
@@ -149,7 +149,7 @@ class ChartData:
     metadata: Dict[str, Any]
     filters: Dict[str, Any] = None
     aggregations: Dict[str, Any] = None
-    
+
     def __post_init__(self):
         if self.filters is None:
             self.filters = {}
@@ -158,24 +158,24 @@ class ChartData:
 
 class BaseChart(ABC):
     """Base class for all chart types"""
-    
+
     def __init__(self, config: ChartConfig):
         self.config = config
         self.figure = None
         self.data_cache = {}
-        
+
     @abstractmethod
     async def create_chart(self, data: ChartData) -> go.Figure:
         """Create the chart from data"""
         pass
-    
+
     async def update_chart(self, new_data: ChartData) -> go.Figure:
         """Update existing chart with new data"""
         return await self.create_chart(new_data)
-    
+
     def apply_theme(self, figure: go.Figure) -> go.Figure:
         """Apply theme and styling to the chart"""
-        
+
         figure.update_layout(
             template=self.config.theme,
             title={
@@ -190,31 +190,31 @@ class BaseChart(ABC):
             legend={'orientation': 'h', 'yanchor': 'bottom', 'y': 1.02},
             margin={'l': 40, 'r': 40, 't': 60, 'b': 40}
         )
-        
+
         if self.config.responsive:
             figure.update_layout(autosize=True)
-        
+
         return figure
-    
+
     def add_interactivity(self, figure: go.Figure) -> go.Figure:
         """Add interactive features to the chart"""
-        
+
         if not self.config.interactive:
             return figure
-        
+
         # Add hover templates
         for trace in figure.data:
             if hasattr(trace, 'hovertemplate'):
                 trace.hovertemplate = self._create_hover_template(trace)
-        
+
         # Add selection and zoom capabilities
         figure.update_layout(
             selectdirection='diagonal',
             dragmode='select'
         )
-        
+
         return figure
-    
+
     def _create_hover_template(self, trace) -> str:
         """Create custom hover template"""
         return "<b>%{fullData.name}</b><br>" + \
@@ -224,32 +224,32 @@ class BaseChart(ABC):
 
 class MetadataChart(BaseChart):
     """Charts for dataset metadata visualization"""
-    
+
     async def create_organism_distribution(self, data: ChartData) -> go.Figure:
         """Create organism distribution pie chart"""
-        
+
         organism_counts = data.data['organism'].value_counts()
-        
+
         fig = px.pie(
             values=organism_counts.values,
             names=organism_counts.index,
             title="Dataset Distribution by Organism"
         )
-        
+
         fig.update_traces(
             hovertemplate="<b>%{label}</b><br>" +
                          "Count: %{value}<br>" +
                          "Percentage: %{percent}<br>" +
                          "<extra></extra>"
         )
-        
+
         return self.apply_theme(self.add_interactivity(fig))
-    
+
     async def create_platform_timeline(self, data: ChartData) -> go.Figure:
         """Create platform usage timeline"""
-        
+
         platform_timeline = data.data.groupby(['year', 'platform']).size().reset_index(name='count')
-        
+
         fig = px.line(
             platform_timeline,
             x='year',
@@ -257,49 +257,49 @@ class MetadataChart(BaseChart):
             color='platform',
             title="Platform Usage Over Time"
         )
-        
+
         fig.update_layout(
             xaxis_title="Year",
             yaxis_title="Number of Datasets",
             hovermode='x unified'
         )
-        
+
         return self.apply_theme(self.add_interactivity(fig))
-    
+
     async def create_sample_size_distribution(self, data: ChartData) -> go.Figure:
         """Create sample size distribution histogram"""
-        
+
         fig = px.histogram(
             data.data,
             x='sample_count',
             nbins=30,
             title="Sample Size Distribution"
         )
-        
+
         fig.update_layout(
             xaxis_title="Number of Samples",
             yaxis_title="Number of Datasets",
             bargap=0.1
         )
-        
+
         # Add statistical annotations
         mean_samples = data.data['sample_count'].mean()
         median_samples = data.data['sample_count'].median()
-        
+
         fig.add_vline(
             x=mean_samples,
             line_dash="dash",
             line_color="red",
             annotation_text=f"Mean: {mean_samples:.1f}"
         )
-        
+
         fig.add_vline(
             x=median_samples,
             line_dash="dash",
             line_color="blue",
             annotation_text=f"Median: {median_samples:.1f}"
         )
-        
+
         return self.apply_theme(self.add_interactivity(fig))
 ```
 
@@ -316,12 +316,12 @@ from .base_chart import BaseChart, ChartData, ChartConfig
 
 class StatisticalChart(BaseChart):
     """Charts for statistical data visualization"""
-    
+
     async def create_quality_metrics_radar(self, data: ChartData) -> go.Figure:
         """Create radar chart for dataset quality metrics"""
-        
+
         quality_metrics = data.data
-        
+
         # Define metrics and their values
         metrics = ['Completeness', 'Consistency', 'Accuracy', 'Timeliness', 'Validity']
         values = [
@@ -331,9 +331,9 @@ class StatisticalChart(BaseChart):
             quality_metrics.get('timeliness_score', 0) * 100,
             quality_metrics.get('validity_score', 0) * 100
         ]
-        
+
         fig = go.Figure()
-        
+
         fig.add_trace(go.Scatterpolar(
             r=values,
             theta=metrics,
@@ -342,7 +342,7 @@ class StatisticalChart(BaseChart):
             line_color='rgb(1, 87, 155)',
             fillcolor='rgba(1, 87, 155, 0.3)'
         ))
-        
+
         fig.update_layout(
             polar=dict(
                 radialaxis=dict(
@@ -353,14 +353,14 @@ class StatisticalChart(BaseChart):
             showlegend=False,
             title="Dataset Quality Assessment"
         )
-        
+
         return self.apply_theme(fig)
-    
+
     async def create_correlation_heatmap(self, data: ChartData) -> go.Figure:
         """Create correlation heatmap for numerical variables"""
-        
+
         correlation_matrix = data.data
-        
+
         fig = go.Figure(data=go.Heatmap(
             z=correlation_matrix.values,
             x=correlation_matrix.columns,
@@ -372,20 +372,20 @@ class StatisticalChart(BaseChart):
                          "Correlation: %{z:.3f}<br>" +
                          "<extra></extra>"
         ))
-        
+
         fig.update_layout(
             title="Variable Correlation Matrix",
             xaxis_title="Variables",
             yaxis_title="Variables"
         )
-        
+
         return self.apply_theme(fig)
-    
+
     async def create_distribution_comparison(self, data: ChartData) -> go.Figure:
         """Create distribution comparison plots"""
-        
+
         datasets = data.data
-        
+
         # Create subplots for multiple distributions
         fig = make_subplots(
             rows=2, cols=2,
@@ -394,36 +394,36 @@ class StatisticalChart(BaseChart):
             specs=[[{"secondary_y": False}, {"secondary_y": False}],
                    [{"secondary_y": False}, {"secondary_y": False}]]
         )
-        
+
         # Sample size distribution
         fig.add_trace(
             go.Histogram(x=datasets['sample_count'], name='Sample Size', nbinsx=20),
             row=1, col=1
         )
-        
+
         # Expression range distribution
         if 'expression_range' in datasets.columns:
             fig.add_trace(
                 go.Histogram(x=datasets['expression_range'], name='Expression Range', nbinsx=20),
                 row=1, col=2
             )
-        
+
         # Missing data percentage
         if 'missing_percentage' in datasets.columns:
             fig.add_trace(
                 go.Histogram(x=datasets['missing_percentage'], name='Missing Data %', nbinsx=20),
                 row=2, col=1
             )
-        
+
         # Quality scores
         if 'quality_score' in datasets.columns:
             fig.add_trace(
                 go.Histogram(x=datasets['quality_score'], name='Quality Score', nbinsx=20),
                 row=2, col=2
             )
-        
+
         fig.update_layout(height=600, showlegend=False, title_text="Dataset Characteristics Distribution")
-        
+
         return self.apply_theme(fig)
 ```
 
@@ -455,7 +455,7 @@ class DashboardConfig:
 
 class DashboardEngine:
     """Main dashboard orchestration engine"""
-    
+
     def __init__(self):
         self.active_dashboards = {}
         self.chart_factories = {
@@ -464,10 +464,10 @@ class DashboardEngine:
         }
         self.data_aggregator = DataAggregator()
         self.real_time_updater = RealTimeUpdater()
-    
+
     async def create_dashboard(self, config: DashboardConfig, data_source: str) -> Dict[str, Any]:
         """Create a new dashboard"""
-        
+
         dashboard = {
             'id': config.dashboard_id,
             'title': config.title,
@@ -476,45 +476,45 @@ class DashboardEngine:
             'last_update': None,
             'status': 'initializing'
         }
-        
+
         try:
             # Initialize charts
             for chart_config in config.charts:
                 chart = await self._create_chart(chart_config, data_source)
                 dashboard['charts'][chart_config['id']] = chart
-            
+
             # Set up real-time updates if enabled
             if config.auto_refresh:
                 await self.real_time_updater.register_dashboard(
-                    config.dashboard_id, 
+                    config.dashboard_id,
                     config.refresh_interval
                 )
-            
+
             dashboard['status'] = 'active'
             self.active_dashboards[config.dashboard_id] = dashboard
-            
+
             return dashboard
-            
+
         except Exception as e:
             dashboard['status'] = 'error'
             dashboard['error'] = str(e)
             return dashboard
-    
+
     async def _create_chart(self, chart_config: Dict[str, Any], data_source: str) -> Dict[str, Any]:
         """Create individual chart"""
-        
+
         chart_type = chart_config.get('type', 'metadata')
         chart_factory_class = self.chart_factories.get(chart_type)
-        
+
         if not chart_factory_class:
             raise ValueError(f"Unknown chart type: {chart_type}")
-        
+
         # Get data for chart
         chart_data = await self.data_aggregator.get_chart_data(
-            data_source, 
+            data_source,
             chart_config.get('data_query', {})
         )
-        
+
         # Create chart factory instance
         factory_config = ChartConfig(
             chart_type=chart_config.get('chart_subtype', 'default'),
@@ -523,12 +523,12 @@ class DashboardEngine:
             height=chart_config.get('height'),
             interactive=chart_config.get('interactive', True)
         )
-        
+
         chart_factory = chart_factory_class(factory_config)
-        
+
         # Generate chart
         figure = await chart_factory.create_chart(chart_data)
-        
+
         return {
             'id': chart_config['id'],
             'figure': figure,
@@ -536,18 +536,18 @@ class DashboardEngine:
             'last_update': datetime.utcnow(),
             'data_hash': self._calculate_data_hash(chart_data)
         }
-    
+
     async def update_dashboard(self, dashboard_id: str, force_refresh: bool = False) -> Dict[str, Any]:
         """Update dashboard with fresh data"""
-        
+
         if dashboard_id not in self.active_dashboards:
             raise ValueError(f"Dashboard {dashboard_id} not found")
-        
+
         dashboard = self.active_dashboards[dashboard_id]
         config = dashboard['config']
-        
+
         updated_charts = {}
-        
+
         for chart_id, chart in dashboard['charts'].items():
             try:
                 # Check if chart needs update
@@ -556,32 +556,32 @@ class DashboardEngine:
                     if current_hash == chart['data_hash']:
                         updated_charts[chart_id] = chart
                         continue
-                
+
                 # Update chart
                 updated_chart = await self._create_chart(
-                    chart['config'], 
+                    chart['config'],
                     config.dashboard_id  # Use dashboard_id as data_source
                 )
                 updated_charts[chart_id] = updated_chart
-                
+
             except Exception as e:
                 # Keep old chart if update fails
                 chart['error'] = str(e)
                 updated_charts[chart_id] = chart
-        
+
         dashboard['charts'] = updated_charts
         dashboard['last_update'] = datetime.utcnow()
-        
+
         return dashboard
-    
+
     async def get_dashboard_data(self, dashboard_id: str) -> Dict[str, Any]:
         """Get dashboard data for frontend"""
-        
+
         if dashboard_id not in self.active_dashboards:
             return {'error': 'Dashboard not found'}
-        
+
         dashboard = self.active_dashboards[dashboard_id]
-        
+
         # Convert plotly figures to JSON
         charts_json = {}
         for chart_id, chart in dashboard['charts'].items():
@@ -592,7 +592,7 @@ class DashboardEngine:
                     'last_update': chart['last_update'].isoformat(),
                     'error': chart.get('error')
                 }
-        
+
         return {
             'id': dashboard['id'],
             'title': dashboard['title'],
@@ -626,111 +626,111 @@ class UpdateSubscription:
 
 class RealTimeUpdater:
     """Manage real-time dashboard updates"""
-    
+
     def __init__(self):
         self.subscriptions = {}
         self.websocket_connections = {}
         self.update_tasks = {}
         self.is_running = False
-    
+
     async def start(self):
         """Start the real-time update service"""
         self.is_running = True
-        
+
         # Start update loop
         asyncio.create_task(self._update_loop())
-    
+
     async def stop(self):
         """Stop the real-time update service"""
         self.is_running = False
-        
+
         # Cancel all update tasks
         for task in self.update_tasks.values():
             task.cancel()
-        
+
         # Close websocket connections
         for ws in self.websocket_connections.values():
             await ws.close()
-    
-    async def register_dashboard(self, 
-                               dashboard_id: str, 
+
+    async def register_dashboard(self,
+                               dashboard_id: str,
                                update_interval: int = 30,
                                chart_ids: Set[str] = None) -> None:
         """Register a dashboard for real-time updates"""
-        
+
         subscription = UpdateSubscription(
             dashboard_id=dashboard_id,
             chart_ids=chart_ids or set(),
             update_interval=update_interval,
             last_update=datetime.utcnow()
         )
-        
+
         self.subscriptions[dashboard_id] = subscription
-        
+
         # Start update task for this dashboard
         self.update_tasks[dashboard_id] = asyncio.create_task(
             self._dashboard_update_task(dashboard_id)
         )
-    
+
     async def unregister_dashboard(self, dashboard_id: str) -> None:
         """Unregister a dashboard from real-time updates"""
-        
+
         if dashboard_id in self.subscriptions:
             del self.subscriptions[dashboard_id]
-        
+
         if dashboard_id in self.update_tasks:
             self.update_tasks[dashboard_id].cancel()
             del self.update_tasks[dashboard_id]
-        
+
         if dashboard_id in self.websocket_connections:
             await self.websocket_connections[dashboard_id].close()
             del self.websocket_connections[dashboard_id]
-    
+
     async def add_websocket_connection(self, dashboard_id: str, websocket) -> None:
         """Add websocket connection for dashboard"""
         self.websocket_connections[dashboard_id] = websocket
-    
+
     async def _dashboard_update_task(self, dashboard_id: str) -> None:
         """Background task for dashboard updates"""
-        
+
         while self.is_running and dashboard_id in self.subscriptions:
             try:
                 subscription = self.subscriptions[dashboard_id]
-                
+
                 # Check if update is needed
                 now = datetime.utcnow()
                 if (now - subscription.last_update).seconds >= subscription.update_interval:
-                    
+
                     # Check for data changes
                     has_changes = await self._check_for_data_changes(dashboard_id)
-                    
+
                     if has_changes:
                         # Notify connected clients
                         await self._notify_dashboard_update(dashboard_id)
                         subscription.last_update = now
-                
+
                 # Wait before next check
                 await asyncio.sleep(5)  # Check every 5 seconds
-                
+
             except Exception as e:
                 # Log error and continue
                 await asyncio.sleep(10)  # Wait longer on error
-    
+
     async def _check_for_data_changes(self, dashboard_id: str) -> bool:
         """Check if dashboard data has changed"""
-        
+
         # This would integrate with your data sources to check for changes
         # For now, return False (no changes)
         return False
-    
+
     async def _notify_dashboard_update(self, dashboard_id: str) -> None:
         """Notify clients of dashboard updates"""
-        
+
         if dashboard_id not in self.websocket_connections:
             return
-        
+
         websocket = self.websocket_connections[dashboard_id]
-        
+
         try:
             update_message = {
                 'type': 'dashboard_update',
@@ -738,16 +738,16 @@ class RealTimeUpdater:
                 'timestamp': datetime.utcnow().isoformat(),
                 'charts_updated': list(self.subscriptions[dashboard_id].chart_ids)
             }
-            
+
             await websocket.send(json.dumps(update_message))
-            
+
         except websockets.ConnectionClosed:
             # Remove closed connection
             del self.websocket_connections[dashboard_id]
         except Exception as e:
             # Log error
             pass
-    
+
     async def _update_loop(self):
         """Main update loop"""
         while self.is_running:
@@ -755,20 +755,20 @@ class RealTimeUpdater:
                 # Perform any global update tasks
                 await self._cleanup_expired_subscriptions()
                 await asyncio.sleep(60)  # Run cleanup every minute
-                
+
             except Exception as e:
                 await asyncio.sleep(10)
-    
+
     async def _cleanup_expired_subscriptions(self):
         """Clean up expired or inactive subscriptions"""
-        
+
         expired_dashboards = []
         cutoff_time = datetime.utcnow() - timedelta(hours=24)
-        
+
         for dashboard_id, subscription in self.subscriptions.items():
             if subscription.last_update < cutoff_time:
                 expired_dashboards.append(dashboard_id)
-        
+
         for dashboard_id in expired_dashboards:
             await self.unregister_dashboard(dashboard_id)
 ```
@@ -811,9 +811,9 @@ export const DashboardContainer: React.FC<DashboardContainerProps> = ({
     if (!autoRefresh) return;
 
     const wsService = new WebSocketService();
-    
+
     wsService.connect(`/ws/dashboard/${dashboardId}`);
-    
+
     wsService.onMessage((message) => {
       if (message.type === 'dashboard_update') {
         handleRefresh();
@@ -851,7 +851,7 @@ export const DashboardContainer: React.FC<DashboardContainerProps> = ({
   const handleExport = useCallback(async (format: string) => {
     try {
       const exportData = await VisualizationAPI.exportDashboard(dashboardId, format);
-      
+
       // Trigger download
       const blob = new Blob([exportData], { type: 'application/octet-stream' });
       const url = URL.createObjectURL(blob);
@@ -860,7 +860,7 @@ export const DashboardContainer: React.FC<DashboardContainerProps> = ({
       link.download = `${dashboardId}_${new Date().toISOString().split('T')[0]}.${format}`;
       link.click();
       URL.revokeObjectURL(url);
-      
+
     } catch (err) {
       setError(err.message);
     }
@@ -896,7 +896,7 @@ export const DashboardContainer: React.FC<DashboardContainerProps> = ({
           autoRefresh={autoRefresh}
         />
       </div>
-      
+
       <DashboardGrid
         charts={dashboardData?.charts || {}}
         layout={dashboardData?.layout || 'grid'}

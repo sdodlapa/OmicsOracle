@@ -7,10 +7,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from omics_oracle.integrations.pubmed import (
-    PubMedIntegration,
-    search_pubmed_for_geo,
-)
+from omics_oracle.integrations.pubmed import PubMedIntegration, search_pubmed_for_geo
 
 
 class TestPubMedIntegration:
@@ -107,10 +104,7 @@ class TestPubMedIntegration:
         assert paper_info["journal"] == "Test Journal"
         assert paper_info["year"] == "2023"
         assert paper_info["abstract"] == "This is a test abstract."
-        assert (
-            paper_info["pubmed_url"]
-            == "https://pubmed.ncbi.nlm.nih.gov/12345678/"
-        )
+        assert paper_info["pubmed_url"] == "https://pubmed.ncbi.nlm.nih.gov/12345678/"
 
     def test_extract_paper_info_minimal(self):
         """Test paper info extraction with minimal data."""
@@ -241,9 +235,7 @@ class TestPubMedIntegration:
     @pytest.mark.asyncio
     async def test_get_related_papers_integration(self):
         """Test complete workflow of getting related papers."""
-        with patch.object(
-            self.pubmed, "search_papers"
-        ) as mock_search, patch.object(
+        with patch.object(self.pubmed, "search_papers") as mock_search, patch.object(
             self.pubmed, "fetch_paper_details"
         ) as mock_fetch:
             mock_search.return_value = ["12345678", "87654321"]
@@ -252,9 +244,7 @@ class TestPubMedIntegration:
                 {"pmid": "87654321", "title": "Paper 2"},
             ]
 
-            papers = await self.pubmed.get_related_papers(
-                "GSE12345", "Test Dataset"
-            )
+            papers = await self.pubmed.get_related_papers("GSE12345", "Test Dataset")
 
             assert len(papers) == 2
             mock_search.assert_called_once_with("GSE12345", "Test Dataset", 10)
@@ -269,21 +259,15 @@ class TestConvenienceFunction:
     async def test_search_pubmed_for_geo(self, mock_pubmed_class):
         """Test the convenience function."""
         mock_pubmed = AsyncMock()
-        mock_pubmed.get_related_papers.return_value = [
-            {"pmid": "12345", "title": "Test"}
-        ]
+        mock_pubmed.get_related_papers.return_value = [{"pmid": "12345", "title": "Test"}]
         mock_pubmed_class.return_value.__aenter__.return_value = mock_pubmed
 
-        papers = await search_pubmed_for_geo(
-            "GSE12345", email="test@example.com"
-        )
+        papers = await search_pubmed_for_geo("GSE12345", email="test@example.com")
 
         assert len(papers) == 1
         assert papers[0]["pmid"] == "12345"
         mock_pubmed_class.assert_called_once_with(email="test@example.com")
-        mock_pubmed.get_related_papers.assert_called_once_with(
-            "GSE12345", None, 10
-        )
+        mock_pubmed.get_related_papers.assert_called_once_with("GSE12345", None, 10)
 
 
 if __name__ == "__main__":

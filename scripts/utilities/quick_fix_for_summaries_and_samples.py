@@ -29,17 +29,11 @@ def process_ai_summary_safely(ai_summary, geo_id, original_summary):
         )
 
         # Check if summary is generic
-        is_generic = any(
-            indicator in str(ai_summary) for indicator in generic_indicators
-        )
+        is_generic = any(indicator in str(ai_summary) for indicator in generic_indicators)
 
         # Check if mentions wrong GEO ID
         for indicator in generic_indicators[:3]:  # GEO IDs
-            if (
-                indicator in display_summary
-                and geo_id != indicator
-                and geo_id != "unknown"
-            ):
+            if indicator in display_summary and geo_id != indicator and geo_id != "unknown":
                 is_generic = True
                 break
 

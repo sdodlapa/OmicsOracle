@@ -33,14 +33,10 @@ async def check_gse_content():
     ssl_context = ssl.create_default_context(cafile=certifi.where())
 
     # Create connector with SSL context
-    connector = aiohttp.TCPConnector(
-        ssl=False
-    )  # Disable SSL verification for local testing
+    connector = aiohttp.TCPConnector(ssl=False)  # Disable SSL verification for local testing
 
     # Create session with timeout and SSL-enabled connector
-    timeout = aiohttp.ClientTimeout(
-        total=60
-    )  # Longer timeout for potentially slow responses
+    timeout = aiohttp.ClientTimeout(total=60)  # Longer timeout for potentially slow responses
 
     base_url = "http://localhost:8001"  # Use port 8001 as confirmed working
     gse_id = "GSE278726"
@@ -63,9 +59,7 @@ async def check_gse_content():
     }
 
     try:
-        async with aiohttp.ClientSession(
-            connector=connector, timeout=timeout
-        ) as session:
+        async with aiohttp.ClientSession(connector=connector, timeout=timeout) as session:
             logger.info(f"Testing direct GSE search for {gse_id}")
 
             for query in queries:
@@ -93,12 +87,8 @@ async def check_gse_content():
                         timeout=45,  # Specific timeout for this request
                     ) as response:
                         if response.status != 200:
-                            logger.error(
-                                f"API returned status {response.status}"
-                            )
-                            results["queries"][query] = {
-                                "error": f"API returned status {response.status}"
-                            }
+                            logger.error(f"API returned status {response.status}")
+                            results["queries"][query] = {"error": f"API returned status {response.status}"}
                             continue
 
                         data = await response.json()
@@ -113,18 +103,10 @@ async def check_gse_content():
                                 results["queries"][query] = {
                                     "found": True,
                                     "title": result.get("title", "No title"),
-                                    "summary": result.get(
-                                        "summary", "No summary"
-                                    ),
-                                    "organism": result.get(
-                                        "organism", "No organism"
-                                    ),
+                                    "summary": result.get("summary", "No summary"),
+                                    "organism": result.get("organism", "No organism"),
                                     "has_covid_terms": any(
-                                        term
-                                        in (
-                                            result.get("title", "")
-                                            + result.get("summary", "")
-                                        ).lower()
+                                        term in (result.get("title", "") + result.get("summary", "")).lower()
                                         for term in [
                                             "covid",
                                             "covid-19",
@@ -135,33 +117,23 @@ async def check_gse_content():
                                 }
 
                                 # Log what we found
-                                logger.info(
-                                    f"Found {gse_id} in results for query '{query}'"
-                                )
-                                logger.info(
-                                    f"Title: {result.get('title', 'No title')}"
-                                )
+                                logger.info(f"Found {gse_id} in results for query '{query}'")
+                                logger.info(f"Title: {result.get('title', 'No title')}")
 
                                 # Check for COVID-19 terms
                                 if results["queries"][query]["has_covid_terms"]:
-                                    logger.warning(
-                                        f"COVID-19 terms found in result for {gse_id}!"
-                                    )
+                                    logger.warning(f"COVID-19 terms found in result for {gse_id}!")
                                 break
 
                         if not found:
                             results["queries"][query] = {
                                 "found": False,
                                 "total_results": len(data.get("results", [])),
-                                "first_result_title": data.get("results", [{}])[
-                                    0
-                                ].get("title", "No results")
+                                "first_result_title": data.get("results", [{}])[0].get("title", "No results")
                                 if data.get("results")
                                 else "No results",
                             }
-                            logger.info(
-                                f"Did not find {gse_id} in results for query '{query}'"
-                            )
+                            logger.info(f"Did not find {gse_id} in results for query '{query}'")
 
                 except asyncio.TimeoutError:
                     logger.error(f"Request timeout for query '{query}'")
@@ -187,13 +159,9 @@ async def check_gse_content():
                 ] = "CRITICAL ISSUE: GSE278726 shows COVID-19 content despite being a cardiovascular study"
                 mismatch_detected = True
             elif found_in_any_query:
-                results[
-                    "conclusion"
-                ] = "No issue detected: GSE278726 content appears correct"
+                results["conclusion"] = "No issue detected: GSE278726 content appears correct"
             else:
-                results[
-                    "conclusion"
-                ] = "GSE278726 not found in any search results"
+                results["conclusion"] = "GSE278726 not found in any search results"
 
             # Save detailed results
             filename = f"gse_direct_check_{gse_id}_{timestamp}.json"
@@ -211,21 +179,13 @@ async def check_gse_content():
 
             if found_in_any_query:
                 # Show the title from the most direct query
-                if gse_id in results["queries"] and results["queries"][
-                    gse_id
-                ].get("found", False):
-                    print(
-                        f"\nTitle in OmicsOracle: {results['queries'][gse_id]['title']}"
-                    )
-                    print(
-                        f"Has COVID-19 terms: {results['queries'][gse_id]['has_covid_terms']}"
-                    )
+                if gse_id in results["queries"] and results["queries"][gse_id].get("found", False):
+                    print(f"\nTitle in OmicsOracle: {results['queries'][gse_id]['title']}")
+                    print(f"Has COVID-19 terms: {results['queries'][gse_id]['has_covid_terms']}")
 
                 if mismatch_detected:
                     print("\nWARNING: Content mismatch detected!")
-                    print(
-                        "Expected: Cardiovascular disease study (SMAD2 mutations)"
-                    )
+                    print("Expected: Cardiovascular disease study (SMAD2 mutations)")
                     print("Found: Content with COVID-19 terms")
 
             print("\n" + "=" * 80)

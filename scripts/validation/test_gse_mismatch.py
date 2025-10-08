@@ -51,9 +51,7 @@ class GSEMismatchTester:
                 timeout=timeout,
                 headers={"User-Agent": "OmicsOracle-MismatchTester/1.0"},
             )
-            logger.warning(
-                "Using insecure SSL connection (verification disabled)"
-            )
+            logger.warning("Using insecure SSL connection (verification disabled)")
 
     async def close_session(self):
         """Close aiohttp session"""
@@ -65,9 +63,7 @@ class GSEMismatchTester:
         """Fetch data directly from NCBI GEO"""
         try:
             # First try esearch to get the correct ID
-            esearch_url = (
-                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
-            )
+            esearch_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi"
 
             esearch_params = {
                 "db": "gds",  # GEO DataSets
@@ -77,45 +73,26 @@ class GSEMismatchTester:
 
             logger.info(f"Searching for GSE ID in NCBI Entrez: {self.gse_id}")
 
-            async with self.session.get(
-                esearch_url, params=esearch_params
-            ) as response:
+            async with self.session.get(esearch_url, params=esearch_params) as response:
                 if response.status != 200:
-                    logger.error(
-                        f"NCBI Entrez esearch API returned status {response.status}"
-                    )
-                    return {
-                        "error": f"NCBI Entrez esearch API returned status {response.status}"
-                    }
+                    logger.error(f"NCBI Entrez esearch API returned status {response.status}")
+                    return {"error": f"NCBI Entrez esearch API returned status {response.status}"}
 
                 search_data = await response.json()
 
-                if (
-                    "esearchresult" not in search_data
-                    or "idlist" not in search_data["esearchresult"]
-                ):
-                    logger.error(
-                        f"No results found for {self.gse_id} in Entrez esearch"
-                    )
-                    return {
-                        "error": f"No results found for {self.gse_id} in Entrez"
-                    }
+                if "esearchresult" not in search_data or "idlist" not in search_data["esearchresult"]:
+                    logger.error(f"No results found for {self.gse_id} in Entrez esearch")
+                    return {"error": f"No results found for {self.gse_id} in Entrez"}
 
                 id_list = search_data["esearchresult"]["idlist"]
                 if not id_list:
-                    logger.error(
-                        f"Empty ID list for {self.gse_id} in Entrez esearch"
-                    )
-                    return {
-                        "error": f"Empty ID list for {self.gse_id} in Entrez"
-                    }
+                    logger.error(f"Empty ID list for {self.gse_id} in Entrez esearch")
+                    return {"error": f"Empty ID list for {self.gse_id} in Entrez"}
 
                 entrez_id = id_list[0]
 
             # Now fetch the summary with the correct ID
-            entrez_url = (
-                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
-            )
+            entrez_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
 
             params = {
                 "db": "gds",  # GEO DataSets
@@ -124,18 +101,12 @@ class GSEMismatchTester:
                 "version": "2.0",
             }
 
-            logger.info(
-                f"Fetching GSE data from NCBI Entrez for {self.gse_id} using ID {entrez_id}"
-            )
+            logger.info(f"Fetching GSE data from NCBI Entrez for {self.gse_id} using ID {entrez_id}")
 
             async with self.session.get(entrez_url, params=params) as response:
                 if response.status != 200:
-                    logger.error(
-                        f"NCBI Entrez API returned status {response.status}"
-                    )
-                    return {
-                        "error": f"NCBI Entrez API returned status {response.status}"
-                    }
+                    logger.error(f"NCBI Entrez API returned status {response.status}")
+                    return {"error": f"NCBI Entrez API returned status {response.status}"}
 
                 data = await response.json()
 
@@ -196,15 +167,11 @@ class GSEMismatchTester:
                     break
 
             if not result:
-                logger.warning(
-                    f"GSE ID {self.gse_id} not found in search results"
-                )
+                logger.warning(f"GSE ID {self.gse_id} not found in search results")
 
                 # Try to search for a keyword that might retrieve this GSE ID
                 # Testing if it shows up with COVID-19 content as reported
-                logger.info(
-                    "Trying search with 'COVID-19' to see if this GSE appears..."
-                )
+                logger.info("Trying search with 'COVID-19' to see if this GSE appears...")
 
                 covid_payload = {
                     "query": "COVID-19",
@@ -226,9 +193,7 @@ class GSEMismatchTester:
                 ) as response:
                     if response.status != 200:
                         logger.error(f"API returned status {response.status}")
-                        return {
-                            "error": f"API returned status {response.status}"
-                        }
+                        return {"error": f"API returned status {response.status}"}
 
                     covid_results = await response.json()
 
@@ -236,19 +201,13 @@ class GSEMismatchTester:
                 for item in covid_results.get("results", []):
                     if item.get("geo_id") == self.gse_id:
                         result = item
-                        logger.info(
-                            f"Found {self.gse_id} in COVID-19 search results!"
-                        )
+                        logger.info(f"Found {self.gse_id} in COVID-19 search results!")
                         break
 
                 if not result:
-                    logger.warning(
-                        f"GSE ID {self.gse_id} not found in COVID-19 search results either"
-                    )
+                    logger.warning(f"GSE ID {self.gse_id} not found in COVID-19 search results either")
                     # Try one more general search
-                    logger.info(
-                        "Trying generic search to locate this GSE ID..."
-                    )
+                    logger.info("Trying generic search to locate this GSE ID...")
 
                     generic_payload = {
                         "query": "gene expression",
@@ -269,12 +228,8 @@ class GSEMismatchTester:
                         json=generic_payload,
                     ) as response:
                         if response.status != 200:
-                            logger.error(
-                                f"API returned status {response.status}"
-                            )
-                            return {
-                                "error": f"API returned status {response.status}"
-                            }
+                            logger.error(f"API returned status {response.status}")
+                            return {"error": f"API returned status {response.status}"}
 
                         generic_results = await response.json()
 
@@ -282,14 +237,10 @@ class GSEMismatchTester:
                     for item in generic_results.get("results", []):
                         if item.get("geo_id") == self.gse_id:
                             result = item
-                            logger.info(
-                                f"Found {self.gse_id} in generic search results!"
-                            )
+                            logger.info(f"Found {self.gse_id} in generic search results!")
                             break
 
-            return result or {
-                "error": f"Could not find {self.gse_id} in OmicsOracle search results"
-            }
+            return result or {"error": f"Could not find {self.gse_id} in OmicsOracle search results"}
 
         except Exception as e:
             logger.error(f"Error searching in OmicsOracle: {str(e)}")
@@ -349,9 +300,7 @@ class GSEMismatchTester:
                     )
 
                 if ncbi_title and our_title and ncbi_title != our_title:
-                    issues.append(
-                        f"Title mismatch between NCBI and OmicsOracle"
-                    )
+                    issues.append(f"Title mismatch between NCBI and OmicsOracle")
 
                 if issues:
                     results["verdict"] = "MISMATCH"
@@ -360,14 +309,10 @@ class GSEMismatchTester:
                     results["verdict"] = "MATCH"
 
             # Save results
-            with open(
-                f"gse_mismatch_test_{self.gse_id}_{self.timestamp}.json", "w"
-            ) as f:
+            with open(f"gse_mismatch_test_{self.gse_id}_{self.timestamp}.json", "w") as f:
                 json.dump(results, f, indent=2)
 
-            logger.info(
-                f"Test results saved to gse_mismatch_test_{self.gse_id}_{self.timestamp}.json"
-            )
+            logger.info(f"Test results saved to gse_mismatch_test_{self.gse_id}_{self.timestamp}.json")
 
             # Print summary
             print("\n" + "=" * 80)

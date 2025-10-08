@@ -41,9 +41,7 @@ logger = logging.getLogger("gse_validator")
 class GSEValidator:
     def __init__(self, base_url="http://localhost:8000", ncbi_api_key=None):
         self.base_url = base_url
-        self.ncbi_api_key = (
-            ncbi_api_key  # Optional NCBI API key for higher rate limits
-        )
+        self.ncbi_api_key = ncbi_api_key  # Optional NCBI API key for higher rate limits
         self.timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.output_dir = "validation_reports"
         os.makedirs(self.output_dir, exist_ok=True)
@@ -64,9 +62,7 @@ class GSEValidator:
             await self.session.close()
             self.session = None
 
-    async def validate_by_query(
-        self, query: str, max_results: int = 10
-    ) -> Dict[str, Any]:
+    async def validate_by_query(self, query: str, max_results: int = 10) -> Dict[str, Any]:
         """
         Validate GSE IDs returned from a search query
         """
@@ -111,9 +107,7 @@ class GSEValidator:
 
         return report
 
-    async def validate_gse_id(
-        self, gse_id: str, our_data: Optional[Dict[str, Any]] = None
-    ) -> Dict[str, Any]:
+    async def validate_gse_id(self, gse_id: str, our_data: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """
         Validate a specific GSE ID against NCBI GEO database
         """
@@ -135,9 +129,7 @@ class GSEValidator:
 
         if not ncbi_data or "error" in ncbi_data:
             validation["exists_in_geo"] = False
-            validation["issues"].append(
-                f"GSE ID {gse_id} not found in NCBI GEO"
-            )
+            validation["issues"].append(f"GSE ID {gse_id} not found in NCBI GEO")
             return validation
 
         validation["exists_in_geo"] = True
@@ -167,18 +159,12 @@ class GSEValidator:
 
             if our_summary and ncbi_summary:
                 # Check if summaries are similar enough (at least some overlap)
-                words_in_common = set(our_summary.split()) & set(
-                    ncbi_summary.split()
-                )
-                if (
-                    len(words_in_common) > 10
-                ):  # Arbitrary threshold for some overlap
+                words_in_common = set(our_summary.split()) & set(ncbi_summary.split())
+                if len(words_in_common) > 10:  # Arbitrary threshold for some overlap
                     validation["summary_match"] = "partial"
                 else:
                     validation["summary_match"] = False
-                    validation["issues"].append(
-                        "Summary has little overlap with NCBI data"
-                    )
+                    validation["issues"].append("Summary has little overlap with NCBI data")
 
             # Check organism
             our_organism = our_data.get("organism", "").strip().lower()
@@ -187,10 +173,7 @@ class GSEValidator:
             if our_organism and ncbi_organism:
                 if our_organism == ncbi_organism:
                     validation["organism_match"] = True
-                elif (
-                    our_organism in ncbi_organism
-                    or ncbi_organism in our_organism
-                ):
+                elif our_organism in ncbi_organism or ncbi_organism in our_organism:
                     validation["organism_match"] = "partial"
                 else:
                     validation["organism_match"] = False
@@ -198,10 +181,7 @@ class GSEValidator:
 
         # Overall validation verdict
         if validation["exists_in_geo"]:
-            if (
-                validation["title_match"] is False
-                or validation["organism_match"] is False
-            ):
+            if validation["title_match"] is False or validation["organism_match"] is False:
                 validation["verdict"] = "MISMATCH"
             elif validation["issues"]:
                 validation["verdict"] = "PARTIAL_MATCH"
@@ -212,9 +192,7 @@ class GSEValidator:
 
         return validation
 
-    async def get_search_results(
-        self, query: str, max_results: int = 10
-    ) -> Dict[str, Any]:
+    async def get_search_results(self, query: str, max_results: int = 10) -> Dict[str, Any]:
         """
         Get search results from our API
         """
@@ -227,9 +205,7 @@ class GSEValidator:
                 "timestamp": int(time.time() * 1000),
             }
 
-            logger.info(
-                f"Making API request to {self.base_url}/api/search with payload: {payload}"
-            )
+            logger.info(f"Making API request to {self.base_url}/api/search with payload: {payload}")
 
             async with self.session.post(
                 f"{self.base_url}/api/search",
@@ -257,15 +233,11 @@ class GSEValidator:
         """
         try:
             # Option 1: Fetch from NCBI Entrez eUtils API
-            entrez_url = (
-                "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
-            )
+            entrez_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esummary.fcgi"
 
             params = {
                 "db": "gds",  # GEO DataSets
-                "id": gse_id.replace(
-                    "GSE", ""
-                ),  # NCBI wants the ID without the GSE prefix
+                "id": gse_id.replace("GSE", ""),  # NCBI wants the ID without the GSE prefix
                 "retmode": "json",
                 "version": "2.0",
             }
@@ -277,9 +249,7 @@ class GSEValidator:
 
             async with self.session.get(entrez_url, params=params) as response:
                 if response.status != 200:
-                    logger.error(
-                        f"NCBI Entrez API returned status {response.status}"
-                    )
+                    logger.error(f"NCBI Entrez API returned status {response.status}")
 
                     # Option 2: Try direct GEO API as fallback
                     return await self.fetch_geo_direct(gse_id)
@@ -327,9 +297,7 @@ class GSEValidator:
             async with self.session.get(geo_url, params=params) as response:
                 if response.status != 200:
                     logger.error(f"GEO API returned status {response.status}")
-                    return {
-                        "error": f"GEO API returned status {response.status}"
-                    }
+                    return {"error": f"GEO API returned status {response.status}"}
 
                 text = await response.text()
 
@@ -337,44 +305,25 @@ class GSEValidator:
                 data = {}
 
                 if "!Series_title" in text:
-                    title_line = [
-                        line
-                        for line in text.split("\n")
-                        if line.startswith("!Series_title")
-                    ][0]
+                    title_line = [line for line in text.split("\n") if line.startswith("!Series_title")][0]
                     data["title"] = title_line.split("=", 1)[1].strip()
 
                 if "!Series_summary" in text:
-                    summary_lines = [
-                        line
-                        for line in text.split("\n")
-                        if line.startswith("!Series_summary")
-                    ]
-                    data["summary"] = " ".join(
-                        [
-                            line.split("=", 1)[1].strip()
-                            for line in summary_lines
-                        ]
-                    )
+                    summary_lines = [line for line in text.split("\n") if line.startswith("!Series_summary")]
+                    data["summary"] = " ".join([line.split("=", 1)[1].strip() for line in summary_lines])
 
                 if "!Series_organism" in text:
                     organism_line = [
-                        line
-                        for line in text.split("\n")
-                        if line.startswith("!Series_organism")
+                        line for line in text.split("\n") if line.startswith("!Series_organism")
                     ][0]
                     data["organism"] = organism_line.split("=", 1)[1].strip()
 
                 if "!Series_platform_organism" in text:
                     platform_organism_line = [
-                        line
-                        for line in text.split("\n")
-                        if line.startswith("!Series_platform_organism")
+                        line for line in text.split("\n") if line.startswith("!Series_platform_organism")
                     ][0]
                     if "organism" not in data:
-                        data["organism"] = platform_organism_line.split("=", 1)[
-                            1
-                        ].strip()
+                        data["organism"] = platform_organism_line.split("=", 1)[1].strip()
 
                 return data
 
@@ -382,44 +331,22 @@ class GSEValidator:
             logger.error(f"Error fetching GSE data directly from GEO: {str(e)}")
             return {"error": str(e)}
 
-    def generate_validation_summary(
-        self, validation_results: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def generate_validation_summary(self, validation_results: List[Dict[str, Any]]) -> Dict[str, Any]:
         """
         Generate a summary of validation results
         """
         total = len(validation_results)
-        existing_in_geo = sum(
-            1 for v in validation_results if v.get("exists_in_geo", False)
-        )
-        title_matches = sum(
-            1 for v in validation_results if v.get("title_match") is True
-        )
-        title_partial = sum(
-            1 for v in validation_results if v.get("title_match") == "partial"
-        )
-        organism_matches = sum(
-            1 for v in validation_results if v.get("organism_match") is True
-        )
-        organism_partial = sum(
-            1
-            for v in validation_results
-            if v.get("organism_match") == "partial"
-        )
+        existing_in_geo = sum(1 for v in validation_results if v.get("exists_in_geo", False))
+        title_matches = sum(1 for v in validation_results if v.get("title_match") is True)
+        title_partial = sum(1 for v in validation_results if v.get("title_match") == "partial")
+        organism_matches = sum(1 for v in validation_results if v.get("organism_match") is True)
+        organism_partial = sum(1 for v in validation_results if v.get("organism_match") == "partial")
 
         # Count verdicts
-        matches = sum(
-            1 for v in validation_results if v.get("verdict") == "MATCH"
-        )
-        partial_matches = sum(
-            1 for v in validation_results if v.get("verdict") == "PARTIAL_MATCH"
-        )
-        mismatches = sum(
-            1 for v in validation_results if v.get("verdict") == "MISMATCH"
-        )
-        not_found = sum(
-            1 for v in validation_results if v.get("verdict") == "NOT_FOUND"
-        )
+        matches = sum(1 for v in validation_results if v.get("verdict") == "MATCH")
+        partial_matches = sum(1 for v in validation_results if v.get("verdict") == "PARTIAL_MATCH")
+        mismatches = sum(1 for v in validation_results if v.get("verdict") == "MISMATCH")
+        not_found = sum(1 for v in validation_results if v.get("verdict") == "NOT_FOUND")
 
         return {
             "total_validated": total,
@@ -438,8 +365,7 @@ class GSEValidator:
                 "title": (title_matches + 0.5 * title_partial) / existing_in_geo
                 if existing_in_geo > 0
                 else 0,
-                "organism": (organism_matches + 0.5 * organism_partial)
-                / existing_in_geo
+                "organism": (organism_matches + 0.5 * organism_partial) / existing_in_geo
                 if existing_in_geo > 0
                 else 0,
             },
@@ -456,9 +382,7 @@ class GSEValidator:
         logger.info(f"Validation report saved to {filename}")
 
         # Also save a summary file
-        summary_filename = (
-            f"{self.output_dir}/validation_summary_{self.timestamp}.json"
-        )
+        summary_filename = f"{self.output_dir}/validation_summary_{self.timestamp}.json"
         summary = {
             "query": report["query"],
             "timestamp": report["timestamp"],
@@ -523,19 +447,11 @@ class GSEValidator:
             # Show details of mismatches
             print("\nMismatch Details:")
             for i, result in enumerate(
-                [
-                    r
-                    for r in report["validation_results"]
-                    if r["verdict"] == "MISMATCH"
-                ]
+                [r for r in report["validation_results"] if r["verdict"] == "MISMATCH"]
             ):
                 print(f"\n{i+1}. GSE ID: {result['gse_id']} - MISMATCH")
-                print(
-                    f"   Our Title: {result.get('our_data', {}).get('title', 'N/A')}"
-                )
-                print(
-                    f"   NCBI Title: {result.get('ncbi_data', {}).get('title', 'N/A')}"
-                )
+                print(f"   Our Title: {result.get('our_data', {}).get('title', 'N/A')}")
+                print(f"   NCBI Title: {result.get('ncbi_data', {}).get('title', 'N/A')}")
                 print(f"   Issues: {', '.join(result['issues'])}")
 
         if summary["not_found"] > 0:
@@ -543,11 +459,7 @@ class GSEValidator:
 
             # Show GSE IDs not found
             print("\nNot Found GSE IDs:")
-            not_found_ids = [
-                r["gse_id"]
-                for r in report["validation_results"]
-                if r["verdict"] == "NOT_FOUND"
-            ]
+            not_found_ids = [r["gse_id"] for r in report["validation_results"] if r["verdict"] == "NOT_FOUND"]
             for i, gse_id in enumerate(not_found_ids):
                 print(f"{i+1}. {gse_id}")
 
@@ -572,22 +484,16 @@ async def main():
         default="http://localhost:8000",
         help="Base URL for the API",
     )
-    parser.add_argument(
-        "--ncbi-api-key", help="NCBI API key for higher rate limits"
-    )
+    parser.add_argument("--ncbi-api-key", help="NCBI API key for higher rate limits")
 
     args = parser.parse_args()
 
-    validator = GSEValidator(
-        base_url=args.api_url, ncbi_api_key=args.ncbi_api_key
-    )
+    validator = GSEValidator(base_url=args.api_url, ncbi_api_key=args.ncbi_api_key)
 
     try:
         if args.query:
             logger.info(f"Validating search results for query: {args.query}")
-            report = await validator.validate_by_query(
-                args.query, args.max_results
-            )
+            report = await validator.validate_by_query(args.query, args.max_results)
             validator.print_summary(report)
         elif args.gse_id:
             logger.info(f"Validating specific GSE ID: {args.gse_id}")
@@ -599,12 +505,8 @@ async def main():
             print(f"\nExists in NCBI GEO: {validation['exists_in_geo']}")
 
             if validation["exists_in_geo"]:
-                print(
-                    f"NCBI Title: {validation.get('ncbi_data', {}).get('title', 'N/A')}"
-                )
-                print(
-                    f"NCBI Organism: {validation.get('ncbi_data', {}).get('organism', 'N/A')}"
-                )
+                print(f"NCBI Title: {validation.get('ncbi_data', {}).get('title', 'N/A')}")
+                print(f"NCBI Organism: {validation.get('ncbi_data', {}).get('organism', 'N/A')}")
 
             print(f"\nVerdict: {validation['verdict']}")
 

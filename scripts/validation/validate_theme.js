@@ -11,7 +11,7 @@ const cssContent = fs.readFileSync(cssPath, 'utf8');
 
 // Test 1: Check if new color variables are defined
 console.log('1. ✅ Color Variables:');
-const hasNewVars = cssContent.includes('--title-color: #1d4ed8') && 
+const hasNewVars = cssContent.includes('--title-color: #1d4ed8') &&
                   cssContent.includes('--card-background-glass') &&
                   cssContent.includes('--accent-color: #2563eb');
 console.log(`   ✅ New color variables defined: ${hasNewVars}`);
@@ -23,31 +23,31 @@ console.log(`   ✅ Milky white gradient background: ${hasLightBg}`);
 
 // Test 3: Check if heading colors are updated
 console.log('\n3. ✅ Title Styling:');
-const hasTitleStyles = cssContent.includes('h1, h2, h3, h4, h5, h6') && 
+const hasTitleStyles = cssContent.includes('h1, h2, h3, h4, h5, h6') &&
                       cssContent.includes('color: var(--title-color)');
 console.log(`   ✅ Blue title colors implemented: ${hasTitleStyles}`);
 
 // Test 4: Check if dataset styling is updated
 console.log('\n4. ✅ Dataset Styling:');
-const hasDatasetStyles = cssContent.includes('.dataset-title') && 
+const hasDatasetStyles = cssContent.includes('.dataset-title') &&
                         cssContent.includes('text-decoration: underline');
 console.log(`   ✅ Dataset title hover effects: ${hasDatasetStyles}`);
 
 // Test 5: Check if AI summary styling exists
 console.log('\n5. ✅ AI Summary Styling:');
-const hasAISummaryStyles = cssContent.includes('.ai-summary-section') && 
+const hasAISummaryStyles = cssContent.includes('.ai-summary-section') &&
                           cssContent.includes('rgba(59, 130, 246, 0.1)');
 console.log(`   ✅ AI summary section styling: ${hasAISummaryStyles}`);
 
 // Test 6: Check if button styling is updated
 console.log('\n6. ✅ Button Styling:');
-const hasButtonStyles = cssContent.includes('.btn-abstract-toggle') && 
+const hasButtonStyles = cssContent.includes('.btn-abstract-toggle') &&
                        cssContent.includes('var(--hover-background)');
 console.log(`   ✅ Abstract toggle button styling: ${hasButtonStyles}`);
 
 // Test 7: Check if GEO link styling exists
 console.log('\n7. ✅ Link Styling:');
-const hasLinkStyles = cssContent.includes('.geo-link') && 
+const hasLinkStyles = cssContent.includes('.geo-link') &&
                      cssContent.includes('font-weight: 600');
 console.log(`   ✅ GEO link styling implemented: ${hasLinkStyles}`);
 

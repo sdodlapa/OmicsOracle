@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional
 
 from .base_client import APIClient
 from .models import Publication, SearchRequest, SearchResponse
+from .adapters import adapt_search_response
 
 logger = logging.getLogger(__name__)
 
@@ -52,30 +53,43 @@ class SearchClient(APIClient):
         enable_enrichment: bool = True,
     ) -> SearchResponse:
         """
-        Execute search query.
+        Execute a search query with filters.
 
         Args:
             query: Search query string
-            databases: List of databases to search (default: all)
-            max_results: Maximum results to return
-            search_mode: Search algorithm ("keyword", "semantic", "hybrid")
+            databases: List of databases to search (pubmed, google_scholar, semantic_scholar)
+            max_results: Maximum number of results
             filters: Additional search filters
-            enable_enrichment: Enable citation/quality/biomarker enrichment
+            **kwargs: Additional parameters
 
         Returns:
-            SearchResponse with results and metadata
+            SearchResponse: Search results with metadata
 
         Example:
-            response = await client.search(
-                query="CRISPR Cas9",
-                max_results=50,
-                search_mode="hybrid",
-                filters={"year_min": 2020, "has_pdf": True}
+            ```python
+            results = await client.search(
+                "CRISPR gene therapy",
+                databases=["pubmed", "semantic_scholar"],
+                max_results=50
             )
-
-            for pub in response.results:
-                print(f"{pub.title} - Quality: {pub.quality_score.overall}")
+            ```
         """
+        # Transform user-friendly request to backend format
+        # Backend expects: {search_terms: [str], max_results: int, enable_semantic: bool}
+        search_terms = query.split() if isinstance(query, str) else query
+        enable_semantic = "semantic_scholar" in (databases or [])
+        
+        backend_request = {
+            "search_terms": search_terms,
+            "max_results": max_results,
+            "enable_semantic": enable_semantic,
+            "filters": filters or {}
+        }
+
+        response = await self.post("/api/agents/search", json=backend_request)
+        
+        # Transform backend response to integration layer format
+        return adapt_search_response(response)
         # Build request
         request = SearchRequest(
             query=query,

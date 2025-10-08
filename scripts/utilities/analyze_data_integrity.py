@@ -124,10 +124,7 @@ class DataIntegrityAnalyzer:
 
             for file in files:
                 # Check if file matches any include pattern
-                if any(
-                    file.endswith(p.replace("*", ""))
-                    for p in self.include_patterns
-                ):
+                if any(file.endswith(p.replace("*", "")) for p in self.include_patterns):
                     file_path = os.path.join(root, file)
                     rel_path = os.path.relpath(file_path, self.root_dir)
 
@@ -146,16 +143,12 @@ class DataIntegrityAnalyzer:
 
                         # Update statistics
                         all_findings["statistics"]["files_with_issues"] += 1
-                        all_findings["statistics"]["total_issues"] += len(
-                            file_findings["issues"]
-                        )
+                        all_findings["statistics"]["total_issues"] += len(file_findings["issues"])
 
                         # Update issue type counts
                         for issue in file_findings["issues"]:
                             issue_type = issue["type"]
-                            all_findings["statistics"]["issues_by_type"][
-                                issue_type
-                            ] += 1
+                            all_findings["statistics"]["issues_by_type"][issue_type] += 1
 
         # Generate a summary
         all_findings["summary"] = self.generate_summary(all_findings)
@@ -177,9 +170,7 @@ class DataIntegrityAnalyzer:
 
             # Check each pattern
             for pattern_type, pattern_info in self.patterns.items():
-                matches = re.finditer(
-                    pattern_info["regex"], content, re.IGNORECASE
-                )
+                matches = re.finditer(pattern_info["regex"], content, re.IGNORECASE)
 
                 for match in matches:
                     # Get line number and context
@@ -242,9 +233,7 @@ class DataIntegrityAnalyzer:
 
             summary.append(f"\nMOST PROBLEMATIC FILES:")
             for file_info in critical_files:
-                summary.append(
-                    f"- {file_info['file']}: {len(file_info['issues'])} issues"
-                )
+                summary.append(f"- {file_info['file']}: {len(file_info['issues'])} issues")
 
         return "\n".join(summary)
 
@@ -259,9 +248,7 @@ class DataIntegrityAnalyzer:
         logger.info(f"Data integrity analysis saved to {filename}")
 
         # Also save a summary file
-        summary_filename = (
-            f"{self.output_dir}/integrity_analysis_summary_{self.timestamp}.txt"
-        )
+        summary_filename = f"{self.output_dir}/integrity_analysis_summary_{self.timestamp}.txt"
         with open(summary_filename, "w") as f:
             f.write(findings["summary"])
 
@@ -277,19 +264,13 @@ class DataIntegrityAnalyzer:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Analyze OmicsOracle codebase for data integrity issues"
-    )
+    parser = argparse.ArgumentParser(description="Analyze OmicsOracle codebase for data integrity issues")
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument(
-        "--scan-all", action="store_true", help="Scan the entire codebase"
-    )
+    group.add_argument("--scan-all", action="store_true", help="Scan the entire codebase")
     group.add_argument("--check-file", help="Check a specific file")
 
-    parser.add_argument(
-        "--root-dir", help="Root directory to scan (default: current directory)"
-    )
+    parser.add_argument("--root-dir", help="Root directory to scan (default: current directory)")
 
     args = parser.parse_args()
 
@@ -304,9 +285,7 @@ def main():
         if file_findings["issues"]:
             print(f"\nIssues found in {args.check_file}:")
             for issue in file_findings["issues"]:
-                print(
-                    f"Line {issue['line']}: {issue['description']} - {issue['match']}"
-                )
+                print(f"Line {issue['line']}: {issue['description']} - {issue['match']}")
                 print(f"  Context: {issue['context']}")
                 print()
         else:

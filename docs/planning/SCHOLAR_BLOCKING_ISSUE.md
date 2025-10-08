@@ -24,7 +24,7 @@ pg.ScraperAPI("YOUR_API_KEY")  # Get key from scraperapi.com
 scholarly.use_proxy(pg)
 ```
 
-**Cost:** $49/month for 100K requests  
+**Cost:** $49/month for 100K requests
 **Success Rate:** 99%+
 
 ### Option 2: Use Free Proxies (Unreliable)
@@ -36,7 +36,7 @@ pg.FreeProxies()
 scholarly.use_proxy(pg)
 ```
 
-**Cost:** Free  
+**Cost:** Free
 **Success Rate:** 30-50% (proxies often don't work)
 
 ### Option 3: Use Tor (Slower but Free)
@@ -55,8 +55,8 @@ pg.Tor_External(tor_sock_port=9050, tor_control_port=9051, tor_password="your_pa
 scholarly.use_proxy(pg)
 ```
 
-**Cost:** Free  
-**Success Rate:** 70-80%  
+**Cost:** Free
+**Success Rate:** 70-80%
 **Speed:** Slow (5-10x slower)
 
 ### Option 4: Skip Scholar for Now (Our Approach)
@@ -97,10 +97,10 @@ scholar_config = GoogleScholarConfig(
 @patch('scholarly.search_pubs')
 def test_scholar_search(mock_search):
     mock_search.return_value = iter([mock_scholar_result])
-    
+
     client = GoogleScholarClient(config)
     results = client.search("CRISPR")
-    
+
     assert len(results) > 0
 ```
 

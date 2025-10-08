@@ -133,9 +133,7 @@ def test_integration():
                     print(f"   ❌ Missing field: {field}")
                     structure_ok = False
                 elif not isinstance(data[field], expected_type):
-                    print(
-                        f"   ❌ Wrong type for {field}: expected {expected_type}, got {type(data[field])}"
-                    )
+                    print(f"   ❌ Wrong type for {field}: expected {expected_type}, got {type(data[field])}")
                     structure_ok = False
 
             if structure_ok:
@@ -161,13 +159,9 @@ def test_integration():
     print(f"\n{Fore.GREEN}🎉 System is ready for use!{Style.RESET_ALL}")
     print(f"\n{Fore.BLUE}Next Steps:{Style.RESET_ALL}")
     print(f"1. Open http://localhost:5173 in your browser")
-    print(
-        f"2. Try searching for: 'BRCA1', 'dna methylation', 'cancer genomics'"
-    )
+    print(f"2. Try searching for: 'BRCA1', 'dna methylation', 'cancer genomics'")
     print(f"3. The search is working but may return 0 results - this is normal")
-    print(
-        f"   (GEO database connectivity or query specificity may affect results)"
-    )
+    print(f"   (GEO database connectivity or query specificity may affect results)")
 
     return True
 

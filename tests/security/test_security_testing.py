@@ -126,12 +126,8 @@ class SecurityTestSuite:
                                 "status_code": response.status_code,
                                 "response_length": len(response.text),
                                 "contains_payload": payload in response.text,
-                                "error_exposed": self._check_error_exposure(
-                                    response.text
-                                ),
-                                "sql_errors": self._check_sql_errors(
-                                    response.text
-                                ),
+                                "error_exposed": self._check_error_exposure(response.text),
+                                "sql_errors": self._check_sql_errors(response.text),
                                 "execution_time": response.elapsed.total_seconds(),
                             }
                         )
@@ -177,11 +173,7 @@ class SecurityTestSuite:
         ]
 
         response_lower = response_text.lower()
-        exposed_patterns = [
-            pattern
-            for pattern in sensitive_patterns
-            if pattern.lower() in response_lower
-        ]
+        exposed_patterns = [pattern for pattern in sensitive_patterns if pattern.lower() in response_lower]
 
         return len(exposed_patterns) > 0
 
@@ -205,11 +197,7 @@ class SecurityTestSuite:
         ]
 
         response_lower = response_text.lower()
-        found_sql_errors = [
-            pattern
-            for pattern in sql_error_patterns
-            if pattern.lower() in response_lower
-        ]
+        found_sql_errors = [pattern for pattern in sql_error_patterns if pattern.lower() in response_lower]
 
         return found_sql_errors
 
@@ -262,9 +250,7 @@ class SecurityTestSuite:
                             "status_code": response.status_code,
                             "response_length": len(response.text),
                             "contains_payload": payload in response.text,
-                            "prompt_leaked": self._check_prompt_leakage(
-                                response.text
-                            ),
+                            "prompt_leaked": self._check_prompt_leakage(response.text),
                             "execution_time": response.elapsed.total_seconds(),
                         }
                     )
@@ -342,9 +328,7 @@ class SecurityTestSuite:
         for endpoint in protected_endpoints:
             for test in bypass_tests:
                 try:
-                    response = self.session.get(
-                        f"{self.base_url}{endpoint}", **test, timeout=10
-                    )
+                    response = self.session.get(f"{self.base_url}{endpoint}", **test, timeout=10)
 
                     results.append(
                         {
@@ -358,9 +342,7 @@ class SecurityTestSuite:
                     )
 
                 except Exception as e:
-                    results.append(
-                        {"endpoint": endpoint, "test": test, "error": str(e)}
-                    )
+                    results.append({"endpoint": endpoint, "test": test, "error": str(e)})
 
         return {"bypass_attempts": results}
 
@@ -395,24 +377,17 @@ class SecurityTestSuite:
 
             for filename, content in malicious_files.items():
                 try:
-                    files = {
-                        "file": (filename, content, "application/octet-stream")
-                    }
+                    files = {"file": (filename, content, "application/octet-stream")}
 
-                    response = self.session.post(
-                        f"{self.base_url}{endpoint}", files=files, timeout=10
-                    )
+                    response = self.session.post(f"{self.base_url}{endpoint}", files=files, timeout=10)
 
                     endpoint_results.append(
                         {
                             "filename": filename,
                             "status_code": response.status_code,
                             "response_length": len(response.text),
-                            "upload_successful": response.status_code
-                            in [200, 201],
-                            "error_message": response.text[:200]
-                            if response.status_code >= 400
-                            else None,
+                            "upload_successful": response.status_code in [200, 201],
+                            "error_message": response.text[:200] if response.status_code >= 400 else None,
                         }
                     )
 
@@ -462,9 +437,7 @@ class SecurityTestSuite:
 
         for endpoint in info_endpoints:
             try:
-                response = self.session.get(
-                    f"{self.base_url}{endpoint}", timeout=10
-                )
+                response = self.session.get(f"{self.base_url}{endpoint}", timeout=10)
 
                 # Check for sensitive information
                 sensitive_info = self._analyze_sensitive_content(response.text)
@@ -536,9 +509,7 @@ class SecurityTestSuite:
             "security_score": security_score,
             "test_duration": end_time - start_time,
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-            "recommendations": self._generate_security_recommendations(
-                test_results
-            ),
+            "recommendations": self._generate_security_recommendations(test_results),
         }
 
         print("\n🔒 Security Testing Complete!")
@@ -547,9 +518,7 @@ class SecurityTestSuite:
 
         return final_report
 
-    def _calculate_security_score(
-        self, test_results: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def _calculate_security_score(self, test_results: Dict[str, Any]) -> Dict[str, Any]:
         """Calculate overall security score based on test results."""
         scores = {
             "injection_protection": 0.0,
@@ -571,9 +540,7 @@ class SecurityTestSuite:
         }.items():
             for result in results:
                 total_injection_tests += 1
-                if result.get("error_exposed", False) or result.get(
-                    "contains_payload", False
-                ):
+                if result.get("error_exposed", False) or result.get("contains_payload", False):
                     failed_injection_tests += 1
 
         if total_injection_tests > 0:
@@ -582,33 +549,19 @@ class SecurityTestSuite:
             )
 
         # Calculate authentication security score
-        auth_tests = test_results.get("authentication_bypass", {}).get(
-            "bypass_attempts", []
-        )
-        bypassed_count = sum(
-            1 for test in auth_tests if test.get("bypassed", False)
-        )
+        auth_tests = test_results.get("authentication_bypass", {}).get("bypass_attempts", [])
+        bypassed_count = sum(1 for test in auth_tests if test.get("bypassed", False))
 
         if len(auth_tests) > 0:
-            scores["authentication_security"] = max(
-                0, 100 - (bypassed_count / len(auth_tests) * 100)
-            )
+            scores["authentication_security"] = max(0, 100 - (bypassed_count / len(auth_tests) * 100))
         else:
-            scores[
-                "authentication_security"
-            ] = 80  # Default if no protected endpoints found
+            scores["authentication_security"] = 80  # Default if no protected endpoints found
 
         # Calculate file upload security score
         upload_tests = test_results.get("file_upload_security", {})
-        total_upload_tests = sum(
-            len(results) for results in upload_tests.values()
-        )
+        total_upload_tests = sum(len(results) for results in upload_tests.values())
         successful_malicious_uploads = sum(
-            sum(
-                1
-                for result in results
-                if result.get("upload_successful", False)
-            )
+            sum(1 for result in results if result.get("upload_successful", False))
             for results in upload_tests.values()
         )
 
@@ -618,17 +571,11 @@ class SecurityTestSuite:
                 100 - (successful_malicious_uploads / total_upload_tests * 100),
             )
         else:
-            scores[
-                "file_upload_security"
-            ] = 90  # Default if no upload endpoints found
+            scores["file_upload_security"] = 90  # Default if no upload endpoints found
 
         # Calculate information disclosure prevention score
-        info_tests = test_results.get("information_disclosure", {}).get(
-            "information_disclosure", []
-        )
-        disclosed_endpoints = sum(
-            1 for test in info_tests if test.get("sensitive_info_found", False)
-        )
+        info_tests = test_results.get("information_disclosure", {}).get("information_disclosure", [])
+        disclosed_endpoints = sum(1 for test in info_tests if test.get("sensitive_info_found", False))
 
         if len(info_tests) > 0:
             scores["information_disclosure_prevention"] = max(
@@ -657,9 +604,7 @@ class SecurityTestSuite:
         else:
             return "F"
 
-    def _generate_security_recommendations(
-        self, test_results: Dict[str, Any]
-    ) -> List[str]:
+    def _generate_security_recommendations(self, test_results: Dict[str, Any]) -> List[str]:
         """Generate security recommendations based on test results."""
         recommendations = []
 
@@ -682,34 +627,20 @@ class SecurityTestSuite:
             )
 
         # Analyze authentication bypass results
-        auth_data = test_results.get("authentication_bypass", {}).get(
-            "bypass_attempts", []
-        )
+        auth_data = test_results.get("authentication_bypass", {}).get("bypass_attempts", [])
         bypassed = sum(1 for test in auth_data if test.get("bypassed", False))
 
         if bypassed > 0:
-            recommendations.append(
-                "🟡 HIGH: Implement proper authentication and authorization mechanisms"
-            )
-            recommendations.append(
-                "🟡 HIGH: Validate all authentication headers and parameters"
-            )
+            recommendations.append("🟡 HIGH: Implement proper authentication and authorization mechanisms")
+            recommendations.append("🟡 HIGH: Validate all authentication headers and parameters")
 
         # Analyze information disclosure
-        info_data = test_results.get("information_disclosure", {}).get(
-            "information_disclosure", []
-        )
-        disclosed = sum(
-            1 for test in info_data if test.get("sensitive_info_found", False)
-        )
+        info_data = test_results.get("information_disclosure", {}).get("information_disclosure", [])
+        disclosed = sum(1 for test in info_data if test.get("sensitive_info_found", False))
 
         if disclosed > 0:
-            recommendations.append(
-                "🟡 MEDIUM: Remove or secure endpoints that expose sensitive information"
-            )
-            recommendations.append(
-                "🟡 MEDIUM: Implement proper access controls for configuration files"
-            )
+            recommendations.append("🟡 MEDIUM: Remove or secure endpoints that expose sensitive information")
+            recommendations.append("🟡 MEDIUM: Implement proper access controls for configuration files")
 
         # Add general recommendations
         recommendations.extend(

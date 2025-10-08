@@ -4,9 +4,8 @@ Test request validation functionality.
 
 import pytest
 from fastapi import HTTPException
-from pydantic import ValidationError
-
 from interfaces.futuristic.main import SearchRequest
+from pydantic import ValidationError
 
 
 class TestRequestValidation:
@@ -14,9 +13,7 @@ class TestRequestValidation:
 
     def test_valid_search_request(self):
         """Test creation of valid search request."""
-        request = SearchRequest(
-            query="breast cancer", max_results=10, search_type="comprehensive"
-        )
+        request = SearchRequest(query="breast cancer", max_results=10, search_type="comprehensive")
 
         assert request.query == "breast cancer"
         assert request.max_results == 10
@@ -65,9 +62,7 @@ class TestRequestValidation:
 
     def test_request_serialization(self):
         """Test request serialization to dict."""
-        request = SearchRequest(
-            query="test query", max_results=15, search_type="advanced"
-        )
+        request = SearchRequest(query="test query", max_results=15, search_type="advanced")
 
         request_dict = request.dict()
         expected = {
@@ -80,9 +75,7 @@ class TestRequestValidation:
 
     def test_request_json_serialization(self):
         """Test request JSON serialization."""
-        request = SearchRequest(
-            query="test query", max_results=15, search_type="advanced"
-        )
+        request = SearchRequest(query="test query", max_results=15, search_type="advanced")
 
         json_str = request.json()
         assert "test query" in json_str
@@ -130,9 +123,7 @@ class TestRequestValidation:
 
     def test_request_field_types(self):
         """Test that request fields have correct types."""
-        request = SearchRequest(
-            query="test", max_results=10, search_type="comprehensive"
-        )
+        request = SearchRequest(query="test", max_results=10, search_type="comprehensive")
 
         assert isinstance(request.query, str)
         assert isinstance(request.max_results, int)

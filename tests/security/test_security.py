@@ -99,9 +99,7 @@ class SecurityTester:
                     {"query": payload, "max_results": 10},
                     {
                         "query": "diabetes",
-                        "max_results": payload
-                        if isinstance(payload, str)
-                        else 10,
+                        "max_results": payload if isinstance(payload, str) else 10,
                     },
                 ]
 
@@ -114,14 +112,8 @@ class SecurityTester:
                         )
 
                         # Check for sensitive information exposure
-                        error_exposed = self._check_error_exposure(
-                            response.text
-                        )
-                        payload_reflected = (
-                            payload in response.text
-                            if isinstance(payload, str)
-                            else False
-                        )
+                        error_exposed = self._check_error_exposure(response.text)
+                        payload_reflected = payload in response.text if isinstance(payload, str) else False
 
                         attack_results.append(
                             {
@@ -150,14 +142,8 @@ class SecurityTester:
                         )
 
             # Calculate safety score for this attack type
-            safe_count = sum(
-                1 for result in attack_results if result.get("safe", False)
-            )
-            safety_score = (
-                (safe_count / len(attack_results)) * 100
-                if attack_results
-                else 0
-            )
+            safe_count = sum(1 for result in attack_results if result.get("safe", False))
+            safety_score = (safe_count / len(attack_results)) * 100 if attack_results else 0
 
             results[attack_type] = {
                 "safety_score": safety_score,
@@ -216,9 +202,7 @@ class SecurityTester:
             for header, expected_values in required_headers.items():
                 if header in headers:
                     header_value = headers[header]
-                    is_valid = any(
-                        expected in header_value for expected in expected_values
-                    )
+                    is_valid = any(expected in header_value for expected in expected_values)
 
                     results[header] = {
                         "present": True,
@@ -279,9 +263,7 @@ class SecurityTester:
                             timeout=5,
                         )
                     else:
-                        response = self.session.get(
-                            f"{self.base_url}{endpoint}", timeout=5
-                        )
+                        response = self.session.get(f"{self.base_url}{endpoint}", timeout=5)
 
                     is_rate_limited = response.status_code == 429
                     responses.append(
@@ -303,20 +285,13 @@ class SecurityTester:
                 # Small delay to avoid overwhelming the server
                 time.sleep(0.1)
 
-            rate_limited_count = sum(
-                1 for r in responses if r.get("rate_limited", False)
-            )
+            rate_limited_count = sum(1 for r in responses if r.get("rate_limited", False))
 
             results[endpoint] = {
                 "total_requests": len(responses),
                 "rate_limited_requests": rate_limited_count,
                 "rate_limiting_active": rate_limited,
-                "rate_limiting_percentage": (
-                    rate_limited_count / len(responses)
-                )
-                * 100
-                if responses
-                else 0,
+                "rate_limiting_percentage": (rate_limited_count / len(responses)) * 100 if responses else 0,
             }
 
         return results
@@ -368,12 +343,8 @@ class SecurityTester:
                 )
 
         # Calculate validation score
-        valid_responses = sum(
-            1 for r in results if r.get("proper_validation", False)
-        )
-        validation_score = (
-            (valid_responses / len(results)) * 100 if results else 0
-        )
+        valid_responses = sum(1 for r in results if r.get("proper_validation", False))
+        validation_score = (valid_responses / len(results)) * 100 if results else 0
 
         return {
             "validation_score": validation_score,
@@ -425,9 +396,7 @@ class SecurityTester:
             for result in test_results["rate_limiting"].values()
             if isinstance(result, dict)
         )
-        scores.append(
-            50 if rate_limiting_active else 25
-        )  # 50% if active, 25% if not
+        scores.append(50 if rate_limiting_active else 25)  # 50% if active, 25% if not
 
         overall_score = sum(scores) / len(scores) if scores else 0
 
@@ -436,9 +405,7 @@ class SecurityTester:
             "overall_security_score": overall_score,
             "test_duration": end_time - start_time,
             "test_results": test_results,
-            "recommendations": self._generate_security_recommendations(
-                test_results
-            ),
+            "recommendations": self._generate_security_recommendations(test_results),
         }
 
         print("\n" + "=" * 60)
@@ -449,9 +416,7 @@ class SecurityTester:
 
         return summary
 
-    def _generate_security_recommendations(
-        self, test_results: Dict[str, Any]
-    ) -> List[str]:
+    def _generate_security_recommendations(self, test_results: Dict[str, Any]) -> List[str]:
         """Generate security recommendations based on test results."""
         recommendations = []
 

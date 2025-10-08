@@ -116,9 +116,14 @@ class APIClient:
             self._client = None
 
     def _build_url(self, endpoint: str) -> str:
-        """Build full URL with API version."""
+        """
+        Build full URL from endpoint.
+        
+        Note: Backend uses /api/ paths (not /api/v1/), so we pass endpoints through as-is.
+        The api_version parameter is kept for future use but currently unused.
+        """
         endpoint = endpoint.lstrip("/")
-        return f"/api/{self.api_version}/{endpoint}"
+        return f"/{endpoint}"
 
     def _check_rate_limit(self):
         """Check and enforce rate limiting."""

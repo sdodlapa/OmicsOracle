@@ -14,10 +14,10 @@ import nest_asyncio
 from ..core.config import Settings
 from ..lib.geo import GEOClient
 from ..lib.geo.models import GEOSeriesMetadata
+from ..lib.publications.config import PublicationSearchConfig, PubMedConfig
+from ..lib.publications.pipeline import PublicationSearchPipeline
 from ..lib.ranking import KeywordRanker
 from ..lib.search.advanced import AdvancedSearchConfig, AdvancedSearchPipeline
-from ..lib.publications.pipeline import PublicationSearchPipeline
-from ..lib.publications.config import PublicationSearchConfig, PubMedConfig
 from .base import Agent
 from .context import AgentContext
 from .exceptions import AgentExecutionError, AgentValidationError
@@ -42,12 +42,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
     by relevance, and applies user-specified filters.
     """
 
-    def __init__(
-        self, 
-        settings: Settings, 
-        enable_semantic: bool = False,
-        enable_publications: bool = False
-    ):
+    def __init__(self, settings: Settings, enable_semantic: bool = False, enable_publications: bool = False):
         """
         Initialize Search Agent.
 
@@ -76,7 +71,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             if self._enable_semantic:
                 logger.info("Initializing AdvancedSearchPipeline for semantic search")
                 self._initialize_semantic_search()
-            
+
             # Initialize publication search if enabled
             if self._enable_publications:
                 logger.info("Initializing PublicationSearchPipeline for publication search")
@@ -94,7 +89,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             logger.info("Cleaning up semantic search pipeline")
             self._semantic_pipeline = None
             self._semantic_index_loaded = False
-        
+
         if self._publication_pipeline:
             logger.info("Cleaning up publication search pipeline")
             self._publication_pipeline = None
@@ -543,48 +538,48 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
     def _initialize_publication_search(self) -> None:
         """
         Initialize publication search pipeline.
-        
+
         Creates PublicationSearchPipeline with PubMed client configured.
         Week 1-2: Only PubMed enabled, other features (Scholar, PDF) disabled.
         """
         try:
             # Get NCBI credentials from settings
-            ncbi_email = getattr(self.settings, 'ncbi_email', None)
-            ncbi_api_key = getattr(self.settings, 'ncbi_api_key', None)
-            
+            ncbi_email = getattr(self.settings, "ncbi_email", None)
+            ncbi_api_key = getattr(self.settings, "ncbi_api_key", None)
+
             if not ncbi_email:
                 logger.warning(
                     "NCBI email not configured. Using default email. "
                     "Set NCBI_EMAIL in environment for production use."
                 )
                 ncbi_email = "test@example.com"
-            
+
             # Create PubMed configuration
             pubmed_config = PubMedConfig(
                 email=ncbi_email,
                 api_key=ncbi_api_key,
                 max_results=50,
-                rate_limit_delay=0.34 if not ncbi_api_key else 0.1  # 3 req/s or 10 req/s with key
+                rate_limit_delay=0.34 if not ncbi_api_key else 0.1,  # 3 req/s or 10 req/s with key
             )
-            
+
             # Create publication search configuration (Week 1-2: PubMed only)
             pub_search_config = PublicationSearchConfig(
                 enable_pubmed=True,
-                enable_scholar=False,      # Week 3
-                enable_citations=False,    # Week 3  
-                enable_pdf_download=False, # Week 4
-                enable_fulltext=False,     # Week 4
+                enable_scholar=False,  # Week 3
+                enable_citations=False,  # Week 3
+                enable_pdf_download=False,  # Week 4
+                enable_fulltext=False,  # Week 4
                 enable_institutional_access=True,  # Use institutional access
-                primary_institution="gatech",      # Georgia Tech
-                secondary_institution="odu",       # ODU fallback
-                pubmed_config=pubmed_config
+                primary_institution="gatech",  # Georgia Tech
+                secondary_institution="odu",  # ODU fallback
+                pubmed_config=pubmed_config,
             )
-            
+
             # Initialize pipeline
             self._publication_pipeline = PublicationSearchPipeline(pub_search_config)
             enabled_features = self._publication_pipeline.get_enabled_features()
             logger.info(f"PublicationSearchPipeline initialized with features: {enabled_features}")
-            
+
         except Exception as e:
             logger.error(f"Failed to initialize publication search: {e}")
             logger.warning("Semantic search disabled, falling back to keyword search")

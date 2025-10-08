@@ -52,9 +52,7 @@ class OmicsOracleUser(HttpUser):
                 catch_response=True,
             ) as response:
                 if response.status_code != 200:
-                    response.failure(
-                        f"Search failed with status {response.status_code}: {response.text}"
-                    )
+                    response.failure(f"Search failed with status {response.status_code}: {response.text}")
                 else:
                     response.success()
         except (ConnectionError, TimeoutError) as e:
@@ -77,9 +75,7 @@ class OmicsOracleUser(HttpUser):
             catch_response=True,
         ) as response:
             if response.status_code != 200:
-                response.failure(
-                    f"AI summarization failed with status {response.status_code}"
-                )
+                response.failure(f"AI summarization failed with status {response.status_code}")
 
     @task(1)
     def visualization_api(self) -> None:
@@ -100,9 +96,7 @@ class OmicsOracleUser(HttpUser):
             catch_response=True,
         ) as response:
             if response.status_code != 200:
-                response.failure(
-                    f"Visualization {endpoint} failed with status {response.status_code}"
-                )
+                response.failure(f"Visualization {endpoint} failed with status {response.status_code}")
 
     @task(4)
     def static_files(self) -> None:
@@ -117,9 +111,7 @@ class OmicsOracleUser(HttpUser):
 
         with self.client.get(file_path, catch_response=True) as response:
             if response.status_code != 200:
-                response.failure(
-                    f"Static file {file_path} failed with status {response.status_code}"
-                )
+                response.failure(f"Static file {file_path} failed with status {response.status_code}")
 
     @task(1)
     def health_check(self) -> None:
@@ -129,9 +121,7 @@ class OmicsOracleUser(HttpUser):
                 200,
                 503,
             ]:  # 503 might be expected if services unavailable
-                response.failure(
-                    f"Health check failed with status {response.status_code}"
-                )
+                response.failure(f"Health check failed with status {response.status_code}")
 
 
 class WebSocketUser(HttpUser):
@@ -170,7 +160,5 @@ class WebSocketUser(HttpUser):
 if __name__ == "__main__":
     # This allows running locust programmatically
     print("🔥 Starting Locust Load Testing")
-    print(
-        "Run: locust -f tests/performance/test_load_testing.py --host=http://localhost:8000"
-    )
+    print("Run: locust -f tests/performance/test_load_testing.py --host=http://localhost:8000")
     print("Then open: http://localhost:8089")

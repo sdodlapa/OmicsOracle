@@ -51,9 +51,7 @@ def test_query_refinement_endpoints():
         print(f"✅ Similar queries endpoint: {response.status_code}")
         if response.status_code == 200:
             data = response.json()
-            print(
-                f"   - Similar queries: {len(data.get('similar_queries', []))}"
-            )
+            print(f"   - Similar queries: {len(data.get('similar_queries', []))}")
     except Exception as e:
         print(f"❌ Similar queries endpoint failed: {e}")
 
@@ -111,9 +109,7 @@ def main():
     print("🎉 Test completed! Check the results above.")
     print("\n📝 Manual testing steps:")
     print("1. Open http://localhost:5173 in your browser")
-    print(
-        "2. Try searching for a query that returns no results (e.g., 'nonexistent gene xyz123')"
-    )
+    print("2. Try searching for a query that returns no results (e.g., 'nonexistent gene xyz123')")
     print("3. Verify that query refinement suggestions appear")
     print("4. Test clicking on suggestions to refine the search")
     print("5. Verify feedback functionality works")

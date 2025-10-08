@@ -95,7 +95,7 @@ def baseline_analysis(paper):
         'methods': ['machine learning', 'statistical', 'deep learning'],
         'findings': ['identified', 'discovered', 'found']
     }
-    
+
     results = {
         'reused': any(kw in paper.abstract.lower() for kw in keywords['reuse']),
         'method': extract_keywords(paper.abstract, keywords['methods']),
@@ -110,13 +110,13 @@ def llm_analysis(paper):
     """LLM-powered deep analysis."""
     llm = LLMClient(provider="ollama", model="biomistral")
     analyzer = LLMCitationAnalyzer(llm)
-    
+
     analysis = analyzer.analyze_citation_context(
         citation_context,
         cited_paper,
         citing_paper
     )
-    
+
     return analysis
 ```
 
@@ -186,7 +186,7 @@ def llm_analysis(paper):
 ## Next Steps Based on Outcome
 
 ### If GO (LLM provides value)
-**Day 17:** 
+**Day 17:**
 - Optimize prompts for BioMistral
 - Build knowledge synthesis features
 - Integration testing

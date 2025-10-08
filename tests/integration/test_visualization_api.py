@@ -26,9 +26,7 @@ def test_visualization_endpoints():
             health_data = response.json()
             print(f"✅ Health check successful")
             print(f"   Status: {health_data.get('status')}")
-            print(
-                f"   Available endpoints: {len(health_data.get('endpoints', []))}"
-            )
+            print(f"   Available endpoints: {len(health_data.get('endpoints', []))}")
         else:
             print(f"❌ Health check failed: {response.status_code}")
     except Exception as e:
@@ -37,9 +35,7 @@ def test_visualization_endpoints():
     # Test 2: Search stats
     print("\n📊 Test 2: Search statistics")
     try:
-        response = requests.post(
-            f"{base_url}/api/visualization/search-stats", json=test_request
-        )
+        response = requests.post(f"{base_url}/api/visualization/search-stats", json=test_request)
         if response.status_code == 200:
             stats = response.json()
             print(f"✅ Search stats successful")
@@ -50,9 +46,7 @@ def test_visualization_endpoints():
             print(f"   Average samples: {stats.get('avg_samples')}")
             print(f"   Date range: {stats.get('date_range')}")
         else:
-            print(
-                f"❌ Search stats failed: {response.status_code} - {response.text}"
-            )
+            print(f"❌ Search stats failed: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"❌ Search stats error: {str(e)}")
 
@@ -69,14 +63,10 @@ def test_visualization_endpoints():
             print(f"   Total entities: {entities.get('total_entities')}")
             print(f"   Entity types: {len(entities.get('labels', []))}")
             if entities.get("labels"):
-                for label, count in zip(
-                    entities["labels"][:5], entities["counts"][:5]
-                ):
+                for label, count in zip(entities["labels"][:5], entities["counts"][:5]):
                     print(f"     - {label}: {count}")
         else:
-            print(
-                f"❌ Entity distribution failed: {response.status_code} - {response.text}"
-            )
+            print(f"❌ Entity distribution failed: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"❌ Entity distribution error: {str(e)}")
 
@@ -92,14 +82,10 @@ def test_visualization_endpoints():
             print(f"✅ Organism distribution successful")
             print(f"   Organism types: {len(organisms.get('labels', []))}")
             if organisms.get("labels"):
-                for label, count in zip(
-                    organisms["labels"][:5], organisms["counts"][:5]
-                ):
+                for label, count in zip(organisms["labels"][:5], organisms["counts"][:5]):
                     print(f"     - {label}: {count}")
         else:
-            print(
-                f"❌ Organism distribution failed: {response.status_code} - {response.text}"
-            )
+            print(f"❌ Organism distribution failed: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"❌ Organism distribution error: {str(e)}")
 
@@ -115,14 +101,10 @@ def test_visualization_endpoints():
             print(f"✅ Platform distribution successful")
             print(f"   Platform types: {len(platforms.get('labels', []))}")
             if platforms.get("labels"):
-                for label, count in zip(
-                    platforms["labels"][:5], platforms["counts"][:5]
-                ):
+                for label, count in zip(platforms["labels"][:5], platforms["counts"][:5]):
                     print(f"     - {label}: {count}")
         else:
-            print(
-                f"❌ Platform distribution failed: {response.status_code} - {response.text}"
-            )
+            print(f"❌ Platform distribution failed: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"❌ Platform distribution error: {str(e)}")
 
@@ -145,9 +127,7 @@ def test_visualization_endpoints():
                 for year, count in list(zip(years, counts))[-5:]:
                     print(f"     - {year}: {count} datasets")
         else:
-            print(
-                f"❌ Timeline distribution failed: {response.status_code} - {response.text}"
-            )
+            print(f"❌ Timeline distribution failed: {response.status_code} - {response.text}")
     except Exception as e:
         print(f"❌ Timeline distribution error: {str(e)}")
 

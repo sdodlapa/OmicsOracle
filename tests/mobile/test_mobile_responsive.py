@@ -95,9 +95,7 @@ class MobileTestSuite:
 
                         # Check for viewport meta tag
                         if 'name="viewport"' in content:
-                            page_result["mobile_features"][
-                                "viewport_meta"
-                            ] = True
+                            page_result["mobile_features"]["viewport_meta"] = True
                             device_result["viewport_meta_present"] = True
 
                         # Check for touch-friendly elements
@@ -109,13 +107,8 @@ class MobileTestSuite:
                             "hamburger",
                             "swipe",
                         ]
-                        if any(
-                            indicator in content
-                            for indicator in touch_indicators
-                        ):
-                            page_result["mobile_features"][
-                                "touch_friendly"
-                            ] = True
+                        if any(indicator in content for indicator in touch_indicators):
+                            page_result["mobile_features"]["touch_friendly"] = True
 
                         # Check for mobile CSS
                         mobile_css_indicators = [
@@ -126,10 +119,7 @@ class MobileTestSuite:
                             "max-width",
                             "screen",
                         ]
-                        if any(
-                            indicator in content
-                            for indicator in mobile_css_indicators
-                        ):
+                        if any(indicator in content for indicator in mobile_css_indicators):
                             page_result["mobile_features"]["mobile_css"] = True
 
                         # Check for responsive images
@@ -140,13 +130,8 @@ class MobileTestSuite:
                             "img-responsive",
                             "responsive-img",
                         ]
-                        if any(
-                            indicator in content
-                            for indicator in responsive_img_indicators
-                        ):
-                            page_result["mobile_features"][
-                                "responsive_images"
-                            ] = True
+                        if any(indicator in content for indicator in responsive_img_indicators):
+                            page_result["mobile_features"]["responsive_images"] = True
 
                 except requests.exceptions.RequestException as e:
                     page_result["errors"].append(f"Request failed: {str(e)}")
@@ -162,12 +147,8 @@ class MobileTestSuite:
                 if isinstance(page, dict) and "mobile_features" in page
             )
 
-            total_possible_features = (
-                len(pages_to_test) * 4
-            )  # 4 features per page
-            device_result["mobile_optimized"] = mobile_features_count >= (
-                total_possible_features * 0.5
-            )
+            total_possible_features = len(pages_to_test) * 4  # 4 features per page
+            device_result["mobile_optimized"] = mobile_features_count >= (total_possible_features * 0.5)
 
             results[device] = device_result
 
@@ -214,9 +195,7 @@ class MobileTestSuite:
                 page_name = page_url.split("/")[-1] or "home"
                 results["page_load_times"][page_name] = None
                 results["resource_sizes"][page_name] = None
-                results["recommendations"].append(
-                    f"Failed to load {page_name}: {str(e)}"
-                )
+                results["recommendations"].append(f"Failed to load {page_name}: {str(e)}")
 
         # Calculate performance score
         if page_count > 0:
@@ -226,32 +205,18 @@ class MobileTestSuite:
             # Score based on mobile performance criteria
             # Good mobile load time: < 3 seconds
             # Good mobile page size: < 1MB
-            time_score = (
-                max(0, (3 - avg_load_time) / 3 * 100)
-                if avg_load_time <= 3
-                else 0
-            )
-            size_score = (
-                max(0, (1000000 - avg_size) / 1000000 * 100)
-                if avg_size <= 1000000
-                else 0
-            )
+            time_score = max(0, (3 - avg_load_time) / 3 * 100) if avg_load_time <= 3 else 0
+            size_score = max(0, (1000000 - avg_size) / 1000000 * 100) if avg_size <= 1000000 else 0
 
             results["mobile_performance_score"] = (time_score + size_score) / 2
 
             # Generate recommendations
             if avg_load_time > 3:
-                results["recommendations"].append(
-                    "Optimize page load times for mobile (target < 3 seconds)"
-                )
+                results["recommendations"].append("Optimize page load times for mobile (target < 3 seconds)")
             if avg_size > 1000000:  # 1MB
-                results["recommendations"].append(
-                    "Reduce page size for mobile (target < 1MB)"
-                )
+                results["recommendations"].append("Reduce page size for mobile (target < 1MB)")
             if avg_load_time > 5:
-                results["recommendations"].append(
-                    "Critical: Page load times too slow for mobile users"
-                )
+                results["recommendations"].append("Critical: Page load times too slow for mobile users")
 
         return results
 
@@ -283,13 +248,9 @@ class MobileTestSuite:
                 "button-size",
             ]
 
-            if not any(
-                indicator in content for indicator in touch_size_indicators
-            ):
+            if not any(indicator in content for indicator in touch_size_indicators):
                 results["touch_targets_adequate"] = False
-                results["issues"].append(
-                    "No evidence of adequate touch target sizing"
-                )
+                results["issues"].append("No evidence of adequate touch target sizing")
 
             # Check for hover alternative implementations
             hover_alternatives = [
@@ -304,9 +265,7 @@ class MobileTestSuite:
 
             if not any(alt in content for alt in hover_alternatives):
                 results["hover_alternatives"] = False
-                results["issues"].append(
-                    "No touch alternatives for hover interactions detected"
-                )
+                results["issues"].append("No touch alternatives for hover interactions detected")
 
             # Check for scroll behavior optimization
             scroll_indicators = [
@@ -318,9 +277,7 @@ class MobileTestSuite:
 
             if not any(indicator in content for indicator in scroll_indicators):
                 results["scroll_behavior"] = False
-                results["issues"].append(
-                    "No mobile scroll optimization detected"
-                )
+                results["issues"].append("No mobile scroll optimization detected")
 
             # Check for gesture support
             gesture_indicators = [
@@ -350,9 +307,7 @@ class MobileTestSuite:
                 results["touch_feedback"] = True
 
         except requests.exceptions.RequestException as e:
-            results["issues"].append(
-                f"Failed to test touch interactions: {str(e)}"
-            )
+            results["issues"].append(f"Failed to test touch interactions: {str(e)}")
 
         return results
 
@@ -386,15 +341,10 @@ class MobileTestSuite:
                 "voiceover",
             ]
 
-            screen_reader_count = sum(
-                content.count(indicator)
-                for indicator in screen_reader_indicators
-            )
+            screen_reader_count = sum(content.count(indicator) for indicator in screen_reader_indicators)
             if screen_reader_count < 5:  # Arbitrary minimum
                 results["screen_reader_friendly"] = False
-                results["violations"].append(
-                    "Insufficient screen reader support"
-                )
+                results["violations"].append("Insufficient screen reader support")
 
             # Check for keyboard navigation support
             keyboard_indicators = [
@@ -405,13 +355,9 @@ class MobileTestSuite:
                 "tab-order",
             ]
 
-            if not any(
-                indicator in content for indicator in keyboard_indicators
-            ):
+            if not any(indicator in content for indicator in keyboard_indicators):
                 results["keyboard_navigation"] = False
-                results["violations"].append(
-                    "No keyboard navigation support detected"
-                )
+                results["violations"].append("No keyboard navigation support detected")
 
             # Check for mobile text scaling
             text_scale_indicators = [
@@ -422,9 +368,7 @@ class MobileTestSuite:
                 "zoom",
             ]
 
-            if not any(
-                indicator in content for indicator in text_scale_indicators
-            ):
+            if not any(indicator in content for indicator in text_scale_indicators):
                 results["text_scaling"] = False
                 results["violations"].append("No text scaling support detected")
 
@@ -439,9 +383,7 @@ class MobileTestSuite:
             results["accessibility_score"] = sum(features) / len(features) * 100
 
         except requests.exceptions.RequestException as e:
-            results["violations"].append(
-                f"Failed to test mobile accessibility: {str(e)}"
-            )
+            results["violations"].append(f"Failed to test mobile accessibility: {str(e)}")
 
         return results
 
@@ -456,16 +398,10 @@ class MobileTestSuite:
 
         # Calculate overall scores
         responsive_devices = sum(
-            1
-            for device in responsiveness.values()
-            if device.get("mobile_optimized", False)
+            1 for device in responsiveness.values() if device.get("mobile_optimized", False)
         )
         total_devices = len(responsiveness)
-        responsiveness_score = (
-            (responsive_devices / total_devices * 100)
-            if total_devices > 0
-            else 0
-        )
+        responsiveness_score = (responsive_devices / total_devices * 100) if total_devices > 0 else 0
 
         performance_score = performance.get("mobile_performance_score", 0)
 
@@ -478,24 +414,15 @@ class MobileTestSuite:
 
         accessibility_score = accessibility.get("accessibility_score", 0)
 
-        overall_score = (
-            responsiveness_score
-            + performance_score
-            + touch_score
-            + accessibility_score
-        ) / 4
+        overall_score = (responsiveness_score + performance_score + touch_score + accessibility_score) / 4
 
         # Generate recommendations
         recommendations = []
 
         if responsiveness_score < 80:
-            recommendations.append(
-                "Improve mobile responsiveness across devices"
-            )
+            recommendations.append("Improve mobile responsiveness across devices")
         if performance_score < 70:
-            recommendations.append(
-                "Optimize mobile performance (load times and page sizes)"
-            )
+            recommendations.append("Optimize mobile performance (load times and page sizes)")
         if touch_score < 80:
             recommendations.append("Enhance touch interaction support")
         if accessibility_score < 80:
@@ -503,17 +430,9 @@ class MobileTestSuite:
 
         # Combine all specific recommendations
         recommendations.extend(performance.get("recommendations", []))
+        recommendations.extend([f"Touch: {issue}" for issue in touch_interactions.get("issues", [])])
         recommendations.extend(
-            [
-                f"Touch: {issue}"
-                for issue in touch_interactions.get("issues", [])
-            ]
-        )
-        recommendations.extend(
-            [
-                f"Accessibility: {violation}"
-                for violation in accessibility.get("violations", [])
-            ]
+            [f"Accessibility: {violation}" for violation in accessibility.get("violations", [])]
         )
 
         return {

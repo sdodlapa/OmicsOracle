@@ -47,9 +47,7 @@ def test_all_interfaces():
     results = {}
 
     for interface in interfaces:
-        print(
-            f"{Fore.YELLOW}Testing {interface['name']} (Port {interface['port']}){Style.RESET_ALL}"
-        )
+        print(f"{Fore.YELLOW}Testing {interface['name']} (Port {interface['port']}){Style.RESET_ALL}")
 
         try:
             response = requests.get(interface["url"], timeout=5)
@@ -69,9 +67,7 @@ def test_all_interfaces():
 
                 results[interface["name"]] = True
             else:
-                print(
-                    f"   ❌ {interface['name']} returned status {response.status_code}"
-                )
+                print(f"   ❌ {interface['name']} returned status {response.status_code}")
                 results[interface["name"]] = False
 
         except requests.exceptions.ConnectionError:
@@ -100,9 +96,7 @@ def test_all_interfaces():
     )
 
     if running_count == total_count:
-        print(
-            f"\n{Fore.GREEN}🎉 All interfaces are running successfully!{Style.RESET_ALL}"
-        )
+        print(f"\n{Fore.GREEN}🎉 All interfaces are running successfully!{Style.RESET_ALL}")
         print(f"\n{Fore.BLUE}Available URLs:{Style.RESET_ALL}")
         print(f"• Backend API: http://localhost:8000")
         print(f"• Original Interface: http://localhost:8001")
@@ -117,9 +111,7 @@ def test_all_interfaces():
             f"\n{Fore.YELLOW}⚠️  Some interfaces are not running. You can still use the available ones.{Style.RESET_ALL}"
         )
     else:
-        print(
-            f"\n{Fore.RED}❌ No interfaces are running. Please start the servers first.{Style.RESET_ALL}"
-        )
+        print(f"\n{Fore.RED}❌ No interfaces are running. Please start the servers first.{Style.RESET_ALL}")
 
     return running_count == total_count
 

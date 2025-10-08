@@ -51,9 +51,7 @@ class ComprehensiveTestRunner:
 
                     endpoint_name = endpoint.split("/")[-1] or "home"
                     results["response_times"][endpoint_name] = duration
-                    results["status_codes"][
-                        endpoint_name
-                    ] = response.status_code
+                    results["status_codes"][endpoint_name] = response.status_code
 
                     if response.status_code == 200:
                         results["endpoints_available"] += 1
@@ -62,11 +60,7 @@ class ComprehensiveTestRunner:
                     endpoint_name = endpoint.split("/")[-1] or "home"
                     results["errors"].append(f"{endpoint_name}: {str(e)}")
 
-            results["availability_score"] = (
-                results["endpoints_available"]
-                / results["endpoints_tested"]
-                * 100
-            )
+            results["availability_score"] = results["endpoints_available"] / results["endpoints_tested"] * 100
 
             return results
 
@@ -108,9 +102,7 @@ class ComprehensiveTestRunner:
             print("🔄 Running load tests...")
 
             load_suite = LoadTestSuite(self.base_url)
-            results = load_suite.run_comprehensive_load_test(
-                duration=30, users=5
-            )
+            results = load_suite.run_comprehensive_load_test(duration=30, users=5)
             self.results["load_testing"] = results
 
             print("✅ Load tests completed")
@@ -143,18 +135,13 @@ class ComprehensiveTestRunner:
                 "Content-Security-Policy",
             ]
 
-            headers_present = sum(
-                1 for header in security_headers if header in response.headers
-            )
+            headers_present = sum(1 for header in security_headers if header in response.headers)
 
             self.results["security_basic"] = {
                 "headers_tested": len(security_headers),
                 "headers_present": headers_present,
-                "security_score": (headers_present / len(security_headers))
-                * 100,
-                "headers_found": [
-                    h for h in security_headers if h in response.headers
-                ],
+                "security_score": (headers_present / len(security_headers)) * 100,
+                "headers_found": [h for h in security_headers if h in response.headers],
             }
 
             print("✅ Basic security checks completed")
@@ -178,18 +165,11 @@ class ComprehensiveTestRunner:
                 html_content = response.text
 
                 # Basic HTML checks
-                has_doctype = (
-                    html_content.strip().lower().startswith("<!doctype")
-                )
+                has_doctype = html_content.strip().lower().startswith("<!doctype")
                 has_title = "<title>" in html_content.lower()
                 has_meta_viewport = 'name="viewport"' in html_content.lower()
-                has_css = any(
-                    tag in html_content.lower()
-                    for tag in ["<style", "<link", ".css"]
-                )
-                has_js = any(
-                    tag in html_content.lower() for tag in ["<script", ".js"]
-                )
+                has_css = any(tag in html_content.lower() for tag in ["<style", "<link", ".css"])
+                has_js = any(tag in html_content.lower() for tag in ["<script", ".js"])
 
                 html_score = (
                     sum(
@@ -232,9 +212,7 @@ class ComprehensiveTestRunner:
                 "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15"
             }
 
-            response = requests.get(
-                self.base_url, headers=mobile_headers, timeout=10
-            )
+            response = requests.get(self.base_url, headers=mobile_headers, timeout=10)
 
             if response.status_code == 200:
                 content = response.text.lower()
@@ -242,16 +220,11 @@ class ComprehensiveTestRunner:
                 # Basic mobile optimization checks
                 has_viewport = 'name="viewport"' in content
                 has_responsive_css = any(
-                    indicator in content
-                    for indicator in ["@media", "responsive", "mobile"]
+                    indicator in content for indicator in ["@media", "responsive", "mobile"]
                 )
                 has_touch_icons = "apple-touch-icon" in content
 
-                mobile_score = (
-                    sum([has_viewport, has_responsive_css, has_touch_icons])
-                    / 3
-                    * 100
-                )
+                mobile_score = sum([has_viewport, has_responsive_css, has_touch_icons]) / 3 * 100
 
                 self.results["mobile_basic"] = {
                     "has_viewport": has_viewport,
@@ -346,18 +319,10 @@ class ComprehensiveTestRunner:
             "recommendations": recommendations,
             "summary": {
                 "tests_passed": sum(
-                    1
-                    for r in self.results.values()
-                    if not r.get("error") and not r.get("failed")
+                    1 for r in self.results.values() if not r.get("error") and not r.get("failed")
                 ),
-                "tests_failed": sum(
-                    1
-                    for r in self.results.values()
-                    if r.get("error") or r.get("failed")
-                ),
-                "tests_skipped": sum(
-                    1 for r in self.results.values() if r.get("skipped")
-                ),
+                "tests_failed": sum(1 for r in self.results.values() if r.get("error") or r.get("failed")),
+                "tests_skipped": sum(1 for r in self.results.values() if r.get("skipped")),
                 "total_tests": len(self.results),
             },
         }
@@ -371,9 +336,7 @@ class ComprehensiveTestRunner:
         timestamp = time.strftime("%Y%m%d_%H%M%S")
 
         # Save comprehensive report
-        comprehensive_file = (
-            results_dir / f"comprehensive_test_report_{timestamp}.json"
-        )
+        comprehensive_file = results_dir / f"comprehensive_test_report_{timestamp}.json"
         with open(comprehensive_file, "w", encoding="utf-8") as f:
             json.dump(report, f, indent=2)
 
@@ -389,17 +352,11 @@ class ComprehensiveTestRunner:
         assessment = report["overall_assessment"]
         summary = report["summary"]
 
-        print(
-            f"📊 Overall Score: {assessment['overall_score']:.1f}/100 ({assessment['test_status']})"
-        )
-        print(
-            f"📈 Tests Passed: {summary['tests_passed']}/{summary['total_tests']}"
-        )
+        print(f"📊 Overall Score: {assessment['overall_score']:.1f}/100 ({assessment['test_status']})")
+        print(f"📈 Tests Passed: {summary['tests_passed']}/{summary['total_tests']}")
         print(f"❌ Tests Failed: {summary['tests_failed']}")
         print(f"⏭️  Tests Skipped: {summary['tests_skipped']}")
-        print(
-            f"⏱️  Total Duration: {report['test_metadata']['total_duration']:.1f} seconds"
-        )
+        print(f"⏱️  Total Duration: {report['test_metadata']['total_duration']:.1f} seconds")
 
         print("")
         print("📋 Category Scores:")
@@ -420,12 +377,8 @@ def main():
     """Main function for running comprehensive tests."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Comprehensive Web Interface Testing"
-    )
-    parser.add_argument(
-        "--url", default="http://localhost:8000", help="Base URL to test"
-    )
+    parser = argparse.ArgumentParser(description="Comprehensive Web Interface Testing")
+    parser.add_argument("--url", default="http://localhost:8000", help="Base URL to test")
 
     args = parser.parse_args()
 

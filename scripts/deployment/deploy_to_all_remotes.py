@@ -21,9 +21,7 @@ REMOTE_ACCOUNTS = {
 def run_command(command: str) -> Tuple[bool, str]:
     """Execute shell command and return success status and output"""
     try:
-        result = subprocess.run(
-            command, shell=True, capture_output=True, text=True, check=False
-        )
+        result = subprocess.run(command, shell=True, capture_output=True, text=True, check=False)
         return result.returncode == 0, result.stdout + result.stderr
     except (subprocess.SubprocessError, OSError) as e:
         return False, str(e)
@@ -75,9 +73,7 @@ def update_remote_url(remote_name: str) -> bool:
         new_url = f"git@{ssh_host}:{username}/{repo_part.split('/')[-1]}"
 
         # Update the remote URL
-        success, output = run_command(
-            f"git remote set-url {remote_name} {new_url}"
-        )
+        success, output = run_command(f"git remote set-url {remote_name} {new_url}")
         if success:
             print(f"  [SSH] Updated {remote_name} URL to use {ssh_host}")
             return True
@@ -128,18 +124,13 @@ def push_to_all_remotes(branch: Optional[str] = None) -> None:
         print("[ERROR] Failed to get git remotes")
         sys.exit(1)
 
-    remotes = [
-        remote.strip() for remote in output.split("\n") if remote.strip()
-    ]
+    remotes = [remote.strip() for remote in output.split("\n") if remote.strip()]
 
     if not remotes:
         print("[ERROR] No git remotes configured")
         sys.exit(1)
 
-    print(
-        f"[DEPLOY] Deploying OmicsOracle to "
-        f"{len(remotes)} GitHub repositories..."
-    )
+    print(f"[DEPLOY] Deploying OmicsOracle to " f"{len(remotes)} GitHub repositories...")
     print(f"[INFO] Configured remotes: {', '.join(remotes)}")
 
     current_branch = branch or get_current_branch()
@@ -173,9 +164,7 @@ def push_to_all_remotes(branch: Optional[str] = None) -> None:
             successful += 1
 
     print("=" * 50)
-    print(
-        f"Total: {successful}/{len(remotes)} repositories updated successfully"
-    )
+    print(f"Total: {successful}/{len(remotes)} repositories updated successfully")
 
     if successful == len(remotes):
         print("[SUCCESS] All repositories updated successfully!")
@@ -185,10 +174,7 @@ def push_to_all_remotes(branch: Optional[str] = None) -> None:
             if success:
                 print(f"  [URL] {remote}: {url.strip()}")
     else:
-        print(
-            "[WARN] Some deployments failed. "
-            "Check the output above for details."
-        )
+        print("[WARN] Some deployments failed. " "Check the output above for details.")
 
 
 def main() -> None:

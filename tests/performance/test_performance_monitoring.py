@@ -53,9 +53,7 @@ class PerformanceMonitor:
                 pass
 
         total_time = time.time() - (self.start_time or time.time())
-        logger.info(
-            f"Performance monitoring stopped after {total_time:.2f} seconds"
-        )
+        logger.info(f"Performance monitoring stopped after {total_time:.2f} seconds")
 
         return self._generate_report()
 
@@ -73,16 +71,12 @@ class PerformanceMonitor:
                 # Disk I/O metrics
                 disk_io = psutil.disk_io_counters()
                 if disk_io:
-                    self.metrics["disk_io"].append(
-                        disk_io.read_bytes + disk_io.write_bytes
-                    )
+                    self.metrics["disk_io"].append(disk_io.read_bytes + disk_io.write_bytes)
 
                 # Network I/O metrics
                 network_io = psutil.net_io_counters()
                 if network_io:
-                    self.metrics["network_io"].append(
-                        network_io.bytes_sent + network_io.bytes_recv
-                    )
+                    self.metrics["network_io"].append(network_io.bytes_sent + network_io.bytes_recv)
 
                 await asyncio.sleep(1)  # Collect every second
 
@@ -90,9 +84,7 @@ class PerformanceMonitor:
                 logger.error(f"Error collecting metrics: {e}")
                 await asyncio.sleep(1)
 
-    def record_request(
-        self, response_time: float, success: bool = True
-    ) -> None:
+    def record_request(self, response_time: float, success: bool = True) -> None:
         """Record a request and its response time."""
         self.metrics["response_times"].append(response_time)
         self.request_count += 1
@@ -108,8 +100,7 @@ class PerformanceMonitor:
                 "total_duration": total_time,
                 "total_requests": self.request_count,
                 "total_errors": self.error_count,
-                "error_rate": (self.error_count / max(self.request_count, 1))
-                * 100,
+                "error_rate": (self.error_count / max(self.request_count, 1)) * 100,
                 "requests_per_second": self.request_count / max(total_time, 1),
                 "timestamp": datetime.now().isoformat(),
             },
@@ -145,22 +136,16 @@ class PerformanceMonitor:
         recommendations = []
 
         # CPU recommendations
-        cpu_avg = sum(self.metrics["cpu_usage"]) / max(
-            len(self.metrics["cpu_usage"]), 1
-        )
+        cpu_avg = sum(self.metrics["cpu_usage"]) / max(len(self.metrics["cpu_usage"]), 1)
         if cpu_avg > 80:
             recommendations.append(
                 "High CPU usage detected. Consider optimizing algorithms or scaling horizontally."
             )
         elif cpu_avg < 20:
-            recommendations.append(
-                "Low CPU usage - system can likely handle more load."
-            )
+            recommendations.append("Low CPU usage - system can likely handle more load.")
 
         # Memory recommendations
-        memory_avg = sum(self.metrics["memory_usage"]) / max(
-            len(self.metrics["memory_usage"]), 1
-        )
+        memory_avg = sum(self.metrics["memory_usage"]) / max(len(self.metrics["memory_usage"]), 1)
         if memory_avg > 85:
             recommendations.append(
                 "High memory usage detected. Check for memory leaks or increase available memory."
@@ -168,28 +153,20 @@ class PerformanceMonitor:
 
         # Response time recommendations
         if self.metrics["response_times"]:
-            response_avg = sum(self.metrics["response_times"]) / len(
-                self.metrics["response_times"]
-            )
+            response_avg = sum(self.metrics["response_times"]) / len(self.metrics["response_times"])
             if response_avg > 5.0:
                 recommendations.append(
                     "High response times detected. Consider caching, database optimization, or code profiling."
                 )
             elif response_avg < 0.5:
-                recommendations.append(
-                    "Excellent response times - system is performing well."
-                )
+                recommendations.append("Excellent response times - system is performing well.")
 
         # Error rate recommendations
         error_rate = (self.error_count / max(self.request_count, 1)) * 100
         if error_rate > 5:
-            recommendations.append(
-                "High error rate detected. Check logs and fix failing endpoints."
-            )
+            recommendations.append("High error rate detected. Check logs and fix failing endpoints.")
         elif error_rate == 0:
-            recommendations.append(
-                "No errors detected - excellent system stability."
-            )
+            recommendations.append("No errors detected - excellent system stability.")
 
         return recommendations
 
@@ -231,15 +208,11 @@ class PerformanceBenchmarks:
 
                     try:
                         if method == "GET":
-                            async with session.get(
-                                f"{self.base_url}{endpoint}"
-                            ) as response:
+                            async with session.get(f"{self.base_url}{endpoint}") as response:
                                 await response.text()
                                 success = response.status == 200
                         else:
-                            async with session.post(
-                                f"{self.base_url}{endpoint}", json=data
-                            ) as response:
+                            async with session.post(f"{self.base_url}{endpoint}", json=data) as response:
                                 await response.text()
                                 success = response.status == 200
 
@@ -255,8 +228,7 @@ class PerformanceBenchmarks:
 
                 if response_times:
                     results[f"{method} {endpoint}"] = {
-                        "avg_response_time": sum(response_times)
-                        / len(response_times),
+                        "avg_response_time": sum(response_times) / len(response_times),
                         "min_response_time": min(response_times),
                         "max_response_time": max(response_times),
                         "samples": len(response_times),
@@ -264,9 +236,7 @@ class PerformanceBenchmarks:
 
         return results
 
-    async def run_concurrent_users_test(
-        self, max_users: int = 20
-    ) -> Dict[str, Any]:
+    async def run_concurrent_users_test(self, max_users: int = 20) -> Dict[str, Any]:
         """Test system with concurrent users."""
         results = {}
 
@@ -290,8 +260,7 @@ class PerformanceBenchmarks:
 
                 results[f"{user_count}_users"] = {
                     "duration": duration,
-                    "requests_per_second": (user_count * 5)
-                    / duration,  # Assuming 5 requests per user
+                    "requests_per_second": (user_count * 5) / duration,  # Assuming 5 requests per user
                     "concurrent_users": user_count,
                 }
 
@@ -333,15 +302,11 @@ class PerformanceBenchmarks:
                     start_time = time.time()
 
                     if method == "GET":
-                        async with session.get(
-                            f"{self.base_url}{endpoint}"
-                        ) as response:
+                        async with session.get(f"{self.base_url}{endpoint}") as response:
                             await response.text()
                             success = response.status == 200
                     else:
-                        async with session.post(
-                            f"{self.base_url}{endpoint}", json=data
-                        ) as response:
+                        async with session.post(f"{self.base_url}{endpoint}", json=data) as response:
                             await response.text()
                             success = response.status == 200
 
@@ -396,9 +361,7 @@ async def main():
     await benchmarks.save_results(all_results)
 
     print("\n📊 Performance Test Summary:")
-    print(
-        f"Response time tests completed for {len(response_results)} endpoints"
-    )
+    print(f"Response time tests completed for {len(response_results)} endpoints")
     print(f"Concurrent user tests completed")
     print("Results saved to performance_results.json")
 

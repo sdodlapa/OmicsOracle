@@ -122,7 +122,7 @@
 **All original issues from the user's screenshot have been resolved:**
 
 1. ❌ `dataset_0` → ✅ `GSE167294`
-2. ❌ Wrong organisms → ✅ Correct `Homo sapiens` detection  
+2. ❌ Wrong organisms → ✅ Correct `Homo sapiens` detection
 3. ❌ Broken abstract buttons → ✅ Working `Show Abstract` toggles
 4. ❌ Platform field displayed → ✅ Platform field removed
 5. ❌ Potential duplicates → ✅ Duplicate filtering active

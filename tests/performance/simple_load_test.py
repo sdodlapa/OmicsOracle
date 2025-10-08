@@ -59,6 +59,4 @@ class SimpleOmicsUser(HttpUser):
 
 if __name__ == "__main__":
     print("🔥 Simple Load Test")
-    print(
-        "Run: locust -f tests/performance/simple_load_test.py --host=http://localhost:8000"
-    )
+    print("Run: locust -f tests/performance/simple_load_test.py --host=http://localhost:8000")

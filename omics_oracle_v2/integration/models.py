@@ -76,7 +76,7 @@ class Publication(BaseModel):
     id: str = Field(..., description="Unique identifier")
     title: str = Field(..., description="Publication title")
     authors: List[str] = Field(..., description="Author names")
-    year: int = Field(..., description="Publication year")
+    year: Optional[int] = Field(None, description="Publication year")
     journal: Optional[str] = Field(None, description="Journal name")
     doi: Optional[str] = Field(None, description="DOI")
     pmid: Optional[str] = Field(None, description="PubMed ID")
@@ -102,9 +102,9 @@ class SearchMetadata(BaseModel):
     """Metadata about search execution."""
 
     total_results: int = Field(..., description="Total results found")
-    query_time: float = Field(..., description="Query execution time (seconds)")
-    databases_searched: List[str] = Field(..., description="Databases queried")
-    search_mode: str = Field(..., description="Search mode used")
+    query_time: Optional[float] = Field(None, description="Query execution time (seconds)")
+    databases_searched: Optional[List[str]] = Field(None, description="Databases queried")
+    search_mode: Optional[str] = Field(None, description="Search mode used")
     cache_hit: bool = Field(default=False, description="Result from cache?")
 
 

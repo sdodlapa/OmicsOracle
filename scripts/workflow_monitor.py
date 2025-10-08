@@ -167,9 +167,7 @@ class OmicsOracleWorkflowMonitor:
             print(f"Error running GitHub CLI: {e}")
             return None
 
-    def _calculate_duration(
-        self, start_time: str, end_time: str
-    ) -> Optional[int]:
+    def _calculate_duration(self, start_time: str, end_time: str) -> Optional[int]:
         """Calculate workflow duration in seconds"""
         try:
             start = datetime.fromisoformat(start_time.replace("Z", "+00:00"))
@@ -178,9 +176,7 @@ class OmicsOracleWorkflowMonitor:
         except (ValueError, TypeError):
             return None
 
-    def fetch_workflow_runs(
-        self, repo_name: str, limit: int = 10
-    ) -> List[WorkflowRun]:
+    def fetch_workflow_runs(self, repo_name: str, limit: int = 10) -> List[WorkflowRun]:
         """Fetch recent workflow runs with enhanced parsing"""
         command = (
             f"gh run list --repo {repo_name} --limit {limit} "
@@ -199,9 +195,7 @@ class OmicsOracleWorkflowMonitor:
             for run_data in runs_data:
                 duration = None
                 if run_data.get("updatedAt") and run_data.get("createdAt"):
-                    duration = self._calculate_duration(
-                        run_data["createdAt"], run_data["updatedAt"]
-                    )
+                    duration = self._calculate_duration(run_data["createdAt"], run_data["updatedAt"])
 
                 workflow_run = WorkflowRun(
                     id=run_data["databaseId"],
@@ -232,10 +226,7 @@ class OmicsOracleWorkflowMonitor:
         if workflow_run.workflow_status == WorkflowStatus.SUCCESS:
             return []
 
-        command = (
-            f"gh run view {workflow_run.id} --repo "
-            f"{workflow_run.repository} --log-failed"
-        )
+        command = f"gh run view {workflow_run.id} --repo " f"{workflow_run.repository} --log-failed"
 
         log_output = self._run_gh_command(command)
         if not log_output:
@@ -244,10 +235,7 @@ class OmicsOracleWorkflowMonitor:
         error_lines = []
         for line in log_output.split("\n"):
             line = line.strip()
-            if any(
-                keyword in line.lower()
-                for keyword in ["error:", "failed:", "exception:", "traceback"]
-            ):
+            if any(keyword in line.lower() for keyword in ["error:", "failed:", "exception:", "traceback"]):
                 error_lines.append(line)
 
         return error_lines[:10]  # Limit to first 10 errors
@@ -274,9 +262,7 @@ class OmicsOracleWorkflowMonitor:
 
         return error_categories
 
-    def generate_fix_recommendations(
-        self, error_categories: Dict[str, List[str]]
-    ) -> Dict[str, str]:
+    def generate_fix_recommendations(self, error_categories: Dict[str, List[str]]) -> Dict[str, str]:
         """Generate automated fix recommendations"""
         fix_recommendations = {}
 
@@ -288,13 +274,9 @@ class OmicsOracleWorkflowMonitor:
 
             if category not in fix_recommendations:
                 if category == "Unknown":
-                    fix_recommendations[
-                        category
-                    ] = "Review logs manually and check documentation"
+                    fix_recommendations[category] = "Review logs manually and check documentation"
                 else:
-                    fix_recommendations[
-                        category
-                    ] = f"Address {category} issues in the codebase"
+                    fix_recommendations[category] = f"Address {category} issues in the codebase"
 
         return fix_recommendations
 
@@ -302,9 +284,7 @@ class OmicsOracleWorkflowMonitor:
 if __name__ == "__main__":
     print("[OK] Step 3 Complete: Enhanced monitoring core")
     monitor = OmicsOracleWorkflowMonitor()
-    print(
-        f"[DATA] Configured repositories: {list(monitor.repositories.keys())}"
-    )
+    print(f"[DATA] Configured repositories: {list(monitor.repositories.keys())}")
     print(f"[TOOL] Error patterns defined: {len(monitor.error_patterns)}")
 
     # Test workflow fetching for first repository
@@ -324,9 +304,7 @@ if __name__ == "__main__":
             if errors_found:
                 print(f"[ERROR] Found {len(errors_found)} error(s)")
                 categories = monitor.categorize_errors(errors_found)
-                recommendations = monitor.generate_fix_recommendations(
-                    categories
-                )
+                recommendations = monitor.generate_fix_recommendations(categories)
                 rec_count = len(recommendations)
                 print(f"[TOOL] Generated {rec_count} fix recommendation(s)")
             else:

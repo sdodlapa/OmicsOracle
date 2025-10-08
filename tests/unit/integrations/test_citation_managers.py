@@ -6,10 +6,7 @@ import json
 
 import pytest
 
-from omics_oracle.integrations.citation_managers import (
-    CitationManagerIntegration,
-    export_geo_references,
-)
+from omics_oracle.integrations.citation_managers import CitationManagerIntegration, export_geo_references
 
 
 class TestCitationManagerIntegration:
@@ -29,21 +26,13 @@ class TestCitationManagerIntegration:
 
     def test_format_geo_reference_basic(self):
         """Test basic GEO reference formatting."""
-        reference = self.citation_manager.format_geo_reference(
-            self.mock_geo_data
-        )
+        reference = self.citation_manager.format_geo_reference(self.mock_geo_data)
 
         assert reference["id"] == "GSE12345"
         assert reference["type"] == "dataset"
         assert reference["title"] == "Test RNA-seq Dataset"
-        assert (
-            reference["abstract"]
-            == "This is a test RNA sequencing dataset for validation purposes."
-        )
-        assert (
-            reference["URL"]
-            == "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE12345"
-        )
+        assert reference["abstract"] == "This is a test RNA sequencing dataset for validation purposes."
+        assert reference["URL"] == "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE12345"
         assert reference["publisher"] == "Gene Expression Omnibus (GEO)"
         assert reference["source"] == "NCBI GEO"
         assert reference["note"] == "GEO accession: GSE12345"
@@ -70,9 +59,7 @@ class TestCitationManagerIntegration:
             },
         ]
 
-        reference = self.citation_manager.format_geo_reference(
-            self.mock_geo_data, papers
-        )
+        reference = self.citation_manager.format_geo_reference(self.mock_geo_data, papers)
 
         assert "related_papers" in reference
         assert len(reference["related_papers"]) == 2
@@ -90,18 +77,13 @@ class TestCitationManagerIntegration:
 
     def test_to_bibtex_basic(self):
         """Test BibTeX format generation."""
-        reference = self.citation_manager.format_geo_reference(
-            self.mock_geo_data
-        )
+        reference = self.citation_manager.format_geo_reference(self.mock_geo_data)
         bibtex = self.citation_manager.to_bibtex(reference)
 
         assert "@misc{GSE12345," in bibtex
         assert "title = {Test RNA-seq Dataset}" in bibtex
         assert "publisher = {Gene Expression Omnibus (GEO)}" in bibtex
-        assert (
-            "url = {https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE12345}"
-            in bibtex
-        )
+        assert "url = {https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE12345}" in bibtex
         assert "year = {2023}" in bibtex
         assert "note = {GEO accession: GSE12345}" in bibtex
         assert bibtex.endswith("}")
@@ -119,18 +101,13 @@ class TestCitationManagerIntegration:
 
     def test_to_ris_basic(self):
         """Test RIS format generation."""
-        reference = self.citation_manager.format_geo_reference(
-            self.mock_geo_data
-        )
+        reference = self.citation_manager.format_geo_reference(self.mock_geo_data)
         ris = self.citation_manager.to_ris(reference)
 
         lines = ris.split("\n")
         assert "TY  - DATA" in lines
         assert "TI  - Test RNA-seq Dataset" in lines
-        assert (
-            "UR  - https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE12345"
-            in lines
-        )
+        assert "UR  - https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE12345" in lines
         assert "PB  - Gene Expression Omnibus (GEO)" in lines
         assert "PY  - 2023" in lines
         assert "N1  - GEO accession: GSE12345" in lines
@@ -144,9 +121,7 @@ class TestCitationManagerIntegration:
             {"pmid": "11111", "title": "Related Paper 3"},
         ]
 
-        reference = self.citation_manager.format_geo_reference(
-            self.mock_geo_data, papers
-        )
+        reference = self.citation_manager.format_geo_reference(self.mock_geo_data, papers)
         ris = self.citation_manager.to_ris(reference)
 
         assert "N1  - Related Papers:" in ris
@@ -168,9 +143,7 @@ class TestCitationManagerIntegration:
 
     def test_to_endnote_xml_basic(self):
         """Test EndNote XML format generation."""
-        reference = self.citation_manager.format_geo_reference(
-            self.mock_geo_data
-        )
+        reference = self.citation_manager.format_geo_reference(self.mock_geo_data)
         xml = self.citation_manager.to_endnote_xml(reference)
 
         assert '<?xml version="1.0" encoding="UTF-8"?>' in xml
@@ -178,9 +151,7 @@ class TestCitationManagerIntegration:
         assert "<title>Test RNA-seq Dataset</title>" in xml
         assert "<year>2023</year>" in xml
         assert "<publisher>Gene Expression Omnibus (GEO)</publisher>" in xml
-        assert (
-            "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE12345" in xml
-        )
+        assert "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE12345" in xml
 
     def test_escape_xml_special_chars(self):
         """Test XML character escaping."""
@@ -200,9 +171,7 @@ class TestCitationManagerIntegration:
 
     def test_to_csl_json_basic(self):
         """Test CSL-JSON format generation."""
-        reference = self.citation_manager.format_geo_reference(
-            self.mock_geo_data
-        )
+        reference = self.citation_manager.format_geo_reference(self.mock_geo_data)
         csl_json = self.citation_manager.to_csl_json(reference)
 
         data = json.loads(csl_json)
@@ -212,10 +181,7 @@ class TestCitationManagerIntegration:
         assert item["id"] == "GSE12345"
         assert item["type"] == "dataset"
         assert item["title"] == "Test RNA-seq Dataset"
-        assert (
-            item["URL"]
-            == "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE12345"
-        )
+        assert item["URL"] == "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE12345"
         assert item["publisher"] == "Gene Expression Omnibus (GEO)"
         assert "issued" in item
         assert "accessed" in item
@@ -262,9 +228,7 @@ class TestCitationManagerIntegration:
         """Test exporting with unsupported format."""
         datasets = [self.mock_geo_data]
 
-        result = self.citation_manager.export_references(
-            datasets, "unsupported"
-        )
+        result = self.citation_manager.export_references(datasets, "unsupported")
 
         # Should return empty string for unsupported format
         assert result == ""

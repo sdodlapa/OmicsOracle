@@ -6,15 +6,16 @@ This script monitors the futuristic interface server logs in real-time
 to track user queries as they happen.
 """
 
-import time
 import subprocess
 import threading
+import time
 from datetime import datetime
+
 
 class BackendLogMonitor:
     def __init__(self):
         self.monitoring = True
-        
+
     def start_monitoring(self):
         """Start monitoring the backend logs"""
         print("🔍 OmicsOracle Backend Log Monitor")
@@ -23,17 +24,17 @@ class BackendLogMonitor:
         print("🔍 Submit your query and watch the detailed tracking below!")
         print("⏰ Started at:", datetime.now())
         print("=" * 50)
-        
+
         # Monitor the server process output
         try:
             # Since the server is already running, we'll monitor by watching for API calls
             while self.monitoring:
                 print("📡 Monitoring for new queries... (submit a query in your browser)")
                 time.sleep(2)
-                
+
         except KeyboardInterrupt:
             print("\n🛑 Monitoring stopped")
-            
+
     def explain_process_flow(self):
         """Explain what happens during a query"""
         print("\n📋 QUERY PROCESS FLOW EXPLANATION:")
@@ -65,14 +66,15 @@ class BackendLogMonitor:
         print("  18. Search button returns to normal state")
         print()
 
+
 if __name__ == "__main__":
     monitor = BackendLogMonitor()
     monitor.explain_process_flow()
-    
+
     print("🚀 Ready for query tracking!")
     print("💡 Submit your query now in the browser...")
     print()
-    
+
     try:
         monitor.start_monitoring()
     except KeyboardInterrupt:

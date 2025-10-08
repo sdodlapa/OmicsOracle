@@ -56,17 +56,11 @@ class PipelineMonitor:
             self.visualization_available = True
         except ImportError:
             self.visualization_available = False
-            logger.warning(
-                "Matplotlib not available. Visualizations will be skipped."
-            )
+            logger.warning("Matplotlib not available. Visualizations will be skipped.")
 
-        logger.info(
-            f"Pipeline monitor initialized with base URL: {self.base_url}"
-        )
+        logger.info(f"Pipeline monitor initialized with base URL: {self.base_url}")
 
-    def monitor_search_pipeline(
-        self, query, max_results=None, search_type="comprehensive"
-    ):
+    def monitor_search_pipeline(self, query, max_results=None, search_type="comprehensive"):
         """Run the complete monitoring process for a search query"""
         logger.info(f"Starting pipeline monitor for query: '{query}'")
 
@@ -117,9 +111,7 @@ class PipelineMonitor:
             logger.error(f"Error checking API health: {str(e)}")
             return {"status": "error", "error": str(e)}
 
-    def make_api_request(
-        self, query, max_results=None, search_type="comprehensive"
-    ):
+    def make_api_request(self, query, max_results=None, search_type="comprehensive"):
         """Make the search API request and return the response"""
         try:
             payload = {
@@ -152,9 +144,7 @@ class PipelineMonitor:
             try:
                 return response.json()
             except json.JSONDecodeError:
-                logger.error(
-                    f"Failed to decode JSON response. Raw response: {response.text[:500]}..."
-                )
+                logger.error(f"Failed to decode JSON response. Raw response: {response.text[:500]}...")
                 return {
                     "error": "Invalid JSON response",
                     "raw_response": response.text[:2000],
@@ -175,9 +165,7 @@ class PipelineMonitor:
 
         # Check if there was an error
         if "error" in response:
-            analysis["potential_issues"].append(
-                f"API error: {response.get('error')}"
-            )
+            analysis["potential_issues"].append(f"API error: {response.get('error')}")
             return analysis
 
         # Check result count consistency
@@ -218,12 +206,8 @@ class PipelineMonitor:
                 mapping_check = {
                     "index": i,
                     "geo_id": dataset.get("geo_id", "MISSING"),
-                    "title_length": len(dataset.get("title", ""))
-                    if dataset.get("title")
-                    else 0,
-                    "summary_length": len(dataset.get("summary", ""))
-                    if dataset.get("summary")
-                    else 0,
+                    "title_length": len(dataset.get("title", "")) if dataset.get("title") else 0,
+                    "summary_length": len(dataset.get("summary", "")) if dataset.get("summary") else 0,
                     "ai_insights_length": len(dataset.get("ai_insights", ""))
                     if dataset.get("ai_insights")
                     else 0,
@@ -252,41 +236,26 @@ class PipelineMonitor:
                 if not dataset.get("title"):
                     issues.append("Missing title")
 
-                if not dataset.get("summary") and not dataset.get(
-                    "ai_insights"
-                ):
+                if not dataset.get("summary") and not dataset.get("ai_insights"):
                     issues.append("Missing both summary and AI insights")
 
                 # Check for suspiciously short text that might indicate truncation
                 if dataset.get("summary") and len(dataset.get("summary")) < 50:
-                    issues.append(
-                        f"Suspiciously short summary ({len(dataset.get('summary'))} chars)"
-                    )
+                    issues.append(f"Suspiciously short summary ({len(dataset.get('summary'))} chars)")
 
-                if (
-                    dataset.get("ai_insights")
-                    and len(dataset.get("ai_insights")) < 100
-                ):
-                    issues.append(
-                        f"Suspiciously short AI insights ({len(dataset.get('ai_insights'))} chars)"
-                    )
+                if dataset.get("ai_insights") and len(dataset.get("ai_insights")) < 100:
+                    issues.append(f"Suspiciously short AI insights ({len(dataset.get('ai_insights'))} chars)")
 
                 # Check for duplicate content across datasets
                 for j, other_dataset in enumerate(response["results"]):
                     if i != j:
-                        if dataset.get("summary") and dataset.get(
-                            "summary"
-                        ) == other_dataset.get("summary"):
-                            issues.append(
-                                f"Duplicate summary with dataset at index {j}"
-                            )
+                        if dataset.get("summary") and dataset.get("summary") == other_dataset.get("summary"):
+                            issues.append(f"Duplicate summary with dataset at index {j}")
 
-                        if dataset.get("ai_insights") and dataset.get(
+                        if dataset.get("ai_insights") and dataset.get("ai_insights") == other_dataset.get(
                             "ai_insights"
-                        ) == other_dataset.get("ai_insights"):
-                            issues.append(
-                                f"Duplicate AI insights with dataset at index {j}"
-                            )
+                        ):
+                            issues.append(f"Duplicate AI insights with dataset at index {j}")
 
                 mapping_check["issues"] = issues
                 if issues:
@@ -297,12 +266,8 @@ class PipelineMonitor:
                 analysis["dataset_mapping_check"].append(mapping_check)
 
         # Analyze metadata for missing datasets or inconsistencies
-        if "metadata" in response and "datasets" in response.get(
-            "metadata", {}
-        ):
-            api_dataset_count = len(
-                response.get("metadata", {}).get("datasets", [])
-            )
+        if "metadata" in response and "datasets" in response.get("metadata", {}):
+            api_dataset_count = len(response.get("metadata", {}).get("datasets", []))
             results_count = len(response.get("results", []))
 
             if api_dataset_count != results_count:
@@ -340,21 +305,13 @@ class PipelineMonitor:
     def print_summary(self, report):
         """Print a human-readable summary of the monitoring results"""
         print("\n" + "=" * 80)
-        print(
-            f"PIPELINE MONITOR SUMMARY FOR: '{report['query_info']['original_query']}'"
-        )
+        print(f"PIPELINE MONITOR SUMMARY FOR: '{report['query_info']['original_query']}'")
         print("=" * 80)
 
-        print(
-            f"\nAPI Health: {report['health_status'].get('status', 'unknown')}"
-        )
+        print(f"\nAPI Health: {report['health_status'].get('status', 'unknown')}")
         print(f"Request Time: {report['request_time_seconds']:.2f} seconds")
-        print(
-            f"Results Returned: {len(report['api_response'].get('results', []))}"
-        )
-        print(
-            f"Total Results Reported by API: {report['api_response'].get('total_found', 0)}"
-        )
+        print(f"Results Returned: {len(report['api_response'].get('results', []))}")
+        print(f"Total Results Reported by API: {report['api_response'].get('total_found', 0)}")
 
         if report["analysis"]["potential_issues"]:
             print("\nPOTENTIAL ISSUES DETECTED:")
@@ -363,10 +320,7 @@ class PipelineMonitor:
         else:
             print("\nNo potential issues detected.")
 
-        if (
-            "recommended_fixes" in report["analysis"]
-            and report["analysis"]["recommended_fixes"]
-        ):
+        if "recommended_fixes" in report["analysis"] and report["analysis"]["recommended_fixes"]:
             print("\nRECOMMENDED FIXES:")
             for i, fix in enumerate(report["analysis"]["recommended_fixes"]):
                 print(f"{i+1}. File: {fix['file']}")
@@ -380,10 +334,7 @@ class PipelineMonitor:
         )
 
         # Generate visualization if available
-        if (
-            self.visualization_available
-            and len(report["api_response"].get("results", [])) > 0
-        ):
+        if self.visualization_available and len(report["api_response"].get("results", [])) > 0:
             try:
                 self.generate_visualizations(report)
                 print(
@@ -422,28 +373,15 @@ class PipelineMonitor:
         axs[0, 0].set_ylabel("Count")
 
         # Plot 2: Content lengths
-        if (
-            "results" in report["api_response"]
-            and len(report["api_response"]["results"]) > 0
-        ):
-            summary_lengths = [
-                len(d.get("summary", ""))
-                for d in report["api_response"]["results"]
-            ]
-            ai_lengths = [
-                len(d.get("ai_insights", ""))
-                for d in report["api_response"]["results"]
-            ]
+        if "results" in report["api_response"] and len(report["api_response"]["results"]) > 0:
+            summary_lengths = [len(d.get("summary", "")) for d in report["api_response"]["results"]]
+            ai_lengths = [len(d.get("ai_insights", "")) for d in report["api_response"]["results"]]
 
             x = np.arange(len(summary_lengths))
             width = 0.35
 
-            axs[0, 1].bar(
-                x - width / 2, summary_lengths, width, label="Summary Length"
-            )
-            axs[0, 1].bar(
-                x + width / 2, ai_lengths, width, label="AI Insights Length"
-            )
+            axs[0, 1].bar(x - width / 2, summary_lengths, width, label="Summary Length")
+            axs[0, 1].bar(x + width / 2, ai_lengths, width, label="AI Insights Length")
             axs[0, 1].set_title("Content Lengths by Dataset")
             axs[0, 1].set_xlabel("Dataset Index")
             axs[0, 1].set_ylabel("Character Count")
@@ -456,14 +394,9 @@ class PipelineMonitor:
         if "dataset_mapping_check" in report["analysis"]:
             datasets = [
                 d.get("geo_id", f"Dataset {i}")
-                for i, d in enumerate(
-                    report["analysis"]["dataset_mapping_check"]
-                )
+                for i, d in enumerate(report["analysis"]["dataset_mapping_check"])
             ]
-            issue_counts = [
-                len(d.get("issues", []))
-                for d in report["analysis"]["dataset_mapping_check"]
-            ]
+            issue_counts = [len(d.get("issues", [])) for d in report["analysis"]["dataset_mapping_check"]]
 
             axs[1, 0].bar(range(len(datasets)), issue_counts)
             axs[1, 0].set_title("Issues by Dataset")
@@ -500,9 +433,7 @@ class PipelineMonitor:
             axs[1, 1].set_xticklabels(fields, rotation=45, ha="right")
 
         plt.tight_layout()
-        plt.savefig(
-            f"{self.output_dir}/{self.timestamp}_visualizations.png", dpi=300
-        )
+        plt.savefig(f"{self.output_dir}/{self.timestamp}_visualizations.png", dpi=300)
         plt.close()
 
     def get_frontend_html(self):
@@ -556,10 +487,7 @@ class PipelineMonitor:
         }
 
         # Save full field information for every dataset
-        if (
-            "results" in report["api_response"]
-            and report["api_response"]["results"]
-        ):
+        if "results" in report["api_response"] and report["api_response"]["results"]:
             diagnosis["dataset_fields"] = {}
             for i, dataset in enumerate(report["api_response"]["results"]):
                 diagnosis["dataset_fields"][f"dataset_{i}"] = {
@@ -568,9 +496,7 @@ class PipelineMonitor:
                 }
 
         # Save diagnosis report
-        with open(
-            f"{self.output_dir}/mapping_diagnosis_{self.timestamp}.json", "w"
-        ) as f:
+        with open(f"{self.output_dir}/mapping_diagnosis_{self.timestamp}.json", "w") as f:
             json.dump(diagnosis, f, indent=2)
 
     def compare_search_results(self, report1, report2):
@@ -622,9 +548,7 @@ class PipelineMonitor:
                     len1 = len(matching_dataset.get(field))
                     len2 = len(dataset.get(field))
 
-                    if (
-                        abs(len1 - len2) > min(len1, len2) * 0.1
-                    ):  # More than 10% difference
+                    if abs(len1 - len2) > min(len1, len2) * 0.1:  # More than 10% difference
                         dataset_diff["different_fields"].append(field)
                         if field not in comparison["different_fields"]:
                             comparison["different_fields"].append(field)
@@ -641,15 +565,9 @@ class PipelineMonitor:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Monitor the OmicsOracle search pipeline"
-    )
-    parser.add_argument(
-        "--query", required=True, help="The search query to monitor"
-    )
-    parser.add_argument(
-        "--max-results", type=int, help="Maximum number of results to request"
-    )
+    parser = argparse.ArgumentParser(description="Monitor the OmicsOracle search pipeline")
+    parser.add_argument("--query", required=True, help="The search query to monitor")
+    parser.add_argument("--max-results", type=int, help="Maximum number of results to request")
     parser.add_argument(
         "--search-type",
         default="comprehensive",
@@ -682,9 +600,7 @@ def main():
     monitor = PipelineMonitor(base_url=args.api_url)
 
     # Standard monitoring
-    report = monitor.monitor_search_pipeline(
-        args.query, args.max_results, args.search_type
-    )
+    report = monitor.monitor_search_pipeline(args.query, args.max_results, args.search_type)
 
     # Additional diagnostics if requested
     if args.diagnose_mapping:
@@ -700,29 +616,20 @@ def main():
                 # Here we could parse the HTML and JavaScript to detect mapping issues
 
             # Analyze response data in more detail
-            if (
-                "results" in report["api_response"]
-                and report["api_response"]["results"]
-            ):
+            if "results" in report["api_response"] and report["api_response"]["results"]:
                 print("\nAnalyzing dataset field consistency...")
 
                 # Check field consistency across all datasets
-                fields_analysis = monitor.analyze_field_consistency(
-                    report["api_response"]["results"]
-                )
+                fields_analysis = monitor.analyze_field_consistency(report["api_response"]["results"])
 
                 print(
                     f"Found {len(fields_analysis['consistent_fields'])} consistent fields across all datasets"
                 )
-                print(
-                    f"Found {len(fields_analysis['inconsistent_fields'])} inconsistent fields"
-                )
+                print(f"Found {len(fields_analysis['inconsistent_fields'])} inconsistent fields")
 
                 if fields_analysis["inconsistent_fields"]:
                     print("\nInconsistent fields detected:")
-                    for field, presence in fields_analysis[
-                        "inconsistent_fields"
-                    ].items():
+                    for field, presence in fields_analysis["inconsistent_fields"].items():
                         print(
                             f"  - {field}: present in {presence}/{len(report['api_response']['results'])} datasets"
                         )
@@ -752,21 +659,15 @@ def main():
             print(
                 f"Results count: {len(report['api_response'].get('results', []))} vs {len(compare_report['api_response'].get('results', []))}"
             )
-            print(
-                f"Fields with differences: {len(result_diff['different_fields'])}"
-            )
+            print(f"Fields with differences: {len(result_diff['different_fields'])}")
 
             if result_diff["different_fields"]:
                 print("\nKey differences detected:")
-                for field in result_diff["different_fields"][
-                    :5
-                ]:  # Show only first 5 differences
+                for field in result_diff["different_fields"][:5]:  # Show only first 5 differences
                     print(f"  - {field}")
 
             # Save comparison report
-            with open(
-                f"{monitor.output_dir}/comparison_{monitor.timestamp}.json", "w"
-            ) as f:
+            with open(f"{monitor.output_dir}/comparison_{monitor.timestamp}.json", "w") as f:
                 json.dump(result_diff, f, indent=2)
 
         except Exception as e:

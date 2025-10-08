@@ -75,9 +75,6 @@ class TestEnvironmentSetup:
         """Test default values for environment variables."""
         with patch.dict(os.environ, {}, clear=True):
             # Test with defaults
-            assert (
-                os.environ.get("NCBI_EMAIL", "default@example.com")
-                == "default@example.com"
-            )
+            assert os.environ.get("NCBI_EMAIL", "default@example.com") == "default@example.com"
             assert os.environ.get("DEBUG", "false") == "false"
             assert os.environ.get("MAX_RESULTS", "5") == "5"

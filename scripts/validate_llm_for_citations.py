@@ -21,10 +21,7 @@ from typing import Dict, List, Optional
 
 from omics_oracle_v2.lib.llm.client import LLMClient
 from omics_oracle_v2.lib.publications.citations import LLMCitationAnalyzer
-from omics_oracle_v2.lib.publications.citations.models import (
-    CitationContext,
-    UsageAnalysis,
-)
+from omics_oracle_v2.lib.publications.citations.models import CitationContext, UsageAnalysis
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
 
 logging.basicConfig(level=logging.INFO)
@@ -266,9 +263,7 @@ def create_sample_papers() -> List[tuple]:
             context_text=sample["context"],
             section="Methods",
         )
-        test_cases.append(
-            (cited_paper, sample["citing_paper"], context, sample["ground_truth"])
-        )
+        test_cases.append((cited_paper, sample["citing_paper"], context, sample["ground_truth"]))
 
     return test_cases
 
@@ -277,43 +272,27 @@ def evaluate_accuracy(predictions: List[Dict], ground_truths: List[Dict]) -> Dic
     """Calculate accuracy metrics."""
     total = len(predictions)
     correct_reuse = sum(
-        1
-        for pred, truth in zip(predictions, ground_truths)
-        if pred["dataset_reused"] == truth["reused"]
+        1 for pred, truth in zip(predictions, ground_truths) if pred["dataset_reused"] == truth["reused"]
     )
 
     # Calculate precision, recall for reuse detection
     true_positives = sum(
-        1
-        for pred, truth in zip(predictions, ground_truths)
-        if pred["dataset_reused"] and truth["reused"]
+        1 for pred, truth in zip(predictions, ground_truths) if pred["dataset_reused"] and truth["reused"]
     )
     false_positives = sum(
-        1
-        for pred, truth in zip(predictions, ground_truths)
-        if pred["dataset_reused"] and not truth["reused"]
+        1 for pred, truth in zip(predictions, ground_truths) if pred["dataset_reused"] and not truth["reused"]
     )
     false_negatives = sum(
-        1
-        for pred, truth in zip(predictions, ground_truths)
-        if not pred["dataset_reused"] and truth["reused"]
+        1 for pred, truth in zip(predictions, ground_truths) if not pred["dataset_reused"] and truth["reused"]
     )
 
     precision = (
-        true_positives / (true_positives + false_positives)
-        if (true_positives + false_positives) > 0
-        else 0
+        true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 0
     )
     recall = (
-        true_positives / (true_positives + false_negatives)
-        if (true_positives + false_negatives) > 0
-        else 0
+        true_positives / (true_positives + false_negatives) if (true_positives + false_negatives) > 0 else 0
     )
-    f1_score = (
-        2 * (precision * recall) / (precision + recall)
-        if (precision + recall) > 0
-        else 0
-    )
+    f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
 
     return {
         "accuracy": correct_reuse / total,
@@ -361,9 +340,7 @@ def run_validation_test(use_llm: bool = False, llm_provider: str = "ollama"):
         logger.info(f"\nPaper: {citing.title[:50]}...")
         logger.info(f"  Predicted reuse: {prediction['dataset_reused']}")
         logger.info(f"  Actual reuse: {ground_truth['reused']}")
-        logger.info(
-            f"  Match: {'✓' if prediction['dataset_reused'] == ground_truth['reused'] else '✗'}"
-        )
+        logger.info(f"  Match: {'✓' if prediction['dataset_reused'] == ground_truth['reused'] else '✗'}")
 
     baseline_time = time.time() - baseline_start
 
@@ -401,9 +378,7 @@ def run_validation_test(use_llm: bool = False, llm_provider: str = "ollama"):
 
             for cited, citing, context, ground_truth in test_cases:
                 try:
-                    analysis = llm_analyzer.analyze_citation_context(
-                        context, cited, citing
-                    )
+                    analysis = llm_analyzer.analyze_citation_context(context, cited, citing)
 
                     prediction = {
                         "dataset_reused": analysis.dataset_reused,
@@ -469,14 +444,10 @@ def run_validation_test(use_llm: bool = False, llm_provider: str = "ollama"):
     if use_llm and "error" not in results["llm"]:
         # Compare metrics
         improvement = {
-            "accuracy": results["llm"]["metrics"]["accuracy"]
-            - results["baseline"]["metrics"]["accuracy"],
-            "precision": results["llm"]["metrics"]["precision"]
-            - results["baseline"]["metrics"]["precision"],
-            "recall": results["llm"]["metrics"]["recall"]
-            - results["baseline"]["metrics"]["recall"],
-            "f1_score": results["llm"]["metrics"]["f1_score"]
-            - results["baseline"]["metrics"]["f1_score"],
+            "accuracy": results["llm"]["metrics"]["accuracy"] - results["baseline"]["metrics"]["accuracy"],
+            "precision": results["llm"]["metrics"]["precision"] - results["baseline"]["metrics"]["precision"],
+            "recall": results["llm"]["metrics"]["recall"] - results["baseline"]["metrics"]["recall"],
+            "f1_score": results["llm"]["metrics"]["f1_score"] - results["baseline"]["metrics"]["f1_score"],
         }
 
         logger.info("\nIMPROVEMENT (LLM vs Baseline):")

@@ -4,12 +4,13 @@ Unit tests for PublicationRanker.
 Tests multi-factor scoring algorithm, weights, and filtering.
 """
 
-import pytest
 from datetime import datetime, timedelta
 
-from omics_oracle_v2.lib.publications.ranking.ranker import PublicationRanker
+import pytest
+
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.publications.ranking.ranker import PublicationRanker
 
 
 @pytest.fixture
@@ -23,7 +24,7 @@ def config():
             "abstract_match": 0.3,
             "recency": 0.2,
             "citations": 0.1,
-        }
+        },
     )
 
 
@@ -40,9 +41,9 @@ def sample_publication():
         pmid="12345678",
         title="CRISPR-Cas9 gene editing for cancer therapy",
         abstract="Background: Gene editing shows promise for cancer treatment. "
-                 "Methods: We used CRISPR-Cas9 to target oncogenes. "
-                 "Results: Significant tumor reduction observed. "
-                 "Conclusions: CRISPR-Cas9 is effective for cancer therapy.",
+        "Methods: We used CRISPR-Cas9 to target oncogenes. "
+        "Results: Significant tumor reduction observed. "
+        "Conclusions: CRISPR-Cas9 is effective for cancer therapy.",
         authors=["Smith J", "Doe J"],
         journal="Nature Biotechnology",
         publication_date=datetime.now() - timedelta(days=30),
@@ -109,9 +110,7 @@ class TestPublicationScoring:
     def test_score_publication_returns_float(self, ranker, sample_publication):
         """Test scoring returns float score."""
         score = ranker._score_publication(
-            sample_publication, 
-            "CRISPR cancer therapy", 
-            ["crispr", "cancer", "therapy"]
+            sample_publication, "CRISPR cancer therapy", ["crispr", "cancer", "therapy"]
         )
         assert isinstance(score, float)
         assert 0 <= score <= 100
@@ -121,7 +120,7 @@ class TestPublicationScoring:
         score = ranker._score_publication(
             sample_publication,
             "CRISPR-Cas9 gene editing for cancer therapy",
-            ["crispr", "cas9", "gene", "editing", "cancer", "therapy"]
+            ["crispr", "cas9", "gene", "editing", "cancer", "therapy"],
         )
         # Should have high title match component
         assert score > 50
@@ -129,17 +128,11 @@ class TestPublicationScoring:
     def test_partial_title_match_scores_lower(self, ranker, sample_publication):
         """Test partial title match scores lower."""
         score_full = ranker._score_publication(
-            sample_publication,
-            "CRISPR cancer therapy",
-            ["crispr", "cancer", "therapy"]
+            sample_publication, "CRISPR cancer therapy", ["crispr", "cancer", "therapy"]
         )
-        
-        score_partial = ranker._score_publication(
-            sample_publication,
-            "cancer",
-            ["cancer"]
-        )
-        
+
+        score_partial = ranker._score_publication(sample_publication, "cancer", ["cancer"])
+
         assert score_full > score_partial
 
     def test_abstract_match_contributes_to_score(self, ranker, sample_publication):
@@ -148,26 +141,24 @@ class TestPublicationScoring:
         score_with_abstract = ranker._score_publication(
             sample_publication,
             "oncogene targeting tumor reduction",
-            ["oncogene", "targeting", "tumor", "reduction"]
+            ["oncogene", "targeting", "tumor", "reduction"],
         )
-        
+
         # Query not in abstract
         score_without_abstract = ranker._score_publication(
-            sample_publication,
-            "completely unrelated query xyz",
-            ["completely", "unrelated", "query", "xyz"]
+            sample_publication, "completely unrelated query xyz", ["completely", "unrelated", "query", "xyz"]
         )
-        
+
         assert score_with_abstract > score_without_abstract
 
     def test_recent_publications_score_higher(self, ranker, sample_publication, old_publication):
         """Test recent publications score higher on recency."""
         query = "cancer treatment"
         tokens = ["cancer", "treatment"]
-        
+
         recent_score = ranker._score_publication(sample_publication, query, tokens)
         old_score = ranker._score_publication(old_publication, query, tokens)
-        
+
         # Recent should have higher recency component
         # (though old one may score higher overall due to high citations)
         assert recent_score >= 0
@@ -176,9 +167,9 @@ class TestPublicationScoring:
         """Test citations affect score."""
         query = "cancer genomics"
         tokens = ["cancer", "genomics"]
-        
+
         highly_cited_score = ranker._score_publication(highly_cited_publication, query, tokens)
-        
+
         # High citations should contribute positively
         assert highly_cited_score >= 0
 
@@ -189,9 +180,9 @@ class TestRankingFunction:
     def test_rank_returns_sorted_results(self, ranker, sample_publication, old_publication):
         """Test rank returns sorted list."""
         publications = [old_publication, sample_publication]
-        
+
         ranked = ranker.rank(publications, "CRISPR cancer therapy", top_k=10)
-        
+
         assert len(ranked) == 2
         # First result should have higher score
         assert ranked[0].relevance_score >= ranked[1].relevance_score
@@ -199,9 +190,9 @@ class TestRankingFunction:
     def test_rank_respects_top_k(self, ranker, sample_publication):
         """Test rank respects top_k parameter."""
         publications = [sample_publication] * 10
-        
+
         ranked = ranker.rank(publications, "test query", top_k=5)
-        
+
         assert len(ranked) <= 5
 
     def test_rank_returns_empty_for_empty_input(self, ranker):
@@ -212,20 +203,20 @@ class TestRankingFunction:
     def test_rank_includes_score_breakdown(self, ranker, sample_publication):
         """Test rank includes score breakdown."""
         ranked = ranker.rank([sample_publication], "CRISPR cancer", top_k=10)
-        
+
         assert len(ranked) == 1
-        assert hasattr(ranked[0], 'score_breakdown')
-        assert 'title_match' in ranked[0].score_breakdown
-        assert 'abstract_match' in ranked[0].score_breakdown
-        assert 'recency' in ranked[0].score_breakdown
-        assert 'citations' in ranked[0].score_breakdown
+        assert hasattr(ranked[0], "score_breakdown")
+        assert "title_match" in ranked[0].score_breakdown
+        assert "abstract_match" in ranked[0].score_breakdown
+        assert "recency" in ranked[0].score_breakdown
+        assert "citations" in ranked[0].score_breakdown
 
     def test_rank_sets_rank_numbers(self, ranker, sample_publication, old_publication):
         """Test rank sets rank numbers correctly."""
         publications = [old_publication, sample_publication]
-        
+
         ranked = ranker.rank(publications, "test", top_k=10)
-        
+
         assert ranked[0].rank == 1
         assert ranked[1].rank == 2
 
@@ -237,9 +228,9 @@ class TestTextRelevanceCalculation:
         """Test relevance calculation with exact match."""
         text = "CRISPR-Cas9 gene editing for cancer therapy"
         query_tokens = ["crispr", "gene", "editing", "cancer", "therapy"]
-        
+
         score = ranker._calculate_text_relevance(text, query_tokens)
-        
+
         assert score > 0
         assert score <= 1.0
 
@@ -247,9 +238,9 @@ class TestTextRelevanceCalculation:
         """Test relevance with partial match."""
         text = "Gene therapy approaches"
         query_tokens = ["gene", "editing", "crispr"]
-        
+
         score = ranker._calculate_text_relevance(text, query_tokens)
-        
+
         assert score >= 0
         assert score <= 1.0
 
@@ -257,22 +248,22 @@ class TestTextRelevanceCalculation:
         """Test relevance with no match."""
         text = "Completely unrelated content"
         query_tokens = ["crispr", "cancer", "therapy"]
-        
+
         score = ranker._calculate_text_relevance(text, query_tokens)
-        
+
         assert score == 0.0
 
     def test_phrase_matching_bonus(self, ranker):
         """Test phrase matching gives bonus."""
         text = "CRISPR-Cas9 gene editing is revolutionary"
         query_tokens = ["crispr", "cas9", "gene", "editing"]
-        
+
         score_with_phrase = ranker._calculate_text_relevance(text, query_tokens)
-        
+
         # Shuffle tokens (no phrase match)
         text_shuffled = "Gene editing with revolutionary CRISPR-Cas9"
         score_without_phrase = ranker._calculate_text_relevance(text_shuffled, query_tokens)
-        
+
         # With phrase should score same or higher
         assert score_with_phrase >= 0
 
@@ -286,11 +277,11 @@ class TestRecencyScoring:
             pmid="123",
             title="Test",
             source=PublicationSource.PUBMED,
-            publication_date=datetime.now() - timedelta(days=1)
+            publication_date=datetime.now() - timedelta(days=1),
         )
-        
+
         score = ranker._calculate_recency_score(pub)
-        
+
         # Very recent should score close to 1.0
         assert score > 0.9
         assert score <= 1.0
@@ -301,25 +292,20 @@ class TestRecencyScoring:
             pmid="123",
             title="Test",
             source=PublicationSource.PUBMED,
-            publication_date=datetime.now() - timedelta(days=3650)  # 10 years
+            publication_date=datetime.now() - timedelta(days=3650),  # 10 years
         )
-        
+
         score = ranker._calculate_recency_score(pub)
-        
+
         # Old should have low recency score
         assert score < 0.5
 
     def test_recency_score_for_no_date(self, ranker):
         """Test recency score when date is missing."""
-        pub = Publication(
-            pmid="123",
-            title="Test",
-            source=PublicationSource.PUBMED,
-            publication_date=None
-        )
-        
+        pub = Publication(pmid="123", title="Test", source=PublicationSource.PUBMED, publication_date=None)
+
         score = ranker._calculate_recency_score(pub)
-        
+
         # Should handle gracefully
         assert score >= 0
 
@@ -329,43 +315,28 @@ class TestCitationScoring:
 
     def test_citation_score_for_highly_cited(self, ranker):
         """Test citation score for highly cited paper."""
-        pub = Publication(
-            pmid="123",
-            title="Test",
-            source=PublicationSource.PUBMED,
-            citations=5000
-        )
-        
+        pub = Publication(pmid="123", title="Test", source=PublicationSource.PUBMED, citations=5000)
+
         score = ranker._calculate_citation_score(pub)
-        
+
         # Should be close to 1.0 (log scale, 1.0 at 1000 citations)
         assert score >= 0.9
 
     def test_citation_score_for_low_citations(self, ranker):
         """Test citation score for low citations."""
-        pub = Publication(
-            pmid="123",
-            title="Test",
-            source=PublicationSource.PUBMED,
-            citations=10
-        )
-        
+        pub = Publication(pmid="123", title="Test", source=PublicationSource.PUBMED, citations=10)
+
         score = ranker._calculate_citation_score(pub)
-        
+
         # Should be lower
         assert score < 0.5
 
     def test_citation_score_for_no_citations(self, ranker):
         """Test citation score when citations missing."""
-        pub = Publication(
-            pmid="123",
-            title="Test",
-            source=PublicationSource.PUBMED,
-            citations=None
-        )
-        
+        pub = Publication(pmid="123", title="Test", source=PublicationSource.PUBMED, citations=None)
+
         score = ranker._calculate_citation_score(pub)
-        
+
         # Should be 0 or very low
         assert score >= 0
         assert score <= 0.1
@@ -377,7 +348,7 @@ class TestTokenization:
     def test_tokenize_query_splits_words(self, ranker):
         """Test tokenization splits words."""
         tokens = ranker._tokenize_query("CRISPR cancer therapy")
-        
+
         assert "crispr" in tokens
         assert "cancer" in tokens
         assert "therapy" in tokens
@@ -385,13 +356,13 @@ class TestTokenization:
     def test_tokenize_query_lowercases(self, ranker):
         """Test tokenization lowercases."""
         tokens = ranker._tokenize_query("CRISPR Cancer THERAPY")
-        
+
         assert all(t.islower() for t in tokens)
 
     def test_tokenize_query_removes_stop_words(self, ranker):
         """Test tokenization removes stop words."""
         tokens = ranker._tokenize_query("the CRISPR and cancer therapy")
-        
+
         # Stop words should be removed
         assert "the" not in tokens
         assert "and" not in tokens
@@ -399,7 +370,7 @@ class TestTokenization:
     def test_tokenize_query_handles_punctuation(self, ranker):
         """Test tokenization handles punctuation."""
         tokens = ranker._tokenize_query("CRISPR-Cas9, gene editing!")
-        
+
         # Should split on punctuation
         assert "crispr" in tokens or "cas9" in tokens
 
@@ -410,9 +381,9 @@ class TestFilteringAndDeduplication:
     def test_filter_by_min_score(self, ranker, sample_publication, old_publication):
         """Test filtering by minimum score."""
         publications = [sample_publication, old_publication]
-        
+
         ranked = ranker.rank(publications, "CRISPR cancer", top_k=10)
-        
+
         # Filter by min score
         if ranked:
             min_score = ranked[0].relevance_score - 10
@@ -426,36 +397,27 @@ class TestEdgeCases:
     def test_rank_with_None_publication_date(self, ranker):
         """Test ranking handles None publication date."""
         pub = Publication(
-            pmid="123",
-            title="Test publication",
-            source=PublicationSource.PUBMED,
-            publication_date=None
+            pmid="123", title="Test publication", source=PublicationSource.PUBMED, publication_date=None
         )
-        
+
         ranked = ranker.rank([pub], "test", top_k=10)
         assert len(ranked) == 1
 
     def test_rank_with_None_citations(self, ranker):
         """Test ranking handles None citations."""
         pub = Publication(
-            pmid="123",
-            title="Test publication",
-            source=PublicationSource.PUBMED,
-            citations=None
+            pmid="123", title="Test publication", source=PublicationSource.PUBMED, citations=None
         )
-        
+
         ranked = ranker.rank([pub], "test", top_k=10)
         assert len(ranked) == 1
 
     def test_rank_with_empty_abstract(self, ranker):
         """Test ranking handles empty abstract."""
         pub = Publication(
-            pmid="123",
-            title="Test publication with CRISPR",
-            source=PublicationSource.PUBMED,
-            abstract=None
+            pmid="123", title="Test publication with CRISPR", source=PublicationSource.PUBMED, abstract=None
         )
-        
+
         ranked = ranker.rank([pub], "CRISPR", top_k=10)
         assert len(ranked) == 1
         # Should still score based on title
@@ -463,11 +425,7 @@ class TestEdgeCases:
 
     def test_rank_with_special_characters_in_query(self, ranker, sample_publication):
         """Test ranking handles special characters in query."""
-        ranked = ranker.rank(
-            [sample_publication], 
-            "CRISPR-Cas9 (gene editing) & cancer!",
-            top_k=10
-        )
+        ranked = ranker.rank([sample_publication], "CRISPR-Cas9 (gene editing) & cancer!", top_k=10)
         assert len(ranked) == 1
 
 

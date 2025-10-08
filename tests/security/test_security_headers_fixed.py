@@ -72,13 +72,9 @@ class SecurityHeadersTestSuite:
                     # Check if header value matches expected values
                     expected = header_config["expected"]
                     if isinstance(expected, list):
-                        present_correctly = any(
-                            exp in header_value for exp in expected
-                        )
+                        present_correctly = any(exp in header_value for exp in expected)
                     else:
-                        present_correctly = (
-                            expected in header_value if expected else True
-                        )
+                        present_correctly = expected in header_value if expected else True
                 else:
                     present_correctly = False
 
@@ -94,16 +90,8 @@ class SecurityHeadersTestSuite:
 
         # Calculate summary statistics
         total_headers = len(security_headers)
-        present_headers = sum(
-            1
-            for h in results.values()
-            if isinstance(h, dict) and h.get("present", False)
-        )
-        correct_headers = sum(
-            1
-            for h in results.values()
-            if isinstance(h, dict) and h.get("correct", False)
-        )
+        present_headers = sum(1 for h in results.values() if isinstance(h, dict) and h.get("present", False))
+        correct_headers = sum(1 for h in results.values() if isinstance(h, dict) and h.get("correct", False))
 
         results["summary"] = {
             "total_headers": total_headers,
@@ -128,9 +116,7 @@ class SecurityHeadersTestSuite:
             if not header_data.get("present"):
                 recommendations.append(f"Add {header_name} header")
             elif not header_data.get("correct"):
-                recommendations.append(
-                    f"Fix {header_name} header configuration"
-                )
+                recommendations.append(f"Fix {header_name} header configuration")
 
         # Check for information disclosure
         if info_disclosure.get("server_info_exposed"):
@@ -169,9 +155,7 @@ class SecurityHeadersTestSuite:
         # Test HTTP to HTTPS redirect
         if parsed_url.scheme == "http":
             try:
-                http_response = self.session.get(
-                    self.base_url, timeout=10, allow_redirects=False
-                )
+                http_response = self.session.get(self.base_url, timeout=10, allow_redirects=False)
                 if http_response.status_code in [301, 302, 307, 308]:
                     location = http_response.headers.get("Location", "")
                     results["https_redirect"] = location.startswith("https://")
@@ -183,12 +167,8 @@ class SecurityHeadersTestSuite:
         if results["https_available"]:
             try:
                 context = ssl.create_default_context()
-                with socket.create_connection(
-                    (hostname, 443), timeout=10
-                ) as sock:
-                    with context.wrap_socket(
-                        sock, server_hostname=hostname
-                    ) as ssock:
+                with socket.create_connection((hostname, 443), timeout=10) as sock:
+                    with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                         results["ssl_certificate_valid"] = True
                         results["tls_version"] = ssock.version()
                         results["cipher_suite"] = ssock.cipher()
@@ -241,12 +221,8 @@ class SecurityHeadersTestSuite:
 
                     for header in rate_limit_headers:
                         if header in response.headers:
-                            endpoint_results[
-                                "rate_limit_headers_present"
-                            ] = True
-                            endpoint_results["rate_limit_headers"][
-                                header
-                            ] = response.headers[header]
+                            endpoint_results["rate_limit_headers_present"] = True
+                            endpoint_results["rate_limit_headers"][header] = response.headers[header]
 
                     # If rate limited, break the loop
                     if endpoint_results["rate_limited"]:
@@ -261,17 +237,12 @@ class SecurityHeadersTestSuite:
 
         # Calculate summary
         total_endpoints = len(test_endpoints)
-        rate_limited_endpoints = sum(
-            1
-            for result in results.values()
-            if result.get("rate_limited", False)
-        )
+        rate_limited_endpoints = sum(1 for result in results.values() if result.get("rate_limited", False))
 
         results["summary"] = {
             "total_endpoints_tested": total_endpoints,
             "rate_limited_endpoints": rate_limited_endpoints,
-            "rate_limiting_coverage": (rate_limited_endpoints / total_endpoints)
-            * 100,
+            "rate_limiting_coverage": (rate_limited_endpoints / total_endpoints) * 100,
         }
 
         return results
@@ -288,9 +259,7 @@ class SecurityHeadersTestSuite:
         results = {}
 
         for origin in cors_test_origins:
-            headers = (
-                {"Origin": origin} if origin != "null" else {"Origin": "null"}
-            )
+            headers = {"Origin": origin} if origin != "null" else {"Origin": "null"}
 
             try:
                 # Test preflight request
@@ -299,14 +268,10 @@ class SecurityHeadersTestSuite:
                 )
 
                 # Test actual request
-                actual_response = self.session.get(
-                    f"{self.base_url}/api/search", headers=headers, timeout=10
-                )
+                actual_response = self.session.get(f"{self.base_url}/api/search", headers=headers, timeout=10)
 
                 cors_headers = {
-                    "Access-Control-Allow-Origin": actual_response.headers.get(
-                        "Access-Control-Allow-Origin"
-                    ),
+                    "Access-Control-Allow-Origin": actual_response.headers.get("Access-Control-Allow-Origin"),
                     "Access-Control-Allow-Methods": actual_response.headers.get(
                         "Access-Control-Allow-Methods"
                     ),
@@ -331,10 +296,7 @@ class SecurityHeadersTestSuite:
                     "actual_status": actual_response.status_code,
                     "cors_headers": cors_headers,
                     "origin_allowed": origin_allowed,
-                    "credentials_allowed": cors_headers.get(
-                        "Access-Control-Allow-Credentials"
-                    )
-                    == "true",
+                    "credentials_allowed": cors_headers.get("Access-Control-Allow-Credentials") == "true",
                 }
 
             except requests.exceptions.RequestException as e:
@@ -342,8 +304,7 @@ class SecurityHeadersTestSuite:
 
         # Check for overly permissive CORS
         wildcard_cors = any(
-            result.get("cors_headers", {}).get("Access-Control-Allow-Origin")
-            == "*"
+            result.get("cors_headers", {}).get("Access-Control-Allow-Origin") == "*"
             for result in results.values()
             if isinstance(result, dict) and "cors_headers" in result
         )
@@ -354,8 +315,7 @@ class SecurityHeadersTestSuite:
             "allowed_origins": sum(
                 1
                 for result in results.values()
-                if isinstance(result, dict)
-                and result.get("origin_allowed", False)
+                if isinstance(result, dict) and result.get("origin_allowed", False)
             ),
         }
 
@@ -371,27 +331,14 @@ class SecurityHeadersTestSuite:
         """Generate comprehensive security headers report."""
 
         # Calculate risk scores
-        headers_score = headers_results.get("summary", {}).get(
-            "security_score", 0
-        )
+        headers_score = headers_results.get("summary", {}).get("security_score", 0)
         https_score = (
-            100
-            if https_results.get("https_available")
-            and https_results.get("ssl_certificate_valid")
-            else 0
+            100 if https_results.get("https_available") and https_results.get("ssl_certificate_valid") else 0
         )
-        rate_limit_score = rate_limit_results.get("summary", {}).get(
-            "rate_limiting_coverage", 0
-        )
-        cors_score = (
-            0
-            if cors_results.get("summary", {}).get("wildcard_cors_enabled")
-            else 100
-        )
+        rate_limit_score = rate_limit_results.get("summary", {}).get("rate_limiting_coverage", 0)
+        cors_score = 0 if cors_results.get("summary", {}).get("wildcard_cors_enabled") else 100
 
-        overall_score = (
-            headers_score + https_score + rate_limit_score + cors_score
-        ) / 4
+        overall_score = (headers_score + https_score + rate_limit_score + cors_score) / 4
 
         # Generate recommendations
         recommendations = []
@@ -467,9 +414,7 @@ def run_security_headers_tests() -> Dict[str, Any]:
     with open("security_headers_results.json", "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2)
 
-    print(
-        f"Security headers testing completed. Risk level: {report['risk_level']}"
-    )
+    print(f"Security headers testing completed. Risk level: {report['risk_level']}")
     print("Results saved to: security_headers_results.json")
 
     return report

@@ -1,6 +1,6 @@
 # GPU/GCP Migration Decision Analysis
 
-**Date:** October 7, 2025  
+**Date:** October 7, 2025
 **Question:** Do we need to migrate to GCP with GPU **now** or can we continue without it?
 
 ---
@@ -60,8 +60,8 @@ Let me break down what requires GPU vs what doesn't:
 - Compare performance vs cloud APIs
 - Make final model selection
 
-**When Needed:** Only for final production deployment decision  
-**Time Required:** 4-5 hours  
+**When Needed:** Only for final production deployment decision
+**Time Required:** 4-5 hours
 **Can Wait Until:** Ready for production optimization (Week 4 or later)
 
 ---
@@ -157,8 +157,8 @@ llm = LLMClient(
 3. ✅ Day 19: Testing suite
 4. ✅ Day 20: Documentation
 
-**Cost:** ~$1-5 for API calls (negligible)  
-**Time:** 12-16 hours  
+**Cost:** ~$1-5 for API calls (negligible)
+**Time:** 12-16 hours
 **Environment:** Local (existing setup)
 
 ### Phase 2: GCP Migration (Week 4 or Later) ⏭️ **Do This Later**
@@ -247,17 +247,17 @@ class PublicationSearchPipeline:
                 cache_enabled=True
             )
             self.llm_analyzer = LLMCitationAnalyzer(self.llm)
-    
+
     def search_with_citations(self, query):
         # Search publications
         results = self.search(query)
-        
+
         # Analyze citations with LLM (uses cloud API)
         for pub in results.publications:
             citing_papers = self.citation_analyzer.get_citing_papers(pub)
             analyses = self.llm_analyzer.analyze_batch(citing_papers)
             pub.citation_analysis = analyses
-        
+
         return results
 ```
 
@@ -267,7 +267,7 @@ class PublicationSearchPipeline:
 class InteractiveQA:
     def __init__(self, llm_client):
         self.llm = llm_client  # Works with any provider
-    
+
     def ask_about_dataset(self, dataset, question):
         # Uses LLM to answer questions
         pass
@@ -340,8 +340,8 @@ Development/Testing: 50-100 LLM calls
 - Total: ~$5-10 for entire Days 17-20
 ```
 
-**Timeline:** 12-16 hours  
-**Setup Time:** 0 hours  
+**Timeline:** 12-16 hours
+**Setup Time:** 0 hours
 **Total Cost:** ~$5-10
 
 ### GCP Migration Now
@@ -355,9 +355,9 @@ Development Time: 12-16 hours
 - Total: $32-64
 ```
 
-**API Costs:** Same $5-10 (still need for testing)  
-**Timeline:** 14-18 hours (including setup)  
-**Setup Time:** 2 hours  
+**API Costs:** Same $5-10 (still need for testing)
+**Timeline:** 14-18 hours (including setup)
+**Setup Time:** 2 hours
 **Total Cost:** ~$37-74
 
 **Savings by staying local: $27-64**
@@ -427,7 +427,7 @@ llm = LLMClient(provider="ollama", model="biomistral")
 - Development: Iterate fast, test features → Use cloud APIs locally ✅
 - Production: Optimize cost, scale → Use local models on GPU ⏭️
 
-**Current Phase:** Development (Days 17-20)  
+**Current Phase:** Development (Days 17-20)
 **Next Phase:** Production optimization (Week 4+)
 
 **Analogy:**
@@ -446,7 +446,7 @@ Don't optimize prematurely!
    ```bash
    # Check OpenAI key
    echo $OPENAI_API_KEY
-   
+
    # Or get Anthropic key (cheaper)
    # https://console.anthropic.com/
    export ANTHROPIC_API_KEY=your_key

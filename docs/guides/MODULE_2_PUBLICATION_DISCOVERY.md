@@ -1,9 +1,9 @@
 # 🔍 Module 2: Related Publications Discovery System
 
-**Date**: December 28, 2024  
-**Module**: Publication Relationship Discovery  
-**Priority**: High - Research Impact Analysis  
-**Estimated Timeline**: 4-6 weeks  
+**Date**: December 28, 2024
+**Module**: Publication Relationship Discovery
+**Priority**: High - Research Impact Analysis
+**Estimated Timeline**: 4-6 weeks
 
 ---
 
@@ -85,40 +85,40 @@ from ..models.discovery import CitationResult
 
 class ScholarClient:
     """Google Scholar citation tracking"""
-    
+
     def __init__(self, use_proxy: bool = True):
         self.use_proxy = use_proxy
         if use_proxy:
             self._setup_proxy()
-    
+
     def _setup_proxy(self):
         """Setup proxy for Google Scholar requests"""
         pg = ProxyGenerator()
         pg.FreeProxies()
         scholarly.use_proxy(pg)
-    
-    async def find_citing_papers(self, 
-                               title: str, 
+
+    async def find_citing_papers(self,
+                               title: str,
                                authors: List[str],
                                year: int,
                                max_results: int = 100) -> List[CitingPublication]:
         """Find papers that cite the given publication"""
-        
+
         # Search for the original publication
         search_query = f'"{title}" {" ".join(authors[:2])} {year}'
-        
+
         try:
             # Find the original publication
             search_results = scholarly.search_pubs(search_query)
             original_pub = next(search_results)
-            
+
             if not original_pub:
                 return []
-            
+
             # Get citation information
             filled_pub = scholarly.fill(original_pub)
             citations = filled_pub.get('citations', [])
-            
+
             citing_papers = []
             for citation in citations[:max_results]:
                 try:
@@ -127,12 +127,12 @@ class ScholarClient:
                         citing_papers.append(citing_paper)
                 except Exception as e:
                     continue
-            
+
             return citing_papers
-            
+
         except Exception as e:
             raise Exception(f"Scholar search failed: {e}")
-    
+
     def _parse_citation(self, citation_data: Dict) -> Optional[CitingPublication]:
         """Parse citation data into CitingPublication object"""
         try:
@@ -150,7 +150,7 @@ class ScholarClient:
 
 class CitationAnalyzer:
     """Analyze citation context and relevance"""
-    
+
     def __init__(self):
         self.dataset_mention_patterns = [
             r'GEO\s*:?\s*GSE\d+',
@@ -159,7 +159,7 @@ class CitationAnalyzer:
             r'dataset\s+GSE\d+',
             r'GSE\d+\s+dataset'
         ]
-        
+
         self.usage_context_keywords = {
             'reanalysis': ['reanalyz', 'reprocess', 're-analyz', 'secondary analysis'],
             'validation': ['validat', 'confirm', 'verify', 'replicate'],
@@ -167,27 +167,27 @@ class CitationAnalyzer:
             'benchmark': ['benchmark', 'comparison', 'evaluate', 'assess'],
             'training_data': ['training', 'machine learning', 'model', 'algorithm']
         }
-    
-    async def analyze_citation_context(self, 
+
+    async def analyze_citation_context(self,
                                      citing_paper: CitingPublication,
                                      geo_id: str,
                                      full_text: str) -> Dict[str, Any]:
         """Analyze how the dataset is used in the citing paper"""
-        
+
         # Find dataset mentions in text
         dataset_mentions = self._find_dataset_mentions(full_text, geo_id)
-        
+
         # Classify usage type
         usage_type = self._classify_usage_type(full_text, dataset_mentions)
-        
+
         # Extract methodology information
         methodology = self._extract_methodology(full_text)
-        
+
         # Calculate relevance score
         relevance_score = self._calculate_relevance_score(
             dataset_mentions, usage_type, methodology
         )
-        
+
         return {
             'dataset_mentions': dataset_mentions,
             'usage_type': usage_type,
@@ -195,13 +195,13 @@ class CitationAnalyzer:
             'relevance_score': relevance_score,
             'context_summary': self._generate_context_summary(dataset_mentions)
         }
-    
+
     def _find_dataset_mentions(self, text: str, geo_id: str) -> List[Dict[str, Any]]:
         """Find mentions of the dataset in text"""
         import re
-        
+
         mentions = []
-        
+
         # Look for specific GEO ID mentions
         for pattern in self.dataset_mention_patterns:
             matches = re.finditer(pattern, text, re.IGNORECASE)
@@ -210,26 +210,26 @@ class CitationAnalyzer:
                 start = max(0, match.start() - 200)
                 end = min(len(text), match.end() + 200)
                 context = text[start:end]
-                
+
                 mentions.append({
                     'text': match.group(),
                     'position': match.start(),
                     'context': context,
                     'pattern_type': pattern
                 })
-        
+
         return mentions
-    
+
     def _classify_usage_type(self, text: str, mentions: List[Dict]) -> str:
         """Classify how the dataset is being used"""
         text_lower = text.lower()
-        
+
         # Count keywords for each usage type
         usage_scores = {}
         for usage_type, keywords in self.usage_context_keywords.items():
             score = sum(text_lower.count(keyword) for keyword in keywords)
             usage_scores[usage_type] = score
-        
+
         # Return the usage type with highest score
         if usage_scores:
             return max(usage_scores, key=usage_scores.get)
@@ -258,7 +258,7 @@ class MLTechnique:
 
 class TechniqueDetector:
     """Detect machine learning and bioinformatics techniques"""
-    
+
     def __init__(self):
         self.ml_techniques = {
             'supervised_learning': {
@@ -284,7 +284,7 @@ class TechniqueDetector:
                 'transformer': ['transformer', 'attention mechanism', 'bert', 'gpt']
             }
         }
-        
+
         self.bioinformatics_techniques = {
             'differential_expression': {
                 'deseq2': ['deseq2', 'deseq'],
@@ -305,35 +305,35 @@ class TechniqueDetector:
                 'regulatory': ['regulatory network', 'transcription factor']
             }
         }
-        
+
         self.software_tools = {
             'r_packages': ['bioconductor', 'cran', 'r package'],
             'python_libraries': ['scikit-learn', 'tensorflow', 'pytorch', 'pandas', 'numpy'],
             'specialized_tools': ['galaxy', 'bioconda', 'nextflow', 'snakemake']
         }
-    
+
     async def detect_techniques(self, full_text: str) -> Dict[str, Any]:
         """Detect ML and bioinformatics techniques in text"""
-        
+
         detected_techniques = []
         software_tools = []
-        
+
         # Detect ML techniques
         ml_results = self._detect_ml_techniques(full_text)
         detected_techniques.extend(ml_results)
-        
+
         # Detect bioinformatics techniques
         bioinfo_results = self._detect_bioinformatics_techniques(full_text)
         detected_techniques.extend(bioinfo_results)
-        
+
         # Detect software tools
         software_tools = self._detect_software_tools(full_text)
-        
+
         # Calculate overall ML/bioinformatics confidence
         confidence_score = self._calculate_confidence_score(
             detected_techniques, software_tools
         )
-        
+
         return {
             'techniques': detected_techniques,
             'software_tools': software_tools,
@@ -341,12 +341,12 @@ class TechniqueDetector:
             'categories': self._categorize_techniques(detected_techniques),
             'methodology_summary': self._generate_methodology_summary(detected_techniques)
         }
-    
+
     def _detect_ml_techniques(self, text: str) -> List[MLTechnique]:
         """Detect machine learning techniques"""
         text_lower = text.lower()
         detected = []
-        
+
         for category, techniques in self.ml_techniques.items():
             for technique_name, keywords in techniques.items():
                 for keyword in keywords:
@@ -358,7 +358,7 @@ class TechniqueDetector:
                             start = max(0, match.start() - 100)
                             end = min(len(text), match.end() + 100)
                             contexts.append(text[start:end])
-                        
+
                         detected.append(MLTechnique(
                             name=technique_name,
                             category=category,
@@ -366,14 +366,14 @@ class TechniqueDetector:
                             context='; '.join(contexts[:3]),  # First 3 contexts
                             tools_mentioned=self._extract_tools_from_context(contexts)
                         ))
-        
+
         return detected
-    
+
     def _detect_bioinformatics_techniques(self, text: str) -> List[MLTechnique]:
         """Detect bioinformatics techniques"""
         text_lower = text.lower()
         detected = []
-        
+
         for category, techniques in self.bioinformatics_techniques.items():
             for technique_name, keywords in techniques.items():
                 for keyword in keywords:
@@ -384,7 +384,7 @@ class TechniqueDetector:
                             start = max(0, match.start() - 100)
                             end = min(len(text), match.end() + 100)
                             contexts.append(text[start:end])
-                        
+
                         detected.append(MLTechnique(
                             name=technique_name,
                             category=f"bioinformatics_{category}",
@@ -392,26 +392,26 @@ class TechniqueDetector:
                             context='; '.join(contexts[:3]),
                             tools_mentioned=self._extract_tools_from_context(contexts)
                         ))
-        
+
         return detected
-    
-    def _calculate_confidence_score(self, 
-                                  techniques: List[MLTechnique], 
+
+    def _calculate_confidence_score(self,
+                                  techniques: List[MLTechnique],
                                   software_tools: List[str]) -> float:
         """Calculate overall confidence score for ML/bioinformatics usage"""
-        
+
         if not techniques and not software_tools:
             return 0.0
-        
+
         # Base score from techniques
         technique_score = min(1.0, len(techniques) * 0.2)
-        
+
         # Boost from software tools
         software_boost = min(0.3, len(software_tools) * 0.1)
-        
+
         # Boost from high-confidence techniques
         high_conf_boost = sum(t.confidence for t in techniques if t.confidence > 0.7) * 0.1
-        
+
         total_score = technique_score + software_boost + high_conf_boost
         return min(1.0, total_score)
 ```
@@ -430,12 +430,12 @@ from chromadb.config import Settings
 
 class EmbeddingEngine:
     """Generate and manage document embeddings for semantic similarity"""
-    
+
     def __init__(self, model_name: str = "allenai/scibert_scivocab_uncased"):
         self.model = SentenceTransformer(model_name)
         self.vector_store = chromadb.Client(Settings(anonymized_telemetry=False))
         self.collection = self._get_or_create_collection()
-    
+
     def _get_or_create_collection(self):
         """Get or create ChromaDB collection for publications"""
         try:
@@ -445,57 +445,57 @@ class EmbeddingEngine:
                 name="publications",
                 metadata={"description": "Publication embeddings for semantic search"}
             )
-    
-    async def generate_publication_embedding(self, 
+
+    async def generate_publication_embedding(self,
                                            title: str,
                                            abstract: str,
                                            keywords: List[str] = None,
                                            full_text: str = None) -> np.ndarray:
         """Generate embedding for a publication"""
-        
+
         # Combine text components
         text_components = [title, abstract]
-        
+
         if keywords:
             text_components.append(" ".join(keywords))
-        
+
         if full_text:
             # Use first 1000 words of full text to avoid token limits
             words = full_text.split()
             text_components.append(" ".join(words[:1000]))
-        
+
         # Combine with special separators
         combined_text = " [SEP] ".join(text_components)
-        
+
         # Generate embedding
         embedding = self.model.encode(combined_text, convert_to_tensor=False)
         return embedding
-    
+
     async def store_publication_embedding(self,
                                         publication_id: str,
                                         embedding: np.ndarray,
                                         metadata: Dict[str, Any]):
         """Store publication embedding in vector database"""
-        
+
         self.collection.add(
             embeddings=[embedding.tolist()],
             documents=[metadata.get('title', '')],
             metadatas=[metadata],
             ids=[publication_id]
         )
-    
+
     async def find_similar_publications(self,
                                       target_embedding: np.ndarray,
                                       n_results: int = 20,
                                       filter_criteria: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         """Find publications similar to target embedding"""
-        
+
         results = self.collection.query(
             query_embeddings=[target_embedding.tolist()],
             n_results=n_results,
             where=filter_criteria
         )
-        
+
         similar_publications = []
         for i in range(len(results['ids'][0])):
             similar_publications.append({
@@ -504,19 +504,19 @@ class EmbeddingEngine:
                 'metadata': results['metadatas'][0][i],
                 'title': results['documents'][0][i]
             })
-        
+
         return similar_publications
-    
+
     async def batch_generate_embeddings(self,
                                       publications: List[Dict[str, Any]],
                                       batch_size: int = 32) -> List[np.ndarray]:
         """Generate embeddings for multiple publications"""
-        
+
         embeddings = []
-        
+
         for i in range(0, len(publications), batch_size):
             batch = publications[i:i + batch_size]
-            
+
             # Prepare text for batch
             batch_texts = []
             for pub in batch:
@@ -524,17 +524,17 @@ class EmbeddingEngine:
                     pub.get('title', ''),
                     pub.get('abstract', '')
                 ]
-                
+
                 if pub.get('keywords'):
                     text_components.append(" ".join(pub['keywords']))
-                
+
                 combined_text = " [SEP] ".join(text_components)
                 batch_texts.append(combined_text)
-            
+
             # Generate embeddings for batch
             batch_embeddings = self.model.encode(batch_texts, convert_to_tensor=False)
             embeddings.extend(batch_embeddings)
-        
+
         return embeddings
 ```
 
@@ -578,22 +578,22 @@ class CitingPublication:
     year: Optional[int]
     doi: Optional[str]
     url: Optional[str]
-    
+
     # Citation information
     citation_count: int = 0
     scholar_id: Optional[str] = None
-    
+
     # Usage analysis
     usage_type: UsageType = UsageType.UNKNOWN
     ml_techniques: List[str] = None
     software_tools: List[str] = None
     confidence_score: float = 0.0
-    
+
     # Relationship information
     relationship_type: RelationshipType = RelationshipType.CITES
     relationship_strength: float = 0.0
     context_summary: str = ""
-    
+
     def __post_init__(self):
         if self.ml_techniques is None:
             self.ml_techniques = []
@@ -611,12 +611,12 @@ class DatasetUsage:
     preprocessing_steps: List[str]
     analysis_methods: List[str]
     validation_approach: str
-    
+
     # Quality metrics
     reproducibility_score: float = 0.0
     code_availability: bool = False
     data_availability: bool = False
-    
+
     def __post_init__(self):
         if self.preprocessing_steps is None:
             self.preprocessing_steps = []
@@ -633,7 +633,7 @@ class PublicationRelationship:
     evidence: List[str]
     context: str
     discovered_date: datetime
-    
+
     def __post_init__(self):
         if self.evidence is None:
             self.evidence = []
@@ -662,7 +662,7 @@ from .models.discovery import DiscoveryResult
 
 class PublicationDiscoveryOrchestrator:
     """Main orchestrator for publication discovery"""
-    
+
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.citation_analyzer = CitationAnalyzer()
@@ -670,20 +670,20 @@ class PublicationDiscoveryOrchestrator:
         self.text_analyzer = TextAnalyzer()
         self.technique_detector = TechniqueDetector()
         self.embedding_engine = EmbeddingEngine(config.get("embedding_model"))
-        
+
         # Discovery strategies
         self.discovery_strategies = [
             self._discover_via_citations,
             self._discover_via_accession_search,
             self._discover_via_semantic_similarity
         ]
-    
+
     async def discover_related_publications(self,
                                           geo_id: str,
                                           original_publication: Dict[str, Any],
                                           max_results: int = 100) -> DiscoveryResult:
         """Discover publications related to a GEO dataset"""
-        
+
         all_related_publications = []
         discovery_metadata = {
             'geo_id': geo_id,
@@ -691,49 +691,49 @@ class PublicationDiscoveryOrchestrator:
             'total_candidates': 0,
             'final_results': 0
         }
-        
+
         # Run discovery strategies
         for strategy in self.discovery_strategies:
             try:
                 strategy_name = strategy.__name__
                 publications = await strategy(geo_id, original_publication, max_results)
-                
+
                 if publications:
                     all_related_publications.extend(publications)
                     discovery_metadata['strategies_used'].append(strategy_name)
                     discovery_metadata['total_candidates'] += len(publications)
-                
+
             except Exception as e:
                 self.logger.warning(f"Strategy {strategy.__name__} failed: {e}")
                 continue
-        
+
         # Deduplicate and rank publications
         deduplicated_publications = self._deduplicate_publications(all_related_publications)
         ranked_publications = await self._rank_publications(deduplicated_publications, geo_id)
-        
+
         # Analyze publication usage
         analyzed_publications = await self._analyze_publication_usage(
             ranked_publications[:max_results], geo_id
         )
-        
+
         discovery_metadata['final_results'] = len(analyzed_publications)
-        
+
         return DiscoveryResult(
             geo_id=geo_id,
             related_publications=analyzed_publications,
             metadata=discovery_metadata,
             discovery_timestamp=datetime.utcnow()
         )
-    
+
     async def _discover_via_citations(self,
                                     geo_id: str,
                                     original_publication: Dict[str, Any],
                                     max_results: int) -> List[CitingPublication]:
         """Discover publications via citation tracking"""
-        
+
         if not original_publication:
             return []
-        
+
         # Get citing papers from Google Scholar
         citing_papers = await self.scholar_client.find_citing_papers(
             title=original_publication.get('title', ''),
@@ -741,18 +741,18 @@ class PublicationDiscoveryOrchestrator:
             year=original_publication.get('year'),
             max_results=max_results
         )
-        
+
         return citing_papers
-    
+
     async def _discover_via_accession_search(self,
                                            geo_id: str,
                                            original_publication: Dict[str, Any],
                                            max_results: int) -> List[CitingPublication]:
         """Discover publications via GEO accession number search"""
-        
+
         # Search PubMed for papers mentioning the GEO ID
         pubmed_results = await self.text_analyzer.search_pubmed_for_geo_id(geo_id, max_results)
-        
+
         # Convert to CitingPublication objects
         citing_publications = []
         for result in pubmed_results:
@@ -766,45 +766,45 @@ class PublicationDiscoveryOrchestrator:
                 relationship_type=RelationshipType.USES_DATA
             )
             citing_publications.append(citing_pub)
-        
+
         return citing_publications
-    
+
     async def _analyze_publication_usage(self,
                                        publications: List[CitingPublication],
                                        geo_id: str) -> List[CitingPublication]:
         """Analyze how each publication uses the dataset"""
-        
+
         analyzed_publications = []
-        
+
         for pub in publications:
             try:
                 # Get full text if available
                 full_text = await self._get_publication_full_text(pub)
-                
+
                 if full_text:
                     # Analyze citation context
                     context_analysis = await self.citation_analyzer.analyze_citation_context(
                         pub, geo_id, full_text
                     )
-                    
+
                     # Detect ML/bioinformatics techniques
                     technique_analysis = await self.technique_detector.detect_techniques(full_text)
-                    
+
                     # Update publication with analysis results
                     pub.usage_type = UsageType(context_analysis.get('usage_type', 'unknown'))
                     pub.ml_techniques = [t.name for t in technique_analysis.get('techniques', [])]
                     pub.software_tools = technique_analysis.get('software_tools', [])
                     pub.confidence_score = context_analysis.get('relevance_score', 0.0)
                     pub.context_summary = context_analysis.get('context_summary', '')
-                
+
                 analyzed_publications.append(pub)
-                
+
             except Exception as e:
                 # Include publication even if analysis fails
                 pub.confidence_score = 0.1  # Low confidence for failed analysis
                 analyzed_publications.append(pub)
                 continue
-        
+
         return analyzed_publications
 ```
 

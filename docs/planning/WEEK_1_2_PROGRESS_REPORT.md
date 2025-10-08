@@ -441,11 +441,11 @@ for paper in result.publications:
     if paper.metadata['access_status']['pmc']:
         # Downloads automatically ✅
         pdf = download_from_pmc()
-    
+
     if paper.metadata['access_status']['unpaywall']:
         # Downloads automatically ✅
         pdf = download_from_unpaywall()
-    
+
     # Manual access (60%)
     if paper.metadata['access_status']['ezproxy']:
         # URL provided, user clicks and logs in 🔗

@@ -144,10 +144,7 @@ class SecurityTester:
                 results["test_summary"]["failed_tests"] += 1
 
         # Calculate security score
-        total_tests = (
-            results["test_summary"]["passed_tests"]
-            + results["test_summary"]["failed_tests"]
-        )
+        total_tests = results["test_summary"]["passed_tests"] + results["test_summary"]["failed_tests"]
         if total_tests > 0:
             results["test_summary"]["security_score"] = (
                 results["test_summary"]["passed_tests"] / total_tests
@@ -200,9 +197,7 @@ class SecurityTester:
         ai_endpoint = "/api/ai/summarize"
         ai_test_cases = [
             {"query": payload, "max_results": 5, "include_batch_summary": True}
-            for payload in self.injection_payloads["xss_payloads"][
-                :5
-            ]  # Test top XSS payloads
+            for payload in self.injection_payloads["xss_payloads"][:5]  # Test top XSS payloads
         ]
 
         for test_case in ai_test_cases:
@@ -217,9 +212,7 @@ class SecurityTester:
                 results["passed_tests"] += 1
 
         # Determine overall status
-        results["overall_status"] = (
-            "PASS" if len(results["vulnerabilities_found"]) == 0 else "FAIL"
-        )
+        results["overall_status"] = "PASS" if len(results["vulnerabilities_found"]) == 0 else "FAIL"
         results["vulnerability_count"] = len(results["vulnerabilities_found"])
 
         return results
@@ -230,9 +223,7 @@ class SecurityTester:
         """Test a specific injection payload against an endpoint."""
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    f"{self.base_url}{endpoint}", json=test_case, timeout=10
-                ) as response:
+                async with session.post(f"{self.base_url}{endpoint}", json=test_case, timeout=10) as response:
                     response_text = await response.text()
 
                     # Check for signs of successful injection
@@ -282,9 +273,7 @@ class SecurityTester:
                                 "response_status": response.status,
                                 "vulnerability_indicator": indicator,
                                 "response_preview": response_text[:200],
-                                "severity": self._assess_vulnerability_severity(
-                                    attack_type, indicator
-                                ),
+                                "severity": self._assess_vulnerability_severity(attack_type, indicator),
                             }
 
                     # Check for error disclosure
@@ -342,9 +331,7 @@ class SecurityTester:
 
         return False
 
-    def _assess_vulnerability_severity(
-        self, attack_type: str, indicator: str
-    ) -> str:
+    def _assess_vulnerability_severity(self, attack_type: str, indicator: str) -> str:
         """Assess the severity of a discovered vulnerability."""
         high_severity = ["sql_injection", "command_injection", "reflected_xss"]
         medium_severity = ["path_traversal", "nosql_injection"]
@@ -452,9 +439,7 @@ class SecurityTester:
                             }
                         )
 
-        results["overall_status"] = (
-            "PASS" if len(results["vulnerabilities_found"]) == 0 else "FAIL"
-        )
+        results["overall_status"] = "PASS" if len(results["vulnerabilities_found"]) == 0 else "FAIL"
         return results
 
     async def test_security_headers(self) -> Dict[str, Any]:
@@ -519,14 +504,11 @@ class SecurityTester:
             "X-Frame-Options",
             "Content-Security-Policy",
         ]
-        has_critical_missing = any(
-            header in results["missing_headers"] for header in critical_missing
-        )
+        has_critical_missing = any(header in results["missing_headers"] for header in critical_missing)
 
         results["overall_status"] = "FAIL" if has_critical_missing else "PASS"
         results["security_score"] = (
-            (len(required_headers) - len(results["missing_headers"]))
-            / len(required_headers)
+            (len(required_headers) - len(results["missing_headers"])) / len(required_headers)
         ) * 100
 
         return results
@@ -537,8 +519,7 @@ class SecurityTester:
         # For now, we'll do basic checks
         return {
             "https_enabled": self.base_url.startswith("https://"),
-            "hsts_header": "Strict-Transport-Security"
-            in self.test_results.get("headers", {}),
+            "hsts_header": "Strict-Transport-Security" in self.test_results.get("headers", {}),
             "secure_cookies": True,  # Would need to check Set-Cookie headers
         }
 
@@ -575,18 +556,13 @@ class SecurityTester:
 
                         results["response_analysis"].append(response_info)
 
-                        if (
-                            response.status == 429
-                            and results["rate_limited_at"] is None
-                        ):
+                        if response.status == 429 and results["rate_limited_at"] is None:
                             results["rate_limited_at"] = i
                             results["rate_limiting_active"] = True
                             break  # Rate limiting working, no need to continue
 
                 except Exception as e:
-                    results["response_analysis"].append(
-                        {"request_num": i, "error": str(e)}
-                    )
+                    results["response_analysis"].append({"request_num": i, "error": str(e)})
 
         # Analyze rate limiting effectiveness
         if results["rate_limiting_active"]:
@@ -594,9 +570,7 @@ class SecurityTester:
             results["rate_limit_threshold"] = results["rate_limited_at"]
         else:
             results["overall_status"] = "FAIL"
-            results[
-                "recommendation"
-            ] = "Implement rate limiting to prevent abuse"
+            results["recommendation"] = "Implement rate limiting to prevent abuse"
 
         return results
 
@@ -633,9 +607,7 @@ class SecurityTester:
 
                 try:
                     if method == "GET":
-                        async with session.get(
-                            f"{self.base_url}{endpoint}", timeout=10
-                        ) as response:
+                        async with session.get(f"{self.base_url}{endpoint}", timeout=10) as response:
                             response_text = await response.text()
                     else:
                         async with session.request(
@@ -661,10 +633,7 @@ class SecurityTester:
 
                 except Exception as e:
                     # Even exceptions might reveal information
-                    if (
-                        "connection" in str(e).lower()
-                        or "timeout" in str(e).lower()
-                    ):
+                    if "connection" in str(e).lower() or "timeout" in str(e).lower():
                         pass  # Normal network errors
                     else:
                         results["information_leaks"].append(
@@ -677,9 +646,7 @@ class SecurityTester:
                             }
                         )
 
-        results["overall_status"] = (
-            "PASS" if len(results["information_leaks"]) == 0 else "FAIL"
-        )
+        results["overall_status"] = "PASS" if len(results["information_leaks"]) == 0 else "FAIL"
         return results
 
     async def test_session_management(self) -> Dict[str, Any]:
@@ -703,9 +670,7 @@ class SecurityTester:
                         "samesite": "SameSite" in cookie,
                     }
 
-                    if not cookie_analysis[
-                        "secure"
-                    ] and self.base_url.startswith("https://"):
+                    if not cookie_analysis["secure"] and self.base_url.startswith("https://"):
                         results["session_vulnerabilities"].append(
                             {
                                 "type": "insecure_cookie",
@@ -723,9 +688,7 @@ class SecurityTester:
                             }
                         )
 
-        results["overall_status"] = (
-            "PASS" if len(results["session_vulnerabilities"]) == 0 else "FAIL"
-        )
+        results["overall_status"] = "PASS" if len(results["session_vulnerabilities"]) == 0 else "FAIL"
         return results
 
     async def test_file_upload_security(self) -> Dict[str, Any]:
@@ -748,9 +711,7 @@ class SecurityTester:
         async with aiohttp.ClientSession() as session:
             for endpoint in potential_upload_endpoints:
                 try:
-                    async with session.options(
-                        f"{self.base_url}{endpoint}"
-                    ) as response:
+                    async with session.options(f"{self.base_url}{endpoint}") as response:
                         if response.status != 404:
                             results["upload_endpoints_found"].append(endpoint)
                 except:
@@ -762,9 +723,7 @@ class SecurityTester:
             results["note"] = "No file upload endpoints found"
         else:
             results["overall_status"] = "NEEDS_MANUAL_TESTING"
-            results[
-                "note"
-            ] = "File upload endpoints found but require manual testing"
+            results["note"] = "File upload endpoints found but require manual testing"
 
         return results
 
@@ -784,9 +743,7 @@ class SecurityTester:
                 "Access-Control-Request-Headers": "Content-Type",
             }
 
-            async with session.options(
-                f"{self.base_url}/api/search", headers=headers
-            ) as response:
+            async with session.options(f"{self.base_url}/api/search", headers=headers) as response:
                 cors_headers = {
                     key: value
                     for key, value in response.headers.items()
@@ -796,9 +753,7 @@ class SecurityTester:
                 results["cors_headers"] = cors_headers
 
                 # Check for overly permissive CORS
-                allow_origin = cors_headers.get(
-                    "Access-Control-Allow-Origin", ""
-                )
+                allow_origin = cors_headers.get("Access-Control-Allow-Origin", "")
                 if allow_origin == "*":
                     results["vulnerabilities"].append(
                         {
@@ -808,9 +763,7 @@ class SecurityTester:
                         }
                     )
 
-                allow_credentials = cors_headers.get(
-                    "Access-Control-Allow-Credentials", ""
-                ).lower()
+                allow_credentials = cors_headers.get("Access-Control-Allow-Credentials", "").lower()
                 if allow_credentials == "true" and allow_origin == "*":
                     results["vulnerabilities"].append(
                         {
@@ -820,9 +773,7 @@ class SecurityTester:
                         }
                     )
 
-        results["overall_status"] = (
-            "PASS" if len(results["vulnerabilities"]) == 0 else "FAIL"
-        )
+        results["overall_status"] = "PASS" if len(results["vulnerabilities"]) == 0 else "FAIL"
         return results
 
     async def save_security_report(
@@ -839,22 +790,14 @@ class SecurityTester:
         logger.info(f"Security test results saved to {results_file}")
 
         # Also create a summary report
-        await self._generate_security_summary(
-            results, results_file.with_suffix(".md")
-        )
+        await self._generate_security_summary(results, results_file.with_suffix(".md"))
 
-    async def _generate_security_summary(
-        self, results: Dict[str, Any], summary_file: Path
-    ) -> None:
+    async def _generate_security_summary(self, results: Dict[str, Any], summary_file: Path) -> None:
         """Generate a human-readable security summary."""
         summary = []
         summary.append("# OmicsOracle Security Test Report\n")
-        summary.append(
-            f"**Test Date:** {results['test_summary']['start_time']}\n"
-        )
-        summary.append(
-            f"**Security Score:** {results['test_summary']['security_score']:.1f}%\n"
-        )
+        summary.append(f"**Test Date:** {results['test_summary']['start_time']}\n")
+        summary.append(f"**Security Score:** {results['test_summary']['security_score']:.1f}%\n")
         summary.append(
             f"**Tests Passed:** {results['test_summary']['passed_tests']}/{results['test_summary']['total_tests']}\n\n"
         )
@@ -863,9 +806,7 @@ class SecurityTester:
 
         for test_name, test_result in results["detailed_results"].items():
             status = test_result.get("overall_status", "UNKNOWN")
-            emoji = (
-                "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
-            )
+            emoji = "✅" if status == "PASS" else "❌" if status == "FAIL" else "⚠️"
             summary.append(f"- {emoji} **{test_name}**: {status}\n")
 
         summary.append("\n## Vulnerabilities Found\n")
@@ -910,14 +851,10 @@ class SecurityTester:
             summary.append("✅ No significant vulnerabilities found!\n")
 
         summary.append("\n## Recommendations\n")
-        summary.append(
-            "- Review and address any high severity vulnerabilities immediately\n"
-        )
+        summary.append("- Review and address any high severity vulnerabilities immediately\n")
         summary.append("- Implement missing security headers\n")
         summary.append("- Ensure proper input validation on all endpoints\n")
-        summary.append(
-            "- Regular security testing should be part of CI/CD pipeline\n"
-        )
+        summary.append("- Regular security testing should be part of CI/CD pipeline\n")
 
         with open(summary_file, "w") as f:
             f.writelines(summary)
@@ -939,22 +876,17 @@ async def main():
     # Print summary
     print(f"\n📊 Security Test Summary:")
     print(f"Security Score: {results['test_summary']['security_score']:.1f}%")
-    print(
-        f"Tests Passed: {results['test_summary']['passed_tests']}/{results['test_summary']['total_tests']}"
-    )
+    print(f"Tests Passed: {results['test_summary']['passed_tests']}/{results['test_summary']['total_tests']}")
 
     total_vulns = sum(
-        len(test.get("vulnerabilities_found", []))
-        for test in results["detailed_results"].values()
+        len(test.get("vulnerabilities_found", [])) for test in results["detailed_results"].values()
     )
     print(f"Vulnerabilities Found: {total_vulns}")
 
     if results["test_summary"]["security_score"] >= 80:
         print("✅ Security testing passed - system appears secure")
     else:
-        print(
-            "⚠️ Security issues detected - review results and fix vulnerabilities"
-        )
+        print("⚠️ Security issues detected - review results and fix vulnerabilities")
 
 
 if __name__ == "__main__":

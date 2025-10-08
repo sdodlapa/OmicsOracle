@@ -37,9 +37,7 @@ class TestGEOClientIntegration:
         """Test searching for real GEO series."""
         try:
             # Search for a common term
-            results = await client.search_geo_series(
-                query="breast cancer", max_results=5
-            )
+            results = await client.search_geo_series(query="breast cancer", max_results=5)
 
             # Should get some results
             assert isinstance(results, list)
@@ -63,9 +61,7 @@ class TestGEOClientIntegration:
         try:
             # Use a well-known public GEO series
             # GSE2034 is a classic breast cancer dataset
-            metadata = await client.get_geo_metadata(
-                "GSE2034", include_sra=False
-            )
+            metadata = await client.get_geo_metadata("GSE2034", include_sra=False)
 
             # Verify basic metadata structure
             assert isinstance(metadata, dict)
@@ -90,9 +86,7 @@ class TestGEOClientIntegration:
             # Use small list of known series
             geo_ids = ["GSE2034", "GSE2990"]  # Small breast cancer datasets
 
-            results = await client.batch_retrieve_metadata(
-                geo_ids, max_concurrent=2
-            )
+            results = await client.batch_retrieve_metadata(geo_ids, max_concurrent=2)
 
             # Should get results for both
             assert isinstance(results, dict)
@@ -121,9 +115,7 @@ class TestGEOClientIntegration:
             # Make multiple rapid requests
             results = []
             for i in range(3):
-                result = await client.search_geo_series(
-                    query=f"test query {i}", max_results=1
-                )
+                result = await client.search_geo_series(query=f"test query {i}", max_results=1)
                 results.append(result)
 
             end_time = time.time()
@@ -222,9 +214,7 @@ class TestGEOClientSlowIntegration:
         """Test processing larger batches of GEO series."""
         try:
             # Search for multiple series
-            search_results = await client.search_geo_series(
-                query="microarray human", max_results=10
-            )
+            search_results = await client.search_geo_series(query="microarray human", max_results=10)
 
             if not search_results:
                 pytest.skip("No search results returned")
@@ -232,16 +222,12 @@ class TestGEOClientSlowIntegration:
             # Take first 5 for batch processing
             geo_ids = search_results[:5]
 
-            results = await client.batch_retrieve_metadata(
-                geo_ids, max_concurrent=3
-            )
+            results = await client.batch_retrieve_metadata(geo_ids, max_concurrent=3)
 
             # Should get results for most or all
             assert len(results) >= len(geo_ids) * 0.7  # Allow 30% failure rate
 
-            successful_results = [
-                r for r in results.values() if "error" not in r
-            ]
+            successful_results = [r for r in results.values() if "error" not in r]
             assert len(successful_results) > 0
 
         except Exception as e:

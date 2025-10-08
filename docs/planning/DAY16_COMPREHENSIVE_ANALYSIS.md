@@ -59,10 +59,10 @@
 ## Detailed Case Analysis
 
 ### Case 1: ✅ BOTH GOT RIGHT (Easy Case)
-**Paper:** Machine Learning Identifies Breast Cancer Biomarkers  
-**Context:** "We downloaded TCGA breast cancer data and performed differential expression analysis."  
-**Ground Truth:** REUSED ✅  
-**Keyword Result:** REUSED ✓  
+**Paper:** Machine Learning Identifies Breast Cancer Biomarkers
+**Context:** "We downloaded TCGA breast cancer data and performed differential expression analysis."
+**Ground Truth:** REUSED ✅
+**Keyword Result:** REUSED ✓
 **LLM Result:** REUSED ✓
 
 **LLM Reasoning:** "The citing paper explicitly states that they 'downloaded TCGA breast cancer data and performed differential expression analysis'"
@@ -72,10 +72,10 @@
 ---
 
 ### Case 2: ✅ BOTH GOT RIGHT (Easy Case)
-**Paper:** Review of Cancer Genomics Databases  
-**Context:** "TCGA is one of the largest cancer genomics databases."  
-**Ground Truth:** CITATION ONLY ✅  
-**Keyword Result:** CITATION ONLY ✓  
+**Paper:** Review of Cancer Genomics Databases
+**Context:** "TCGA is one of the largest cancer genomics databases."
+**Ground Truth:** CITATION ONLY ✅
+**Keyword Result:** CITATION ONLY ✓
 **LLM Result:** CITATION ONLY ✓
 
 **LLM Reasoning:** "The citing paper is a review... does not indicate that the authors downloaded, analyzed, or processed raw data"
@@ -85,10 +85,10 @@
 ---
 
 ### Case 3: ✅ BOTH GOT RIGHT (Medium Case)
-**Paper:** Novel Cancer Biomarker Discovery Pipeline  
-**Context:** "Our method is compatible with TCGA data."  
-**Ground Truth:** CITATION ONLY ✅  
-**Keyword Result:** CITATION ONLY ✓  
+**Paper:** Novel Cancer Biomarker Discovery Pipeline
+**Context:** "Our method is compatible with TCGA data."
+**Ground Truth:** CITATION ONLY ✅
+**Keyword Result:** CITATION ONLY ✓
 **LLM Result:** CITATION ONLY ✓
 
 **LLM Reasoning:** "mentions that their method is 'compatible with TCGA data' but does not provide any evidence of downloading, analyzing, or processing data"
@@ -98,15 +98,15 @@
 ---
 
 ### Case 4: ❌ BOTH GOT WRONG (Hard Case)
-**Paper:** Genomic Predictors of Response to Immunotherapy  
-**Context:** "Patient samples were obtained through institutional collaboration, with genomic profiles referenced from publicly available sources."  
-**Ground Truth:** REUSED ✅ (Hidden reuse)  
-**Keyword Result:** CITATION ONLY ✗  
+**Paper:** Genomic Predictors of Response to Immunotherapy
+**Context:** "Patient samples were obtained through institutional collaboration, with genomic profiles referenced from publicly available sources."
+**Ground Truth:** REUSED ✅ (Hidden reuse)
+**Keyword Result:** CITATION ONLY ✗
 **LLM Result:** CITATION ONLY ✗
 
 **LLM Reasoning:** "mentions using patient samples... and references genomic profiles from publicly available sources, but does not explicitly state that they downloaded, analyzed, or reanalyzed data from TCGA"
 
-**Why Both Failed:** 
+**Why Both Failed:**
 - "publicly available sources" is TOO VAGUE
 - Could mean TCGA, GEO, SRA, or others
 - Ground truth assumes it's TCGA, but not explicitly stated
@@ -115,15 +115,15 @@
 ---
 
 ### Case 5: ❌ LLM FALSE POSITIVE (Tricky Case)
-**Paper:** Single-cell RNA-seq Reveals Tumor Heterogeneity  
-**Context:** "Comparing our single-cell data to TCGA bulk sequencing demonstrates the advantages of our approach."  
-**Ground Truth:** CITATION ONLY ✅ (Just comparing, not using)  
-**Keyword Result:** CITATION ONLY ✓  
+**Paper:** Single-cell RNA-seq Reveals Tumor Heterogeneity
+**Context:** "Comparing our single-cell data to TCGA bulk sequencing demonstrates the advantages of our approach."
+**Ground Truth:** CITATION ONLY ✅ (Just comparing, not using)
+**Keyword Result:** CITATION ONLY ✓
 **LLM Result:** REUSED ✗ (FALSE POSITIVE)
 
 **LLM Reasoning:** "explicitly mentions comparing their single-cell data to TCGA bulk sequencing, indicating they have accessed and directly used TCGA data for comparison purposes"
 
-**Why LLM Failed:** 
+**Why LLM Failed:**
 - LLM interpreted "comparing to" as "using the data"
 - Actually just conceptual comparison, not data reuse
 - This is a **legitimate ambiguity** - reasonable people could disagree
@@ -132,10 +132,10 @@
 ---
 
 ### Case 6: ❌ BOTH GOT WRONG (Hard Case)
-**Paper:** DeepSurv: Deep Learning for Cancer Prognosis  
-**Context:** "Model performance was validated across multiple cohorts showing consistent results."  
-**Ground Truth:** REUSED ✅ (Validated on TCGA)  
-**Keyword Result:** CITATION ONLY ✗  
+**Paper:** DeepSurv: Deep Learning for Cancer Prognosis
+**Context:** "Model performance was validated across multiple cohorts showing consistent results."
+**Ground Truth:** REUSED ✅ (Validated on TCGA)
+**Keyword Result:** CITATION ONLY ✗
 **LLM Result:** CITATION ONLY ✗
 
 **LLM Reasoning:** Not available in output (hit API rate limit)
@@ -148,10 +148,10 @@
 ---
 
 ### Case 7: ✅ LLM GOT RIGHT, Keyword FAILED (Hard Case - LLM Success!)
-**Paper:** Pan-Cancer Analysis of TP53 Mutations  
-**Context:** "Leveraging large-scale genomic efforts, our analysis spans multiple cancer types."  
-**Ground Truth:** REUSED ✅  
-**Keyword Result:** CITATION ONLY ✗  
+**Paper:** Pan-Cancer Analysis of TP53 Mutations
+**Context:** "Leveraging large-scale genomic efforts, our analysis spans multiple cancer types."
+**Ground Truth:** REUSED ✅
+**Keyword Result:** CITATION ONLY ✗
 **LLM Result:** REUSED ✓
 
 **Why LLM Succeeded:**
@@ -162,10 +162,10 @@
 ---
 
 ### Case 8: ✅ BOTH GOT RIGHT (Easy Case)
-**Paper:** Best Practices for Cancer Genomics Studies  
-**Context:** "Following TCGA protocols ensures data quality and reproducibility."  
-**Ground Truth:** CITATION ONLY ✅ (Methodological reference)  
-**Keyword Result:** CITATION ONLY ✓  
+**Paper:** Best Practices for Cancer Genomics Studies
+**Context:** "Following TCGA protocols ensures data quality and reproducibility."
+**Ground Truth:** CITATION ONLY ✅ (Methodological reference)
+**Keyword Result:** CITATION ONLY ✓
 **LLM Result:** CITATION ONLY ✓
 
 **LLM Reasoning:** "dataset was not reused"
@@ -186,7 +186,7 @@
    - **Fix:** Either make context explicit or change ground truth to "ambiguous"
 
 2. **Case 6 (DeepSurv):** "validated across multiple cohorts" - which cohorts?
-   - Ground truth: REUSED  
+   - Ground truth: REUSED
    - Reality: TCGA not mentioned at all
    - **Fix:** Add "including TCGA" to context OR change ground truth
 
@@ -301,7 +301,7 @@ Then LLM would correctly classify as REUSED.
 def classify_citation(context, cited, citing):
     # Phase 1: Keyword screening (fast)
     keyword_result = keyword_classifier(context)
-    
+
     if keyword_result.confidence > 0.9:
         # High confidence from keywords → use directly
         return keyword_result
@@ -479,7 +479,7 @@ def classify_citation(context, cited, citing):
 2. Biomedical-specialized model (BioMistral vs GPT-4)
 3. More comprehensive validation
 
-**Next Steps:** 
+**Next Steps:**
 - Save current findings
 - Plan proper validation for next session with H100
 - Create high-quality test dataset

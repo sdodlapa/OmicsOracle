@@ -25,7 +25,7 @@ for paper in result.publications:
     # 2. Check Unpaywall (free) - downloads automatically ✅
     # 3. Generate Georgia Tech EZProxy URL - YOU need to click & login 🔗
     # 4. Generate ODU EZProxy URL - YOU need to click & login 🔗
-    
+
     # Result metadata includes:
     paper.metadata['access_status'] = {
         'pmc': True/False,           # Auto-download ✅
@@ -33,7 +33,7 @@ for paper in result.publications:
         'ezproxy': True/False,        # URL available, manual login needed 🔗
         'openurl': True/False         # URL available, manual redirect 🔗
     }
-    
+
     paper.metadata['access_url'] = "https://login.ezproxy.gatech.edu/login?url=..."
     paper.metadata['access_instructions'] = "Click link, login with GT credentials"
 ```
@@ -235,14 +235,14 @@ result = pipeline.search("CRISPR cancer therapy")
 
 # 2. For each paper found
 for paper in result.publications:
-    
+
     # Step 1: Try free access (auto-download) ✅
     if paper.pmcid:
         pdf = download_from_pmc(paper.pmcid)  # Works now!
-    
+
     if not pdf and paper.doi:
         pdf = check_unpaywall(paper.doi)      # Works now!
-    
+
     # Step 2: Generate institutional URLs (manual) 🔗
     if not pdf:
         # Generate Georgia Tech EZProxy URL
@@ -254,7 +254,7 @@ for paper in result.publications:
             "3. Article will open in browser\n"
             "4. Download PDF manually"
         )
-    
+
     # Step 3: Store metadata
     paper.metadata['access_status'] = {
         'pmc': bool(paper.pmcid),
@@ -284,14 +284,14 @@ return PublicationResult(
    ```python
    from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
    from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
-   
+
    config = PublicationSearchConfig(
        enable_pubmed=True,
        enable_institutional_access=True,
        primary_institution="gatech",
        pubmed_config=PubMedConfig(email="your_email@gatech.edu")
    )
-   
+
    pipeline = PublicationSearchPipeline(config)
    result = pipeline.search("CRISPR cancer therapy", max_results=10)
    ```
@@ -301,7 +301,7 @@ return PublicationResult(
    for paper in result.publications[:5]:
        print(f"\nTitle: {paper.publication.title[:80]}...")
        print(f"Access Status: {paper.publication.metadata['access_status']}")
-       
+
        if paper.publication.metadata.get('has_access'):
            url = paper.publication.metadata.get('access_url')
            print(f"Access URL: {url}")

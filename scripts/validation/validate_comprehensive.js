@@ -57,8 +57,8 @@ test('Futuristic interface JavaScript exists', () => {
 // Test CSS content
 console.log('\n🎨 Color Scheme CSS Tests:');
 
-const cssContent = fs.existsSync('interfaces/futuristic/static/css/main.css') 
-    ? fs.readFileSync('interfaces/futuristic/static/css/main.css', 'utf8') 
+const cssContent = fs.existsSync('interfaces/futuristic/static/css/main.css')
+    ? fs.readFileSync('interfaces/futuristic/static/css/main.css', 'utf8')
     : '';
 
 test('CSS contains root theme variables', () => {
@@ -94,15 +94,15 @@ test('CSS contains theme option styles', () => {
 });
 
 test('CSS contains responsive theme selector', () => {
-    return cssContent.includes('@media (max-width: 768px)') && 
+    return cssContent.includes('@media (max-width: 768px)') &&
            cssContent.includes('.color-scheme-selector');
 });
 
 // Test JavaScript content
 console.log('\n⚙️ JavaScript Functionality Tests:');
 
-const jsContent = fs.existsSync('interfaces/futuristic/static/js/main.js') 
-    ? fs.readFileSync('interfaces/futuristic/static/js/main.js', 'utf8') 
+const jsContent = fs.existsSync('interfaces/futuristic/static/js/main.js')
+    ? fs.readFileSync('interfaces/futuristic/static/js/main.js', 'utf8')
     : '';
 
 test('JavaScript contains FuturisticInterface class', () => {
@@ -130,7 +130,7 @@ test('JavaScript contains icon mapping system', () => {
 });
 
 test('JavaScript contains dataset display functions', () => {
-    return jsContent.includes('displaySearchResults') && 
+    return jsContent.includes('displaySearchResults') &&
            jsContent.includes('extractGeoId') &&
            jsContent.includes('extractOrganism');
 });
@@ -140,7 +140,7 @@ test('JavaScript contains deduplication logic', () => {
 });
 
 test('JavaScript contains AI summary display', () => {
-    return jsContent.includes('generateAISummarySection') || 
+    return jsContent.includes('generateAISummarySection') ||
            jsContent.includes('ai-summaries-section');
 });
 
@@ -151,8 +151,8 @@ test('JavaScript contains abstract toggle functionality', () => {
 // Test Python content
 console.log('\n🐍 Python Backend Tests:');
 
-const pyContent = fs.existsSync('interfaces/futuristic/main.py') 
-    ? fs.readFileSync('interfaces/futuristic/main.py', 'utf8') 
+const pyContent = fs.existsSync('interfaces/futuristic/main.py')
+    ? fs.readFileSync('interfaces/futuristic/main.py', 'utf8')
     : '';
 
 test('Python contains color scheme selector HTML', () => {
@@ -166,7 +166,7 @@ test('Python contains multiple theme options', () => {
 });
 
 test('Python includes both JavaScript files', () => {
-    return pyContent.includes('/static/js/main.js') && 
+    return pyContent.includes('/static/js/main.js') &&
            pyContent.includes('/static/js/futuristic-interface.js');
 });
 
@@ -179,7 +179,7 @@ console.log('\n🌈 Theme Completeness Tests:');
 
 const themes = ['default', 'dark-ocean', 'forest-green', 'sunset-purple', 'warm-amber', 'modern-gray'];
 const cssVariables = [
-    '--primary-gradient', '--card-background', '--accent-color', 
+    '--primary-gradient', '--card-background', '--accent-color',
     '--title-color', '--text-color', '--border-color'
 ];
 
@@ -188,11 +188,11 @@ themes.forEach(theme => {
         test(`${theme} theme contains all required variables`, () => {
             const themeSection = cssContent.match(new RegExp(`\\[data-theme="${theme}"\\][^}]*\\{[^}]*\\}`, 's'));
             if (!themeSection) return `Theme section not found`;
-            
-            const missingVars = cssVariables.filter(variable => 
+
+            const missingVars = cssVariables.filter(variable =>
                 !themeSection[0].includes(variable)
             );
-            
+
             return missingVars.length === 0 || `Missing variables: ${missingVars.join(', ')}`;
         });
     }
@@ -205,21 +205,21 @@ test('CSS and JS theme names match', () => {
     const cssThemes = [...cssContent.matchAll(/data-theme="([^"]+)"/g)].map(m => m[1]);
     const jsThemes = [...jsContent.matchAll(/data-theme['"]=["']([^"']+)["']/g)].map(m => m[1]);
     const pyThemes = [...pyContent.matchAll(/data-theme="([^"]+)"/g)].map(m => m[1]);
-    
+
     const allThemes = new Set([...cssThemes, ...jsThemes, ...pyThemes]);
     const expectedThemes = new Set(themes);
-    
+
     const missing = [...expectedThemes].filter(t => !allThemes.has(t));
     const extra = [...allThemes].filter(t => !expectedThemes.has(t));
-    
+
     if (missing.length > 0) return `Missing themes: ${missing.join(', ')}`;
     if (extra.length > 0) warn(`Extra themes found: ${extra.join(', ')}`);
-    
+
     return true;
 });
 
 test('Icon system is properly initialized', () => {
-    return jsContent.includes('applyIconReplacements()') && 
+    return jsContent.includes('applyIconReplacements()') &&
            jsContent.includes('setTimeout') &&
            jsContent.includes('ICON_MAP');
 });
@@ -236,13 +236,13 @@ test('Search functionality preserved', () => {
 });
 
 test('Dataset display functionality preserved', () => {
-    return jsContent.includes('displaySearchResults') && 
+    return jsContent.includes('displaySearchResults') &&
            jsContent.includes('dataset-item') &&
            jsContent.includes('geo-link');
 });
 
 test('Performance monitoring preserved', () => {
-    return jsContent.includes('updatePerformanceMetrics') && 
+    return jsContent.includes('updatePerformanceMetrics') &&
            jsContent.includes('startPerformanceMonitoring');
 });
 

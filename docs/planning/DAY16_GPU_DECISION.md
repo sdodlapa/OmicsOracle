@@ -2,8 +2,8 @@
 
 ## Current Situation
 
-**Hardware Available:** CPU only (no GPU)  
-**Future Access:** H100 GPUs on GCP (next session)  
+**Hardware Available:** CPU only (no GPU)
+**Future Access:** H100 GPUs on GCP (next session)
 **Question:** Should we postpone LLM testing until GPU access?
 
 ## Short Answer: **NO - We Can Test Now!**
@@ -92,7 +92,7 @@ PYTHONPATH=src:$PYTHONPATH python scripts/validate_llm_for_citations.py \
   --llm --provider openai
 ```
 
-**Outcome:** 
+**Outcome:**
 - ✅ Validate that LLM approach works (accuracy >85%)
 - ✅ Prove value vs baseline (62.5% → ~90%)
 - ✅ Make GO/NO-GO decision
@@ -301,5 +301,5 @@ cd /Users/sanjeevadodlapati/Downloads/Repos/OmicsOracle
 PYTHONPATH=src:$PYTHONPATH python scripts/validate_llm_for_citations.py --llm --provider openai
 ```
 
-**Cost: Less than a cup of coffee ☕**  
+**Cost: Less than a cup of coffee ☕**
 **Value: Validates entire LLM approach for Week 3!**

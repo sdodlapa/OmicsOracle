@@ -1,8 +1,8 @@
 # 🔧 Interface Consolidation Implementation Guide
 
-**Date**: June 25, 2025  
-**Status**: Implementation Ready  
-**Purpose**: Step-by-step guide for consolidating OmicsOracle interfaces  
+**Date**: June 25, 2025
+**Status**: Implementation Ready
+**Purpose**: Step-by-step guide for consolidating OmicsOracle interfaces
 
 ---
 
@@ -60,24 +60,24 @@ from typing import Optional, Dict, Any
 
 class BaseConfig(BaseSettings):
     """Base configuration for all interfaces"""
-    
+
     # Database settings
     database_url: str = "sqlite:///omics_oracle.db"
     database_pool_size: int = 10
-    
+
     # API settings
     api_host: str = "localhost"
     api_port: int = 8000
     api_reload: bool = False
-    
+
     # Security
     secret_key: str = "change-me-in-production"
     cors_origins: list = ["http://localhost:3000"]
-    
+
     # Logging
     log_level: str = "INFO"
     log_format: str = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    
+
     class Config:
         env_file = ".env"
         case_sensitive = False
@@ -95,7 +95,7 @@ class SearchServiceInterface(ABC):
     @abstractmethod
     async def search(self, query: str, filters: Dict[str, Any]) -> List[Dict[str, Any]]:
         pass
-    
+
     @abstractmethod
     async def get_suggestions(self, partial_query: str) -> List[str]:
         pass
@@ -104,7 +104,7 @@ class CacheServiceInterface(ABC):
     @abstractmethod
     async def get(self, key: str) -> Optional[Any]:
         pass
-    
+
     @abstractmethod
     async def set(self, key: str, value: Any, ttl: int = 3600) -> bool:
         pass
@@ -143,17 +143,17 @@ import json
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, Set[WebSocket]] = {}
-    
+
     async def connect(self, websocket: WebSocket, client_id: str):
         await websocket.accept()
         if client_id not in self.active_connections:
             self.active_connections[client_id] = set()
         self.active_connections[client_id].add(websocket)
-    
+
     async def disconnect(self, websocket: WebSocket, client_id: str):
         if client_id in self.active_connections:
             self.active_connections[client_id].discard(websocket)
-    
+
     async def send_personal_message(self, message: dict, client_id: str):
         if client_id in self.active_connections:
             for connection in self.active_connections[client_id]:
@@ -170,17 +170,17 @@ from typing import Dict, Any, List
 
 class DashboardComponents:
     """Modular dashboard component system"""
-    
+
     @staticmethod
     def render_search_component(results: List[Dict[str, Any]]) -> str:
         """Render search results component"""
         pass
-    
+
     @staticmethod
     def render_analytics_component(analytics_data: Dict[str, Any]) -> str:
         """Render analytics dashboard component"""
         pass
-    
+
     @staticmethod
     def render_export_component(export_options: Dict[str, Any]) -> str:
         """Render data export component"""
@@ -233,8 +233,8 @@ import asyncio
 import uuid
 
 class AgentMessage:
-    def __init__(self, 
-                 message_type: str, 
+    def __init__(self,
+                 message_type: str,
                  payload: Dict[str, Any],
                  sender_id: str,
                  target_id: Optional[str] = None):
@@ -252,27 +252,27 @@ class BaseAgent(ABC):
         self.is_active = False
         self.message_queue = asyncio.Queue()
         self.subscriptions: Dict[str, callable] = {}
-    
+
     @abstractmethod
     async def process_message(self, message: AgentMessage) -> Optional[AgentMessage]:
         """Process incoming message and return response if needed"""
         pass
-    
+
     async def start(self):
         """Start the agent"""
         self.is_active = True
         await self._message_loop()
-    
+
     async def stop(self):
         """Stop the agent"""
         self.is_active = False
-    
+
     async def _message_loop(self):
         """Main message processing loop"""
         while self.is_active:
             try:
                 message = await asyncio.wait_for(
-                    self.message_queue.get(), 
+                    self.message_queue.get(),
                     timeout=1.0
                 )
                 response = await self.process_message(message)

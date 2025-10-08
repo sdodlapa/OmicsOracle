@@ -2,13 +2,13 @@
 
 ## Executive Summary
 
-**Date:** 2025-01-07  
-**Task:** Validate whether LLM-powered citation analysis provides value over keyword-based approach  
+**Date:** 2025-01-07
+**Task:** Validate whether LLM-powered citation analysis provides value over keyword-based approach
 **Status:** Baseline complete, LLM testing pending
 
 ## Test Dataset
 
-**Total Papers:** 8 test cases  
+**Total Papers:** 8 test cases
 **Breakdown:**
 - 2 Easy cases (explicit reuse/citation keywords)
 - 3 Medium cases (ambiguous language)
@@ -49,7 +49,7 @@
 
 **Case 4: Immunotherapy Study**
 ```
-Context: "Patient samples were obtained through institutional collaboration, 
+Context: "Patient samples were obtained through institutional collaboration,
           with genomic profiles referenced from publicly available sources."
 Ground Truth: REUSED (actually used TCGA data)
 Predicted: NO REUSE
@@ -58,20 +58,20 @@ Why failed: "publicly available sources" is too vague for keyword matching
 
 **Case 6: DeepSurv Validation**
 ```
-Context: "Model performance was validated across multiple cohorts showing 
+Context: "Model performance was validated across multiple cohorts showing
           consistent results."
 Ground Truth: REUSED (validated on TCGA)
-Predicted: NO REUSE  
+Predicted: NO REUSE
 Why failed: No explicit mention of data source in context
 ```
 
 **Case 7: TP53 Pan-Cancer Analysis**
 ```
-Context: "Leveraging large-scale genomic efforts, our analysis spans 
+Context: "Leveraging large-scale genomic efforts, our analysis spans
           multiple cancer types."
 Ground Truth: REUSED ("large-scale genomic efforts" = TCGA)
 Predicted: NO REUSE
-Why failed: Requires semantic understanding that "large-scale genomic efforts" 
+Why failed: Requires semantic understanding that "large-scale genomic efforts"
            in cancer context typically refers to TCGA
 ```
 
@@ -87,7 +87,7 @@ The word **"HOW"** requires:
 3. Domain knowledge (e.g., "large-scale genomic efforts" in cancer = likely TCGA)
 4. Ability to distinguish:
    - Methodological citation ("following TCGA protocols")
-   - Comparison citation ("our approach vs TCGA")  
+   - Comparison citation ("our approach vs TCGA")
    - Actual data reuse ("validated on multiple cohorts" = used TCGA)
 
 **Keyword matching can only detect explicit mentions.**
@@ -102,7 +102,7 @@ With **25% recall**, keyword matching would:
 
 **Example Impact:**
 - Real dataset reuse: 100 papers
-- Keyword detection: ~25 papers  
+- Keyword detection: ~25 papers
 - **User misses 75 papers worth of insights!**
 
 ## Hypothesis: LLM Will Improve Recall
@@ -116,11 +116,11 @@ With **25% recall**, keyword matching would:
 1. **Semantic Understanding:**
    - Can infer "large-scale genomic efforts" = TCGA
    - Understands context: "validated across cohorts" implies data use
-   
+
 2. **Domain Knowledge:**
    - BioMistral trained on 15M+ biomedical papers
    - Knows standard research patterns in cancer genomics
-   
+
 3. **Reasoning:**
    - Can distinguish citation types
    - Can infer unstated information from context
@@ -152,7 +152,7 @@ With **25% recall**, keyword matching would:
 
 **Expected Outcome:** GO (LLM >85% accuracy, >80% recall)
 
-**Rationale:** 
+**Rationale:**
 - Test cases designed to challenge keyword approach
 - LLM should excel at semantic understanding
 - BioMistral specialized for biomedical text
@@ -195,6 +195,6 @@ Proceeding to Phase 1: Ollama installation and BioMistral 7B setup.
 
 ---
 
-**Test Data Location:** `data/validation_results/llm_validation_20251007_033012.json`  
-**Test Script:** `scripts/validate_llm_for_citations.py`  
+**Test Data Location:** `data/validation_results/llm_validation_20251007_033012.json`
+**Test Script:** `scripts/validate_llm_for_citations.py`
 **Full Test Cases:** See script source for 8 test cases with ground truth labels

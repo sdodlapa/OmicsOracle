@@ -142,9 +142,7 @@ def read_all_pdfs(directory: str) -> Dict[str, Dict]:
     return results
 
 
-def save_extracted_text(
-    results: Dict[str, Dict], output_dir: str = "extracted_docs"
-):
+def save_extracted_text(results: Dict[str, Dict], output_dir: str = "extracted_docs"):
     """Save extracted text to individual files."""
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)

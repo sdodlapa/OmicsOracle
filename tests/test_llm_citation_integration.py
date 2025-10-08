@@ -18,8 +18,8 @@ from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
 from omics_oracle_v2.lib.publications.config import (
     GoogleScholarConfig,
     LLMConfig,
-    PubMedConfig,
     PublicationSearchConfig,
+    PubMedConfig,
 )
 from omics_oracle_v2.lib.publications.models import Publication
 from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
@@ -32,6 +32,7 @@ class TestLLMCitationIntegration:
     def sample_publication(self):
         """Create sample publication."""
         from omics_oracle_v2.lib.publications.models import PublicationSource
+
         return Publication(
             title="The Cancer Genome Atlas (TCGA): A comprehensive resource",
             abstract="TCGA provides genomic data for cancer research...",
@@ -47,6 +48,7 @@ class TestLLMCitationIntegration:
     def sample_citing_paper(self):
         """Create sample citing paper."""
         from omics_oracle_v2.lib.publications.models import PublicationSource
+
         pub = Publication(
             title="Novel biomarkers identified using TCGA data",
             abstract="We analyzed TCGA breast cancer data to identify novel prognostic biomarkers...",
@@ -132,7 +134,9 @@ class TestLLMCitationIntegration:
                 assert isinstance(pipeline.llm_citation_analyzer, LLMCitationAnalyzer)
 
     @patch("openai.OpenAI")  # Patch at import location
-    def test_llm_citation_analysis_workflow(self, mock_openai, sample_publication, sample_citing_paper, mock_llm_response):
+    def test_llm_citation_analysis_workflow(
+        self, mock_openai, sample_publication, sample_citing_paper, mock_llm_response
+    ):
         """Test complete LLM citation analysis workflow."""
         # Setup mock LLM client
         mock_client = Mock()
@@ -216,6 +220,7 @@ class TestLLMCitationIntegration:
     def test_citation_enrichment_handles_errors(self, sample_publication):
         """Test citation enrichment gracefully handles errors."""
         from omics_oracle_v2.lib.publications.models import PublicationSource
+
         # Create pipeline with citations enabled
         config = PublicationSearchConfig(
             enable_pubmed=False,
@@ -364,6 +369,7 @@ class TestCitationAnalyzerIntegration:
     def sample_publication(self):
         """Create sample publication."""
         from omics_oracle_v2.lib.publications.models import PublicationSource
+
         return Publication(
             title="TCGA: A comprehensive resource",
             abstract="TCGA provides genomic data...",
@@ -392,6 +398,7 @@ class TestCitationAnalyzerIntegration:
 
         # Mock citations
         from omics_oracle_v2.lib.publications.models import PublicationSource
+
         citing_paper = Publication(
             title="Paper citing TCGA",
             abstract="Using TCGA data...",
@@ -417,6 +424,7 @@ class TestCitationAnalyzerIntegration:
         analyzer = CitationAnalyzer(mock_scholar)
 
         from omics_oracle_v2.lib.publications.models import PublicationSource
+
         citing_paper = Publication(
             title="Paper citing TCGA",
             abstract="Using TCGA data...",
