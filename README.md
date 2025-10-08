@@ -79,12 +79,12 @@ cp .env.example .env
 
 ### Start OmicsOracle
 
-**🎯 SINGLE STARTUP METHOD (Use This!)**
+**Main Startup Script:**
 
 ```bash
-# Start both API server and Dashboard with SSL bypass
-# (Required for Georgia Tech/institutional networks)
-./start_omics_oracle_ssl_bypass.sh
+# Start both API server and Dashboard
+# (Includes SSL bypass for Georgia Tech/institutional networks)
+./start_omics_oracle.sh
 ```
 
 **What it does:**
@@ -95,8 +95,6 @@ cp .env.example .env
 5. ✅ Monitors both services and auto-restarts if needed
 
 **To stop:** Press `CTRL+C` (stops both services cleanly)
-
-> ⚠️ **DO NOT** use other startup scripts - they're deprecated and may cause issues!
 
 ### Access Points
 

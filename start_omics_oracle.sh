@@ -6,10 +6,10 @@
 # This version includes SSL verification bypass for institutional networks
 # that use self-signed certificates (e.g., university/corporate networks).
 #
-# ⚠️  SECURITY WARNING: Only use this on trusted networks!
+# WARNING: SECURITY - Only use this on trusted networks!
 #
 # Usage:
-#   ./start_omics_oracle_ssl_bypass.sh
+#   ./start_omics_oracle.sh
 #
 # Services:
 #   - API Server: http://localhost:8000
@@ -62,7 +62,7 @@ echo ""
 
 # Step 2: Set SSL bypass
 echo -e "${BLUE}[2/5]${NC} Configuring SSL bypass..."
-echo -e "${YELLOW}⚠️  SSL VERIFICATION DISABLED (for institutional networks)${NC}"
+echo -e "${YELLOW}WARNING: SSL VERIFICATION DISABLED (for institutional networks)${NC}"
 export PYTHONHTTPSVERIFY=0
 export SSL_CERT_FILE=""
 echo -e "${GREEN}[OK]${NC} SSL bypass enabled"
@@ -159,15 +159,15 @@ echo ""
 sleep 1
 
 if curl -s http://localhost:$API_PORT/health > /dev/null 2>&1; then
-    echo -e "${GREEN}✓${NC} API health check passed"
+    echo -e "${GREEN}[OK]${NC} API health check passed"
 else
-    echo -e "${YELLOW}⚠${NC} API health check failed (may still be starting)"
+    echo -e "${YELLOW}[WARN]${NC} API health check failed (may still be starting)"
 fi
 
 if curl -s http://localhost:$DASHBOARD_PORT > /dev/null 2>&1; then
-    echo -e "${GREEN}✓${NC} Dashboard is responding"
+    echo -e "${GREEN}[OK]${NC} Dashboard is responding"
 else
-    echo -e "${YELLOW}⚠${NC} Dashboard not responding yet (may still be starting)"
+    echo -e "${YELLOW}[WARN]${NC} Dashboard not responding yet (may still be starting)"
 fi
 
 echo ""
@@ -175,12 +175,12 @@ echo "=========================================="
 echo "  Services Running!"
 echo "=========================================="
 echo ""
-echo "  📊 Dashboard: http://localhost:$DASHBOARD_PORT"
-echo "  🔌 API:       http://localhost:$API_PORT"
-echo "  📝 Docs:      http://localhost:$API_PORT/docs"
+echo "  [Dashboard] http://localhost:$DASHBOARD_PORT"
+echo "  [API]       http://localhost:$API_PORT"
+echo "  [Docs]      http://localhost:$API_PORT/docs"
 echo ""
-echo "  ⚠️  SSL verification: DISABLED"
-echo "     (for institutional networks only)"
+echo "  [WARNING] SSL verification: DISABLED"
+echo "            (for institutional networks only)"
 echo ""
 echo "Logs:"
 echo "  API:       tail -f $API_LOG"
