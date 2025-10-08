@@ -126,23 +126,23 @@ def create_sample_datasets(output_dir: str = "data/cache/geo_samples"):
         with open(filepath, "w") as f:
             json.dump(dataset, f, indent=2)
 
-        print(f"✅ Created {filename}")
+        print(f"[OK] Created {filename}")
 
     # Also save as single combined file
     combined_path = output_path / "all_datasets.json"
     with open(combined_path, "w") as f:
         json.dump(SAMPLE_DATASETS, f, indent=2)
 
-    print(f"\n✅ Created {len(SAMPLE_DATASETS)} sample datasets in {output_dir}/")
-    print(f"✅ Combined file: {combined_path}")
+    print(f"\n[OK] Created {len(SAMPLE_DATASETS)} sample datasets in {output_dir}/")
+    print(f"[OK] Combined file: {combined_path}")
 
     return SAMPLE_DATASETS
 
 
 if __name__ == "__main__":
     datasets = create_sample_datasets()
-    print(f"\nDatasets ready for embedding!")
-    print(f"Total: {len(datasets)} datasets")
+    print("\nDatasets ready for embedding!")
+    print("Total: {} datasets".format(len(datasets)))
     print(
-        f"Topics: ATAC-seq, RNA-seq, ChIP-seq, microbiome, proteomics, methylation, scRNA-seq, Hi-C, CRISPR, metabolomics"
+        "Topics: ATAC-seq, RNA-seq, ChIP-seq, microbiome, proteomics, methylation, scRNA-seq, Hi-C, CRISPR, metabolomics"
     )
