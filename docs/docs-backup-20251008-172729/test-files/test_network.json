@@ -1,0 +1,85 @@
+{
+  "type": "CitationNetworkVisualizer",
+  "config": {
+    "width": 1200,
+    "height": 800,
+    "theme": "plotly_white",
+    "color_scheme": "default",
+    "font_family": "Arial, sans-serif",
+    "font_size": 12,
+    "show_legend": true,
+    "interactive": true,
+    "export_format": "html"
+  },
+  "data": {
+    "nodes": [
+      {
+        "id": "biomarker1",
+        "type": "biomarker",
+        "label": "CA-125",
+        "citations": 150,
+        "impact": 8.5
+      },
+      {
+        "id": "biomarker2",
+        "type": "biomarker",
+        "label": "HE4",
+        "citations": 120,
+        "impact": 7.2
+      },
+      {
+        "id": "paper1",
+        "type": "paper",
+        "label": "Smith et al. 2020",
+        "citations": 45,
+        "impact": 6.1
+      },
+      {
+        "id": "paper2",
+        "type": "paper",
+        "label": "Jones et al. 2021",
+        "citations": 38,
+        "impact": 5.8
+      },
+      {
+        "id": "disease1",
+        "type": "disease",
+        "label": "Ovarian Cancer",
+        "citations": 200,
+        "impact": 9.0
+      }
+    ],
+    "edges": [
+      {
+        "source": "paper1",
+        "target": "biomarker1",
+        "relationship": "studies",
+        "strength": 0.9
+      },
+      {
+        "source": "paper1",
+        "target": "disease1",
+        "relationship": "investigates",
+        "strength": 0.8
+      },
+      {
+        "source": "paper2",
+        "target": "biomarker2",
+        "relationship": "studies",
+        "strength": 0.85
+      },
+      {
+        "source": "biomarker1",
+        "target": "disease1",
+        "relationship": "associated_with",
+        "strength": 0.95
+      },
+      {
+        "source": "biomarker2",
+        "target": "disease1",
+        "relationship": "associated_with",
+        "strength": 0.88
+      }
+    ]
+  }
+}

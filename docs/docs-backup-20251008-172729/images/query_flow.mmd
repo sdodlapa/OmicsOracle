@@ -1,0 +1,36 @@
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant QueryParser
+    participant SynonymExpander
+    participant SearchEngine
+    participant Pipeline
+    participant NCBI
+    participant QueryTracer
+
+    User->>Frontend: Submit query
+    Frontend->>QueryParser: Process query
+    QueryParser->>QueryTracer: Record query receipt
+    QueryParser->>SynonymExpander: Extract components
+    SynonymExpander->>QueryParser: Return expanded terms
+    QueryParser->>SearchEngine: Generate alternative queries
+    QueryParser->>QueryTracer: Record components & alternatives
+    SearchEngine->>Pipeline: Execute original query
+    Pipeline->>NCBI: Fetch data
+    NCBI->>Pipeline: Return results
+    Pipeline->>SearchEngine: Process results
+    SearchEngine->>QueryTracer: Record search strategy
+
+    alt No results from original query
+        SearchEngine->>Pipeline: Try alternative query
+        Pipeline->>NCBI: Fetch data
+        NCBI->>Pipeline: Return results
+        Pipeline->>SearchEngine: Process results
+        SearchEngine->>QueryTracer: Record alternative strategy
+    end
+
+    SearchEngine->>Frontend: Return results
+    Frontend->>User: Display results
+    QueryTracer->>QueryTracer: Generate trace report
+```

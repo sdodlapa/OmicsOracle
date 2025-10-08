@@ -1,0 +1,1276 @@
+{
+  "analysis": {
+    "total_files": 125,
+    "total_loc": 29644,
+    "architectural_score": 7.80412,
+    "circular_dependencies": [],
+    "sys_path_violations": 37,
+    "god_files": [
+      "src/omics_oracle/pipeline/pipeline.py",
+      "src/omics_oracle/web/research_intelligence.py",
+      "src/omics_oracle/web/research_dashboard.py",
+      "src/omics_oracle/web/main_simple.py",
+      "src/omics_oracle/cli/main.py",
+      "src/omics_oracle/nlp/biomedical_ner.py",
+      "src/omics_oracle/geo_tools/geo_client.py",
+      "interfaces/futuristic/main.py",
+      "tests/interface/comprehensive_interface_tester.py",
+      "tests/security/test_security_testing_fixed.py",
+      "tests/security/test_security_testing.py",
+      "tests/security/test_security_suite.py",
+      "tests/browser/test_browser_automation.py"
+    ],
+    "recommendations": [
+      "\ud83d\udea8 CRITICAL: Remove 37 sys.path manipulations. Implement proper package structure.",
+      "\ud83d\udcdd Refactor 13 large files (>500 LOC): src/omics_oracle/pipeline/pipeline.py, src/omics_oracle/web/research_intelligence.py, src/omics_oracle/web/research_dashboard.py...",
+      "\ud83c\udfaf Improve cohesion in core component (score: 0.0)",
+      "\ud83c\udfaf Improve cohesion in web component (score: 0.0)",
+      "\ud83c\udfaf Improve cohesion in integrations component (score: 0.0)",
+      "\ud83c\udfaf Improve cohesion in nlp component (score: 0.0)",
+      "\ud83c\udfaf Improve cohesion in geo_tools component (score: 0.0)",
+      "\ud83c\udfaf Improve cohesion in monitoring component (score: 0.0)",
+      "\ud83c\udfaf Improve cohesion in services component (score: 0.0)"
+    ]
+  },
+  "file_metrics": {
+    "src/omics_oracle/_version.py": {
+      "lines_of_code": 13,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 1,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "src/omics_oracle/pipeline/pipeline.py": {
+      "lines_of_code": 776,
+      "cyclomatic_complexity": 66,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 13,
+      "classes_count": 5,
+      "functions_count": 25
+    },
+    "src/omics_oracle/core/logging.py": {
+      "lines_of_code": 70,
+      "cyclomatic_complexity": 7,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 7,
+      "classes_count": 1,
+      "functions_count": 3
+    },
+    "src/omics_oracle/core/config.py": {
+      "lines_of_code": 246,
+      "cyclomatic_complexity": 31,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 8,
+      "classes_count": 9,
+      "functions_count": 11
+    },
+    "src/omics_oracle/core/models.py": {
+      "lines_of_code": 175,
+      "cyclomatic_complexity": 12,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 5,
+      "classes_count": 17,
+      "functions_count": 5
+    },
+    "src/omics_oracle/core/exceptions.py": {
+      "lines_of_code": 69,
+      "cyclomatic_complexity": 3,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 1,
+      "classes_count": 21,
+      "functions_count": 1
+    },
+    "src/omics_oracle/web/research_intelligence.py": {
+      "lines_of_code": 510,
+      "cyclomatic_complexity": 51,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 10,
+      "classes_count": 8,
+      "functions_count": 17
+    },
+    "src/omics_oracle/web/research_dashboard.py": {
+      "lines_of_code": 694,
+      "cyclomatic_complexity": 46,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 12,
+      "classes_count": 11,
+      "functions_count": 24
+    },
+    "src/omics_oracle/web/models.py": {
+      "lines_of_code": 287,
+      "cyclomatic_complexity": 11,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 4,
+      "classes_count": 19,
+      "functions_count": 5
+    },
+    "src/omics_oracle/web/visualization_routes.py": {
+      "lines_of_code": 290,
+      "cyclomatic_complexity": 32,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 15,
+      "classes_count": 6,
+      "functions_count": 6
+    },
+    "src/omics_oracle/web/ai_routes.py": {
+      "lines_of_code": 197,
+      "cyclomatic_complexity": 19,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 10,
+      "classes_count": 0,
+      "functions_count": 7
+    },
+    "src/omics_oracle/web/research_query_engine.py": {
+      "lines_of_code": 499,
+      "cyclomatic_complexity": 35,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 8,
+      "classes_count": 3,
+      "functions_count": 13
+    },
+    "src/omics_oracle/web/advanced_widgets.py": {
+      "lines_of_code": 473,
+      "cyclomatic_complexity": 21,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 7,
+      "classes_count": 5,
+      "functions_count": 16
+    },
+    "src/omics_oracle/web/export_routes.py": {
+      "lines_of_code": 242,
+      "cyclomatic_complexity": 33,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 11,
+      "classes_count": 2,
+      "functions_count": 6
+    },
+    "src/omics_oracle/web/refinement_routes.py": {
+      "lines_of_code": 402,
+      "cyclomatic_complexity": 28,
+      "sys_path_usage": 1,
+      "god_class_score": 0.0,
+      "imports_count": 13,
+      "classes_count": 8,
+      "functions_count": 6
+    },
+    "src/omics_oracle/web/main.py": {
+      "lines_of_code": 263,
+      "cyclomatic_complexity": 13,
+      "sys_path_usage": 1,
+      "god_class_score": 1.0,
+      "imports_count": 28,
+      "classes_count": 2,
+      "functions_count": 9
+    },
+    "src/omics_oracle/web/main_simple.py": {
+      "lines_of_code": 521,
+      "cyclomatic_complexity": 72,
+      "sys_path_usage": 1,
+      "god_class_score": 1.0,
+      "imports_count": 18,
+      "classes_count": 1,
+      "functions_count": 23
+    },
+    "src/omics_oracle/web/batch_routes.py": {
+      "lines_of_code": 186,
+      "cyclomatic_complexity": 27,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 6,
+      "classes_count": 2,
+      "functions_count": 8
+    },
+    "src/omics_oracle/web/routes.py": {
+      "lines_of_code": 443,
+      "cyclomatic_complexity": 58,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 16,
+      "classes_count": 1,
+      "functions_count": 15
+    },
+    "src/omics_oracle/models/analytics.py": {
+      "lines_of_code": 136,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 4,
+      "classes_count": 10,
+      "functions_count": 0
+    },
+    "src/omics_oracle/cli/main.py": {
+      "lines_of_code": 682,
+      "cyclomatic_complexity": 143,
+      "sys_path_usage": 2,
+      "god_class_score": 0.0,
+      "imports_count": 10,
+      "classes_count": 0,
+      "functions_count": 25
+    },
+    "src/omics_oracle/integrations/service.py": {
+      "lines_of_code": 131,
+      "cyclomatic_complexity": 9,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 4,
+      "classes_count": 1,
+      "functions_count": 5
+    },
+    "src/omics_oracle/integrations/pubmed.py": {
+      "lines_of_code": 224,
+      "cyclomatic_complexity": 32,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 5,
+      "classes_count": 1,
+      "functions_count": 9
+    },
+    "src/omics_oracle/integrations/citation_managers.py": {
+      "lines_of_code": 285,
+      "cyclomatic_complexity": 51,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 4,
+      "classes_count": 1,
+      "functions_count": 9
+    },
+    "src/omics_oracle/nlp/biomedical_ner.py": {
+      "lines_of_code": 687,
+      "cyclomatic_complexity": 92,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 6,
+      "classes_count": 2,
+      "functions_count": 22
+    },
+    "src/omics_oracle/nlp/prompt_interpreter.py": {
+      "lines_of_code": 288,
+      "cyclomatic_complexity": 54,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 7,
+      "classes_count": 2,
+      "functions_count": 12
+    },
+    "src/omics_oracle/api/main.py": {
+      "lines_of_code": 5,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 1,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "src/omics_oracle/geo_tools/client.py": {
+      "lines_of_code": 257,
+      "cyclomatic_complexity": 34,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 9,
+      "classes_count": 1,
+      "functions_count": 9
+    },
+    "src/omics_oracle/geo_tools/geo_client.py": {
+      "lines_of_code": 569,
+      "cyclomatic_complexity": 88,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 13,
+      "classes_count": 4,
+      "functions_count": 27
+    },
+    "src/omics_oracle/monitoring/api_monitor.py": {
+      "lines_of_code": 201,
+      "cyclomatic_complexity": 32,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 8,
+      "classes_count": 1,
+      "functions_count": 5
+    },
+    "src/omics_oracle/monitoring/pipeline_monitor.py": {
+      "lines_of_code": 263,
+      "cyclomatic_complexity": 36,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 7,
+      "classes_count": 2,
+      "functions_count": 14
+    },
+    "src/omics_oracle/monitoring/websocket_monitor.py": {
+      "lines_of_code": 238,
+      "cyclomatic_complexity": 44,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 8,
+      "classes_count": 2,
+      "functions_count": 17
+    },
+    "src/omics_oracle/services/batch_processor.py": {
+      "lines_of_code": 356,
+      "cyclomatic_complexity": 38,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 9,
+      "classes_count": 4,
+      "functions_count": 15
+    },
+    "src/omics_oracle/services/query_analysis.py": {
+      "lines_of_code": 498,
+      "cyclomatic_complexity": 69,
+      "sys_path_usage": 0,
+      "god_class_score": 5.0,
+      "imports_count": 6,
+      "classes_count": 6,
+      "functions_count": 21
+    },
+    "src/omics_oracle/services/cache.py": {
+      "lines_of_code": 280,
+      "cyclomatic_complexity": 14,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 8,
+      "classes_count": 2,
+      "functions_count": 10
+    },
+    "src/omics_oracle/services/cost_manager.py": {
+      "lines_of_code": 329,
+      "cyclomatic_complexity": 28,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 8,
+      "classes_count": 3,
+      "functions_count": 9
+    },
+    "src/omics_oracle/services/improved_search.py": {
+      "lines_of_code": 268,
+      "cyclomatic_complexity": 47,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 6,
+      "classes_count": 1,
+      "functions_count": 5
+    },
+    "src/omics_oracle/services/search_wrapper.py": {
+      "lines_of_code": 109,
+      "cyclomatic_complexity": 32,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 7,
+      "classes_count": 1,
+      "functions_count": 7
+    },
+    "src/omics_oracle/services/summarizer.py": {
+      "lines_of_code": 412,
+      "cyclomatic_complexity": 49,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 7,
+      "classes_count": 1,
+      "functions_count": 11
+    },
+    "src/omics_oracle/services/analytics.py": {
+      "lines_of_code": 383,
+      "cyclomatic_complexity": 48,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 8,
+      "classes_count": 1,
+      "functions_count": 13
+    },
+    "src/omics_oracle/services/pdf_export.py": {
+      "lines_of_code": 287,
+      "cyclomatic_complexity": 33,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 11,
+      "classes_count": 1,
+      "functions_count": 8
+    },
+    "interfaces/futuristic/validate_interface.py": {
+      "lines_of_code": 360,
+      "cyclomatic_complexity": 48,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 6,
+      "classes_count": 1,
+      "functions_count": 15
+    },
+    "interfaces/futuristic/enhanced_server.py": {
+      "lines_of_code": 43,
+      "cyclomatic_complexity": 3,
+      "sys_path_usage": 3,
+      "god_class_score": 0.0,
+      "imports_count": 5,
+      "classes_count": 0,
+      "functions_count": 1
+    },
+    "interfaces/futuristic/test_server.py": {
+      "lines_of_code": 138,
+      "cyclomatic_complexity": 3,
+      "sys_path_usage": 2,
+      "god_class_score": 0.0,
+      "imports_count": 7,
+      "classes_count": 0,
+      "functions_count": 3
+    },
+    "interfaces/futuristic/main.py": {
+      "lines_of_code": 597,
+      "cyclomatic_complexity": 76,
+      "sys_path_usage": 3,
+      "god_class_score": 1.0,
+      "imports_count": 20,
+      "classes_count": 3,
+      "functions_count": 13
+    },
+    "interfaces/futuristic/futuristic_demo.py": {
+      "lines_of_code": 329,
+      "cyclomatic_complexity": 12,
+      "sys_path_usage": 1,
+      "god_class_score": 0.0,
+      "imports_count": 15,
+      "classes_count": 2,
+      "functions_count": 4
+    },
+    "interfaces/futuristic/ui/routes_clean.py": {
+      "lines_of_code": 148,
+      "cyclomatic_complexity": 2,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 2,
+      "classes_count": 0,
+      "functions_count": 2
+    },
+    "interfaces/futuristic/ui/routes.py": {
+      "lines_of_code": 397,
+      "cyclomatic_complexity": 2,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 3,
+      "classes_count": 0,
+      "functions_count": 2
+    },
+    "interfaces/futuristic/websocket/manager.py": {
+      "lines_of_code": 79,
+      "cyclomatic_complexity": 19,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 5,
+      "classes_count": 1,
+      "functions_count": 8
+    },
+    "interfaces/futuristic/core/config.py": {
+      "lines_of_code": 67,
+      "cyclomatic_complexity": 4,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 2,
+      "classes_count": 1,
+      "functions_count": 1
+    },
+    "interfaces/futuristic/core/health.py": {
+      "lines_of_code": 186,
+      "cyclomatic_complexity": 29,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 9,
+      "classes_count": 3,
+      "functions_count": 12
+    },
+    "interfaces/futuristic/core/production_config.py": {
+      "lines_of_code": 252,
+      "cyclomatic_complexity": 26,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 5,
+      "classes_count": 7,
+      "functions_count": 10
+    },
+    "interfaces/futuristic/core/application.py": {
+      "lines_of_code": 39,
+      "cyclomatic_complexity": 1,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 10,
+      "classes_count": 0,
+      "functions_count": 1
+    },
+    "interfaces/futuristic/core/performance.py": {
+      "lines_of_code": 288,
+      "cyclomatic_complexity": 36,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 6,
+      "classes_count": 4,
+      "functions_count": 19
+    },
+    "interfaces/futuristic/agents/visualization_agent.py": {
+      "lines_of_code": 266,
+      "cyclomatic_complexity": 46,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 4,
+      "classes_count": 1,
+      "functions_count": 12
+    },
+    "interfaces/futuristic/agents/orchestrator.py": {
+      "lines_of_code": 263,
+      "cyclomatic_complexity": 27,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 7,
+      "classes_count": 1,
+      "functions_count": 13
+    },
+    "interfaces/futuristic/agents/search_agent.py": {
+      "lines_of_code": 388,
+      "cyclomatic_complexity": 59,
+      "sys_path_usage": 1,
+      "god_class_score": 3.0,
+      "imports_count": 10,
+      "classes_count": 3,
+      "functions_count": 20
+    },
+    "interfaces/futuristic/agents/base.py": {
+      "lines_of_code": 246,
+      "cyclomatic_complexity": 35,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 7,
+      "classes_count": 9,
+      "functions_count": 20
+    },
+    "interfaces/futuristic/agents/analysis_agent.py": {
+      "lines_of_code": 184,
+      "cyclomatic_complexity": 28,
+      "sys_path_usage": 1,
+      "god_class_score": 1.0,
+      "imports_count": 6,
+      "classes_count": 1,
+      "functions_count": 9
+    },
+    "interfaces/futuristic/models/futuristic_models.py": {
+      "lines_of_code": 131,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 5,
+      "classes_count": 14,
+      "functions_count": 0
+    },
+    "interfaces/futuristic/api/routes.py": {
+      "lines_of_code": 319,
+      "cyclomatic_complexity": 47,
+      "sys_path_usage": 2,
+      "god_class_score": 0.0,
+      "imports_count": 18,
+      "classes_count": 3,
+      "functions_count": 14
+    },
+    "interfaces/futuristic/services/visualization_service.py": {
+      "lines_of_code": 346,
+      "cyclomatic_complexity": 36,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 9,
+      "classes_count": 5,
+      "functions_count": 13
+    },
+    "interfaces/futuristic/services/logging_service.py": {
+      "lines_of_code": 193,
+      "cyclomatic_complexity": 31,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 11,
+      "classes_count": 3,
+      "functions_count": 17
+    },
+    "interfaces/futuristic/services/websocket_manager.py": {
+      "lines_of_code": 232,
+      "cyclomatic_complexity": 42,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 5,
+      "classes_count": 1,
+      "functions_count": 17
+    },
+    "tests/test_pagination.py": {
+      "lines_of_code": 43,
+      "cyclomatic_complexity": 2,
+      "sys_path_usage": 2,
+      "god_class_score": 0.0,
+      "imports_count": 3,
+      "classes_count": 0,
+      "functions_count": 1
+    },
+    "tests/conftest.py": {
+      "lines_of_code": 50,
+      "cyclomatic_complexity": 5,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 3,
+      "classes_count": 0,
+      "functions_count": 5
+    },
+    "tests/test_search_fix.py": {
+      "lines_of_code": 114,
+      "cyclomatic_complexity": 14,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 4,
+      "classes_count": 0,
+      "functions_count": 1
+    },
+    "tests/run_comprehensive_tests_simple.py": {
+      "lines_of_code": 332,
+      "cyclomatic_complexity": 49,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 12,
+      "classes_count": 1,
+      "functions_count": 11
+    },
+    "tests/pipeline/test_initialization.py": {
+      "lines_of_code": 84,
+      "cyclomatic_complexity": 14,
+      "sys_path_usage": 1,
+      "god_class_score": 0.0,
+      "imports_count": 9,
+      "classes_count": 0,
+      "functions_count": 4
+    },
+    "tests/interface/test_modern_interface.py": {
+      "lines_of_code": 101,
+      "cyclomatic_complexity": 14,
+      "sys_path_usage": 1,
+      "god_class_score": 0.0,
+      "imports_count": 5,
+      "classes_count": 0,
+      "functions_count": 5
+    },
+    "tests/interface/comprehensive_interface_tester.py": {
+      "lines_of_code": 578,
+      "cyclomatic_complexity": 81,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 20,
+      "classes_count": 1,
+      "functions_count": 15
+    },
+    "tests/interface/test_all_interfaces.py": {
+      "lines_of_code": 132,
+      "cyclomatic_complexity": 16,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 3,
+      "classes_count": 0,
+      "functions_count": 2
+    },
+    "tests/interface/test_api_endpoints.py": {
+      "lines_of_code": 110,
+      "cyclomatic_complexity": 12,
+      "sys_path_usage": 1,
+      "god_class_score": 0.0,
+      "imports_count": 10,
+      "classes_count": 0,
+      "functions_count": 6
+    },
+    "tests/unit/test_simple_api.py": {
+      "lines_of_code": 0,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 0,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "tests/unit/test_error_handling.py": {
+      "lines_of_code": 36,
+      "cyclomatic_complexity": 7,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 3,
+      "classes_count": 0,
+      "functions_count": 2
+    },
+    "tests/unit/temp_test_file.py": {
+      "lines_of_code": 4,
+      "cyclomatic_complexity": 1,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 0,
+      "classes_count": 0,
+      "functions_count": 1
+    },
+    "tests/unit/test_cache_disabling.py": {
+      "lines_of_code": 75,
+      "cyclomatic_complexity": 7,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 6,
+      "classes_count": 1,
+      "functions_count": 7
+    },
+    "tests/unit/test_progress_callback_setup.py": {
+      "lines_of_code": 134,
+      "cyclomatic_complexity": 11,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 5,
+      "classes_count": 1,
+      "functions_count": 10
+    },
+    "tests/unit/test_core.py": {
+      "lines_of_code": 21,
+      "cyclomatic_complexity": 2,
+      "sys_path_usage": 1,
+      "god_class_score": 1.0,
+      "imports_count": 6,
+      "classes_count": 1,
+      "functions_count": 1
+    },
+    "tests/unit/test_geo_client.py": {
+      "lines_of_code": 24,
+      "cyclomatic_complexity": 2,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 5,
+      "classes_count": 0,
+      "functions_count": 1
+    },
+    "tests/unit/test_web_interface_unit.py": {
+      "lines_of_code": 154,
+      "cyclomatic_complexity": 22,
+      "sys_path_usage": 1,
+      "god_class_score": 1.0,
+      "imports_count": 16,
+      "classes_count": 4,
+      "functions_count": 11
+    },
+    "tests/unit/test_web_server.py": {
+      "lines_of_code": 32,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 1,
+      "god_class_score": 0.0,
+      "imports_count": 4,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "tests/unit/test_pipeline_status.py": {
+      "lines_of_code": 110,
+      "cyclomatic_complexity": 24,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 5,
+      "classes_count": 1,
+      "functions_count": 11
+    },
+    "tests/unit/test_nlp.py": {
+      "lines_of_code": 187,
+      "cyclomatic_complexity": 25,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 4,
+      "classes_count": 3,
+      "functions_count": 21
+    },
+    "tests/unit/test_request_validation.py": {
+      "lines_of_code": 114,
+      "cyclomatic_complexity": 15,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 4,
+      "classes_count": 1,
+      "functions_count": 13
+    },
+    "tests/unit/test_entrez_patch.py": {
+      "lines_of_code": 60,
+      "cyclomatic_complexity": 10,
+      "sys_path_usage": 1,
+      "god_class_score": 1.0,
+      "imports_count": 6,
+      "classes_count": 1,
+      "functions_count": 6
+    },
+    "tests/unit/test_pipeline.py": {
+      "lines_of_code": 271,
+      "cyclomatic_complexity": 17,
+      "sys_path_usage": 1,
+      "god_class_score": 3.0,
+      "imports_count": 6,
+      "classes_count": 3,
+      "functions_count": 17
+    },
+    "tests/unit/test_environment.py": {
+      "lines_of_code": 53,
+      "cyclomatic_complexity": 8,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 3,
+      "classes_count": 1,
+      "functions_count": 7
+    },
+    "tests/unit/test_core_simple.py": {
+      "lines_of_code": 21,
+      "cyclomatic_complexity": 2,
+      "sys_path_usage": 1,
+      "god_class_score": 1.0,
+      "imports_count": 6,
+      "classes_count": 1,
+      "functions_count": 1
+    },
+    "tests/unit/test_biomedical_nlp.py": {
+      "lines_of_code": 314,
+      "cyclomatic_complexity": 31,
+      "sys_path_usage": 1,
+      "god_class_score": 3.0,
+      "imports_count": 5,
+      "classes_count": 3,
+      "functions_count": 28
+    },
+    "tests/unit/integrations/test_citation_managers.py": {
+      "lines_of_code": 240,
+      "cyclomatic_complexity": 17,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 3,
+      "classes_count": 2,
+      "functions_count": 17
+    },
+    "tests/unit/integrations/test_pubmed_integration.py": {
+      "lines_of_code": 241,
+      "cyclomatic_complexity": 16,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 4,
+      "classes_count": 2,
+      "functions_count": 16
+    },
+    "tests/security/test_security_testing_fixed.py": {
+      "lines_of_code": 616,
+      "cyclomatic_complexity": 47,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 4,
+      "classes_count": 1,
+      "functions_count": 11
+    },
+    "tests/security/test_security.py": {
+      "lines_of_code": 402,
+      "cyclomatic_complexity": 38,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 3,
+      "classes_count": 1,
+      "functions_count": 9
+    },
+    "tests/security/test_security_headers.py": {
+      "lines_of_code": 459,
+      "cyclomatic_complexity": 63,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 6,
+      "classes_count": 1,
+      "functions_count": 9
+    },
+    "tests/security/test_security_testing.py": {
+      "lines_of_code": 612,
+      "cyclomatic_complexity": 52,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 5,
+      "classes_count": 1,
+      "functions_count": 15
+    },
+    "tests/security/test_security_suite.py": {
+      "lines_of_code": 806,
+      "cyclomatic_complexity": 83,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 8,
+      "classes_count": 1,
+      "functions_count": 18
+    },
+    "tests/security/test_security_headers_fixed.py": {
+      "lines_of_code": 380,
+      "cyclomatic_complexity": 55,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 7,
+      "classes_count": 1,
+      "functions_count": 9
+    },
+    "tests/integration/test_query_refinement.py": {
+      "lines_of_code": 163,
+      "cyclomatic_complexity": 12,
+      "sys_path_usage": 1,
+      "god_class_score": 0.0,
+      "imports_count": 5,
+      "classes_count": 0,
+      "functions_count": 4
+    },
+    "tests/integration/test_phase4_enhancements.py": {
+      "lines_of_code": 0,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 0,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "tests/integration/test_web_interface_validation.py": {
+      "lines_of_code": 196,
+      "cyclomatic_complexity": 22,
+      "sys_path_usage": 1,
+      "god_class_score": 1.0,
+      "imports_count": 6,
+      "classes_count": 1,
+      "functions_count": 8
+    },
+    "tests/integration/test_integrations.py": {
+      "lines_of_code": 0,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 0,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "tests/integration/test_enhancements.py": {
+      "lines_of_code": 0,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 0,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "tests/integration/test_query_refinement_integration.py": {
+      "lines_of_code": 93,
+      "cyclomatic_complexity": 14,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 3,
+      "classes_count": 0,
+      "functions_count": 4
+    },
+    "tests/integration/test_dashboard_integration.py": {
+      "lines_of_code": 0,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 0,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "tests/integration/test_web_ai_integration.py": {
+      "lines_of_code": 0,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 0,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "tests/integration/test_cli_ai_integration.py": {
+      "lines_of_code": 0,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 0,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "tests/integration/test_visualization_api.py": {
+      "lines_of_code": 0,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 0,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "tests/integration/test_geo_client_integration.py": {
+      "lines_of_code": 173,
+      "cyclomatic_complexity": 31,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 6,
+      "classes_count": 2,
+      "functions_count": 12
+    },
+    "tests/integration/test_llm_integration.py": {
+      "lines_of_code": 0,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 0,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "tests/integration/test_advanced_filters.py": {
+      "lines_of_code": 0,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 0,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "tests/integration/test_integration.py": {
+      "lines_of_code": 138,
+      "cyclomatic_complexity": 16,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 4,
+      "classes_count": 0,
+      "functions_count": 1
+    },
+    "tests/integration/test_comprehensive_web_interface.py": {
+      "lines_of_code": 382,
+      "cyclomatic_complexity": 49,
+      "sys_path_usage": 1,
+      "god_class_score": 3.0,
+      "imports_count": 10,
+      "classes_count": 1,
+      "functions_count": 15
+    },
+    "tests/integration/test_real_geo_llm.py": {
+      "lines_of_code": 0,
+      "cyclomatic_complexity": 0,
+      "sys_path_usage": 0,
+      "god_class_score": 0.0,
+      "imports_count": 0,
+      "classes_count": 0,
+      "functions_count": 0
+    },
+    "tests/integration/test_query_refinement_system.py": {
+      "lines_of_code": 343,
+      "cyclomatic_complexity": 40,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 4,
+      "classes_count": 1,
+      "functions_count": 10
+    },
+    "tests/integration/integrations/test_integrations.py": {
+      "lines_of_code": 69,
+      "cyclomatic_complexity": 4,
+      "sys_path_usage": 1,
+      "god_class_score": 0.0,
+      "imports_count": 5,
+      "classes_count": 0,
+      "functions_count": 2
+    },
+    "tests/system/test_system_validation.py": {
+      "lines_of_code": 371,
+      "cyclomatic_complexity": 43,
+      "sys_path_usage": 0,
+      "god_class_score": 3.0,
+      "imports_count": 7,
+      "classes_count": 1,
+      "functions_count": 12
+    },
+    "tests/browser/test_browser_automation.py": {
+      "lines_of_code": 558,
+      "cyclomatic_complexity": 67,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 13,
+      "classes_count": 1,
+      "functions_count": 10
+    },
+    "tests/mobile/test_mobile_responsive.py": {
+      "lines_of_code": 456,
+      "cyclomatic_complexity": 39,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 4,
+      "classes_count": 1,
+      "functions_count": 7
+    },
+    "tests/geo_tools/test_geo_client.py": {
+      "lines_of_code": 120,
+      "cyclomatic_complexity": 18,
+      "sys_path_usage": 1,
+      "god_class_score": 0.0,
+      "imports_count": 10,
+      "classes_count": 0,
+      "functions_count": 6
+    },
+    "tests/performance/simple_load_test.py": {
+      "lines_of_code": 51,
+      "cyclomatic_complexity": 5,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 2,
+      "classes_count": 1,
+      "functions_count": 5
+    },
+    "tests/performance/test_load_testing.py": {
+      "lines_of_code": 146,
+      "cyclomatic_complexity": 15,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 5,
+      "classes_count": 2,
+      "functions_count": 9
+    },
+    "tests/performance/test_performance_monitoring.py": {
+      "lines_of_code": 318,
+      "cyclomatic_complexity": 42,
+      "sys_path_usage": 0,
+      "god_class_score": 1.0,
+      "imports_count": 9,
+      "classes_count": 2,
+      "functions_count": 14
+    },
+    "tests/e2e/test_search_pipeline.py": {
+      "lines_of_code": 293,
+      "cyclomatic_complexity": 44,
+      "sys_path_usage": 1,
+      "god_class_score": 1.0,
+      "imports_count": 18,
+      "classes_count": 1,
+      "functions_count": 7
+    },
+    "tests/validation/test_architecture.py": {
+      "lines_of_code": 129,
+      "cyclomatic_complexity": 17,
+      "sys_path_usage": 1,
+      "god_class_score": 0.0,
+      "imports_count": 8,
+      "classes_count": 0,
+      "functions_count": 6
+    }
+  },
+  "component_metrics": {
+    "_version.py": {
+      "total_loc": 13,
+      "average_complexity": 0.0,
+      "coupling_score": 0.1,
+      "cohesion_score": 10.0,
+      "violations": []
+    },
+    "pipeline": {
+      "total_loc": 776,
+      "average_complexity": 66.0,
+      "coupling_score": 1.3,
+      "cohesion_score": 10.0,
+      "violations": [
+        "God file: src/omics_oracle/pipeline/pipeline.py (776 LOC)",
+        "High complexity: src/omics_oracle/pipeline/pipeline.py (66)"
+      ]
+    },
+    "core": {
+      "total_loc": 560,
+      "average_complexity": 13.25,
+      "coupling_score": 1.4,
+      "cohesion_score": 0.0,
+      "violations": []
+    },
+    "web": {
+      "total_loc": 5007,
+      "average_complexity": 34.30769230769231,
+      "coupling_score": 5.2,
+      "cohesion_score": 0.0,
+      "violations": [
+        "God file: src/omics_oracle/web/research_intelligence.py (510 LOC)",
+        "High complexity: src/omics_oracle/web/research_intelligence.py (51)",
+        "God file: src/omics_oracle/web/research_dashboard.py (694 LOC)",
+        "sys.path manipulation: src/omics_oracle/web/refinement_routes.py",
+        "sys.path manipulation: src/omics_oracle/web/main.py",
+        "God file: src/omics_oracle/web/main_simple.py (521 LOC)",
+        "High complexity: src/omics_oracle/web/main_simple.py (72)",
+        "sys.path manipulation: src/omics_oracle/web/main_simple.py",
+        "High complexity: src/omics_oracle/web/routes.py (58)"
+      ]
+    },
+    "models": {
+      "total_loc": 136,
+      "average_complexity": 0.0,
+      "coupling_score": 0.4,
+      "cohesion_score": 10.0,
+      "violations": []
+    },
+    "cli": {
+      "total_loc": 682,
+      "average_complexity": 143.0,
+      "coupling_score": 1.0,
+      "cohesion_score": 10.0,
+      "violations": [
+        "God file: src/omics_oracle/cli/main.py (682 LOC)",
+        "High complexity: src/omics_oracle/cli/main.py (143)",
+        "sys.path manipulation: src/omics_oracle/cli/main.py"
+      ]
+    },
+    "integrations": {
+      "total_loc": 640,
+      "average_complexity": 30.666666666666668,
+      "coupling_score": 0.9,
+      "cohesion_score": 0.0,
+      "violations": [
+        "High complexity: src/omics_oracle/integrations/citation_managers.py (51)"
+      ]
+    },
+    "nlp": {
+      "total_loc": 975,
+      "average_complexity": 73.0,
+      "coupling_score": 0.7,
+      "cohesion_score": 0.0,
+      "violations": [
+        "God file: src/omics_oracle/nlp/biomedical_ner.py (687 LOC)",
+        "High complexity: src/omics_oracle/nlp/biomedical_ner.py (92)",
+        "High complexity: src/omics_oracle/nlp/prompt_interpreter.py (54)"
+      ]
+    },
+    "api": {
+      "total_loc": 5,
+      "average_complexity": 0.0,
+      "coupling_score": 0.1,
+      "cohesion_score": 10.0,
+      "violations": []
+    },
+    "geo_tools": {
+      "total_loc": 826,
+      "average_complexity": 61.0,
+      "coupling_score": 1.5,
+      "cohesion_score": 0.0,
+      "violations": [
+        "God file: src/omics_oracle/geo_tools/geo_client.py (569 LOC)",
+        "High complexity: src/omics_oracle/geo_tools/geo_client.py (88)"
+      ]
+    },
+    "monitoring": {
+      "total_loc": 702,
+      "average_complexity": 37.333333333333336,
+      "coupling_score": 1.0,
+      "cohesion_score": 0.0,
+      "violations": []
+    },
+    "services": {
+      "total_loc": 2922,
+      "average_complexity": 39.77777777777778,
+      "coupling_score": 3.5,
+      "cohesion_score": 0.0,
+      "violations": [
+        "High complexity: src/omics_oracle/services/query_analysis.py (69)"
+      ]
+    }
+  }
+}

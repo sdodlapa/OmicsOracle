@@ -1,0 +1,57 @@
+```mermaid
+graph TD
+    subgraph "Original Query"
+        OQ["gene expression data for liver cancer of human species"]
+    end
+
+    subgraph "Component Extraction"
+        CE_O["organism: human"]
+        CE_D["disease: cancer"]
+        CE_T["tissue: liver"]
+        CE_DT["data_type: gene expression"]
+    end
+
+    subgraph "Synonym Expansion"
+        SE_O["organism: human, homo sapiens, patient, patients, human subjects, people"]
+        SE_D["disease: cancer, tumor, tumour, neoplasm, malignancy, carcinoma"]
+        SE_T["tissue: liver, hepatic, hepatocyte, hepatocytes, hepatocellular"]
+        SE_DT["data_type: gene expression, expression, transcript, transcription, mRNA expression"]
+    end
+
+    subgraph "Alternative Query Generation"
+        AQ1["gene expression liver cancer homo sapiens"]
+        AQ2["mRNA expression hepatic cancer human subjects"]
+        AQ3["transcription hepatocellular carcinoma patients"]
+        AQ4["...more alternatives..."]
+    end
+
+    OQ --> CE_O
+    OQ --> CE_D
+    OQ --> CE_T
+    OQ --> CE_DT
+
+    CE_O --> SE_O
+    CE_D --> SE_D
+    CE_T --> SE_T
+    CE_DT --> SE_DT
+
+    SE_O --> AQ1
+    SE_O --> AQ2
+    SE_O --> AQ3
+
+    SE_D --> AQ1
+    SE_D --> AQ2
+    SE_D --> AQ3
+
+    SE_T --> AQ1
+    SE_T --> AQ2
+    SE_T --> AQ3
+
+    SE_DT --> AQ1
+    SE_DT --> AQ2
+    SE_DT --> AQ3
+
+    AQ1 --> AQ4
+    AQ2 --> AQ4
+    AQ3 --> AQ4
+```

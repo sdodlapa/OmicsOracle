@@ -1,0 +1,302 @@
+digraph "OmicsOracle Comprehensive Event Flow and Validation" {
+    rankdir=LR;
+    node [shape=box, style="filled", color="black", fillcolor="lightblue", fontname="Arial"];
+    edge [fontname="Arial", fontsize=10];
+
+    /* Define subgraphs for different stages */
+
+    subgraph cluster_server {
+        label="Server Initialization";
+        style=filled;
+        color=lightgrey;
+        fontsize=14;
+
+        server_start [label="Server Startup", fillcolor="cornflowerblue"];
+        logging_setup [label="Logging Setup"];
+        path_setup [label="Python Path Setup"];
+        env_vars [label="Environment Variables"];
+        entrez_patch [label="Entrez Email Patch"];
+        config_load [label="Config Loading"];
+        ncbi_email_config [label="NCBI Email Config"];
+        bio_entrez_setup [label="Bio.Entrez Setup"];
+        pipeline_init [label="Pipeline Initialization", fillcolor="cornflowerblue"];
+        component_init [label="Component Initialization"];
+        geo_client_init [label="GEO Client Init"];
+        summarizer_init [label="Summarizer Init"];
+        progress_callback [label="Progress Callback Setup"];
+        route_setup [label="API Routes Setup"];
+        static_files [label="Static Files Setup"];
+        cors_setup [label="CORS Setup"];
+    }
+
+    subgraph cluster_search {
+        label="Search Process";
+        style=filled;
+        color=lightgrey;
+        fontsize=14;
+
+        search_request [label="Search Request (UI)", fillcolor="cornflowerblue"];
+        request_validation [label="Request Validation"];
+        pipeline_check [label="Pipeline Availability Check"];
+        query_parsing [label="Query Parsing"];
+        entity_extraction [label="Entity Extraction"];
+        query_expansion [label="Query Expansion"];
+        geo_search [label="GEO Database Search", fillcolor="cornflowerblue"];
+        ncbi_connection [label="NCBI Connection"];
+        esearch_request [label="ESearch Request"];
+        esummary_request [label="ESummary Request"];
+        result_processing [label="Result Processing"];
+        metadata_extraction [label="Metadata Extraction"];
+        summarization [label="AI Summarization", fillcolor="cornflowerblue"];
+        openai_request [label="OpenAI API Request"];
+        result_formatting [label="Result Formatting"];
+        response_creation [label="Response Creation"];
+    }
+
+    subgraph cluster_frontend {
+        label="Frontend Rendering";
+        style=filled;
+        color=lightgrey;
+        fontsize=14;
+
+        websocket_connect [label="WebSocket Connection", fillcolor="cornflowerblue"];
+        websocket_handler [label="WebSocket Message Handler"];
+        progress_updates [label="Progress Updates"];
+        progress_rendering [label="Progress Rendering"];
+        results_display [label="Results Display", fillcolor="cornflowerblue"];
+        geo_display [label="GEO Metadata Display"];
+        summary_display [label="AI Summary Display"];
+        error_handling [label="Error Handling"];
+        ui_interaction [label="UI Interaction"];
+    }
+
+    /* Define connections between nodes */
+
+    /* Server Initialization Flow */
+    server_start -> logging_setup;
+    logging_setup -> path_setup;
+    path_setup -> env_vars;
+    env_vars -> entrez_patch;
+    entrez_patch -> config_load;
+    config_load -> ncbi_email_config;
+    ncbi_email_config -> bio_entrez_setup;
+    bio_entrez_setup -> pipeline_init;
+    pipeline_init -> component_init;
+    component_init -> geo_client_init;
+    component_init -> summarizer_init;
+    geo_client_init -> progress_callback;
+    summarizer_init -> progress_callback;
+    progress_callback -> route_setup;
+    route_setup -> static_files;
+    static_files -> cors_setup;
+
+    /* Search Process Flow */
+    search_request -> request_validation;
+    request_validation -> pipeline_check;
+    pipeline_check -> query_parsing;
+    query_parsing -> entity_extraction;
+    entity_extraction -> query_expansion;
+    query_expansion -> geo_search;
+    geo_search -> ncbi_connection;
+    ncbi_connection -> esearch_request;
+    esearch_request -> esummary_request;
+    esummary_request -> result_processing;
+    result_processing -> metadata_extraction;
+    metadata_extraction -> summarization;
+    summarization -> openai_request;
+    openai_request -> result_formatting;
+    result_formatting -> response_creation;
+
+    /* Frontend Flow */
+    cors_setup -> websocket_connect [constraint=false];
+    websocket_connect -> websocket_handler;
+    websocket_handler -> progress_updates;
+    progress_updates -> progress_rendering;
+    response_creation -> results_display;
+    results_display -> geo_display;
+    results_display -> summary_display;
+    progress_rendering -> results_display;
+    results_display -> error_handling;
+    error_handling -> ui_interaction;
+
+    /* Add validation files as side nodes with dashed connections */
+
+    /* Server Initialization Validation */
+    test_server [label="tests/interface/test_server.py", shape=note, fillcolor="lightyellow"];
+    test_pipeline_init [label="tests/pipeline/test_initialization.py", shape=note, fillcolor="lightyellow"];
+    test_ncbi_config [label="test_ncbi_config.py", shape=note, fillcolor="lightyellow"];
+    test_bio_entrez [label="test_bio_entrez_setup.py", shape=note, fillcolor="lightyellow"];
+    test_env_vars [label="test_environment_variables.py", shape=note, fillcolor="lightyellow"];
+    debug_pipeline [label="debug_pipeline.py", shape=note, fillcolor="lightyellow"];
+    validate_ncbi_config [label="validate_ncbi_config.py", shape=note, fillcolor="lightyellow"];
+    test_logging [label="tests/utils/test_logging.py", shape=note, fillcolor="lightyellow"];
+
+    server_start -> test_server [style=dashed, dir=both];
+    pipeline_init -> test_pipeline_init [style=dashed, dir=both];
+    ncbi_email_config -> test_ncbi_config [style=dashed, dir=both];
+    bio_entrez_setup -> test_bio_entrez [style=dashed, dir=both];
+    env_vars -> test_env_vars [style=dashed, dir=both];
+    pipeline_init -> debug_pipeline [style=dashed, dir=both];
+    ncbi_email_config -> validate_ncbi_config [style=dashed, dir=both];
+    logging_setup -> test_logging [style=dashed, dir=both];
+
+    /* Search Process Validation */
+    test_geo_client [label="tests/geo_tools/test_geo_client.py", shape=note, fillcolor="lightyellow"];
+    test_ncbi_client [label="tests/geo_tools/test_ncbi_client.py", shape=note, fillcolor="lightyellow"];
+    test_summarizer [label="tests/services/test_summarizer.py", shape=note, fillcolor="lightyellow"];
+    test_nlp [label="tests/unit/test_nlp.py", shape=note, fillcolor="lightyellow"];
+    test_entity_extraction [label="tests/nlp/test_entity_extraction.py", shape=note, fillcolor="lightyellow"];
+    test_query_expansion [label="tests/nlp/test_query_expansion.py", shape=note, fillcolor="lightyellow"];
+    test_search_pipeline [label="tests/e2e/test_search_pipeline.py", shape=note, fillcolor="lightyellow"];
+    test_search_api [label="tests/interface/test_api_endpoints.py", shape=note, fillcolor="lightyellow"];
+    test_ncbi_connection [label="test_ncbi_connection.py", shape=note, fillcolor="lightyellow"];
+    test_result_processing [label="tests/pipeline/test_result_processing.py", shape=note, fillcolor="lightyellow"];
+    test_openai_integration [label="tests/services/test_openai_integration.py", shape=note, fillcolor="lightyellow"];
+    test_honest_results [label="test_honest_results.py", shape=note, fillcolor="lightyellow"];
+
+    search_request -> test_search_api [style=dashed, dir=both];
+    query_parsing -> test_nlp [style=dashed, dir=both];
+    entity_extraction -> test_entity_extraction [style=dashed, dir=both];
+    query_expansion -> test_query_expansion [style=dashed, dir=both];
+    geo_search -> test_geo_client [style=dashed, dir=both];
+    ncbi_connection -> test_ncbi_connection [style=dashed, dir=both];
+    esearch_request -> test_ncbi_client [style=dashed, dir=both];
+    esummary_request -> test_ncbi_client [style=dashed, dir=both];
+    result_processing -> test_result_processing [style=dashed, dir=both];
+    metadata_extraction -> test_geo_client [style=dashed, dir=both];
+    summarization -> test_summarizer [style=dashed, dir=both];
+    openai_request -> test_openai_integration [style=dashed, dir=both];
+    result_formatting -> test_search_pipeline [style=dashed, dir=both];
+    response_creation -> test_honest_results [style=dashed, dir=both];
+
+    /* Frontend Validation */
+    test_frontend [label="tests/interface/test_frontend.py", shape=note, fillcolor="lightyellow"];
+    test_ui_rendering [label="tests/interface/test_ui_rendering.py", shape=note, fillcolor="lightyellow"];
+    test_websocket [label="tests/interface/test_websocket.py", shape=note, fillcolor="lightyellow"];
+    test_progress_events [label="test_progress_events.py", shape=note, fillcolor="lightyellow"];
+    test_progress_client [label="test_progress_client.py", shape=note, fillcolor="lightyellow"];
+    test_interface_integration [label="tests/e2e/test_interface_integration.py", shape=note, fillcolor="lightyellow"];
+    test_error_handling [label="tests/unit/test_error_handling.py", shape=note, fillcolor="lightyellow"];
+    test_ui_interaction [label="tests/interface/test_ui_interaction.py", shape=note, fillcolor="lightyellow"];
+
+    websocket_connect -> test_websocket [style=dashed, dir=both];
+    progress_updates -> test_progress_events [style=dashed, dir=both];
+    progress_rendering -> test_progress_client [style=dashed, dir=both];
+    results_display -> test_frontend [style=dashed, dir=both];
+    geo_display -> test_ui_rendering [style=dashed, dir=both];
+    summary_display -> test_ui_rendering [style=dashed, dir=both];
+    results_display -> test_interface_integration [style=dashed, dir=both];
+    error_handling -> test_error_handling [style=dashed, dir=both];
+    ui_interaction -> test_ui_interaction [style=dashed, dir=both];
+
+    /* Monitoring Components */
+    pipeline_monitor [label="src/omics_oracle/monitoring/pipeline_monitor.py", shape=note, fillcolor="lightgreen"];
+    geo_client_monitor [label="src/omics_oracle/monitoring/geo_client_monitor.py", shape=note, fillcolor="lightgreen"];
+    summarizer_monitor [label="src/omics_oracle/monitoring/summarizer_monitor.py", shape=note, fillcolor="lightgreen"];
+    api_monitor [label="src/omics_oracle/monitoring/api_monitor.py", shape=note, fillcolor="lightgreen"];
+    websocket_monitor [label="src/omics_oracle/monitoring/websocket_monitor.py", shape=note, fillcolor="lightgreen"];
+    ui_monitor [label="interfaces/futuristic/static/js/monitoring.js", shape=note, fillcolor="lightgreen"];
+
+    pipeline_init -> pipeline_monitor [style=dotted, dir=both];
+    geo_client_init -> geo_client_monitor [style=dotted, dir=both];
+    summarizer_init -> summarizer_monitor [style=dotted, dir=both];
+    search_request -> api_monitor [style=dotted, dir=both];
+    websocket_connect -> websocket_monitor [style=dotted, dir=both];
+    results_display -> ui_monitor [style=dotted, dir=both];
+
+    /* Diagnostic Tools */
+    system_diagnostics [label="tools/diagnostics/system_diagnostics.py", shape=note, fillcolor="lightpink"];
+    api_diagnostics [label="tools/diagnostics/api_diagnostics.py", shape=note, fillcolor="lightpink"];
+    frontend_diagnostics [label="tools/diagnostics/frontend_diagnostics.py", shape=note, fillcolor="lightpink"];
+    pipeline_diagnostics [label="tools/diagnostics/pipeline_diagnostics.py", shape=note, fillcolor="lightpink"];
+    geo_client_diagnostics [label="tools/diagnostics/geo_client_diagnostics.py", shape=note, fillcolor="lightpink"];
+    summarizer_diagnostics [label="tools/diagnostics/summarizer_diagnostics.py", shape=note, fillcolor="lightpink"];
+    openai_diagnostics [label="tools/diagnostics/openai_diagnostics.py", shape=note, fillcolor="lightpink"];
+
+    server_start -> system_diagnostics [style=dotted, dir=both];
+    search_request -> api_diagnostics [style=dotted, dir=both];
+    results_display -> frontend_diagnostics [style=dotted, dir=both];
+    pipeline_init -> pipeline_diagnostics [style=dotted, dir=both];
+    geo_client_init -> geo_client_diagnostics [style=dotted, dir=both];
+    summarizer_init -> summarizer_diagnostics [style=dotted, dir=both];
+    openai_request -> openai_diagnostics [style=dotted, dir=both];
+
+    /* Central Testing & Monitoring */
+    omics_monitor [label="omics_monitor.py\n(Central Monitor)", shape=note, fillcolor="orange"];
+    run_tests [label="run_tests.py\n(Test Runner)", shape=note, fillcolor="orange"];
+    monitoring_dashboard [label="monitoring_dashboard.py", shape=note, fillcolor="orange"];
+    debug_pipeline_init [label="debug_pipeline_init.py", shape=note, fillcolor="orange"];
+    quick_test_pipeline [label="quick_test_pipeline.py", shape=note, fillcolor="orange"];
+
+    pipeline_monitor -> omics_monitor [style=dotted];
+    geo_client_monitor -> omics_monitor [style=dotted];
+    summarizer_monitor -> omics_monitor [style=dotted];
+    api_monitor -> omics_monitor [style=dotted];
+    websocket_monitor -> omics_monitor [style=dotted];
+    ui_monitor -> omics_monitor [style=dotted];
+
+    omics_monitor -> monitoring_dashboard [style=dotted];
+
+    pipeline_init -> debug_pipeline_init [style=dotted, dir=both];
+    pipeline_init -> quick_test_pipeline [style=dotted, dir=both];
+
+    test_pipeline_init -> run_tests [style=dotted];
+    test_geo_client -> run_tests [style=dotted];
+    test_summarizer -> run_tests [style=dotted];
+    test_search_pipeline -> run_tests [style=dotted];
+    test_frontend -> run_tests [style=dotted];
+    test_interface_integration -> run_tests [style=dotted];
+    test_nlp -> run_tests [style=dotted];
+    test_entity_extraction -> run_tests [style=dotted];
+    test_query_expansion -> run_tests [style=dotted];
+    test_ncbi_client -> run_tests [style=dotted];
+    test_result_processing -> run_tests [style=dotted];
+    test_openai_integration -> run_tests [style=dotted];
+    test_ui_rendering -> run_tests [style=dotted];
+    test_websocket -> run_tests [style=dotted];
+    test_progress_events -> run_tests [style=dotted];
+    test_progress_client -> run_tests [style=dotted];
+    test_error_handling -> run_tests [style=dotted];
+    test_ui_interaction -> run_tests [style=dotted];
+
+    /* Edge Cases and Performance Testing */
+    test_performance [label="tests/performance/test_performance.py", shape=note, fillcolor="lightyellow"];
+    test_load [label="tests/performance/test_load_testing.py", shape=note, fillcolor="lightyellow"];
+    test_error_cases [label="tests/unit/test_error_cases.py", shape=note, fillcolor="lightyellow"];
+    test_cache_bypass [label="tests/unit/test_cache_bypass.py", shape=note, fillcolor="lightyellow"];
+    test_fallbacks [label="tests/unit/test_fallbacks.py", shape=note, fillcolor="lightyellow"];
+
+    server_start -> test_load [style=dashed, dir=both];
+    pipeline_init -> test_performance [style=dashed, dir=both];
+    search_request -> test_error_cases [style=dashed, dir=both];
+    geo_client_init -> test_cache_bypass [style=dashed, dir=both];
+    summarizer_init -> test_cache_bypass [style=dashed, dir=both];
+    error_handling -> test_fallbacks [style=dashed, dir=both];
+
+    /* Legend */
+    subgraph cluster_legend {
+        label="Legend";
+        fontsize=12;
+        style=filled;
+        color=lightgrey;
+
+        node [shape=box, width=2, height=0.5, fontsize=10];
+
+        key_event [label="Key Event", fillcolor="cornflowerblue"];
+        normal_event [label="Event"];
+
+        node [shape=note, width=2, height=0.5, fontsize=10];
+
+        test_file [label="Test/Validation File", fillcolor="lightyellow"];
+        monitor_file [label="Monitoring Component", fillcolor="lightgreen"];
+        diagnostic_file [label="Diagnostic Tool", fillcolor="lightpink"];
+        central_file [label="Central Component", fillcolor="orange"];
+
+        /* Invisible edges for layout */
+        key_event -> normal_event [style=invis];
+        normal_event -> test_file [style=invis];
+        test_file -> monitor_file [style=invis];
+        monitor_file -> diagnostic_file [style=invis];
+        diagnostic_file -> central_file [style=invis];
+    }
+}

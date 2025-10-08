@@ -1,0 +1,77 @@
+{
+  "type": "ReportVisualizer",
+  "config": {
+    "width": 1200,
+    "height": 800,
+    "theme": "plotly_white",
+    "color_scheme": "default",
+    "font_family": "Arial, sans-serif",
+    "font_size": 12,
+    "show_legend": true,
+    "interactive": true,
+    "export_format": "html"
+  },
+  "data": {
+    "panels": [
+      {
+        "data": {
+          "categories": [
+            "CA-125",
+            "HE4",
+            "PSA",
+            "CEA"
+          ],
+          "values": [
+            150,
+            125,
+            100,
+            75
+          ]
+        },
+        "type": "bar",
+        "title": "Top Biomarkers",
+        "xlabel": "Biomarker",
+        "ylabel": "Citations"
+      },
+      {
+        "data": {
+          "categories": [
+            "Diagnostic",
+            "Prognostic",
+            "Therapeutic"
+          ],
+          "values": [
+            200,
+            150,
+            50
+          ]
+        },
+        "type": "pie",
+        "title": "Usage Distribution"
+      },
+      {
+        "data": {
+          "x": [
+            2020,
+            2021,
+            2022,
+            2023,
+            2024
+          ],
+          "y": [
+            100,
+            150,
+            200,
+            250,
+            300
+          ]
+        },
+        "type": "line",
+        "title": "Citation Trend",
+        "xlabel": "Year",
+        "ylabel": "Citations"
+      }
+    ],
+    "title": "Biomarker Analysis Report"
+  }
+}

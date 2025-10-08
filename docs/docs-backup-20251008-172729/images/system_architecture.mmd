@@ -1,0 +1,24 @@
+```mermaid
+flowchart TD
+    U[User] --> |Query| FE[Frontend Interface]
+    FE --> |API Call| QP[Query Parser]
+    QP --> |Extract Components| BSE[Biomedical Synonym Expander]
+    BSE --> |Expand Terms| QP
+    QP --> |Generate Alternatives| MSE[Multi-Strategy Search Engine]
+    MSE --> |Original Query| PC[Pipeline Connector]
+    MSE --> |Alternative Queries| PC
+    PC --> |API Calls| NCBI[NCBI/GEO APIs]
+    NCBI --> |Raw Results| PC
+    PC --> |Processed Results| MSE
+    MSE --> |Search Results| RF[Results Formatter]
+    RF --> |Formatted Results| FE
+    FE --> |Display Results| U
+
+    %% Query Tracer connections
+    QT[Query Tracer] --> |Monitor| QP
+    QT --> |Monitor| BSE
+    QT --> |Monitor| MSE
+    QT --> |Monitor| PC
+    QT --> |Monitor| RF
+    QT --> |Generate Reports| TR[Trace Reports]
+```
