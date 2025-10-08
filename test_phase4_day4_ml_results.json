@@ -1,0 +1,71 @@
+{
+  "date": "2025-10-08",
+  "phase": "Phase 4 Day 4",
+  "focus": "ML Features",
+  "total_tests": 12,
+  "passed": 5,
+  "failed": 1,
+  "skipped": 6,
+  "tests": [
+    {
+      "name": "ML Analytics Health",
+      "status": "PASS",
+      "details": "Status: degraded, Models: 4/4, Cache: False"
+    },
+    {
+      "name": "Biomarker Analytics: BRCA1",
+      "status": "SKIP",
+      "reason": "No publications found (expected - needs DB integration)"
+    },
+    {
+      "name": "Biomarker Analytics: TP53",
+      "status": "SKIP",
+      "reason": "No publications found (expected - needs DB integration)"
+    },
+    {
+      "name": "Biomarker Analytics: EGFR",
+      "status": "SKIP",
+      "reason": "No publications found (expected - needs DB integration)"
+    },
+    {
+      "name": "Citation Predictions (Batch)",
+      "status": "SKIP",
+      "reason": "No publications found (expected - needs DB integration)"
+    },
+    {
+      "name": "Citation Predictions (Single)",
+      "status": "SKIP",
+      "reason": "Publication not found (expected - needs DB integration)"
+    },
+    {
+      "name": "Trend Forecasting",
+      "status": "SKIP",
+      "reason": "No publications found (expected - needs DB integration)"
+    },
+    {
+      "name": "Recommendations: Similar",
+      "status": "PASS",
+      "details": "Found 0 similar biomarkers"
+    },
+    {
+      "name": "Recommendations: Emerging",
+      "status": "PASS",
+      "details": "Found 0 emerging biomarkers"
+    },
+    {
+      "name": "Recommendations: High-Impact",
+      "status": "PASS",
+      "details": "Found 0 high-impact biomarkers"
+    },
+    {
+      "name": "Cache Stats",
+      "status": "FAIL",
+      "error": "HTTP 500: {\"detail\":\"object dict can't be used in 'await' expression\"}"
+    },
+    {
+      "name": "Cache Clear",
+      "status": "PASS",
+      "details": "Message: Cache cleared (pattern: test_*)"
+    }
+  ]
+}
