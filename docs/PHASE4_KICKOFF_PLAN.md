@@ -52,7 +52,7 @@ class TokenResponse(BaseModel):
 class AuthClient:
     """
     Authentication client for integration layer.
-    
+
     Handles:
     - User registration
     - Login/logout
@@ -60,21 +60,21 @@ class AuthClient:
     - Auto-refresh
     - Token storage
     """
-    
+
     def __init__(self, base_url: str = "http://localhost:8000"):
         self.base_url = base_url.rstrip("/")
         self._client: Optional[httpx.AsyncClient] = None
         self._token: Optional[TokenResponse] = None
         self._token_expires_at: Optional[datetime] = None
-    
+
     async def __aenter__(self):
         self._client = httpx.AsyncClient(timeout=30.0)
         return self
-    
+
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         if self._client:
             await self._client.aclose()
-    
+
     async def register(
         self,
         email: str,
@@ -83,12 +83,12 @@ class AuthClient:
     ) -> dict:
         """
         Register a new user.
-        
+
         Args:
             email: User email
             password: User password
             full_name: User's full name
-            
+
         Returns:
             User info
         """
@@ -102,15 +102,15 @@ class AuthClient:
         )
         response.raise_for_status()
         return response.json()
-    
+
     async def login(self, username: str, password: str) -> TokenResponse:
         """
         Login and get access token.
-        
+
         Args:
             username: Email address
             password: User password
-            
+
         Returns:
             TokenResponse with access token
         """
@@ -122,17 +122,17 @@ class AuthClient:
             }
         )
         response.raise_for_status()
-        
+
         data = response.json()
         self._token = TokenResponse(**data)
-        
+
         # Calculate expiration
         self._token_expires_at = datetime.utcnow() + timedelta(
             seconds=self._token.expires_in
         )
-        
+
         return self._token
-    
+
     async def logout(self) -> None:
         """Logout and invalidate token."""
         if self._token:
@@ -142,57 +142,57 @@ class AuthClient:
             )
             self._token = None
             self._token_expires_at = None
-    
+
     async def refresh_token(self) -> TokenResponse:
         """
         Refresh access token.
-        
+
         Returns:
             New TokenResponse
         """
         if not self._token or not self._token.refresh_token:
             raise ValueError("No refresh token available")
-        
+
         response = await self._client.post(
             f"{self.base_url}/api/auth/refresh",
             json={"refresh_token": self._token.refresh_token}
         )
         response.raise_for_status()
-        
+
         data = response.json()
         self._token = TokenResponse(**data)
         self._token_expires_at = datetime.utcnow() + timedelta(
             seconds=self._token.expires_in
         )
-        
+
         return self._token
-    
+
     def get_token(self) -> Optional[str]:
         """Get current access token."""
         return self._token.access_token if self._token else None
-    
+
     def is_token_expired(self) -> bool:
         """Check if token is expired or about to expire."""
         if not self._token_expires_at:
             return True
-        
+
         # Consider expired if less than 5 minutes remaining
         buffer = timedelta(minutes=5)
         return datetime.utcnow() + buffer >= self._token_expires_at
-    
+
     async def ensure_valid_token(self) -> str:
         """
         Ensure we have a valid token, refreshing if needed.
-        
+
         Returns:
             Valid access token
         """
         if not self._token:
             raise ValueError("Not logged in")
-        
+
         if self.is_token_expired():
             await self.refresh_token()
-        
+
         return self._token.access_token
 
 
@@ -204,12 +204,12 @@ async def create_test_user(
 ) -> str:
     """
     Create test user and return access token.
-    
+
     Args:
         email: User email
-        password: User password  
+        password: User password
         full_name: User's full name
-        
+
     Returns:
         Access token
     """
@@ -220,7 +220,7 @@ async def create_test_user(
         except httpx.HTTPStatusError as e:
             if e.response.status_code != 400:  # Already exists
                 raise
-        
+
         # Login
         token_response = await auth.login(email, password)
         return token_response.access_token
@@ -243,7 +243,7 @@ class APIClient:
     ):
         # ... existing code ...
         self.auth_client = auth_client
-        
+
     async def _ensure_client(self):
         """Ensure HTTP client is initialized."""
         if self._client is None:
@@ -283,7 +283,7 @@ async def test_auth():
     print("\n" + "="*80)
     print("TESTING AUTHENTICATION")
     print("="*80)
-    
+
     # Test 1: Register and login
     print("\n[TEST 1] Register and login")
     async with AuthClient() as auth:
@@ -297,23 +297,23 @@ async def test_auth():
             print(f"  ✅ Registered: {user['email']}")
         except Exception as e:
             print(f"  ⚠️ User exists: {e}")
-        
+
         # Login
         token = await auth.login("phase4test@omicsoracle.com", "secure123")
         print(f"  ✅ Logged in")
         print(f"  Token: {token.access_token[:20]}...")
         print(f"  Expires in: {token.expires_in} seconds")
-    
+
     # Test 2: Use token with clients
     print("\n[TEST 2] Use token with authenticated clients")
     token = await create_test_user()
-    
+
     async with AnalysisClient(api_key=token) as client:
         print("  ✅ AnalysisClient initialized with token")
-    
+
     async with MLClient(api_key=token) as client:
         print("  ✅ MLClient initialized with token")
-    
+
     print("\n" + "="*80)
     print("AUTHENTICATION TESTS COMPLETE")
     print("="*80)
@@ -344,16 +344,16 @@ async def test_llm_features():
     print("\n" + "="*80)
     print("TESTING LLM FEATURES (AUTHENTICATED)")
     print("="*80)
-    
+
     # Get auth token
     token = await create_test_user()
     print(f"✅ Authenticated")
-    
+
     # Get search results for context
     async with SearchClient() as search:
         results = await search.search("CRISPR gene editing", max_results=5)
         print(f"✅ Got {len(results.results)} search results")
-    
+
     async with AnalysisClient(api_key=token) as analysis:
         # Test 1: LLM Analysis
         print("\n[TEST 1] LLM Analysis")
@@ -365,7 +365,7 @@ async def test_llm_features():
         print(f"  Overview: {insights.overview[:200]}...")
         print(f"  Key findings: {len(insights.key_findings)}")
         print(f"  Research gaps: {len(insights.research_gaps)}")
-        
+
         # Test 2: Q&A
         print("\n[TEST 2] Q&A System")
         answer = await analysis.ask_question(
@@ -375,7 +375,7 @@ async def test_llm_features():
         print(f"  ✅ Answer received!")
         print(f"  Answer: {answer.answer[:200]}...")
         print(f"  Confidence: {answer.confidence}")
-        
+
         # Test 3: Report Generation
         print("\n[TEST 3] Report Generation")
         report = await analysis.generate_report(
@@ -384,7 +384,7 @@ async def test_llm_features():
         )
         print(f"  ✅ Report generated!")
         print(f"  Report length: {len(report)} characters")
-    
+
     print("\n" + "="*80)
     print("LLM FEATURES TEST COMPLETE")
     print("="*80)
@@ -401,7 +401,7 @@ Update `omics_oracle_v2/integration/adapters.py`:
 def adapt_analysis_response(backend_response: Dict[str, Any]) -> AnalysisResponse:
     """
     Adapt backend analysis response to integration layer format.
-    
+
     Backend format (to be determined after testing):
     {
         "analysis": "...",
@@ -409,7 +409,7 @@ def adapt_analysis_response(backend_response: Dict[str, Any]) -> AnalysisRespons
         "gaps": [...],
         "confidence": 0.85
     }
-    
+
     Integration layer format:
     AnalysisResponse(
         overview="...",
@@ -457,23 +457,23 @@ async def test_ml_features():
     print("\n" + "="*80)
     print("TESTING ML FEATURES (AUTHENTICATED)")
     print("="*80)
-    
+
     # Get auth token
     token = await create_test_user()
     print(f"✅ Authenticated")
-    
+
     # Get search results for seed papers
     async with SearchClient() as search:
         results = await search.search("machine learning genomics", max_results=5)
         seed_papers = [r.id for r in results.results[:2] if r.id]
         print(f"✅ Got {len(seed_papers)} seed papers")
-    
+
     async with MLClient(api_key=token) as ml:
         # Test 1: Recommendations
         print("\n[TEST 1] Paper Recommendations")
         recs = await ml.get_recommendations(seed_papers=seed_papers, count=5)
         print(f"  ✅ Got {len(recs.recommendations)} recommendations")
-        
+
         # Test 2: Citation Prediction
         print("\n[TEST 2] Citation Prediction")
         if results.results:
@@ -482,17 +482,17 @@ async def test_ml_features():
                 years_ahead=5
             )
             print(f"  ✅ Predicted citations: {pred.predicted_count}")
-        
+
         # Test 3: Trending Topics
         print("\n[TEST 3] Trending Topics")
         trends = await ml.get_trending_topics()
         print(f"  ✅ Got {len(trends.topics)} trending topics")
-        
+
         # Test 4: Emerging Authors
         print("\n[TEST 4] Emerging Authors")
         authors = await ml.get_emerging_authors()
         print(f"  ✅ Got {len(authors.authors)} emerging authors")
-    
+
     print("\n" + "="*80)
     print("ML FEATURES TEST COMPLETE")
     print("="*80)
@@ -539,7 +539,7 @@ from omics_oracle_v2.integration.auth import AuthClient
 def login_page():
     """Display login page"""
     st.title("🔐 OmicsOracle Login")
-    
+
     # Check if already logged in
     if "access_token" in st.session_state:
         st.success("✅ Already logged in!")
@@ -547,19 +547,19 @@ def login_page():
             del st.session_state["access_token"]
             st.rerun()
         return
-    
+
     # Login form
     with st.form("login_form"):
         email = st.text_input("Email")
         password = st.text_input("Password", type="password")
         submit = st.form_submit_button("Login")
-        
+
         if submit:
             async def do_login():
                 async with AuthClient() as auth:
                     token = await auth.login(email, password)
                     return token.access_token
-            
+
             try:
                 token = asyncio.run(do_login())
                 st.session_state["access_token"] = token
@@ -567,25 +567,25 @@ def login_page():
                 st.rerun()
             except Exception as e:
                 st.error(f"Login failed: {e}")
-    
+
     # Registration link
     st.markdown("---")
     st.markdown("Don't have an account? Register below:")
-    
+
     with st.expander("Register New Account"):
         with st.form("register_form"):
             reg_email = st.text_input("Email", key="reg_email")
             reg_password = st.text_input("Password", type="password", key="reg_password")
             reg_name = st.text_input("Full Name")
             reg_submit = st.form_submit_button("Register")
-            
+
             if reg_submit:
                 async def do_register():
                     async with AuthClient() as auth:
                         await auth.register(reg_email, reg_password, reg_name)
                         token = await auth.login(reg_email, reg_password)
                         return token.access_token
-                
+
                 try:
                     token = asyncio.run(do_register())
                     st.session_state["access_token"] = token
@@ -606,14 +606,14 @@ Update `omics_oracle_v2/web/main.py` to add new tab:
 # In main dashboard
 tab1, tab2, tab3, tab4 = st.tabs([
     "🔍 Search",
-    "📊 Analytics", 
+    "📊 Analytics",
     "🤖 AI Analysis",  # NEW!
     "🧬 Biomarkers"
 ])
 
 with tab3:
     st.header("🤖 AI-Powered Analysis")
-    
+
     if "access_token" not in st.session_state:
         st.warning("⚠️ Please login to use AI features")
         st.page_link("pages/login.py", label="Go to Login")
@@ -630,23 +630,23 @@ with tab3:
                                 query=st.session_state["last_query"],
                                 results=st.session_state["search_results"][:10]
                             )
-                    
+
                     insights = asyncio.run(analyze())
-                    
+
                     # Display results
                     st.success("✅ Analysis complete!")
-                    
+
                     st.subheader("📝 Overview")
                     st.write(insights.overview)
-                    
+
                     st.subheader("🔑 Key Findings")
                     for finding in insights.key_findings:
                         st.markdown(f"- {finding}")
-                    
+
                     st.subheader("🔬 Research Gaps")
                     for gap in insights.research_gaps:
                         st.markdown(f"- {gap}")
-                    
+
                     st.subheader("💡 Recommendations")
                     for rec in insights.recommendations:
                         st.markdown(f"- {rec}")
@@ -662,11 +662,11 @@ Add to dashboard sidebar:
 if "access_token" in st.session_state and "search_results" in st.session_state:
     st.sidebar.markdown("---")
     st.sidebar.subheader("🎯 Recommended Papers")
-    
+
     if st.sidebar.button("Get Recommendations"):
         with st.spinner("Finding similar papers..."):
             seed_papers = [r.id for r in st.session_state["search_results"][:3] if r.id]
-            
+
             async def get_recs():
                 async with MLClient(
                     api_key=st.session_state["access_token"]
@@ -675,9 +675,9 @@ if "access_token" in st.session_state and "search_results" in st.session_state:
                         seed_papers=seed_papers,
                         count=5
                     )
-            
+
             recs = asyncio.run(get_recs())
-            
+
             for rec in recs.recommendations[:5]:
                 st.sidebar.markdown(f"**{rec.publication.title}**")
                 st.sidebar.caption(f"Score: {rec.score:.2f}")

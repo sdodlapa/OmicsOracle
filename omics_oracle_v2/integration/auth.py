@@ -3,7 +3,7 @@ Authentication client for OmicsOracle integration layer.
 
 Handles:
 - User registration
-- Login/logout  
+- Login/logout
 - Token management
 - Auto-refresh
 - Token storage
@@ -29,7 +29,7 @@ class TokenResponse(BaseModel):
 
 class UserResponse(BaseModel):
     """User response model."""
-    
+
     id: str  # UUID string
     email: str
     full_name: Optional[str] = None
@@ -117,11 +117,11 @@ class AuthClient:
     async def login(self, email: str, password: str) -> TokenResponse:
         """
         Login and get access token.
-        
+
         Args:
             email: User's email
             password: User's password
-            
+
         Returns:
             TokenResponse with access token
         """
@@ -130,21 +130,19 @@ class AuthClient:
             "email": email,
             "password": password,
         }
-        
+
         response = await self._client.post(
             f"{self.base_url}/api/auth/login",
             json=login_data,  # Backend expects JSON
         )
         response.raise_for_status()
-        
+
         token_data = response.json()
         self._token = TokenResponse(**token_data)
-        
+
         # Calculate expiration time
-        self._token_expires_at = datetime.now() + timedelta(
-            seconds=self._token.expires_in
-        )
-        
+        self._token_expires_at = datetime.now() + timedelta(seconds=self._token.expires_in)
+
         logger.info(f"Login successful, token expires at {self._token_expires_at}")
         return self._token
 
@@ -175,22 +173,26 @@ class AuthClient:
 
     async def refresh_token(self) -> TokenResponse:
         """
-        Refresh access token using refresh token.
+        Refresh access token using current token.
+
+        The backend generates a new JWT token using the current token
+        (passed in Authorization header), not a separate refresh token.
 
         Returns:
             New TokenResponse
 
         Raises:
-            ValueError: If no refresh token available
+            ValueError: If not logged in
             httpx.HTTPStatusError: If refresh fails
         """
-        if not self._token or not self._token.refresh_token:
-            raise ValueError("No refresh token available")
+        if not self._token:
+            raise ValueError("Not logged in - no token to refresh")
 
         logger.info("Refreshing access token")
 
         response = await self._client.post(
-            f"{self.base_url}/api/auth/refresh", json={"refresh_token": self._token.refresh_token}
+            f"{self.base_url}/api/auth/refresh",
+            headers={"Authorization": f"Bearer {self._token.access_token}"},
         )
 
         response.raise_for_status()
@@ -199,8 +201,8 @@ class AuthClient:
         self._token = TokenResponse(**data)
         self._token_expires_at = datetime.utcnow() + timedelta(seconds=self._token.expires_in)
 
-        logger.info(f"Token refreshed successfully")
-        logger.debug(f"New token expires at: {self._token_expires_at}")
+        logger.info("Token refreshed successfully")
+        logger.debug("New token expires at: %s", self._token_expires_at)
 
         return self._token
 
@@ -295,16 +297,14 @@ async def create_test_user(
         return token_response.access_token
 
 
-async def login_and_get_token(
-    email: str = "test@example.com", password: str = "TestPassword123!"
-) -> str:
+async def login_and_get_token(email: str = "test@example.com", password: str = "TestPassword123!") -> str:
     """
     Convenience function to login and get token.
-    
+
     Args:
         email: User's email
         password: User's password
-        
+
     Returns:
         Access token string
     """
