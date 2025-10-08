@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OmicsOracle - AI-Powered Genomic Discovery</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .top-bar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-name {
+            font-weight: 500;
+        }
+
+        .btn-logout {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 8px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        /* Search Section */
+        .search-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+
+        .search-header {
+            margin-bottom: 20px;
+        }
+
+        .search-header h2 {
+            color: #2d3748;
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .search-header p {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .search-bar {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 14px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn-search {
+            padding: 14px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-search:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-search:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .search-examples {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .example-chip {
+            padding: 6px 14px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 20px;
+            font-size: 13px;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .example-chip:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        /* Results Section */
+        .results-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+            display: none;
+        }
+
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .results-header h3 {
+            color: #2d3748;
+            font-size: 20px;
+        }
+
+        .result-count {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .dataset-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .dataset-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+        }
+
+        .dataset-card.selected {
+            border-color: #667eea;
+            background: #f7fafc;
+        }
+
+        .dataset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+
+        .dataset-id {
+            font-weight: 600;
+            color: #2d3748;
+            font-size: 16px;
+        }
+
+        .quality-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .quality-high {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .quality-medium {
+            background: #feebc8;
+            color: #7c2d12;
+        }
+
+        .quality-low {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .dataset-title {
+            color: #4a5568;
+            font-size: 14px;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+
+        .dataset-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 13px;
+            color: #718096;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Analysis Section */
+        .analysis-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            display: none;
+        }
+
+        .analysis-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .analysis-header h3 {
+            color: #2d3748;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .ai-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .btn-export {
+            padding: 10px 20px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+
+        .btn-export:hover {
+            background: #edf2f7;
+        }
+
+        .analysis-content {
+            display: grid;
+            gap: 20px;
+        }
+
+        .analysis-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .analysis-card h4 {
+            color: #2d3748;
+            font-size: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .analysis-text {
+            color: #4a5568;
+            line-height: 1.7;
+            font-size: 14px;
+        }
+
+        .findings-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .findings-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #f7fafc;
+            color: #4a5568;
+            font-size: 14px;
+            display: flex;
+            align-items: start;
+            gap: 10px;
+        }
+
+        .findings-list li:last-child {
+            border-bottom: none;
+        }
+
+        .findings-list li::before {
+            content: "✓";
+            color: #48bb78;
+            font-weight: bold;
+        }
+
+        .score-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .score-item {
+            text-align: center;
+            padding: 15px;
+            background: #f7fafc;
+            border-radius: 8px;
+        }
+
+        .score-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .score-label {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s ease-in-out infinite;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        .empty-state h4 {
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .search-bar {
+                flex-direction: column;
+            }
+
+            .dataset-meta {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .score-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="logo">
+            <span>🧬</span>
+            <span>OmicsOracle</span>
+        </div>
+        <div id="user-profile" class="user-profile" style="display: none;">
+            <!-- Populated by JavaScript -->
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Search Section -->
+        <div class="search-section">
+            <div class="search-header">
+                <h2>AI-Powered Dataset Discovery</h2>
+                <p>Find relevant genomic datasets using natural language queries</p>
+            </div>
+
+            <div class="search-bar">
+                <input 
+                    type="text" 
+                    id="search-query" 
+                    class="search-input" 
+                    placeholder="e.g., breast cancer gene expression in human tissues"
+                    autocomplete="off"
+                >
+                <button id="search-btn" class="btn-search" onclick="performSearch()">
+                    Search
+                </button>
+            </div>
+
+            <div class="search-examples">
+                <small style="color: #718096; margin-right: 10px;">Try:</small>
+                <span class="example-chip" onclick="useExample(this)">breast cancer RNA-seq</span>
+                <span class="example-chip" onclick="useExample(this)">alzheimer's disease microarray</span>
+                <span class="example-chip" onclick="useExample(this)">BRCA1 mutations</span>
+                <span class="example-chip" onclick="useExample(this)">immune response to infection</span>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="results-section" class="results-section">
+            <div class="results-header">
+                <h3>Search Results</h3>
+                <span id="result-count" class="result-count"></span>
+            </div>
+            <div id="results-container">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+
+        <!-- Analysis Section -->
+        <div id="analysis-section" class="analysis-section">
+            <div class="analysis-header">
+                <h3>
+                    <span>GPT-4 Analysis</span>
+                    <span class="ai-badge">AI-POWERED</span>
+                </h3>
+                <button class="btn-export" onclick="exportAnalysis()">
+                    📥 Export Report
+                </button>
+            </div>
+
+            <div class="analysis-content" id="analysis-content">
+                <!-- Populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Module -->
+    <script src="/static/js/auth.js"></script>
+
+    <!-- Dashboard JavaScript -->
+    <script>
+        // Require authentication
+        if (!requireAuth()) {
+            // Will redirect to login
+        }
+
+        // Display user profile
+        async function loadUserProfile() {
+            const user = await getCurrentUser();
+            if (user) {
+                document.getElementById('user-profile').innerHTML = `
+                    <span class="user-name">👋 ${user.name}</span>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
+                `;
+                document.getElementById('user-profile').style.display = 'flex';
+            }
+        }
+
+        // Initialize
+        loadUserProfile();
+
+        // Search state
+        let currentResults = [];
+        let selectedDataset = null;
+
+        // Use example query
+        function useExample(element) {
+            document.getElementById('search-query').value = element.textContent;
+            performSearch();
+        }
+
+        // Perform search
+        async function performSearch() {
+            const query = document.getElementById('search-query').value.trim();
+            if (!query) return;
+
+            const searchBtn = document.getElementById('search-btn');
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = '<span class="loading"></span> Searching...';
+
+            try {
+                // Call search API
+                const response = await authenticatedFetch('http://localhost:8000/api/agents/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Search failed');
+                }
+
+                const data = await response.json();
+                currentResults = data.results || [];
+
+                // Display results
+                displayResults(currentResults);
+
+                // Show results section
+                document.getElementById('results-section').style.display = 'block';
+
+            } catch (error) {
+                console.error('Search error:', error);
+                alert('Search failed. Please try again.');
+            } finally {
+                searchBtn.disabled = false;
+                searchBtn.textContent = 'Search';
+            }
+        }
+
+        // Display search results
+        function displayResults(results) {
+            const container = document.getElementById('results-container');
+            const countElement = document.getElementById('result-count');
+
+            if (!results || results.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔍</div>
+                        <h4>No datasets found</h4>
+                        <p>Try a different search query</p>
+                    </div>
+                `;
+                countElement.textContent = '0 datasets';
+                return;
+            }
+
+            countElement.textContent = `${results.length} dataset${results.length !== 1 ? 's' : ''} found`;
+
+            container.innerHTML = results.map((dataset, index) => `
+                <div class="dataset-card" onclick="selectDataset(${index})">
+                    <div class="dataset-header">
+                        <div class="dataset-id">${dataset.accession || dataset.id || 'Unknown'}</div>
+                        <span class="quality-badge quality-${getQualityClass(dataset.quality || 0.8)}">
+                            Quality: ${Math.round((dataset.quality || 0.8) * 100)}%
+                        </span>
+                    </div>
+                    <div class="dataset-title">${dataset.title || dataset.description || 'No description available'}</div>
+                    <div class="dataset-meta">
+                        <span class="meta-item">🧬 ${dataset.organism || 'Unknown organism'}</span>
+                        <span class="meta-item">🔬 ${dataset.platform || 'Unknown platform'}</span>
+                        <span class="meta-item">📊 ${dataset.samples || dataset.sample_count || 'N/A'} samples</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Get quality class
+        function getQualityClass(score) {
+            if (score >= 0.8) return 'high';
+            if (score >= 0.6) return 'medium';
+            return 'low';
+        }
+
+        // Select dataset for analysis
+        async function selectDataset(index) {
+            selectedDataset = currentResults[index];
+
+            // Highlight selected
+            document.querySelectorAll('.dataset-card').forEach((card, i) => {
+                if (i === index) {
+                    card.classList.add('selected');
+                } else {
+                    card.classList.remove('selected');
+                }
+            });
+
+            // Request GPT-4 analysis
+            await analyzeDataset(selectedDataset);
+        }
+
+        // Analyze dataset with GPT-4
+        async function analyzeDataset(dataset) {
+            const analysisSection = document.getElementById('analysis-section');
+            const analysisContent = document.getElementById('analysis-content');
+
+            analysisSection.style.display = 'block';
+            
+            // Show loading skeleton
+            analysisContent.innerHTML = `
+                <div class="analysis-card skeleton" style="height: 150px;"></div>
+                <div class="analysis-card skeleton" style="height: 200px;"></div>
+                <div class="analysis-card skeleton" style="height: 180px;"></div>
+            `;
+
+            try {
+                // Call analysis API
+                const response = await authenticatedFetch('http://localhost:8000/api/agents/analysis', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        dataset_id: dataset.accession || dataset.id,
+                        metadata: dataset
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Analysis failed');
+                }
+
+                const analysis = await response.json();
+
+                // Display analysis
+                displayAnalysis(analysis, dataset);
+
+            } catch (error) {
+                console.error('Analysis error:', error);
+                analysisContent.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">⚠️</div>
+                        <h4>Analysis failed</h4>
+                        <p>Please try again</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Display GPT-4 analysis
+        function displayAnalysis(analysis, dataset) {
+            const content = document.getElementById('analysis-content');
+
+            const summary = analysis.summary || analysis.analysis || 'No analysis available';
+            const findings = analysis.key_findings || analysis.findings || [];
+            const recommendations = analysis.recommendations || [];
+            const scores = analysis.scores || {
+                relevance: dataset.quality || 0.85,
+                quality: dataset.quality || 0.85,
+                confidence: 0.90
+            };
+
+            content.innerHTML = `
+                <!-- Quality Scores -->
+                <div class="analysis-card">
+                    <h4>📊 Quality Assessment</h4>
+                    <div class="score-grid">
+                        <div class="score-item">
+                            <span class="score-value">${Math.round(scores.relevance * 100)}%</span>
+                            <span class="score-label">Relevance</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-value">${Math.round(scores.quality * 100)}%</span>
+                            <span class="score-label">Quality</span>
+                        </div>
+                        <div class="score-item">
+                            <span class="score-value">${Math.round(scores.confidence * 100)}%</span>
+                            <span class="score-label">Confidence</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Summary -->
+                <div class="analysis-card">
+                    <h4>🤖 AI Summary</h4>
+                    <p class="analysis-text">${summary}</p>
+                </div>
+
+                <!-- Key Findings -->
+                ${findings.length > 0 ? `
+                    <div class="analysis-card">
+                        <h4>🔍 Key Findings</h4>
+                        <ul class="findings-list">
+                            ${findings.map(finding => `<li>${finding}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+
+                <!-- Recommendations -->
+                ${recommendations.length > 0 ? `
+                    <div class="analysis-card">
+                        <h4>💡 Recommendations</h4>
+                        <ul class="findings-list">
+                            ${recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+            `;
+        }
+
+        // Export analysis
+        function exportAnalysis() {
+            if (!selectedDataset) {
+                alert('Please select a dataset first');
+                return;
+            }
+
+            // Create report object
+            const report = {
+                dataset: selectedDataset,
+                analysis: document.getElementById('analysis-content').innerText,
+                timestamp: new Date().toISOString(),
+                user: getUser()
+            };
+
+            // Download as JSON
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `omics-oracle-report-${selectedDataset.accession || 'dataset'}-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Enter key to search
+        document.getElementById('search-query').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+    </script>
+</body>
+</html>

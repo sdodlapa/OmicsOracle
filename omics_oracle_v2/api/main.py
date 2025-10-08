@@ -26,7 +26,7 @@ except ImportError:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from omics_oracle_v2.api.config import APISettings
@@ -196,6 +196,12 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
         app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
         logger.info(f"Mounted static files from {static_dir}")
 
+    # Root redirect
+    @app.get("/", tags=["Dashboard"])
+    async def root():
+        """Redirect to dashboard."""
+        return RedirectResponse(url="/dashboard")
+
     # Authentication UI endpoints
     @app.get("/login", tags=["Dashboard"])
     async def login_page():
@@ -222,7 +228,11 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     # Dashboard endpoint
     @app.get("/dashboard", tags=["Dashboard"])
     async def dashboard():
-        """Serve the web dashboard."""
+        """Serve the web dashboard with authentication and LLM features."""
+        dashboard_path = static_dir / "dashboard_v2.html"
+        if dashboard_path.exists():
+            return FileResponse(dashboard_path)
+        # Fallback to original dashboard
         dashboard_path = static_dir / "dashboard.html"
         if dashboard_path.exists():
             return FileResponse(dashboard_path)
