@@ -468,10 +468,10 @@
             </div>
 
             <div class="search-bar">
-                <input 
-                    type="text" 
-                    id="search-query" 
-                    class="search-input" 
+                <input
+                    type="text"
+                    id="search-query"
+                    class="search-input"
                     placeholder="e.g., breast cancer gene expression in human tissues"
                     autocomplete="off"
                 >
@@ -563,11 +563,15 @@
             searchBtn.innerHTML = '<span class="loading"></span> Searching...';
 
             try {
-                // Call search API
+                // Call search API with correct format
                 const response = await authenticatedFetch('http://localhost:8000/api/agents/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ query: query })
+                    body: JSON.stringify({
+                        search_terms: [query],
+                        max_results: 20,
+                        enable_semantic: false
+                    })
                 });
 
                 if (!response.ok) {
@@ -575,7 +579,7 @@
                 }
 
                 const data = await response.json();
-                currentResults = data.results || [];
+                currentResults = data.datasets || [];
 
                 // Display results
                 displayResults(currentResults);
@@ -614,16 +618,16 @@
             container.innerHTML = results.map((dataset, index) => `
                 <div class="dataset-card" onclick="selectDataset(${index})">
                     <div class="dataset-header">
-                        <div class="dataset-id">${dataset.accession || dataset.id || 'Unknown'}</div>
-                        <span class="quality-badge quality-${getQualityClass(dataset.quality || 0.8)}">
-                            Quality: ${Math.round((dataset.quality || 0.8) * 100)}%
+                        <div class="dataset-id">${dataset.geo_id || 'Unknown'}</div>
+                        <span class="quality-badge quality-${getQualityClass(dataset.relevance_score || 0.5)}">
+                            Relevance: ${Math.round((dataset.relevance_score || 0.5) * 100)}%
                         </span>
                     </div>
-                    <div class="dataset-title">${dataset.title || dataset.description || 'No description available'}</div>
+                    <div class="dataset-title">${dataset.title || 'No description available'}</div>
                     <div class="dataset-meta">
                         <span class="meta-item">🧬 ${dataset.organism || 'Unknown organism'}</span>
                         <span class="meta-item">🔬 ${dataset.platform || 'Unknown platform'}</span>
-                        <span class="meta-item">📊 ${dataset.samples || dataset.sample_count || 'N/A'} samples</span>
+                        <span class="meta-item">📊 ${dataset.sample_count || 'N/A'} samples</span>
                     </div>
                 </div>
             `).join('');
@@ -659,7 +663,7 @@
             const analysisContent = document.getElementById('analysis-content');
 
             analysisSection.style.display = 'block';
-            
+
             // Show loading skeleton
             analysisContent.innerHTML = `
                 <div class="analysis-card skeleton" style="height: 150px;"></div>
@@ -672,7 +676,7 @@
                 const response = await authenticatedFetch('http://localhost:8000/api/agents/analysis', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
+                    body: JSON.stringify({
                         dataset_id: dataset.accession || dataset.id,
                         metadata: dataset
                     })
