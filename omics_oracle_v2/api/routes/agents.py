@@ -556,7 +556,7 @@ async def analyze_datasets(
     - Provide scientific context and insights
     - Recommend which datasets to use for specific research goals
 
-    **Note:** Requires OpenAI API key to be configured (OMICS_AI_OPENAI_API_KEY)
+    **Note:** Requires OpenAI API key to be configured (OPENAI_API_KEY)
 
     Args:
         request: Analysis request with datasets and query context
@@ -578,7 +578,7 @@ async def analyze_datasets(
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="AI analysis unavailable: OpenAI API key not configured. "
-                "Set OMICS_AI_OPENAI_API_KEY environment variable.",
+                "Set OPENAI_API_KEY environment variable.",
             )
 
         # Initialize AI client

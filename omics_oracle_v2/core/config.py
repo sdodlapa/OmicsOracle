@@ -26,7 +26,7 @@ Environment Variables:
     OMICS_GEO_CACHE_TTL=3600
     OMICS_GEO_MAX_RETRIES=3
 
-    OMICS_AI_OPENAI_API_KEY=your_key
+    OPENAI_API_KEY=your_key
     OMICS_AI_MODEL=gpt-4
     OMICS_AI_MAX_TOKENS=1000
     OMICS_AI_TEMPERATURE=0.7
@@ -86,15 +86,26 @@ class GEOSettings(BaseSettings):
 class AISettings(BaseSettings):
     """Configuration for AI services."""
 
-    openai_api_key: Optional[str] = Field(default=None, description="OpenAI API key for summarization")
-    model: str = Field(default="gpt-4", description="OpenAI model to use")
-    max_tokens: int = Field(default=1000, ge=1, le=32000, description="Maximum tokens in response")
-    temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="Sampling temperature")
-    timeout: int = Field(default=60, ge=1, le=300, description="Request timeout in seconds")
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+        extra="ignore",
+    )
 
-    class Config:
-        env_prefix = "OMICS_AI_"
-        case_sensitive = False
+    openai_api_key: Optional[str] = Field(
+        default=None, description="OpenAI API key for summarization", env="OPENAI_API_KEY"
+    )
+    model: str = Field(default="gpt-4", description="OpenAI model to use", env="OMICS_AI_MODEL")
+    max_tokens: int = Field(
+        default=1000, ge=1, le=32000, description="Maximum tokens in response", env="OMICS_AI_MAX_TOKENS"
+    )
+    temperature: float = Field(
+        default=0.7, ge=0.0, le=2.0, description="Sampling temperature", env="OMICS_AI_TEMPERATURE"
+    )
+    timeout: int = Field(
+        default=60, ge=1, le=300, description="Request timeout in seconds", env="OMICS_AI_TIMEOUT"
+    )
 
 
 class RedisSettings(BaseSettings):

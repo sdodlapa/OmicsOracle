@@ -587,7 +587,7 @@ class TestSummarizationClientIntegration:
 
     def test_real_summarization(self, sample_metadata):
         """Test real summarization with OpenAI API."""
-        # Only runs if OMICS_AI_OPENAI_API_KEY is set
+        # Only runs if OPENAI_API_KEY is set
         settings = Settings()
         if not settings.ai.openai_api_key:
             pytest.skip("OpenAI API key not configured")

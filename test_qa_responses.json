@@ -1,0 +1,5 @@
+[
+  "1 validation error for ErrorResponse\nmessage\n  Input should be a valid string [type=string_type, input_value=[{'type': 'missing', 'loc..._explanation': None}]}}], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.9/v/string_type",
+  "1 validation error for ErrorResponse\nmessage\n  Input should be a valid string [type=string_type, input_value=[{'type': 'missing', 'loc..._explanation': None}]}}], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.9/v/string_type",
+  "1 validation error for ErrorResponse\nmessage\n  Input should be a valid string [type=string_type, input_value=[{'type': 'missing', 'loc..._explanation': None}]}}], input_type=list]\n    For further information visit https://errors.pydantic.dev/2.9/v/string_type"
+]
