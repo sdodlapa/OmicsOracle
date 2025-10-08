@@ -178,7 +178,7 @@ print_info "Found $TEST_COUNT test files in root directory"
 
 if [ "$TEST_COUNT" -gt 0 ]; then
     print_info "Creating organized test structure..."
-    
+
     # Create test subdirectories
     mkdir -p tests/integration/day_tests
     mkdir -p tests/unit/cache
@@ -186,13 +186,13 @@ if [ "$TEST_COUNT" -gt 0 ]; then
     mkdir -p tests/unit/pdf
     mkdir -p tests/unit/pipeline
     mkdir -p tests/debug
-    
+
     # Move day test files
     if ls test_day*.py 1> /dev/null 2>&1; then
         print_info "Moving day test files..."
         mv test_day*.py tests/integration/day_tests/ 2>/dev/null || true
     fi
-    
+
     # Move cache test files
     if ls test_*cache*.py 1> /dev/null 2>&1; then
         print_info "Moving cache test files..."
@@ -201,7 +201,7 @@ if [ "$TEST_COUNT" -gt 0 ]; then
     if ls test_redis*.py 1> /dev/null 2>&1; then
         mv test_redis*.py tests/unit/cache/ 2>/dev/null || true
     fi
-    
+
     # Move search test files
     if ls test_*search*.py 1> /dev/null 2>&1; then
         print_info "Moving search test files..."
@@ -216,13 +216,13 @@ if [ "$TEST_COUNT" -gt 0 ]; then
     if ls test_author*.py 1> /dev/null 2>&1; then
         mv test_author*.py tests/unit/search/ 2>/dev/null || true
     fi
-    
+
     # Move PDF test files
     if ls test_pdf*.py 1> /dev/null 2>&1; then
         print_info "Moving PDF test files..."
         mv test_pdf*.py tests/unit/pdf/ 2>/dev/null || true
     fi
-    
+
     # Move pipeline test files
     if ls test_*pipeline*.py 1> /dev/null 2>&1; then
         print_info "Moving pipeline test files..."
@@ -231,7 +231,7 @@ if [ "$TEST_COUNT" -gt 0 ]; then
     if ls test_embedding*.py 1> /dev/null 2>&1; then
         mv test_embedding*.py tests/unit/pipeline/ 2>/dev/null || true
     fi
-    
+
     # Move debug test files
     if ls test_*debug*.py 1> /dev/null 2>&1; then
         print_info "Moving debug test files..."
@@ -240,7 +240,7 @@ if [ "$TEST_COUNT" -gt 0 ]; then
     if ls test_dedup*.py 1> /dev/null 2>&1; then
         mv test_dedup*.py tests/debug/ 2>/dev/null || true
     fi
-    
+
     # Move institutional/config test files
     if ls test_institutional*.py 1> /dev/null 2>&1; then
         mv test_institutional*.py tests/integration/ 2>/dev/null || true
@@ -251,18 +251,18 @@ if [ "$TEST_COUNT" -gt 0 ]; then
     if ls test_enhanced*.py 1> /dev/null 2>&1; then
         mv test_enhanced*.py tests/integration/ 2>/dev/null || true
     fi
-    
+
     # Move async test files
     if ls test_async*.py 1> /dev/null 2>&1; then
         mv test_async*.py tests/integration/ 2>/dev/null || true
     fi
-    
+
     # Move remaining test files to integration
     if ls test_*.py 1> /dev/null 2>&1; then
         print_info "Moving remaining test files to integration..."
         mv test_*.py tests/integration/ 2>/dev/null || true
     fi
-    
+
     print_status "Test files organized"
 else
     print_info "No test files to organize"
@@ -275,7 +275,7 @@ if [ -d "backups" ]; then
     BACKUP_DIR_SIZE=$(du -sh backups 2>/dev/null | cut -f1)
     print_info "Backups directory size: $BACKUP_DIR_SIZE"
     print_info "Moving backups/ to ../omics_oracle_old_backups/"
-    
+
     # Move backups out of repository
     mv backups ../omics_oracle_old_backups_$(date +%Y%m%d) 2>/dev/null || true
     print_status "Backups directory archived outside repository"
@@ -398,7 +398,7 @@ print_status "Old startup scripts archived in scripts/archive/"
 # Create unified startup script if it doesn't exist
 if [ ! -f "scripts/start.sh" ]; then
     print_info "Creating unified startup script..."
-    
+
     cat > scripts/start.sh << 'EOFSCRIPT'
 #!/bin/bash
 # Unified OmicsOracle Startup Script
