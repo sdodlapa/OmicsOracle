@@ -1,368 +1,585 @@
-# 🚀 OmicsOracle Production-Hardened Deployment Guide
+# OmicsOracle Deployment Guide
 
-## Quick Start
+## Table of Contents
 
-### Development
+1. [Prerequisites](#prerequisites)
+2. [Local Development](#local-development)
+3. [Docker Deployment](#docker-deployment)
+4. [Production Deployment](#production-deployment)
+5. [Monitoring](#monitoring)
+6. [Troubleshooting](#troubleshooting)
+
+## Prerequisites
+
+### System Requirements
+
+- **CPU**: 4+ cores recommended
+- **RAM**: 8GB minimum, 16GB recommended
+- **Disk**: 50GB+ for data and models
+- **OS**: Linux (Ubuntu 20.04+), macOS, or Windows with WSL2
+
+### Software Dependencies
+
 ```bash
-# Start development environment
-./scripts/deploy.sh development
+# Python 3.11+
+python --version
 
-# Or manually:
-docker-compose --env-file .env.development up -d
+# Docker & Docker Compose
+docker --version
+docker-compose --version
+
+# Redis (for local dev)
+redis-cli --version
+
+# Git
+git --version
 ```
 
-### Staging
-```bash
-# Deploy to staging
-./scripts/deploy.sh staging
+## Local Development
 
-# With legacy interface
-./scripts/deploy.sh staging --legacy
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/omicsoracle/api.git
+cd api
 ```
 
-### Production
+### 2. Set Up Python Environment
+
 ```bash
-# Setup SSL certificates first (recommended)
-./scripts/setup_ssl.sh --domain your-domain.com --email admin@your-domain.com
+# Create virtual environment
+python -m venv venv
 
-# Deploy to production (with confirmation)
-./scripts/deploy.sh production --legacy
+# Activate (Linux/macOS)
+source venv/bin/activate
 
-# Force deploy without confirmation
-./scripts/deploy.sh production --force
+# Activate (Windows)
+.\venv\Scripts\activate
 
-# Monitor production deployment
-./scripts/monitor.sh watch
+# Install dependencies
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
 ```
 
-## Production Features
-
-### 🔒 Security Hardening
-
-- **SSL/TLS encryption** with automatic Let's Encrypt certificates
-- **Security headers** (HSTS, CSP, X-Frame-Options, etc.)
-- **Rate limiting** on API endpoints and search functionality
-- **Input validation** and sanitization
-- **Secure session management** with encrypted cookies
-- **Database connection security** with encrypted connections
-
-### 📊 Monitoring & Alerting
-
-- **Real-time health monitoring** with automatic checks
-- **Performance metrics** collection and display
-- **Resource usage monitoring** (CPU, memory, disk)
-- **Automated alerting** via email for critical issues
-- **Comprehensive logging** with rotation and retention
-- **Interactive monitoring dashboard** for production
-
-### 🚀 Performance Optimization
-
-- **Nginx reverse proxy** with caching and compression
-- **Connection pooling** for database connections
-- **Redis caching** for improved response times
-- **Static file optimization** with aggressive caching
-- **Load balancing** ready for multi-instance deployment
-
-### 🔄 Deployment Automation
-
-- **Zero-downtime deployments** with health checks
-- **Automatic rollback** on deployment failures
-- **Environment-specific configurations** with validation
-- **Pre-deployment testing** with comprehensive test suite
-- **Backup automation** before production deployments
-
-## Environment Configurations
-
-| Environment | Database | Profiles | Purpose | Features |
-|-------------|----------|----------|---------|----------|
-| `development` | MongoDB | `default,dev,frontend,jupyter` | Local development | Hot reload, debug tools |
-| `staging` | PostgreSQL | `default,legacy` | Testing deployment | Production-like testing |
-| `production` | PostgreSQL | `production,legacy` | Live deployment | SSL, monitoring, backups |
-
-## Available Services
-
-### Core Services (Always Available)
-
-- **Main Interface** (Port 8001): Futuristic interface
-- **Redis**: Caching and session storage
-
-### Profile-Based Services
-
-- **Legacy Interface** (Port 8000): `legacy` profile
-- **MongoDB** (Port 27017): `dev` profile
-- **PostgreSQL** (Port 5432): `production` profile
-- **Frontend** (Port 3000): `frontend` profile
-- **Jupyter** (Port 8888): `jupyter` profile
-- **Nginx** (Port 80/443): `production` profile
-
-## SSL Certificate Setup
-
-### Automatic Let's Encrypt Certificate (Recommended)
+### 3. Configure Environment
 
 ```bash
-# Setup SSL with Let's Encrypt
-./scripts/setup_ssl.sh --domain your-domain.com --email admin@your-domain.com
+# Copy example environment file
+cp .env.example .env
 
-# For testing with staging certificates
-./scripts/setup_ssl.sh --domain your-domain.com --email admin@your-domain.com --staging
+# Edit configuration
+nano .env
 ```
 
-### Self-Signed Certificate (Development)
+Required environment variables:
 
 ```bash
-# Generate self-signed certificate for localhost
-./scripts/setup_ssl.sh --domain localhost --type self-signed
+# API Configuration
+API_HOST=0.0.0.0
+API_PORT=8000
+API_WORKERS=4
+
+# Database
+DATABASE_URL=postgresql://user:pass@localhost:5432/omicsoracle
+
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+
+# ML Models
+ML_MODELS_PATH=./models
+EMBEDDING_MODEL=allenai/scibert_scivocab_uncased
+
+# External APIs
+PUBMED_API_KEY=your-key-here
+SEMANTIC_SCHOLAR_API_KEY=your-key-here
+
+# Logging
+LOG_LEVEL=INFO
+LOG_FORMAT=json
 ```
 
-### Custom Certificate
+### 4. Initialize Database
 
 ```bash
-# Use your own SSL certificate
-./scripts/setup_ssl.sh --domain your-domain.com --type custom \
-  --custom-cert /path/to/cert.pem \
-  --custom-key /path/to/key.pem \
-  --custom-chain /path/to/chain.pem
+# Run migrations
+alembic upgrade head
+
+# Create initial data
+python create_sample_datasets.py
 ```
 
-## Production Monitoring
-
-### Real-time Monitoring
+### 5. Start Redis
 
 ```bash
-# Continuous monitoring with auto-refresh
-./scripts/monitor.sh watch
+# Linux/macOS
+redis-server
 
-# Check current status
-./scripts/monitor.sh status
-
-# Detailed performance metrics
-./scripts/monitor.sh metrics
-
-# Check for alerts
-./scripts/monitor.sh alerts
+# Or with Docker
+docker run -d -p 6379:6379 redis:7-alpine
 ```
 
-### Monitoring Dashboard
+### 6. Run Development Server
 
 ```bash
-# Open web-based monitoring dashboard
-./scripts/monitor.sh dashboard
+# Standard mode
+uvicorn omics_oracle_v2.api.main:app --reload --host 0.0.0.0 --port 8000
+
+# With auto-reload
+./start_dev_server.sh
 ```
 
-### Alert Configuration
+Access the API:
+- API: http://localhost:8000
+- Docs: http://localhost:8000/docs
+- Health: http://localhost:8000/health/
+
+## Docker Deployment
+
+### Development with Docker Compose
 
 ```bash
-# Monitor with custom thresholds and email alerts
-./scripts/monitor.sh watch \
-  --threshold-cpu 85 \
-  --threshold-mem 90 \
-  --email admin@your-domain.com
+# Build and start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f api
+
+# Stop services
+docker-compose down
 ```
 
-## Configuration Files
+Services included:
+- API server (port 8000)
+- Redis (port 6379)
+- PostgreSQL (port 5432)
 
-- `.env.development` - Development settings
-- `.env.staging` - Staging settings
-- `.env.production` - Production settings
-- `.env.production.template` - Production configuration template
-- `docker-compose.yml` - Unified compose file
-- `config/nginx.conf` - Basic Nginx configuration
-- `config/nginx.ssl.conf` - Production SSL Nginx configuration
-
-## Manual Commands
-
-### Start specific profiles
+### Production with Docker Compose
 
 ```bash
-# Development with all optional services
-COMPOSE_PROFILES=default,dev,frontend,jupyter docker-compose up -d
+# Build production image
+docker-compose -f docker-compose.prod.yml build
 
-# Production setup with SSL
-COMPOSE_PROFILES=production,legacy docker-compose --env-file .env.production up -d
+# Start services
+docker-compose -f docker-compose.prod.yml up -d
 
-# Minimal setup (just main interface + redis)
-docker-compose --env-file .env.development up -d omics-oracle redis
+# Check health
+curl http://localhost:8000/health/ready
 ```
 
-### Health checks
+Services included:
+- API server with health checks
+- Redis with persistence
+- Prometheus (port 9090)
+- Grafana (port 3000)
+
+### Custom Docker Build
 
 ```bash
-# Check futuristic interface
-curl http://localhost:8001/api/v2/health
+# Build image
+docker build -f Dockerfile.production -t omicsoracle/api:v1.0.0 .
 
-# Check legacy interface
-curl http://localhost:8000/health
+# Run container
+docker run -d \
+  --name omicsoracle-api \
+  -p 8000:8000 \
+  -e DATABASE_URL=postgresql://... \
+  -e REDIS_HOST=redis \
+  --restart unless-stopped \
+  omicsoracle/api:v1.0.0
 
-# Check with SSL
-curl https://your-domain.com/api/v2/health
+# View logs
+docker logs -f omicsoracle-api
 ```
 
-### View logs
+## Production Deployment
+
+### 1. Server Setup (Ubuntu 20.04+)
 
 ```bash
+# Update system
+sudo apt update && sudo apt upgrade -y
+
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+
+# Install Docker Compose
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
+  -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+# Install Nginx (reverse proxy)
+sudo apt install nginx -y
+```
+
+### 2. Configure Nginx
+
+```bash
+sudo nano /etc/nginx/sites-available/omicsoracle
+```
+
+```nginx
+upstream omicsoracle_api {
+    server localhost:8000;
+}
+
+server {
+    listen 80;
+    server_name api.omicsoracle.com;
+
+    # Redirect to HTTPS
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name api.omicsoracle.com;
+
+    # SSL certificates
+    ssl_certificate /etc/letsencrypt/live/api.omicsoracle.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/api.omicsoracle.com/privkey.pem;
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
+    limit_req zone=api_limit burst=20 nodelay;
+
+    location / {
+        proxy_pass http://omicsoracle_api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Health check (no auth required)
+    location /health/ {
+        proxy_pass http://omicsoracle_api;
+        access_log off;
+    }
+
+    # Metrics (restrict access)
+    location /metrics {
+        deny all;
+        return 403;
+    }
+}
+```
+
+Enable site:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/omicsoracle /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 3. SSL Certificate (Let's Encrypt)
+
+```bash
+# Install certbot
+sudo apt install certbot python3-certbot-nginx -y
+
+# Obtain certificate
+sudo certbot --nginx -d api.omicsoracle.com
+
+# Auto-renewal
+sudo certbot renew --dry-run
+```
+
+### 4. Deploy Application
+
+```bash
+# Create application directory
+sudo mkdir -p /opt/omics-oracle
+cd /opt/omics-oracle
+
+# Clone repository
+git clone https://github.com/omicsoracle/api.git .
+
+# Set up environment
+sudo nano .env.production
+
+# Start services
+docker-compose -f docker-compose.prod.yml up -d
+
+# Check status
+docker-compose -f docker-compose.prod.yml ps
+```
+
+### 5. Database Migration
+
+```bash
+# Run migrations
+docker-compose -f docker-compose.prod.yml exec api \
+  alembic upgrade head
+
+# Verify
+docker-compose -f docker-compose.prod.yml exec api \
+  python -c "from omics_oracle_v2.lib.db import get_db; print('DB OK')"
+```
+
+### 6. Systemd Service (Alternative)
+
+```bash
+sudo nano /etc/systemd/system/omicsoracle.service
+```
+
+```ini
+[Unit]
+Description=OmicsOracle API
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/omics-oracle
+ExecStart=/usr/local/bin/docker-compose -f docker-compose.prod.yml up -d
+ExecStop=/usr/local/bin/docker-compose -f docker-compose.prod.yml down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable service:
+
+```bash
+sudo systemctl enable omicsoracle
+sudo systemctl start omicsoracle
+sudo systemctl status omicsoracle
+```
+
+## Monitoring
+
+### Prometheus Metrics
+
+Access metrics:
+```bash
+curl http://localhost:9090/metrics
+```
+
+Key metrics:
+- `http_requests_total`: Total HTTP requests
+- `http_request_duration_seconds`: Request latency
+- `redis_cache_hits_total`: Cache hit rate
+- `ml_predictions_total`: ML prediction count
+
+### Grafana Dashboards
+
+1. Access Grafana: http://localhost:3000
+2. Login: admin/admin (change on first login)
+3. Add Prometheus datasource:
+   - URL: http://prometheus:9090
+   - Save & Test
+4. Import dashboard: Upload `config/grafana/dashboards/omicsoracle.json`
+
+### Health Checks
+
+```bash
+# Basic health
+curl -H "X-API-Key: your-key" http://localhost:8000/health/
+
+# Detailed health
+curl -H "X-API-Key: your-key" http://localhost:8000/health/detailed
+
+# Readiness (K8s)
+curl http://localhost:8000/health/ready
+
+# Liveness (K8s)
+curl http://localhost:8000/health/live
+```
+
+### Logging
+
+View logs:
+
+```bash
+# API logs
+docker-compose -f docker-compose.prod.yml logs -f api
+
 # All services
-docker-compose logs -f
+docker-compose -f docker-compose.prod.yml logs -f
 
-# Specific service
-docker-compose logs -f omics-oracle
+# Specific time range
+docker-compose -f docker-compose.prod.yml logs --since 1h api
 
-# Nginx access logs
-docker-compose exec nginx tail -f /var/log/nginx/access.log
+# Save logs
+docker-compose -f docker-compose.prod.yml logs --no-color > logs.txt
 ```
 
-### Backup and Maintenance
+Log format (JSON):
 
-```bash
-# Create manual backup
-./scripts/deploy.sh production --skip-tests
-
-# Clean up old logs and resources
-./scripts/monitor.sh cleanup
-
-# Rollback to previous deployment
-./scripts/deploy.sh production --rollback
+```json
+{
+  "timestamp": "2024-01-15T10:30:00Z",
+  "level": "INFO",
+  "logger": "omics_oracle_v2.api",
+  "message": "Request processed",
+  "request_id": "abc-123",
+  "duration_ms": 45.2
+}
 ```
-
-## Environment Variables
-
-### Required for Production
-
-```bash
-POSTGRES_PASSWORD=secure_password
-JWT_SECRET_KEY=secure_jwt_secret
-OPENAI_API_KEY=your_openai_key
-NCBI_API_KEY=your_ncbi_key
-NCBI_EMAIL=your_email@example.com
-```
-
-### Optional Customization
-
-```bash
-MAIN_PORT=8001          # Futuristic interface port
-LEGACY_PORT=8000        # Legacy interface port
-REDIS_PORT=6379         # Redis port
-POSTGRES_PORT=5432      # PostgreSQL port
-HTTP_PORT=80            # Nginx HTTP port
-HTTPS_PORT=443          # Nginx HTTPS port
-```
-
-### Security Configuration
-
-```bash
-# SSL/TLS Settings
-SSL_CERT_PATH=/app/config/ssl/cert.pem
-SSL_KEY_PATH=/app/config/ssl/key.pem
-
-# Rate Limiting
-RATE_LIMIT_PER_MINUTE=60
-RATE_LIMIT_BURST=20
-
-# CORS Settings
-CORS_ORIGINS=https://your-domain.com
-ALLOWED_HOSTS=your-domain.com,www.your-domain.com
-```
-
-## Production Deployment Checklist
-
-### Pre-Deployment
-
-- [ ] Configure production environment variables (`.env.production`)
-- [ ] Setup SSL certificates (`./scripts/setup_ssl.sh`)
-- [ ] Review security settings and passwords
-- [ ] Test staging deployment
-- [ ] Backup existing production data
-
-### Deployment
-
-- [ ] Deploy to production (`./scripts/deploy.sh production`)
-- [ ] Verify all services are healthy
-- [ ] Test SSL certificate and HTTPS access
-- [ ] Check monitoring dashboard
-- [ ] Verify API endpoints are working
-
-### Post-Deployment
-
-- [ ] Monitor application performance
-- [ ] Check error logs for issues
-- [ ] Test user-facing functionality
-- [ ] Verify backup systems are working
-- [ ] Document any issues or changes
 
 ## Troubleshooting
 
-### Common Issues
+### Issue: API Not Starting
 
-**SSL Certificate Issues:**
 ```bash
-# Check certificate status
-openssl x509 -in config/ssl/omics_oracle.crt -text -noout
+# Check logs
+docker-compose logs api
 
-# Verify certificate chain
-openssl verify -CAfile config/ssl/omics_oracle_chain.crt config/ssl/omics_oracle.crt
+# Common causes:
+# 1. Port already in use
+sudo lsof -i :8000
+
+# 2. Missing environment variables
+docker-compose config
+
+# 3. Database connection
+docker-compose exec api python -c "from omics_oracle_v2.lib.db import test_connection; test_connection()"
 ```
 
-**Service Health Issues:**
+### Issue: Redis Connection Failed
+
 ```bash
-# Check container logs
-docker-compose logs omics-oracle
+# Check Redis status
+docker-compose exec redis redis-cli ping
 
-# Check resource usage
-./scripts/monitor.sh metrics
+# Test from API
+docker-compose exec api python -c "import redis; r=redis.Redis(host='redis'); print(r.ping())"
 
-# Restart specific service
-docker-compose restart omics-oracle
+# Check network
+docker-compose exec api ping redis
 ```
 
-**Performance Issues:**
+### Issue: Out of Memory
+
 ```bash
-# Monitor resource usage
-./scripts/monitor.sh watch
+# Check memory usage
+docker stats
+
+# Increase container memory
+# Edit docker-compose.prod.yml:
+services:
+  api:
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+```
+
+### Issue: Slow Responses
+
+```bash
+# Check cache hit rate
+docker-compose exec redis redis-cli INFO stats | grep keyspace
 
 # Check database connections
-docker-compose exec postgres psql -U postgres -c "SELECT count(*) FROM pg_stat_activity;"
+docker-compose exec api python -c "from omics_oracle_v2.lib.db import check_pool; check_pool()"
 
-# Clear Redis cache
-docker-compose exec redis redis-cli FLUSHALL
+# Profile request
+curl -w "@curl-format.txt" -H "X-API-Key: key" http://localhost:8000/api/search?query=test
 ```
 
-### Emergency Procedures
+### Issue: SSL Certificate Errors
 
-**Rollback Deployment:**
 ```bash
-./scripts/deploy.sh production --rollback --force
+# Renew certificate
+sudo certbot renew
+
+# Check expiration
+sudo certbot certificates
+
+# Force renewal
+sudo certbot renew --force-renewal
 ```
 
-**Emergency Maintenance Mode:**
+## Backup & Recovery
+
+### Database Backup
+
 ```bash
-# Stop all services except Nginx (shows maintenance page)
-docker-compose stop omics-oracle omics-oracle-legacy
+# Backup
+docker-compose exec postgres pg_dump -U omicsoracle omicsoracle > backup.sql
+
+# Restore
+cat backup.sql | docker-compose exec -T postgres psql -U omicsoracle omicsoracle
 ```
 
-**Quick Recovery:**
+### Redis Backup
+
 ```bash
-# Restart all services
-docker-compose restart
+# Trigger save
+docker-compose exec redis redis-cli SAVE
 
-# Force rebuild and restart
-docker-compose down && ./scripts/deploy.sh production --force
+# Copy RDB file
+docker cp omicsoracle_redis_1:/data/dump.rdb ./redis-backup.rdb
+
+# Restore
+docker cp redis-backup.rdb omicsoracle_redis_1:/data/dump.rdb
+docker-compose restart redis
 ```
 
-## Removed Redundancy
+## Updates & Maintenance
 
-### Consolidated Files
+### Update Application
 
-- ✅ **Single docker-compose.yml** (was: docker-compose.yml + docker-compose.production.yml)
-- ✅ **Enhanced Dockerfile** (was: Dockerfile + Dockerfile.production)
-- ✅ **Unified deploy.sh** (was: deploy.sh + deploy_to_all_remotes.sh)
-- ✅ **Environment-specific configs** (.env.development, .env.staging, .env.production)
+```bash
+# Pull latest code
+git pull origin main
 
-### Benefits
+# Rebuild images
+docker-compose -f docker-compose.prod.yml build
 
-- 🎯 **Single source of truth** for deployment configuration
-- 🔧 **Environment-specific customization** without duplication
-- 📦 **Profile-based services** (optional components)
-- 🚀 **Simplified deployment** with one script for all environments
-- 🧹 **Reduced maintenance** overhead
-- 🔒 **Production hardening** with security, monitoring, and performance optimization
-- 📊 **Comprehensive monitoring** with real-time dashboards and alerting
-- 🔄 **Automated deployment** with rollback capabilities
+# Apply migrations
+docker-compose -f docker-compose.prod.yml exec api alembic upgrade head
+
+# Rolling restart
+docker-compose -f docker-compose.prod.yml up -d --no-deps api
+```
+
+### Zero-Downtime Deployment
+
+```bash
+# Scale up
+docker-compose -f docker-compose.prod.yml up -d --scale api=2
+
+# Update one instance
+docker-compose -f docker-compose.prod.yml up -d --no-deps --scale api=2 api
+
+# Scale down
+docker-compose -f docker-compose.prod.yml up -d --scale api=1
+```
+
+## Security Checklist
+
+- [ ] Change default passwords
+- [ ] Enable SSL/TLS
+- [ ] Configure firewall (ufw/iptables)
+- [ ] Set up API key rotation
+- [ ] Enable rate limiting
+- [ ] Regular security updates
+- [ ] Monitor access logs
+- [ ] Backup encryption keys
+- [ ] Implement CORS policies
+- [ ] Use secrets management (Vault, AWS Secrets Manager)
+
+## Support
+
+- Documentation: https://docs.omicsoracle.com
+- Issues: https://github.com/omicsoracle/api/issues
+- Email: support@omicsoracle.com

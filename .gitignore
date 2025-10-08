@@ -94,3 +94,97 @@ MagicMock/
 # OS
 .DS_Store
 Thumbs.db
+
+# === Cleanup Script Additions (venv preserved) ===
+
+# Compiled Python files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Backups
+backups/
+*.backup
+*.bak
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test outputs
+.pytest_cache/
+.coverage
+htmlcov/
+test-reports/
+*.log
+
+# Data files (keep structure, ignore content)
+data/*.db
+data/*.sqlite
+data/*.csv
+data/downloads/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+
+# === Cleanup Script Additions (venv preserved) ===
+
+# Compiled Python files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Backups
+backups/
+*.backup
+*.bak
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test outputs
+.pytest_cache/
+.coverage
+htmlcov/
+test-reports/
+*.log
+
+# Data files (keep structure, ignore content)
+data/*.db
+data/*.sqlite
+data/*.csv
+data/downloads/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
