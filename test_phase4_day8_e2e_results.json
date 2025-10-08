@@ -1,0 +1,79 @@
+{
+  "test_suite": "Phase 4 Day 8 - End-to-End Testing",
+  "timestamp": "2025-10-08T15:13:14.939813",
+  "summary": {
+    "total": 11,
+    "passed": 8,
+    "failed": 3,
+    "skipped": 0,
+    "pass_rate": 72.72727272727273
+  },
+  "tests": [
+    {
+      "name": "Server Health",
+      "passed": false,
+      "message": "",
+      "duration_ms": 5141.726970672607
+    },
+    {
+      "name": "User Registration",
+      "passed": true,
+      "message": "User: test1759950764@omicsoracle.com",
+      "duration_ms": 3726.2630462646484
+    },
+    {
+      "name": "User Login",
+      "passed": true,
+      "message": "Token acquired",
+      "duration_ms": 294.6019172668457
+    },
+    {
+      "name": "User Profile",
+      "passed": true,
+      "message": "Email: test1759950764@omicsoracle.com",
+      "duration_ms": 50.86112022399902
+    },
+    {
+      "name": "Query Agent",
+      "passed": false,
+      "message": "",
+      "duration_ms": 5045.338153839111
+    },
+    {
+      "name": "Search Agent",
+      "passed": true,
+      "message": "Found 5 datasets",
+      "duration_ms": 3685.296058654785
+    },
+    {
+      "name": "Data Agent",
+      "passed": false,
+      "message": "Status: 404",
+      "duration_ms": 39.974212646484375
+    },
+    {
+      "name": "Analysis Agent",
+      "passed": true,
+      "message": "Analysis generated",
+      "duration_ms": 17508.35394859314
+    },
+    {
+      "name": "Protected Route (no token)",
+      "passed": true,
+      "message": "Correctly rejected unauthorized access",
+      "duration_ms": 42.89817810058594
+    },
+    {
+      "name": "Protected Route (with token)",
+      "passed": true,
+      "message": "Access granted",
+      "duration_ms": 55.29427528381348
+    },
+    {
+      "name": "Performance Benchmarks",
+      "passed": true,
+      "message": "3 benchmarks run",
+      "duration_ms": 0
+    }
+  ]
+}
