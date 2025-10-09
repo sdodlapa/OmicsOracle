@@ -42,7 +42,13 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
     by relevance, and applies user-specified filters.
     """
 
-    def __init__(self, settings: Settings, enable_semantic: bool = False, enable_publications: bool = False):
+    def __init__(
+        self,
+        settings: Settings,
+        enable_semantic: bool = False,
+        enable_publications: bool = False,
+        enable_query_preprocessing: bool = True,
+    ):
         """
         Initialize Search Agent.
 
@@ -50,15 +56,18 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             settings: Application settings
             enable_semantic: Enable semantic search with AdvancedSearchPipeline
             enable_publications: Enable publications search with PublicationSearchPipeline
+            enable_query_preprocessing: Enable query preprocessing with synonym expansion (Phase 2B)
         """
         super().__init__(settings)
         self._geo_client: GEOClient = None
         self._ranker = KeywordRanker(settings.ranking)
         self._enable_semantic = enable_semantic
         self._enable_publications = enable_publications
+        self._enable_query_preprocessing = enable_query_preprocessing
         self._semantic_pipeline: Optional[AdvancedSearchPipeline] = None
         self._semantic_index_loaded = False
         self._publication_pipeline = None
+        self._preprocessing_pipeline = None
 
     def _initialize_resources(self) -> None:
         """Initialize the GEO client and optionally semantic search."""
@@ -76,6 +85,11 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             if self._enable_publications:
                 logger.info("Initializing PublicationSearchPipeline for publication search")
                 self._initialize_publication_search()
+
+            # Initialize query preprocessing if enabled (Phase 2B)
+            if self._enable_query_preprocessing:
+                logger.info("Initializing query preprocessing with synonym expansion")
+                self._initialize_query_preprocessing()
         except Exception as e:
             raise AgentExecutionError(f"Failed to initialize resources: {e}") from e
 
@@ -93,6 +107,10 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
         if self._publication_pipeline:
             logger.info("Cleaning up publication search pipeline")
             self._publication_pipeline = None
+
+        if self._preprocessing_pipeline:
+            logger.info("Cleaning up query preprocessing pipeline")
+            self._preprocessing_pipeline = None
 
     def _run_async(self, coro):
         """
@@ -208,9 +226,41 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             logger.info("Using traditional GEO search")
             context.set_metric("search_mode", "keyword")
 
-            # 1. Execute search with GEO client
+            # 1. Preprocess query with NER + synonym expansion (Phase 2B)
+            preprocessed_query = None
+            entities_by_type = {}
+
+            if self._preprocessing_pipeline and input_data.original_query:
+                logger.info(f"Preprocessing query: {input_data.original_query}")
+                try:
+                    preprocessed = self._preprocessing_pipeline._preprocess_query(input_data.original_query)
+                    preprocessed_query = preprocessed.get("expanded", input_data.original_query)
+                    entities_by_type = preprocessed.get("entities", {})
+
+                    if preprocessed_query != input_data.original_query:
+                        logger.info(f"Query expanded: {input_data.original_query} -> {preprocessed_query}")
+                        context.set_metric("query_preprocessing", "enabled")
+                        context.set_metric("original_query", input_data.original_query)
+                        context.set_metric("expanded_query", preprocessed_query)
+                    else:
+                        context.set_metric("query_preprocessing", "no_expansion")
+                except Exception as e:
+                    logger.warning(f"Query preprocessing failed: {e}. Using original query.")
+                    preprocessed_query = input_data.original_query
+                    context.set_metric("query_preprocessing", "failed")
+            else:
+                preprocessed_query = input_data.original_query
+                context.set_metric("query_preprocessing", "disabled")
+
+            # 2. Build GEO search query
             logger.info(f"Searching GEO with {len(input_data.search_terms)} terms")
-            search_query = self._build_search_query(input_data)
+
+            # Use GEO-optimized query builder if preprocessing provided entities
+            if entities_by_type and preprocessed_query != input_data.original_query:
+                search_query = self._build_geo_query_from_preprocessed(preprocessed_query, entities_by_type)
+            else:
+                search_query = self._build_search_query(input_data)
+
             context.set_metric("search_query", search_query)
 
             # Handle async operations properly
@@ -227,7 +277,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
 
             # Use smart batch fetching with cache awareness (Sprint 1 optimization!)
             # This replaces sequential loop with parallel fetching:
-            # - OLD: 50 × 500ms = 25 seconds (sequential)
+            # - OLD: 50 x 500ms = 25 seconds (sequential)
             # - NEW: ~2.5 seconds (parallel with max_concurrent=10)
             # - CACHED: <100ms (Redis cache hit)
             import time
@@ -356,6 +406,98 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             query = f"({query}) AND {input_data.study_type}[DataSet Type]"
 
         return query
+
+    def _build_geo_query_from_preprocessed(self, expanded_query: str, entities_by_type: dict) -> str:
+        """
+        Build GEO-optimized query from preprocessed/expanded query with entities.
+
+        Uses entity information to build targeted GEO queries with:
+        - Technique terms (from expanded query which already contains synonyms)
+        - Organism filters from entities
+        - Tissue/cell type filters
+        - Disease/phenotype filters
+
+        Args:
+            expanded_query: Query expanded with synonyms (e.g., "RNA-seq OR transcriptome sequencing")
+            entities_by_type: Dictionary of entities grouped by type
+
+        Returns:
+            GEO-optimized query string
+        """
+        from omics_oracle_v2.lib.nlp.models import EntityType
+
+        query_parts = []
+
+        # 1. Use expanded query for techniques (already contains synonyms)
+        # The expanded_query already has technique terms with OR logic
+        technique_entities = entities_by_type.get(EntityType.TECHNIQUE, [])
+        if technique_entities and expanded_query:
+            # The expanded query already has technique synonyms
+            query_parts.append(f"({expanded_query})")
+            logger.info("Added technique query from expanded query")
+
+        # 2. Add organism filter
+        organism_entities = entities_by_type.get(EntityType.ORGANISM, [])
+        if organism_entities:
+            organisms = []
+            for entity in organism_entities:
+                organisms.append(entity.text)
+
+            # Remove duplicates
+            organisms = list(dict.fromkeys(organisms))
+
+            # Build organism filter with GEO [Organism] tag
+            if organisms:
+                organism_query = " OR ".join([f'"{org}"[Organism]' for org in organisms])
+                query_parts.append(f"({organism_query})")
+                logger.info(f"Added organism filter: {organisms}")
+
+        # 3. Add tissue/cell type filter
+        tissue_entities = entities_by_type.get(EntityType.TISSUE, [])
+        cell_entities = entities_by_type.get(EntityType.CELL_TYPE, [])
+        all_tissue_cell = tissue_entities + cell_entities
+
+        if all_tissue_cell:
+            tissue_terms = []
+            for entity in all_tissue_cell:
+                # Quote multi-word terms
+                if " " in entity.text:
+                    tissue_terms.append(f'"{entity.text}"')
+                else:
+                    tissue_terms.append(entity.text)
+
+            # Build OR clause for tissue/cell types
+            if tissue_terms:
+                tissue_query = " OR ".join(tissue_terms)
+                query_parts.append(f"({tissue_query})")
+                logger.info(f"Added tissue/cell filter with {len(tissue_terms)} terms")
+
+        # 4. Add disease/phenotype filter
+        disease_entities = entities_by_type.get(EntityType.DISEASE, [])
+        if disease_entities:
+            disease_terms = []
+            for entity in disease_entities:
+                # Quote multi-word terms
+                if " " in entity.text:
+                    disease_terms.append(f'"{entity.text}"')
+                else:
+                    disease_terms.append(entity.text)
+
+            # Build OR clause for diseases
+            if disease_terms:
+                disease_query = " OR ".join(disease_terms)
+                query_parts.append(f"({disease_query})")
+                logger.info(f"Added disease filter with {len(disease_terms)} terms")
+
+        # 5. Combine all parts with AND logic
+        if query_parts:
+            final_query = " AND ".join(query_parts)
+            logger.info(f"Built GEO query from {len(query_parts)} components")
+            return final_query
+        else:
+            # Fallback to expanded query if no entities found
+            logger.warning("No entities found for GEO query building, using expanded query")
+            return expanded_query
 
     def _apply_filters(
         self, datasets: List[GEOSeriesMetadata], input_data: SearchInput
@@ -618,6 +760,50 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             logger.warning("Semantic search disabled, falling back to keyword search")
             self._enable_semantic = False
             self._semantic_pipeline = None
+
+    def _initialize_query_preprocessing(self) -> None:
+        """
+        Initialize query preprocessing pipeline with synonym expansion (Phase 2B).
+
+        Creates a minimal PublicationSearchPipeline with only preprocessing features enabled.
+        This provides NER + synonym expansion for GEO queries.
+        """
+        try:
+            # Create minimal config for preprocessing only
+            preprocessing_config = PublicationSearchConfig(
+                enable_query_preprocessing=True,  # Phase 1: NER
+                enable_synonym_expansion=True,  # Phase 2B: Synonyms
+                max_synonyms_per_term=10,
+                # Disable all other features (we only need preprocessing)
+                enable_pubmed=False,
+                enable_openalex=False,
+                enable_scholar=False,
+                enable_citations=False,
+                enable_pdf_download=False,
+                enable_fulltext=False,
+                enable_institutional_access=False,
+                enable_cache=False,
+            )
+
+            # Initialize pipeline (only preprocessing components will be initialized)
+            self._preprocessing_pipeline = PublicationSearchPipeline(preprocessing_config)
+
+            # Log stats
+            if (
+                hasattr(self._preprocessing_pipeline, "synonym_expander")
+                and self._preprocessing_pipeline.synonym_expander
+            ):
+                stats = self._preprocessing_pipeline.synonym_expander.stats()
+                logger.info(
+                    f"Query preprocessing initialized: {stats['techniques']} techniques, "
+                    f"{stats['total_terms']} terms, {stats['normalized_lookup']} lookups"
+                )
+            else:
+                logger.info("Query preprocessing initialized (NER only)")
+
+        except Exception as e:
+            logger.warning(f"Failed to initialize query preprocessing: {e}. Falling back to basic search.")
+            self._preprocessing_pipeline = None
 
     def _semantic_search(
         self, query: str, input_data: SearchInput, context: AgentContext
