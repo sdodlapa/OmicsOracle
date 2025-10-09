@@ -276,6 +276,7 @@ class PublicationSearchConfig:
     enable_fulltext: bool = True  # ✅ Week 4 - ENABLED
     enable_institutional_access: bool = True  # ✅ Week 4 - ENABLED
     enable_cache: bool = True  # ✅ Day 26 - Redis caching
+    enable_query_preprocessing: bool = True  # ✅ NEW - Query preprocessing with BiomedicalNER (Oct 9, 2025)
 
     # Component configurations
     pubmed_config: PubMedConfig = field(default_factory=lambda: PubMedConfig(email="sdodl001@odu.edu"))
