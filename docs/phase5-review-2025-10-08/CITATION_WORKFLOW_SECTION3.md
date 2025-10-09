@@ -77,10 +77,10 @@ Send to LLM to analyze usage
 ```
 PDFDownloader.download_batch()
   ↓ Downloads PDFs from multiple sources
-  
+
 FullTextExtractor.extract_text()
   ↓ Extracts text from PDFs
-  
+
 LLMCitationAnalyzer.analyze_citation_context()
   ↓ GPT-4 analyzes:
      - Was dataset reused? (True/False)
@@ -131,7 +131,7 @@ Q&A System:
 
 - DatasetQASystem.suggest_questions() ✅
   - Suggests relevant questions based on data
-  
+
 - DatasetQASystem.get_statistics() ✅
   - Provides stats about dataset usage
 ```
@@ -174,47 +174,47 @@ Q&A System:
 1. Process GEO datasets ✅
    - SearchAgent finds datasets
    - DataAgent assesses quality
-   
+
 2. Get papers citing datasets ✅✅ (ENHANCED)
    - Semantic Scholar: Citation counts
    - Google Scholar: Citing papers list
    - CitationAnalyzer: Citation contexts
-   
+
 3. Download PDFs/full text ✅
    - PDFDownloader: Multi-source downloads
    - FullTextExtractor: Text extraction
    - 70% success rate on PDF downloads
-   
+
 4. Send to LLM to analyze usage ✅✅ (MORE DETAILED)
    - LLMCitationAnalyzer: Deep analysis
    - Extracts 10+ dimensions of usage
    - Batch processing for efficiency
    - Confidence scores and reasoning
-   
+
 5. Store as repository ✅ (BASIC)
    - PDFs: File system
    - Analyses: JSON/Memory
    - ⚠️ Missing: Vector database for semantic search
-   
+
 6. Chat agent for questions ✅
    - DatasetQASystem: Natural language Q&A
    - Evidence-based answers
    - Source citations
    - ⚠️ Uses structured analyses, not full-text search
-   
+
 BONUS FEATURES NOT IN YOUR DESCRIPTION:
 7. Impact report synthesis ✅
    - Comprehensive dataset impact analysis
    - Biomarker aggregation
    - Clinical translation tracking
    - Multi-year trend analysis
-   
+
 8. Question suggestions ✅
    - Smart question generation based on data
-   
+
 9. Multi-source citation enrichment ✅
    - Combines Google Scholar + Semantic Scholar
-   
+
 10. Configurable pipeline ✅
     - Can toggle features on/off
     - Graceful degradation
@@ -490,7 +490,7 @@ Agent: "23 biomarkers discovered, most common:
   - BRCA1 (8 papers)
   - TP53 (6 papers)
   - ESR1 (5 papers)
-  
+
   Evidence:
   1. 'ML predicts response' - Found BRCA1, TP53
   2. 'Biomarker validation' - Validated BRCA1
@@ -554,4 +554,3 @@ Why Useful:
 - Missing: Vector DB (future feature)
 
 ---
-

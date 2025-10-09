@@ -1,14 +1,14 @@
 # OpenAlex Quick Start Guide
 
-**For:** OmicsOracle Users  
+**For:** OmicsOracle Users
 **Updated:** October 9, 2025
 
 ---
 
 ## 🎯 What Changed?
 
-**Before:** Citation analysis was broken (Google Scholar blocked)  
-**Now:** Citation analysis works using OpenAlex API  
+**Before:** Citation analysis was broken (Google Scholar blocked)
+**Now:** Citation analysis works using OpenAlex API
 **Impact:** You can now analyze dataset citations again! 🎉
 
 ---
@@ -103,7 +103,7 @@ for citing_paper in citing_papers:
         dataset_paper,
         citing_paper
     )
-    
+
     # Analyze usage
     if contexts:
         analysis = llm_analyzer.analyze_usage(
@@ -151,7 +151,7 @@ client = OpenAlexClient(config)
 # Verify citation analyzer is initialized
 if pipeline.citation_analyzer:
     print("✅ Citations enabled")
-    
+
     # Check sources
     if pipeline.citation_analyzer.openalex:
         print("  - OpenAlex: ✅")
@@ -327,5 +327,5 @@ Before using citation analysis:
 
 ---
 
-**Last Updated:** October 9, 2025  
+**Last Updated:** October 9, 2025
 **Status:** Production Ready ✅

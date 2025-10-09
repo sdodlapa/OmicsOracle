@@ -89,7 +89,9 @@ class PublicationSearchPipeline:
             logger.info("Initializing OpenAlex client")
             openalex_config = OpenAlexConfig(
                 enable=True,
-                email=config.pubmed_config.email if config.pubmed_config else None,  # Use same email for polite pool
+                email=config.pubmed_config.email
+                if config.pubmed_config
+                else None,  # Use same email for polite pool
             )
             self.openalex_client = OpenAlexClient(openalex_config)
         else:
@@ -105,7 +107,7 @@ class PublicationSearchPipeline:
         # Week 3: Citation analysis (Day 16-17 - NOW MULTI-SOURCE)
         if config.enable_citations:
             logger.info("Initializing citation analyzer with multi-source support")
-            
+
             # Initialize with OpenAlex as primary, Scholar as fallback
             self.citation_analyzer = CitationAnalyzer(
                 openalex_client=self.openalex_client,
@@ -194,7 +196,7 @@ class PublicationSearchPipeline:
         # Always enabled for citation metrics - no blocking/rate limit issues
         logger.info("Initializing Semantic Scholar client for citation enrichment")
         self.semantic_scholar_client = SemanticScholarClient(SemanticScholarConfig(enable=True))
-        
+
         # Add Semantic Scholar to citation analyzer if citations are enabled
         if self.citation_analyzer:
             self.citation_analyzer.semantic_scholar = self.semantic_scholar_client

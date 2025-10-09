@@ -49,7 +49,7 @@ The citation analysis workflow consists of 6 major components working together:
 5. **DatasetQASystem** - Interactive Q&A chat agent (evidence-based, with sources)
 6. **Impact Synthesis** - Generates comprehensive dataset impact reports
 
-**Performance:** 20-30 minutes, ~$5 for 100 papers  
+**Performance:** 20-30 minutes, ~$5 for 100 papers
 **Success Rates:** 70% PDFs, 95% text extraction, 98% LLM analysis
 
 ---
@@ -233,4 +233,3 @@ print(answer["answer"])  # Evidence-based answer with sources
 2. Section 2: Understand how it's built (architecture)
 3. Section 3: Understand how it compares (vs. your vision)
 4. Section 4: Understand quality & next steps (critical evaluation)
-

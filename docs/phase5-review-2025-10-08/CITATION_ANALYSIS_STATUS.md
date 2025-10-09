@@ -2,8 +2,8 @@
 
 ## Current Situation
 
-**Problem:** Google Scholar scraping is being blocked  
-**Impact:** Citation analysis workflow cannot function  
+**Problem:** Google Scholar scraping is being blocked
+**Impact:** Citation analysis workflow cannot function
 **Status:** Temporarily disabled pending alternative implementation
 
 ---
@@ -12,7 +12,7 @@
 
 ### ❌ NOT Working (Temporarily)
 - Finding papers that cite datasets
-- Citation context extraction  
+- Citation context extraction
 - LLM analysis of dataset usage
 - Biomarker discovery from citing papers
 - Q&A chat about dataset usage
@@ -129,7 +129,7 @@ Until OpenAlex is implemented, users can:
 
 ### 🎯 Better Solution
 - **OpenAlex** for citing papers
-- **Semantic Scholar** for citation counts  
+- **Semantic Scholar** for citation counts
 - **PDF extraction** for contexts
 - Best of all worlds!
 
@@ -170,19 +170,18 @@ Until OpenAlex is implemented, users can:
 
 ## Questions?
 
-**Q: Can we use the system now?**  
+**Q: Can we use the system now?**
 A: Yes! Everything except citation analysis works. Use `PRESET_CONFIGS["standard"]` for PubMed + Semantic Scholar enrichment.
 
-**Q: When will citation analysis work again?**  
+**Q: When will citation analysis work again?**
 A: 4-6 days after we start OpenAlex implementation.
 
-**Q: Will it be better than before?**  
+**Q: Will it be better than before?**
 A: YES! OpenAlex is more reliable, and we can extract better contexts from PDFs.
 
-**Q: What about costs?**  
+**Q: What about costs?**
 A: OpenAlex is completely free, no API key needed.
 
 ---
 
 **Status:** 🟡 Partially operational, full functionality restored in ~1 week
-

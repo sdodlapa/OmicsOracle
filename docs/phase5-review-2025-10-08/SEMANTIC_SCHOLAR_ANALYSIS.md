@@ -1,7 +1,7 @@
 # 🔍 Semantic Scholar vs Google Scholar: Critical Analysis
 
-**Date:** October 9, 2025  
-**Issue:** Google Scholar scraping is blocked  
+**Date:** October 9, 2025
+**Issue:** Google Scholar scraping is blocked
 **Question:** Can we use Semantic Scholar as a replacement?
 
 ---
@@ -83,14 +83,14 @@ Step 4: Q&A System
 # Current CitationAnalyzer (lines 52-67)
 def get_citing_papers(self, publication: Publication, max_results: int = 100):
     """Get papers that cite this publication."""
-    
+
     # ⚠️ THIS USES GOOGLE SCHOLAR - NO ALTERNATIVE!
     citing_papers = self.scholar.get_citations(
-        publication.title, 
+        publication.title,
         max_results=max_results
     )
     # Returns: List[Publication] of papers that cite this one
-    
+
     # 🔴 SEMANTIC SCHOLAR CANNOT DO THIS!
     # Their API doesn't provide a "get papers that cite X" endpoint
     # Only provides: citation COUNT, not citation LIST
@@ -210,15 +210,15 @@ analyses = llm_analyzer.analyze_batch(contexts)
 ```python
 def get_citing_papers_from_semantic_scholar(self, publication: Publication):
     """Alternative using Semantic Scholar API."""
-    
+
     # Step 1: Find paper in S2
     paper_data = s2.get_paper_by_doi(publication.doi)
     if not paper_data:
         paper_data = s2.get_paper_by_title(publication.title)
-    
+
     # Step 2: Get citation IDs
     citation_ids = [c["paperId"] for c in paper_data.get("citations", [])]
-    
+
     # Step 3: Fetch each citing paper (SLOW!)
     citing_papers = []
     for cit_id in citation_ids[:20]:  # Limit to avoid rate limits
@@ -227,7 +227,7 @@ def get_citing_papers_from_semantic_scholar(self, publication: Publication):
         # Convert to Publication object
         citing_paper = self._convert_s2_to_publication(citing_paper_data)
         citing_papers.append(citing_paper)
-    
+
     return citing_papers
 ```
 
@@ -253,36 +253,36 @@ def get_citing_papers_from_semantic_scholar(self, publication: Publication):
 ```python
 class HybridCitationAnalyzer:
     """Use best of both worlds."""
-    
+
     def __init__(self, scholar_client, s2_client):
         self.scholar = scholar_client
         self.s2 = s2_client
         self.use_scholar = True  # Try Scholar first
-    
+
     def get_citing_papers(self, publication, max_results=100):
         """Try Google Scholar, fallback to Semantic Scholar."""
-        
+
         # Try Google Scholar first (fast, has contexts)
         if self.use_scholar:
             try:
                 citing_papers = self.scholar.get_citations(
-                    publication.title, 
+                    publication.title,
                     max_results=max_results
                 )
-                
+
                 if len(citing_papers) > 0:
                     logger.info("✅ Got citing papers from Google Scholar")
                     return citing_papers
-                    
+
             except Exception as e:
                 if "blocked" in str(e).lower():
                     logger.warning("⚠️ Google Scholar blocked, switching to Semantic Scholar")
                     self.use_scholar = False
-        
+
         # Fallback to Semantic Scholar (slow, no contexts)
         logger.info("Using Semantic Scholar for citations (slower, limited)")
         return self._get_from_semantic_scholar(publication, max_results=20)
-    
+
     def _get_from_semantic_scholar(self, publication, max_results=20):
         """Get from S2 with limitations."""
         # Implementation from Option 1
@@ -321,25 +321,25 @@ import requests
 
 def get_citing_papers_from_openalex(doi):
     """Get citing papers from OpenAlex."""
-    
+
     # Get work by DOI
     url = f"https://api.openalex.org/works/https://doi.org/{doi}"
     response = requests.get(url)
     work = response.json()
-    
+
     # Get cited_by_count
     cited_by_count = work["cited_by_count"]
-    
+
     # Get citing papers
     citing_url = work["cited_by_api_url"]
     response = requests.get(citing_url)
     citing_works = response.json()["results"]
-    
+
     # Each work has:
     # - title, authors, doi
     # - abstract (sometimes)
     # - Referenced works with locations (citation contexts!)
-    
+
     return citing_works
 ```
 
@@ -408,7 +408,7 @@ Google Scholar scraping is being blocked. Citation analysis workflow is disabled
 
 Currently working:
 - ✅ Publication search (PubMed)
-- ✅ Citation counts (Semantic Scholar)  
+- ✅ Citation counts (Semantic Scholar)
 - ✅ PDF download
 - ✅ Full-text extraction
 
@@ -428,7 +428,7 @@ Not working:
 
 class OpenAlexClient:
     """Client for OpenAlex API - free alternative to Google Scholar."""
-    
+
     def __init__(self, email: str):
         """Initialize with polite pool (faster rate limit)."""
         self.base_url = "https://api.openalex.org"
@@ -437,32 +437,32 @@ class OpenAlexClient:
         self.session.headers.update({
             "User-Agent": f"OmicsOracle/1.0 (mailto:{email})"
         })
-    
+
     def get_citing_works(self, doi: str, max_results: int = 100):
         """Get works that cite this DOI."""
         # Get work
         url = f"{self.base_url}/works/https://doi.org/{doi}"
         work = self.session.get(url).json()
-        
+
         # Get citing works
         citing_url = work["cited_by_api_url"]
         citing = self.session.get(
             citing_url,
             params={"per-page": max_results}
         ).json()
-        
+
         # Convert to Publications
         publications = []
         for work in citing["results"]:
             pub = self._convert_to_publication(work)
             publications.append(pub)
-        
+
         return publications
-    
+
     def _convert_to_publication(self, work):
         """Convert OpenAlex work to Publication."""
         from omics_oracle_v2.lib.publications.models import Publication
-        
+
         return Publication(
             title=work["title"],
             authors=[a["author"]["display_name"] for a in work["authorships"]],
@@ -485,10 +485,10 @@ class CitationAnalyzer:
         self.scholar = scholar_client
         self.openalex = openalex_client
         self.s2 = s2_client
-    
+
     def get_citing_papers(self, publication, max_results=100):
         """Try multiple sources in order of preference."""
-        
+
         # 1. Try OpenAlex (best alternative)
         if self.openalex and publication.doi:
             try:
@@ -498,7 +498,7 @@ class CitationAnalyzer:
                     return citing
             except Exception as e:
                 logger.warning(f"OpenAlex failed: {e}")
-        
+
         # 2. Try Google Scholar (if not blocked)
         if self.scholar:
             try:
@@ -508,12 +508,12 @@ class CitationAnalyzer:
                     return citing
             except Exception as e:
                 logger.warning(f"Google Scholar blocked: {e}")
-        
+
         # 3. Fallback to Semantic Scholar (slow, limited)
         if self.s2 and publication.doi:
             logger.info("⚠️ Using Semantic Scholar fallback (slower, limited)")
             return self._get_from_semantic_scholar(publication, max_results=20)
-        
+
         logger.warning("❌ No citation sources available")
         return []
 ```
@@ -538,9 +538,9 @@ Even without Google Scholar snippets, we can create contexts:
 ```python
 def enhance_citation_contexts(self, citing_paper, cited_paper):
     """Create contexts even without snippets."""
-    
+
     contexts = []
-    
+
     # Strategy 1: Use abstract if available
     if citing_paper.abstract:
         # Check if cited paper is mentioned
@@ -555,7 +555,7 @@ def enhance_citation_contexts(self, citing_paper, cited_paper):
                     context_text=sent,
                     source="abstract"
                 ))
-    
+
     # Strategy 2: Download PDF and search
     if citing_paper.pdf_path:
         full_text = extract_text_from_pdf(citing_paper.pdf_path)
@@ -569,14 +569,14 @@ def enhance_citation_contexts(self, citing_paper, cited_paper):
                 context_text=para,
                 source="fulltext"
             ))
-    
+
     # Strategy 3: Use title + abstract as fallback
     if not contexts:
         contexts.append(CitationContext(
             context_text=f"{citing_paper.title}. {citing_paper.abstract}",
             source="fallback"
         ))
-    
+
     return contexts
 ```
 
@@ -603,7 +603,7 @@ def enhance_citation_contexts(self, citing_paper, cited_paper):
 - [ ] Test citation discovery works
 - [ ] Update documentation
 
-### Phase 3: Enhanced Contexts (Next Week)  
+### Phase 3: Enhanced Contexts (Next Week)
 - [ ] Implement context extraction from abstracts
 - [ ] Implement context extraction from full-text PDFs
 - [ ] Add fallback context generation
@@ -686,7 +686,7 @@ def enhance_citation_contexts(self, citing_paper, cited_paper):
 
 🟢 **NEXT WEEK:** Add enhanced citation context extraction
 
-🟢 **RESULT:** Better than before! 
+🟢 **RESULT:** Better than before!
 - Free, sustainable
 - No blocking
 - Actually better contexts (full paragraphs vs snippets)
@@ -708,4 +708,3 @@ def enhance_citation_contexts(self, citing_paper, cited_paper):
 ---
 
 **Next Step:** Shall I implement the OpenAlex client? It's 1-2 days of work and solves the problem completely.
-

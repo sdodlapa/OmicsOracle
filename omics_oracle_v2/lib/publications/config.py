@@ -168,7 +168,7 @@ class LLMConfig(BaseModel):
     - max_papers_to_analyze: Limit analysis to top N papers (default: 20)
     - max_cost_per_search: Budget limit per search (default: $5.00)
     - enable_cost_preview: Show estimated cost before running (default: True)
-    
+
     Estimated costs:
     - GPT-4: ~$0.05 per paper analysis
     - 20 papers: ~$1.00
@@ -196,24 +196,15 @@ class LLMConfig(BaseModel):
     batch_size: int = Field(5, ge=1, le=20, description="Papers per batch")
     max_tokens: int = Field(2000, ge=100, le=4000, description="Max tokens per response")
     temperature: float = Field(0.1, ge=0.0, le=1.0, description="Generation temperature")
-    
+
     # Cost controls (NEW - Oct 9, 2025)
     max_papers_to_analyze: int = Field(
-        20, 
-        ge=1, 
-        le=1000, 
-        description="Maximum papers to analyze (cost control, default: 20)"
+        20, ge=1, le=1000, description="Maximum papers to analyze (cost control, default: 20)"
     )
     max_cost_per_search: float = Field(
-        5.0, 
-        ge=0.1, 
-        le=100.0, 
-        description="Maximum cost per search in USD (default: $5.00)"
+        5.0, ge=0.1, le=100.0, description="Maximum cost per search in USD (default: $5.00)"
     )
-    enable_cost_preview: bool = Field(
-        True, 
-        description="Show estimated cost before running analysis"
-    )
+    enable_cost_preview: bool = Field(True, description="Show estimated cost before running analysis")
 
     class Config:
         """Pydantic config."""
@@ -381,13 +372,13 @@ Quick-start configuration presets for different use cases.
 
 Usage:
     from omics_oracle_v2.lib.publications.config import PRESET_CONFIGS
-    
+
     # For fast, free searches:
     config = PRESET_CONFIGS["minimal"]
-    
+
     # For comprehensive analysis (recommended):
     config = PRESET_CONFIGS["full"]
-    
+
     # For research with cost control:
     config = PRESET_CONFIGS["research"]
 """
@@ -403,7 +394,6 @@ PRESET_CONFIGS = {
         enable_institutional_access=False,
         enable_cache=True,
     ),
-    
     "standard": PublicationSearchConfig(
         # Good coverage, free, no LLM costs
         enable_pubmed=True,
@@ -414,7 +404,6 @@ PRESET_CONFIGS = {
         enable_institutional_access=True,
         enable_cache=True,
     ),
-    
     "full": PublicationSearchConfig(
         # Complete analysis, all features enabled (RECOMMENDED)
         enable_pubmed=True,
@@ -430,7 +419,6 @@ PRESET_CONFIGS = {
             enable_cost_preview=True,  # Show cost before running
         ),
     ),
-    
     "research": PublicationSearchConfig(
         # For deep research, higher limits but cost-controlled
         enable_pubmed=True,
@@ -447,7 +435,6 @@ PRESET_CONFIGS = {
             batch_size=10,  # Larger batches for efficiency
         ),
     ),
-    
     "enterprise": PublicationSearchConfig(
         # No cost limits, maximum analysis
         enable_pubmed=True,
@@ -472,20 +459,17 @@ PRESET_CONFIGS = {
 def get_preset_config(preset_name: str = "full") -> PublicationSearchConfig:
     """
     Get a preset configuration by name.
-    
+
     Args:
         preset_name: One of "minimal", "standard", "full", "research", "enterprise"
-    
+
     Returns:
         PublicationSearchConfig instance
-    
+
     Example:
         >>> config = get_preset_config("full")  # Recommended default
         >>> config = get_preset_config("research")  # For deep analysis
     """
     if preset_name not in PRESET_CONFIGS:
-        raise ValueError(
-            f"Unknown preset: {preset_name}. "
-            f"Available: {', '.join(PRESET_CONFIGS.keys())}"
-        )
+        raise ValueError(f"Unknown preset: {preset_name}. " f"Available: {', '.join(PRESET_CONFIGS.keys())}")
     return PRESET_CONFIGS[preset_name]

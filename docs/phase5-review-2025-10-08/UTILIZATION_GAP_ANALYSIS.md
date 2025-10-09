@@ -326,12 +326,12 @@ PRESET_CONFIGS = {
 @dataclass
 class LLMConfig:
     # ... existing fields ...
-    
+
     # Cost controls (NEW)
     max_citation_analysis_cost: float = 10.0  # Max $10 per dataset
     enable_cost_estimation: bool = True  # Preview costs before running
     enable_screening_llm: bool = True  # Use GPT-3.5 for initial screening
-    
+
     def estimate_cost(self, num_papers: int) -> float:
         """Estimate LLM analysis cost."""
         if self.enable_screening_llm:
@@ -356,14 +356,14 @@ from typing import Dict, List
 @dataclass
 class FeatureUsageStats:
     """Track feature utilization."""
-    
+
     feature_name: str
     enabled: bool
     times_used: int
     total_cost: float
     total_time_seconds: float
     value_delivered: float  # Estimated
-    
+
     @property
     def roi(self) -> float:
         """Return on investment."""
@@ -373,10 +373,10 @@ class FeatureUsageStats:
 
 class FeatureAnalytics:
     """Track and analyze feature usage."""
-    
+
     def __init__(self):
         self.stats: Dict[str, FeatureUsageStats] = {}
-    
+
     def record_usage(
         self,
         feature: str,
@@ -394,13 +394,13 @@ class FeatureAnalytics:
                 total_time_seconds=0.0,
                 value_delivered=0.0,
             )
-        
+
         stats = self.stats[feature]
         stats.times_used += 1
         stats.total_cost += cost
         stats.total_time_seconds += time_seconds
         stats.value_delivered += value
-    
+
     def get_underutilized_features(self) -> List[str]:
         """Find features that are enabled but rarely used."""
         underutilized = []
@@ -408,7 +408,7 @@ class FeatureAnalytics:
             if stats.enabled and stats.times_used < 5:
                 underutilized.append(name)
         return underutilized
-    
+
     def get_high_roi_features(self) -> List[str]:
         """Find features with best ROI."""
         return sorted(
@@ -416,11 +416,11 @@ class FeatureAnalytics:
             key=lambda k: self.stats[k].roi,
             reverse=True,
         )
-    
+
     def generate_report(self) -> str:
         """Generate utilization report."""
         report = ["Feature Utilization Report", "=" * 50, ""]
-        
+
         for name, stats in self.stats.items():
             status = "✅ ENABLED" if stats.enabled else "❌ DISABLED"
             report.append(f"{name}: {status}")
@@ -430,7 +430,7 @@ class FeatureAnalytics:
             report.append(f"  Value: ${stats.value_delivered:.2f}")
             report.append(f"  ROI: {stats.roi:.1%}")
             report.append("")
-        
+
         return "\n".join(report)
 ```
 
@@ -467,30 +467,30 @@ enable_experimental_feature: bool = False  # Default to DISABLED if experimental
 class PublicationSearchConfig:
     """
     Publication search configuration.
-    
+
     🚀 QUICK START PRESETS:
     - PRESET_CONFIGS["minimal"]: PubMed only (fast, free)
     - PRESET_CONFIGS["standard"]: PubMed + Scholar (recommended)
     - PRESET_CONFIGS["full"]: All features (comprehensive, costs money)
-    
+
     💰 COST ESTIMATES:
     - minimal: Free, ~5s per dataset
     - standard: Free, ~10s per dataset
     - full: ~$2-5 per dataset, ~20-30min per dataset
-    
+
     ⚡ FEATURE DESCRIPTIONS:
-    
+
     enable_pubmed: Search PubMed for publications
       - Coverage: Biomedical literature (30M+ papers)
       - Cost: Free
       - Speed: Fast (API)
-      
+
     enable_scholar: Search Google Scholar for publications
       - Coverage: All disciplines (100M+ papers)
       - Cost: Free (rate limited)
       - Speed: Slow (scraping, 2-3s per query)
       - ⚠️ May hit rate limits with heavy use
-      
+
     enable_citations: Analyze citing papers (★ HIGH VALUE)
       - Discovers papers that cite your dataset
       - Extracts biomarkers, methods, findings
@@ -499,20 +499,20 @@ class PublicationSearchConfig:
       - Cost: ~$2-5 per dataset (LLM fees)
       - Time: +15-20 min per dataset
       - ✅ RECOMMENDED for dataset impact analysis
-      
+
     enable_pdf_download: Download full-text PDFs
       - Multi-source: PMC, Unpaywall, Institutional
       - Success rate: ~70%
       - Cost: Free
       - Time: ~5-10 min for 100 papers
-      
+
     enable_fulltext: Extract text from PDFs
       - Methods: PyPDF2, pdfplumber, OCR
       - Success rate: ~95%
       - Cost: Free
       - Time: ~1-2 min for 100 PDFs
     """
-    
+
     # ... rest of config ...
 ```
 
@@ -562,14 +562,14 @@ config_week_4 = PublicationSearchConfig(
 @dataclass
 class SmartCitationConfig:
     """Smart citation analysis configuration."""
-    
+
     enable_citations: bool = True
-    
+
     # Selective analysis (NEW)
     min_relevance_for_citation_analysis: float = 0.7  # Only analyze relevant papers
     max_papers_to_analyze: int = 20  # Cap analysis at top 20
     prioritize_high_citation_papers: bool = True  # Analyze highly-cited papers first
-    
+
     # Cost control (NEW)
     max_llm_cost_per_search: float = 5.0  # Stop at $5
     enable_cost_preview: bool = True  # Show estimated cost before running
@@ -603,26 +603,26 @@ class PublicationSearchPipeline:
         # Always initialize core
         self.config = config
         self.pubmed_client = PubMedClient(config.pubmed_config)
-        
+
         # Lazy initialization (NEW)
         self._scholar_client = None
         self._citation_analyzer = None
         self._llm_analyzer = None
-    
+
     @property
     def scholar_client(self):
         """Lazy load Google Scholar client."""
         if self._scholar_client is None and self.config.enable_scholar:
             self._scholar_client = GoogleScholarClient(self.config.scholar_config)
         return self._scholar_client
-    
+
     @property
     def citation_analyzer(self):
         """Lazy load citation analyzer."""
         if self._citation_analyzer is None and self.config.enable_citations:
             self._citation_analyzer = CitationAnalyzer(self.scholar_client)
         return self._citation_analyzer
-    
+
     # Benefits:
     # - Faster startup (no unused components)
     # - Less memory usage
@@ -773,7 +773,7 @@ class PublicationSearchConfig:
     enable_fulltext: bool = True  ✅
     enable_institutional_access: bool = True  ✅
     enable_cache: bool = True  ✅
-    
+
     llm_config: LLMConfig = field(default_factory=lambda: LLMConfig(
         enable_llm_analysis=True,
         max_papers_to_analyze=20,  # Cost control
@@ -879,4 +879,3 @@ Value: 10-20x higher! (Comprehensive insights)
 - [ ] Create case studies showing value
 
 **Start with Phase 1 TODAY. You'll see results immediately!** 🚀
-

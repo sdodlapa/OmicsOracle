@@ -113,22 +113,22 @@
 class CitationAnalyzer:
     def __init__(self, scholar_client: GoogleScholarClient):
         """Uses Google Scholar to find citations"""
-        
+
     def get_citing_papers(
-        self, 
-        publication: Publication, 
+        self,
+        publication: Publication,
         max_results: int = 100
     ) -> List[Publication]:
         """
         Gets papers that cite the dataset publication.
-        
+
         Returns:
             List of citing publications with:
             - Title, abstract, DOI
             - Authors, year
             - Citation context (text around citation)
         """
-        
+
     def get_citation_contexts(
         self,
         cited_publication: Publication,
@@ -136,10 +136,10 @@ class CitationAnalyzer:
     ) -> List[CitationContext]:
         """
         Extracts the text around where dataset is cited.
-        
+
         This is the "how they used it" context you want!
         """
-        
+
     def analyze_citation_network(
         self,
         publication: Publication,
@@ -147,7 +147,7 @@ class CitationAnalyzer:
     ) -> dict:
         """
         Builds citation network graph.
-        
+
         Returns:
             - Papers citing this dataset
             - Papers those papers cite (2nd level)
@@ -170,14 +170,14 @@ class PDFDownloader:
     def __init__(self, download_dir: Path, institutional_manager=None):
         """
         Downloads PDFs with institutional access support.
-        
+
         Sources:
         - PubMed Central (free)
         - Unpaywall (open access)
         - Institutional subscriptions (Georgia Tech proxy)
         - Publisher direct links
         """
-        
+
     def download(
         self,
         pdf_url: str,
@@ -186,17 +186,17 @@ class PDFDownloader:
     ) -> Optional[Path]:
         """
         Downloads single PDF.
-        
+
         Features:
         - Deduplication (checks if already downloaded)
         - Retry logic (3 attempts)
         - Validation (checks PDF magic bytes)
         - Organized storage (by source)
-        
+
         Returns:
             Path to downloaded PDF or None
         """
-        
+
     def download_batch(
         self,
         publications: List[Publication],
@@ -204,7 +204,7 @@ class PDFDownloader:
     ) -> Dict[str, Path]:
         """
         Concurrent batch download.
-        
+
         Downloads multiple PDFs in parallel.
         """
 ```
@@ -228,30 +228,30 @@ class PDFDownloader:
 ```python
 class FullTextExtractor:
     """Extracts text from PDF files."""
-    
+
     def extract_text(self, pdf_path: Path) -> Optional[str]:
         """
         Extracts full text from PDF.
-        
+
         Methods:
         1. PyPDF2 (fast, basic extraction)
         2. pdfplumber (better formatting)
         3. OCR fallback (for scanned PDFs)
-        
+
         Returns:
             Full text string or None if failed
         """
-        
+
     def extract_sections(self, pdf_path: Path) -> Dict[str, str]:
         """
         Extracts specific sections (optional enhancement).
-        
+
         Sections:
         - Abstract
         - Methods
         - Results
         - Discussion
-        
+
         Useful for focused analysis!
         """
 ```
@@ -272,7 +272,7 @@ class FullTextExtractor:
 class LLMCitationAnalyzer:
     """
     LLM-powered deep analysis of citations and dataset usage.
-    
+
     Uses GPT-4 to:
     - Understand citation context semantically
     - Classify dataset usage types
@@ -281,7 +281,7 @@ class LLMCitationAnalyzer:
     - Assess clinical relevance
     - Synthesize knowledge across papers
     """
-    
+
     def __init__(self, llm_client: LLMClient):
         """Uses GPT-4 via LLMClient"""
 ```
@@ -296,21 +296,21 @@ def analyze_citation_context(
 ) -> UsageAnalysis:
     """
     Analyzes how a citing paper uses the dataset.
-    
+
     Inputs to GPT-4:
     - Cited paper title & abstract (dataset)
     - Citing paper title & abstract
     - Citation context (text around citation)
-    
+
     GPT-4 Prompt Example:
     '''
     Analyze how this citing paper uses the dataset:
-    
+
     Dataset: "Comprehensive RNA-seq of breast cancer tumors"
     Citing paper: "Machine learning predicts treatment response"
-    Citation context: "We used the publicly available dataset [15] 
+    Citation context: "We used the publicly available dataset [15]
                       to train our ML model on 500 tumor samples..."
-    
+
     Extract:
     1. Was dataset actually reused? (True/False)
     2. Usage type (validation, novel_application, comparison, etc.)
@@ -321,7 +321,7 @@ def analyze_citation_context(
     7. Clinical relevance (high/medium/low/none)
     8. Validation status
     '''
-    
+
     Returns:
         UsageAnalysis object with all extracted information
     """
@@ -336,22 +336,22 @@ class UsageAnalysis:
     dataset_reused: bool             # ✅ Was dataset actually used?
     usage_type: str                  # validation, novel_application, etc.
     confidence: float                # 0.0-1.0
-    
+
     # Context
     research_question: str           # What did they study?
     application_domain: str          # cancer, diabetes, etc.
     methodology: str                 # machine learning, GWAS, etc.
     sample_info: str                 # How many samples used?
-    
+
     # Results
     key_findings: List[str]          # Main discoveries
     novel_biomarkers: List[str]      # New biomarkers found
-    
+
     # Clinical Translation
     clinical_relevance: str          # high, medium, low, none
     clinical_details: str            # Clinical trial info, etc.
     validation_status: str           # validated, in_progress, none
-    
+
     # Explanation
     reasoning: str                   # Why GPT-4 classified it this way
 ```
@@ -365,7 +365,7 @@ def analyze_batch(
 ) -> List[UsageAnalysis]:
     """
     Analyzes multiple citations efficiently.
-    
+
     Processes papers in batches to optimize GPT-4 API calls.
     """
 ```
@@ -379,7 +379,7 @@ def synthesize_dataset_impact(
 ) -> DatasetImpactReport:
     """
     Synthesizes comprehensive impact report.
-    
+
     Aggregates across all citing papers:
     - Total citations & reuse rate
     - Usage types breakdown
@@ -388,7 +388,7 @@ def synthesize_dataset_impact(
     - Clinical translation status
     - Time span of impact
     - GPT-4 narrative summary
-    
+
     Returns:
         Comprehensive DatasetImpactReport
     """
@@ -410,7 +410,7 @@ def synthesize_dataset_impact(
 class DatasetQASystem:
     """
     Interactive Q&A system for dataset analysis.
-    
+
     Allows users to ask natural language questions about how
     datasets are being used in scientific literature.
     """
@@ -427,19 +427,19 @@ def ask(
 ) -> Dict:
     """
     Ask a question about a dataset.
-    
+
     Example Questions:
     - "What novel biomarkers were discovered?"
     - "How has this dataset been used in clinical research?"
     - "What are the most common applications?"
     - "Which findings have been validated?"
-    
+
     Process:
     1. Build context from citation analyses
     2. Create GPT-4 prompt with context + question
     3. Generate evidence-based answer
     4. Extract supporting citations
-    
+
     Returns:
         {
             "question": "What novel biomarkers...",
@@ -467,10 +467,10 @@ def suggest_questions(
 ) -> List[str]:
     """
     Suggests relevant questions based on available data.
-    
+
     Analyzes citation analyses to determine what questions
     would be most interesting/answerable.
-    
+
     Example Output:
     [
         "How has this dataset been used in research?",
@@ -505,7 +505,7 @@ processed_dataset = ProcessedDataset(
 ```python
 # File: omics_oracle_v2/lib/publications/pipeline.py
 class PublicationPipeline:
-    
+
     def search_with_citations(
         self,
         query: str,
@@ -515,7 +515,7 @@ class PublicationPipeline:
     ):
         """
         Complete workflow including citations.
-        
+
         Steps:
         1. Search publications (from GEO dataset pubmed_ids)
         2. Enrich with Semantic Scholar citations
@@ -602,8 +602,8 @@ answer1 = qa_system.ask(
     usage_analyses
 )
 print(answer1["answer"])
-# Output: "Three novel biomarkers were consistently identified 
-#          across multiple studies: BRCA1 (mentioned in 8 papers), 
+# Output: "Three novel biomarkers were consistently identified
+#          across multiple studies: BRCA1 (mentioned in 8 papers),
 #          TP53 (mentioned in 6 papers), and ESR1 (mentioned in 5 papers)..."
 
 answer2 = qa_system.ask(
@@ -612,8 +612,8 @@ answer2 = qa_system.ask(
     usage_analyses
 )
 print(answer2["answer"])
-# Output: "The dataset has been used in 12 clinical studies, primarily 
-#          for treatment response prediction (7 papers) and risk 
+# Output: "The dataset has been used in 12 clinical studies, primarily
+#          for treatment response prediction (7 papers) and risk
 #          stratification (5 papers)..."
 
 # Step 8: Generate comprehensive impact report
@@ -640,4 +640,3 @@ Summary:
 **Status:** ✅ **ALL INTEGRATED AND WORKING**
 
 ---
-

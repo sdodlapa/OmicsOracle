@@ -1,15 +1,15 @@
 # Unpaywall Analysis - Is It Useful for Citation Discovery?
 
-**Date:** October 9, 2025  
+**Date:** October 9, 2025
 **Context:** Evaluating whether Unpaywall should be a fallback for citation discovery
 
 ---
 
 ## Quick Answer
 
-**Are we using Unpaywall?** ✅ YES - Already implemented for PDF downloads  
-**Should we use it for citations?** ❌ NO - Not designed for that purpose  
-**Current usage:** PDF download fallback (open access versions)  
+**Are we using Unpaywall?** ✅ YES - Already implemented for PDF downloads
+**Should we use it for citations?** ❌ NO - Not designed for that purpose
+**Current usage:** PDF download fallback (open access versions)
 **Recommendation:** Keep current usage, don't add to citation discovery
 
 ---
@@ -20,10 +20,10 @@
 
 ### What Unpaywall Provides
 
-✅ **Open access status** - Is a paper OA?  
-✅ **PDF download URLs** - Direct links to legal OA PDFs  
-✅ **OA location info** - Where the OA version is hosted  
-✅ **License information** - CC-BY, CC0, etc.  
+✅ **Open access status** - Is a paper OA?
+✅ **PDF download URLs** - Direct links to legal OA PDFs
+✅ **OA location info** - Where the OA version is hosted
+✅ **License information** - CC-BY, CC0, etc.
 
 ❌ **Does NOT provide:**
 - Citation lists (who cites who)
@@ -54,10 +54,10 @@ def _try_unpaywall(self, publication: Publication) -> Optional[str]:
     """
     if not publication.doi:
         return None
-    
+
     api_url = f"https://api.unpaywall.org/v2/{publication.doi}?email={email}"
     response = requests.get(api_url, timeout=5)
-    
+
     if response.status_code == 200:
         data = response.json()
         if data.get("is_oa"):
@@ -152,7 +152,7 @@ Citation Discovery (Current):
 for paper in all_papers:  # 1000s of papers
     oa_info = unpaywall.get(paper.doi)  # 1000s of API calls
     # Still don't get citing papers!
-    
+
 # GOOD: Using OpenAlex for citations
 citing_papers = openalex.get_citing_papers(doi)  # 1 API call
 # Returns all citing papers!
@@ -241,12 +241,12 @@ def get_pdf_url(self, publication: Publication) -> Optional[str]:
         self._try_institutional, # 3. Institutional access
         self._try_publisher,     # 4. Publisher direct
     ]
-    
+
     for source_func in sources:
         url = source_func(publication)
         if url:
             return url
-    
+
     return None
 ```
 
@@ -286,11 +286,11 @@ def get_pdf_url(self, publication: Publication) -> Optional[str]:
 
 ### Why This is Optimal
 
-✅ **Right tool for right job** - Each API does what it's best at  
-✅ **No redundancy** - OpenAlex and Unpaywall serve different purposes  
-✅ **Maximum coverage** - Multiple fallbacks at each layer  
-✅ **Best performance** - Efficient API usage  
-✅ **Already implemented** - Working in production  
+✅ **Right tool for right job** - Each API does what it's best at
+✅ **No redundancy** - OpenAlex and Unpaywall serve different purposes
+✅ **Maximum coverage** - Multiple fallbacks at each layer
+✅ **Best performance** - Efficient API usage
+✅ **Already implemented** - Working in production
 
 ---
 
@@ -303,21 +303,21 @@ def get_pdf_url(self, publication: Publication) -> Optional[str]:
 
 def find_citations_via_unpaywall(target_doi: str) -> List[Publication]:
     """This would be TERRIBLE - DO NOT DO THIS"""
-    
+
     # Problem 1: Unpaywall has no "get_citing_papers" endpoint
     # We'd need to:
     # 1. Get ALL papers from somewhere else (millions!)
     # 2. For each paper, check if it cites our target
     # 3. This is not what Unpaywall is designed for
-    
+
     # Problem 2: Would require external citation index anyway
     # So we'd still need OpenAlex/Scholar/etc for the citation graph
-    
+
     # Problem 3: Inefficient
     # - 1000s of API calls instead of 1
     # - Rate limit issues
     # - Slow performance
-    
+
     # Conclusion: This makes no sense!
     return []
 ```
@@ -330,7 +330,7 @@ def find_citations_via_unpaywall(target_doi: str) -> List[Publication]:
 
 ### What We Could Improve
 
-**Current:** Unpaywall used only in institutional_access.py  
+**Current:** Unpaywall used only in institutional_access.py
 **Better:** Unpaywall integrated into main PDF downloader
 
 **Enhancement Idea:**
@@ -339,7 +339,7 @@ def find_citations_via_unpaywall(target_doi: str) -> List[Publication]:
 class PDFDownloader:
     def __init__(self, ..., unpaywall_client: UnpaywallClient):
         self.unpaywall = unpaywall_client  # Dedicated client
-    
+
     async def download(self, publication: Publication) -> Path:
         # Try sources in parallel
         results = await asyncio.gather(
@@ -372,16 +372,16 @@ class PDFDownloader:
 
 ### Questions Answered
 
-**Q: Are we using Unpaywall?**  
+**Q: Are we using Unpaywall?**
 A: ✅ YES - For PDF downloads in institutional_access.py
 
-**Q: Should we use it for citation discovery?**  
+**Q: Should we use it for citation discovery?**
 A: ❌ NO - Wrong tool, OpenAlex is better
 
-**Q: Is our current design optimal?**  
+**Q: Is our current design optimal?**
 A: ✅ YES - Right tool for right job
 
-**Q: Any improvements needed?**  
+**Q: Any improvements needed?**
 A: ⚠️ Minor - Could integrate Unpaywall more directly into PDF downloader, but current design works fine
 
 ---
@@ -430,5 +430,5 @@ Storage Layer:      SQLite + Redis cache
 
 **Conclusion:** Unpaywall is already being used optimally for what it's designed for (OA PDF access). No need to add it to citation discovery - OpenAlex is the right tool for that job.
 
-**Date:** October 9, 2025  
+**Date:** October 9, 2025
 **Status:** ✅ Current implementation is optimal

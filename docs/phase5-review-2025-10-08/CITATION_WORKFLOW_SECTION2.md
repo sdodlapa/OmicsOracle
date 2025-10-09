@@ -61,7 +61,7 @@ Each component has **one job** and does it well!
 analyzer = CitationAnalyzer(scholar_client)
 citing_papers = analyzer.get_citing_papers(publication)
 
-# Use PDFDownloader alone  
+# Use PDFDownloader alone
 downloader = PDFDownloader(download_dir)
 pdf_path = downloader.download(pdf_url, pmid)
 
@@ -118,7 +118,7 @@ try:
 except Exception as e:
     logger.error(f"Citation analysis failed: {e}")
     citing_papers = []  # Continue with empty list
-    
+
 # Pipeline continues regardless of failures
 ```
 
@@ -525,4 +525,3 @@ with open("analyses/dataset_GSE123456.json", "w") as f:
 **Status:** ⚠️ **NOT YET IMPLEMENTED** (good future enhancement!)
 
 ---
-

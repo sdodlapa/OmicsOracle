@@ -10,7 +10,7 @@
 
 ### Before (Placeholder Email)
 ```python
-pubmed_config: PubMedConfig = field(default_factory=lambda: 
+pubmed_config: PubMedConfig = field(default_factory=lambda:
     PubMedConfig(email="user@example.com")  # ❌ Placeholder
 )
 ```
@@ -21,7 +21,7 @@ pubmed_config: PubMedConfig = field(default_factory=lambda:
 
 ### After (Your ODU Email) ✅
 ```python
-pubmed_config: PubMedConfig = field(default_factory=lambda: 
+pubmed_config: PubMedConfig = field(default_factory=lambda:
     PubMedConfig(email="sdodl001@odu.edu")  # ✅ Your email
 )
 ```
@@ -259,12 +259,12 @@ config = PubMedConfig(email=email)
 
 ## Verification Checklist
 
-✅ Email configured: `sdodl001@odu.edu`  
-✅ OpenAlex polite pool: Active (10 req/s)  
-✅ PubMed configured: Active (3 req/s)  
-✅ No login required: Correct  
-✅ Privacy safe: Yes  
-✅ Test passed: `test_email_config.py` ✅  
+✅ Email configured: `sdodl001@odu.edu`
+✅ OpenAlex polite pool: Active (10 req/s)
+✅ PubMed configured: Active (3 req/s)
+✅ No login required: Correct
+✅ Privacy safe: Yes
+✅ Test passed: `test_email_config.py` ✅
 
 ---
 
@@ -300,7 +300,7 @@ config = PubMedConfig(email=email)
 
 **What You Get:**
 - ✅ 10x faster OpenAlex citations (1 → 10 req/s)
-- ✅ 10x faster OpenAlex search (1 → 10 req/s)  
+- ✅ 10x faster OpenAlex search (1 → 10 req/s)
 - ✅ Proper PubMed configuration
 - ✅ No account/login needed
 - ✅ Completely free
@@ -312,6 +312,6 @@ config = PubMedConfig(email=email)
 
 ---
 
-**Updated:** October 9, 2025  
-**Your Email:** sdodl001@odu.edu  
+**Updated:** October 9, 2025
+**Your Email:** sdodl001@odu.edu
 **Status:** ✅ Configured and working perfectly!

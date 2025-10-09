@@ -1,7 +1,7 @@
 # Architecture Modularity & Layered Organization Analysis
 
-**Analysis Date:** October 9, 2025  
-**Purpose:** Evaluate component modularity and freedom for independent enhancements  
+**Analysis Date:** October 9, 2025
+**Purpose:** Evaluate component modularity and freedom for independent enhancements
 **Question:** Can we enhance individual components without disturbing the pipeline?
 
 ---
@@ -30,7 +30,7 @@
 # File: omics_oracle_v2/agents/base.py
 class Agent[InputT, OutputT]:
     """Base agent with standardized interface"""
-    
+
     def execute(self, input_data: InputT) -> OutputT:
         """Standard execution contract"""
         # 1. Validate input
@@ -105,10 +105,10 @@ class QueryAgent:
     def _process(self, input_data):
         # NEW: GPT-4 query understanding
         understanding = await self._gpt4_analyze(input_data.query)
-        
+
         # NEW: Ontology expansion
         expanded = self._expand_with_ontology(understanding)
-        
+
         # SAME OUTPUT FORMAT (no breaking change!)
         return QueryOutput(
             search_terms=expanded.terms,
@@ -183,13 +183,13 @@ return SearchOutput(datasets=ranked_datasets, ...)
 class SearchAgent:
     def __init__(self, enable_semantic=False):
         self._semantic_search = FaissSearch() if enable_semantic else None
-    
+
     def _process(self, input_data):
         if self._semantic_search:
             results = self._semantic_search.search(input_data.query)
         else:
             results = self._geo_client.search(input_data.search_terms)
-        
+
         # SAME OUTPUT FORMAT ✅
         return SearchOutput(datasets=results, ...)
 
@@ -200,10 +200,10 @@ class SearchAgent:
         geo_results = await self._geo_client.search(...)
         arrayexpress_results = await self._arrayexpress_client.search(...)
         sra_results = await self._sra_client.search(...)
-        
+
         # Merge and deduplicate
         merged = self._merge_results([geo_results, arrayexpress_results, sra_results])
-        
+
         # SAME OUTPUT FORMAT ✅
         return SearchOutput(datasets=merged, ...)
 ```
@@ -262,14 +262,14 @@ class DataAgent:
 class DataAgent:
     def __init__(self):
         self._quality_model = load_ml_model("quality_predictor_v2")
-    
+
     def _calculate_quality(self, dataset):
         features = self._extract_features(dataset)
         ml_score = self._quality_model.predict(features)
-        
+
         # Can also keep rule-based as fallback
         rule_score = self._rule_based_score(dataset)
-        
+
         # Combine scores
         final_score = 0.7 * ml_score + 0.3 * rule_score
         return final_score
@@ -329,16 +329,16 @@ Output: ReportOutput(
 ```python
 class Orchestrator:
     """Coordinates agent execution, no business logic"""
-    
+
     def execute_workflow(self, workflow_type, input_data):
         # 1. Select agents for workflow
         agents = self._get_agents_for_workflow(workflow_type)
-        
+
         # 2. Execute in sequence (data flows through pipeline)
         result = input_data
         for agent in agents:
             result = agent.execute(result)
-        
+
         # 3. Return final output
         return result
 ```
@@ -374,19 +374,19 @@ def execute_workflow(self, workflow_type, input_data):
 async def execute_workflow(self, workflow_type, input_data):
     # Stage 1: QueryAgent (must run first)
     query_output = await self.query_agent.execute(input_data)
-    
+
     # Stage 2: SearchAgent (depends on QueryAgent)
     search_output = await self.search_agent.execute(query_output)
-    
+
     # Stage 3: DataAgent + ReportAgent (can run in parallel!)
     data_task = self.data_agent.execute(search_output)
     report_task = self.report_agent.execute_lightweight(search_output)
-    
+
     data_output, lightweight_report = await asyncio.gather(data_task, report_task)
-    
+
     # Stage 4: Final report (combine results)
     final_report = await self.report_agent.execute_final(data_output, lightweight_report)
-    
+
     return final_report
 ```
 
@@ -464,7 +464,7 @@ class QueryInput(BaseModel):
 class SearchInput(BaseModel):
     search_terms: List[str]  # Only what SearchAgent needs
     organism: Optional[str]
-    
+
 # NOT this anti-pattern:
 class GlobalInput(BaseModel):
     query: str
@@ -521,12 +521,12 @@ class SearchAgent:
 class SearchAgent:
     def __init__(self, enable_semantic=False):
         self._semantic_pipeline = AdvancedSearchPipeline() if enable_semantic else None
-    
+
     def _process(self, input_data):
         # EXTENSION: New code path
         if self._semantic_pipeline and self._semantic_index_loaded:
             return self._semantic_search(input_data)
-        
+
         # EXISTING: Original code unchanged
         return self._traditional_search(input_data)
 ```
@@ -610,7 +610,7 @@ Months 3-4: Search by image (experimental design diagrams)
 
 **Components Affected:**
 - ✅ QueryAgent: NO CHANGES
-- ✅ DataAgent: NO CHANGES  
+- ✅ DataAgent: NO CHANGES
 - ✅ ReportAgent: NO CHANGES
 - ✅ Orchestrator: NO CHANGES
 
@@ -727,7 +727,7 @@ Months 3-4: Search by image (experimental design diagrams)
        def __init__(self, primary_client, fallback_clients=None):
            self._primary = primary_client
            self._fallbacks = fallback_clients or []
-   
+
    # Not ideal: Modify existing component
    # (But sometimes necessary, just test thoroughly!)
    ```

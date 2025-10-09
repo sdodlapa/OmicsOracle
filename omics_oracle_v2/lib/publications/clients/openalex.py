@@ -13,13 +13,13 @@ Rate Limits: 10 req/second for polite pool (with email), 1 req/second otherwise
 
 Example:
     >>> from omics_oracle_v2.lib.publications.clients.openalex import OpenAlexClient
-    >>> 
+    >>>
     >>> client = OpenAlexClient(email="researcher@university.edu")
-    >>> 
+    >>>
     >>> # Find citing papers
     >>> citing_papers = client.get_citing_papers(doi="10.1038/nature12345")
     >>> print(f"Found {len(citing_papers)} citing papers")
-    >>> 
+    >>>
     >>> # Search for papers
     >>> papers = client.search("CRISPR gene editing", max_results=20)
 """
@@ -68,20 +68,20 @@ class OpenAlexConfig:
         self.timeout = timeout
         self.retry_count = retry_count
         self.user_agent = user_agent
-        
+
         # Auto-configure rate limit based on email
         if rate_limit_per_second is None:
             self.rate_limit_per_second = 10 if email else 1
         else:
             self.rate_limit_per_second = rate_limit_per_second
-        
+
         self.min_request_interval = 1.0 / self.rate_limit_per_second
 
 
 class OpenAlexClient(BasePublicationClient):
     """
     Client for OpenAlex API.
-    
+
     OpenAlex provides comprehensive scholarly data including:
     - Works (publications)
     - Authors
@@ -89,14 +89,14 @@ class OpenAlexClient(BasePublicationClient):
     - Venues (journals)
     - Citations (who cites who)
     - Open access status
-    
+
     Free tier with generous rate limits (10,000/day with email).
     """
 
     def __init__(self, config: Optional[OpenAlexConfig] = None):
         """
         Initialize OpenAlex client.
-        
+
         Args:
             config: OpenAlex configuration
         """
@@ -104,21 +104,23 @@ class OpenAlexClient(BasePublicationClient):
         super().__init__(self.config)
         self.last_request_time = 0.0
         self.session = requests.Session()
-        
+
         # Set up headers
         headers = {
             "User-Agent": self.config.user_agent,
             "Accept": "application/json",
         }
-        
+
         # Add email to user agent for polite pool (faster rate limits)
         if self.config.email:
             headers["User-Agent"] = f"{self.config.user_agent}; mailto:{self.config.email}"
-            logger.info(f"OpenAlex client initialized with polite pool ({self.config.rate_limit_per_second} req/s)")
+            logger.info(
+                f"OpenAlex client initialized with polite pool ({self.config.rate_limit_per_second} req/s)"
+            )
         else:
             logger.info(f"OpenAlex client initialized ({self.config.rate_limit_per_second} req/s)")
             logger.warning("No email provided - consider adding for faster rate limits (10x)")
-        
+
         self.session.headers.update(headers)
 
     @property
@@ -141,11 +143,11 @@ class OpenAlexClient(BasePublicationClient):
     def _make_request(self, url: str, params: Optional[Dict] = None) -> Optional[Dict]:
         """
         Make API request with retry logic.
-        
+
         Args:
             url: API endpoint URL
             params: Query parameters
-            
+
         Returns:
             Response JSON or None on failure
         """
@@ -192,10 +194,10 @@ class OpenAlexClient(BasePublicationClient):
     def get_work_by_doi(self, doi: str) -> Optional[Dict]:
         """
         Get work (publication) by DOI.
-        
+
         Args:
             doi: Digital Object Identifier
-            
+
         Returns:
             Work data or None if not found
         """
@@ -204,26 +206,23 @@ class OpenAlexClient(BasePublicationClient):
 
         # Clean DOI (remove https://doi.org/ prefix if present)
         doi = doi.replace("https://doi.org/", "").replace("http://doi.org/", "")
-        
+
         url = f"{self.config.api_url}/works/https://doi.org/{quote(doi)}"
-        
+
         logger.debug(f"Fetching OpenAlex work for DOI: {doi}")
         return self._make_request(url)
 
     def get_citing_papers(
-        self, 
-        doi: Optional[str] = None, 
-        openalex_id: Optional[str] = None,
-        max_results: int = 100
+        self, doi: Optional[str] = None, openalex_id: Optional[str] = None, max_results: int = 100
     ) -> List[Publication]:
         """
         Get papers that cite a given work.
-        
+
         Args:
             doi: DOI of the cited work
             openalex_id: OpenAlex ID of the cited work
             max_results: Maximum number of citing papers to return
-            
+
         Returns:
             List of citing publications
         """
@@ -270,12 +269,12 @@ class OpenAlexClient(BasePublicationClient):
     def search(self, query: str, max_results: int = 100, **kwargs) -> List[Publication]:
         """
         Search for publications.
-        
+
         Args:
             query: Search query
             max_results: Maximum results to return
             **kwargs: Additional filters (publication_year, type, etc.)
-            
+
         Returns:
             List of publications matching query
         """
@@ -295,7 +294,7 @@ class OpenAlexClient(BasePublicationClient):
             filters.append(f"publication_year:{kwargs['publication_year']}")
         if "type" in kwargs:
             filters.append(f"type:{kwargs['type']}")
-        
+
         if filters:
             params["filter"] = ",".join(filters)
 
@@ -322,10 +321,10 @@ class OpenAlexClient(BasePublicationClient):
     def fetch_by_id(self, identifier: str) -> Optional[Publication]:
         """
         Fetch a publication by DOI or OpenAlex ID.
-        
+
         Args:
             identifier: DOI or OpenAlex ID (starts with 'W')
-            
+
         Returns:
             Publication if found, None otherwise
         """
@@ -348,16 +347,16 @@ class OpenAlexClient(BasePublicationClient):
     def _convert_work_to_publication(self, work: Dict) -> Publication:
         """
         Convert OpenAlex work to Publication object.
-        
+
         Args:
             work: OpenAlex work dictionary
-            
+
         Returns:
             Publication object
         """
         # Extract basic metadata
         title = work.get("title", "")
-        
+
         # Extract authors
         authors = []
         for authorship in work.get("authorships", []):
@@ -365,7 +364,7 @@ class OpenAlexClient(BasePublicationClient):
             name = author.get("display_name", "")
             if name:
                 authors.append(name)
-        
+
         # Extract publication date
         pub_date = None
         pub_date_str = work.get("publication_date")
@@ -374,22 +373,22 @@ class OpenAlexClient(BasePublicationClient):
                 pub_date = datetime.strptime(pub_date_str, "%Y-%m-%d")
             except:
                 pass
-        
+
         # Extract DOI
         doi = work.get("doi")
         if doi and doi.startswith("https://doi.org/"):
             doi = doi.replace("https://doi.org/", "")
-        
+
         # Extract abstract (from abstract_inverted_index)
         abstract = self._extract_abstract(work.get("abstract_inverted_index"))
-        
+
         # Extract journal/venue
         journal = None
         if work.get("primary_location"):
             source = work["primary_location"].get("source")
             if source:
                 journal = source.get("display_name")
-        
+
         # Create publication
         pub = Publication(
             title=title,
@@ -410,25 +409,22 @@ class OpenAlexClient(BasePublicationClient):
                 "oa_url": work.get("open_access", {}).get("oa_url"),
                 "topics": [t.get("display_name") for t in work.get("topics", [])[:3]],
                 "referenced_works_count": work.get("referenced_works_count", 0),
-                "concepts": [
-                    c.get("display_name") 
-                    for c in work.get("concepts", [])[:5]
-                ],
+                "concepts": [c.get("display_name") for c in work.get("concepts", [])[:5]],
             },
         )
-        
+
         return pub
 
     def _extract_abstract(self, inverted_index: Optional[Dict]) -> str:
         """
         Extract abstract from OpenAlex's inverted index format.
-        
+
         OpenAlex stores abstracts as inverted indexes for efficiency:
         {"word": [position1, position2, ...], ...}
-        
+
         Args:
             inverted_index: Inverted index dictionary
-            
+
         Returns:
             Reconstructed abstract text
         """
@@ -441,11 +437,11 @@ class OpenAlexClient(BasePublicationClient):
             for word, positions in inverted_index.items():
                 for pos in positions:
                     word_positions.append((pos, word))
-            
+
             # Sort by position and join
             word_positions.sort(key=lambda x: x[0])
             abstract = " ".join(word for _, word in word_positions)
-            
+
             return abstract
         except Exception as e:
             logger.warning(f"Error extracting abstract from inverted index: {e}")
@@ -454,10 +450,10 @@ class OpenAlexClient(BasePublicationClient):
     def enrich_publication(self, publication: Publication) -> Publication:
         """
         Enrich a publication with OpenAlex data.
-        
+
         Args:
             publication: Publication to enrich
-            
+
         Returns:
             Enriched publication
         """
@@ -480,52 +476,50 @@ class OpenAlexClient(BasePublicationClient):
         # Add OpenAlex metadata
         if not publication.metadata:
             publication.metadata = {}
-        
-        publication.metadata.update({
-            "openalex_id": work.get("id"),
-            "openalex_enriched": True,
-            "is_open_access": work.get("open_access", {}).get("is_oa", False),
-            "oa_url": work.get("open_access", {}).get("oa_url"),
-            "referenced_works_count": work.get("referenced_works_count", 0),
-        })
+
+        publication.metadata.update(
+            {
+                "openalex_id": work.get("id"),
+                "openalex_enriched": True,
+                "is_open_access": work.get("open_access", {}).get("is_oa", False),
+                "oa_url": work.get("open_access", {}).get("oa_url"),
+                "referenced_works_count": work.get("referenced_works_count", 0),
+            }
+        )
 
         logger.debug(f"Enriched publication with OpenAlex data: {publication.title[:50]}")
         return publication
 
-    def get_citation_contexts(
-        self,
-        cited_doi: str,
-        citing_doi: str
-    ) -> List[str]:
+    def get_citation_contexts(self, cited_doi: str, citing_doi: str) -> List[str]:
         """
         Get citation contexts (where the citation appears).
-        
+
         Note: OpenAlex doesn't provide full citation contexts like Google Scholar snippets.
         This method returns what's available (abstract, title) as a fallback.
-        
+
         Args:
             cited_doi: DOI of cited work
             citing_doi: DOI of citing work
-            
+
         Returns:
             List of context strings (abstract, title)
         """
         contexts = []
-        
+
         # Get citing work
         citing_work = self.get_work_by_doi(citing_doi)
         if not citing_work:
             return contexts
-        
+
         # Use abstract as context if available
         abstract = self._extract_abstract(citing_work.get("abstract_inverted_index"))
         if abstract:
             contexts.append(abstract)
-        
+
         # Fallback to title if no abstract
         if not contexts:
             title = citing_work.get("title", "")
             if title:
                 contexts.append(title)
-        
+
         return contexts

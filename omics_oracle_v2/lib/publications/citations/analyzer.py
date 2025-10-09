@@ -64,7 +64,7 @@ class CitationAnalyzer:
         self.openalex = openalex_client
         self.scholar = scholar_client
         self.semantic_scholar = semantic_scholar_client
-        
+
         # Log available sources
         sources = []
         if self.openalex:
@@ -73,9 +73,9 @@ class CitationAnalyzer:
             sources.append("Google Scholar (fallback)")
         if self.semantic_scholar:
             sources.append("Semantic Scholar (enrichment)")
-        
+
         logger.info(f"CitationAnalyzer initialized with sources: {', '.join(sources)}")
-        
+
         if not any([self.openalex, self.scholar]):
             logger.warning("No citation sources configured - citation analysis will be limited")
 
@@ -103,17 +103,14 @@ class CitationAnalyzer:
         if self.openalex and self.openalex.config.enable:
             try:
                 logger.debug("Attempting OpenAlex citation search...")
-                citing_papers = self.openalex.get_citing_papers(
-                    doi=publication.doi,
-                    max_results=max_results
-                )
-                
+                citing_papers = self.openalex.get_citing_papers(doi=publication.doi, max_results=max_results)
+
                 if citing_papers:
                     source_used = "OpenAlex"
                     logger.info(f"✓ Found {len(citing_papers)} citing papers from OpenAlex")
                 else:
                     logger.debug("No citing papers found in OpenAlex")
-                    
+
             except Exception as e:
                 logger.warning(f"OpenAlex citation search failed: {e}")
 
@@ -121,17 +118,14 @@ class CitationAnalyzer:
         if not citing_papers and self.scholar:
             try:
                 logger.debug("Falling back to Google Scholar citation search...")
-                citing_papers = self.scholar.get_citations(
-                    publication.title,
-                    max_results=max_results
-                )
-                
+                citing_papers = self.scholar.get_citations(publication.title, max_results=max_results)
+
                 if citing_papers:
                     source_used = "Google Scholar"
                     logger.info(f"✓ Found {len(citing_papers)} citing papers from Google Scholar")
                 else:
                     logger.debug("No citing papers found in Google Scholar")
-                    
+
             except Exception as e:
                 logger.warning(f"Google Scholar citation search failed: {e}")
 
@@ -182,7 +176,7 @@ class CitationAnalyzer:
                 cited_paper_id=cited_publication.doi or cited_publication.title,
                 context_text=snippet,
                 sentence=snippet,
-                source="scholar_snippet"
+                source="scholar_snippet",
             )
             contexts.append(context)
             logger.debug("Using Google Scholar snippet as citation context")
@@ -191,8 +185,7 @@ class CitationAnalyzer:
         elif self.openalex and cited_publication.doi and citing_publication.doi:
             try:
                 openalex_contexts = self.openalex.get_citation_contexts(
-                    cited_doi=cited_publication.doi,
-                    citing_doi=citing_publication.doi
+                    cited_doi=cited_publication.doi, citing_doi=citing_publication.doi
                 )
                 for ctx in openalex_contexts:
                     context = CitationContext(
@@ -201,7 +194,7 @@ class CitationAnalyzer:
                         context_text=ctx,
                         paragraph=ctx,
                         section="abstract",
-                        source="openalex"
+                        source="openalex",
                     )
                     contexts.append(context)
                 if openalex_contexts:
@@ -217,7 +210,7 @@ class CitationAnalyzer:
                 context_text=citing_publication.abstract,
                 paragraph=citing_publication.abstract,
                 section="abstract",
-                source="abstract"
+                source="abstract",
             )
             contexts.append(context)
             logger.debug("Using citing paper abstract as context")

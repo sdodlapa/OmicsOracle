@@ -70,7 +70,7 @@ def ask(question, analyses):
     # Searches through UsageAnalysis objects
     # Filters by keywords in question
     # Returns matching papers
-    
+
 # Works well for: "What biomarkers..." (keyword: biomarker)
 # Doesn't work for: "Find papers about treatment resistance"
 #   (no keyword match, need semantic understanding)
@@ -209,11 +209,11 @@ Hybrid approach:
 1. GPT-3.5 Turbo for initial screening ($0.10 per 1M tokens)
    - Filter to papers that actually reused dataset
    - Fast, cheap classification
-   
+
 2. GPT-4 for detailed analysis ($2 per 1M tokens)
    - Only for confirmed dataset reuses
    - Deep extraction
-   
+
 Cost savings: 80-90% reduction!
 
 Example:
@@ -430,16 +430,16 @@ import chromadb
 
 class DocumentVectorStore:
     """Store and search documents using vector embeddings."""
-    
+
     def __init__(self, collection_name="papers"):
         self.model = SentenceTransformer('all-mpnet-base-v2')
         self.client = chromadb.Client()
         self.collection = self.client.create_collection(collection_name)
-    
+
     def add_paper(self, paper: Publication, full_text: str):
         """Add paper with chunking."""
         chunks = self._chunk_text(full_text, chunk_size=500)
-        
+
         for i, chunk in enumerate(chunks):
             embedding = self.model.encode(chunk)
             self.collection.add(
@@ -452,7 +452,7 @@ class DocumentVectorStore:
                     "chunk_id": i
                 }]
             )
-    
+
     def search(self, query: str, top_k: int = 10):
         """Semantic search across all papers."""
         query_embedding = self.model.encode(query)
@@ -470,7 +470,7 @@ class DatasetQASystem:
     def __init__(self, llm_client, vector_store=None):
         self.llm = llm_client
         self.vector_store = vector_store  # NEW
-    
+
     def ask(self, dataset, question, analyses):
         # NEW: Retrieve relevant chunks
         if self.vector_store:
@@ -478,7 +478,7 @@ class DatasetQASystem:
             context = self._build_context_from_chunks(chunks)
         else:
             context = self._build_context_from_analyses(analyses)
-        
+
         # Generate answer with context
         answer = self.llm.generate(prompt_with_context)
         return answer
@@ -500,27 +500,27 @@ class DatasetQASystem:
 ```python
 class HybridLLMAnalyzer:
     """Uses GPT-3.5 for screening, GPT-4 for detail."""
-    
+
     def __init__(self, screening_llm, detailed_llm):
         self.screening = screening_llm  # GPT-3.5 Turbo
         self.detailed = detailed_llm    # GPT-4
-    
+
     def analyze_batch(self, contexts):
         # Step 1: Quick screening with GPT-3.5
         screened = []
         for context in contexts:
             prompt = f"Did this paper reuse the dataset? Yes/No: {context}"
             response = self.screening.generate(prompt)
-            
+
             if "yes" in response.lower():
                 screened.append(context)
-        
+
         # Step 2: Detailed analysis with GPT-4 (only for positives)
         detailed_analyses = []
         for context in screened:
             analysis = self.detailed.analyze_citation_context(context)
             detailed_analyses.append(analysis)
-        
+
         return detailed_analyses
 ```
 
@@ -544,7 +544,7 @@ class GoogleScholarClient:
         self.use_proxy = use_proxy
         if use_proxy:
             self.proxy_api = ScraperAPI(api_key=config.proxy_key)
-    
+
     def search(self, query):
         if self.use_proxy:
             return self.proxy_api.get(f"https://scholar.google.com/scholar?q={query}")
@@ -579,17 +579,17 @@ def refresh_citations(dataset_id):
     """Periodic citation refresh task."""
     # Get existing analyses
     old_analyses = db.get_analyses(dataset_id)
-    
+
     # Re-run citation analysis
     new_analyses = pipeline.analyze_citations(dataset_id)
-    
+
     # Detect changes
     changes = detect_changes(old_analyses, new_analyses)
-    
+
     if changes:
         # New biomarkers, citations, etc.
         send_alert(dataset_id, changes)
-    
+
     # Store updated analyses
     db.save_analyses(dataset_id, new_analyses)
 
@@ -613,7 +613,7 @@ class FullTextExtractor:
     def extract_sections(self, pdf_path) -> Dict[str, str]:
         """Extract specific sections from paper."""
         text = self.extract_text(pdf_path)
-        
+
         sections = {
             "abstract": self._extract_section(text, "abstract"),
             "introduction": self._extract_section(text, "introduction"),
@@ -621,7 +621,7 @@ class FullTextExtractor:
             "results": self._extract_section(text, "results"),
             "discussion": self._extract_section(text, "discussion"),
         }
-        
+
         return sections
 ```
 
@@ -643,12 +643,12 @@ class FullTextExtractor:
 def find_related_datasets(dataset_id):
     """Find datasets commonly used together."""
     papers = get_papers_using_dataset(dataset_id)
-    
+
     other_datasets = []
     for paper in papers:
         datasets = extract_datasets_from_paper(paper)
         other_datasets.extend(datasets)
-    
+
     # Count co-occurrences
     co_occurrences = Counter(other_datasets)
     return co_occurrences.most_common(10)
@@ -660,7 +660,7 @@ def find_related_datasets(dataset_id):
 def detect_trends(dataset_id, time_window="1year"):
     """Detect emerging trends in dataset usage."""
     analyses = get_analyses_over_time(dataset_id, time_window)
-    
+
     # Analyze trends
     trends = {
         "usage_types": analyze_usage_trend(analyses),
@@ -668,7 +668,7 @@ def detect_trends(dataset_id, time_window="1year"):
         "domains": analyze_domain_trend(analyses),
         "citations": analyze_citation_trend(analyses)
     }
-    
+
     return trends
 ```
 
@@ -682,10 +682,10 @@ def generate_review(topic, datasets):
     for dataset in datasets:
         papers = get_citing_papers(dataset)
         all_papers.extend(papers)
-    
+
     # Analyze patterns
     synthesis = llm.synthesize_review(all_papers, topic)
-    
+
     return synthesis
 ```
 
@@ -835,4 +835,3 @@ Now enhancing full-text pipeline
 💰 **Add cost optimization in Month 2** for scale
 
 ---
-
