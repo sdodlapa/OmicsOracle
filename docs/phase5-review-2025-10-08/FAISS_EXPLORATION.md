@@ -2,7 +2,7 @@
 
 ## 🎯 Quick Answer
 
-**Does FAISS change Sprint 1 plan?**  
+**Does FAISS change Sprint 1 plan?**
 **NO! ✅** FAISS is a **separate optimization** that enhances search quality, not a replacement for fixing the metadata fetching bottleneck.
 
 **The Two Problems Are Different:**
@@ -35,7 +35,7 @@
 
 ### Overview
 
-**FAISS** = **F**acebook **A**I **S**imilarity **S**earch  
+**FAISS** = **F**acebook **A**I **S**imilarity **S**earch
 - Library for efficient similarity search on high-dimensional vectors
 - Developed by Meta AI Research
 - Used for finding "similar" items in large datasets
@@ -176,14 +176,14 @@ Cost: Negligible ($0.00001 per search)
 
 ### Sprint 1: Fix Metadata Bottleneck (Unchanged) ✅
 
-**Problem:** Sequential metadata fetching (25s)  
-**Solution:** Parallel + caching  
-**Timeline:** 5 days  
-**Dependencies:** None  
+**Problem:** Sequential metadata fetching (25s)
+**Solution:** Parallel + caching
+**Timeline:** 5 days
+**Dependencies:** None
 
 ```
 Day 1-2: Parallel fetching implementation
-Day 3-4: Redis caching integration  
+Day 3-4: Redis caching integration
 Day 5: Monitoring & tuning
 
 Result: 25s → 2.5s (90% faster)
@@ -200,8 +200,8 @@ Result: 25s → 2.5s (90% faster)
 2. Smart batching strategy
 3. Quality score caching
 
-**Timeline:** 5 days  
-**Dependencies:** None  
+**Timeline:** 5 days
+**Dependencies:** None
 
 **FAISS Impact:** None - still independent!
 
@@ -209,7 +209,7 @@ Result: 25s → 2.5s (90% faster)
 
 ### Phase 5: FAISS Integration (New Addition) 🆕
 
-**When:** After Sprint 1-2 complete (Week 3-4)  
+**When:** After Sprint 1-2 complete (Week 3-4)
 **Why:** Need parallel metadata fetching working first!
 
 **Phase 5A: Setup (Week 3)**
@@ -389,10 +389,10 @@ model = KeyedVectors.load_word2vec_format('BioSentVec_PubMed_MIMICIII.bin', bina
 
 ### ✅ **Sprint 1 (Week 1): Fix Bottleneck First**
 
-**Why:** Gets you 90% improvement (25s → 2.5s) immediately  
-**Complexity:** Low  
-**Dependencies:** None  
-**Risk:** Low  
+**Why:** Gets you 90% improvement (25s → 2.5s) immediately
+**Complexity:** Low
+**Dependencies:** None
+**Risk:** Low
 
 **Action Items:**
 1. Implement parallel metadata fetching
@@ -406,10 +406,10 @@ model = KeyedVectors.load_word2vec_format('BioSentVec_PubMed_MIMICIII.bin', bina
 
 ### ✅ **Sprint 2 (Week 2): GPT-4 Optimization**
 
-**Why:** Reduces cost by 75% ($0.04 → $0.01)  
-**Complexity:** Low  
-**Dependencies:** Sprint 1 caching infrastructure  
-**Risk:** Low  
+**Why:** Reduces cost by 75% ($0.04 → $0.01)
+**Complexity:** Low
+**Dependencies:** Sprint 1 caching infrastructure
+**Risk:** Low
 
 **Action Items:**
 1. Cache GPT-4 summaries
@@ -422,10 +422,10 @@ model = KeyedVectors.load_word2vec_format('BioSentVec_PubMed_MIMICIII.bin', bina
 
 ### 🔮 **Phase 5 (Weeks 3-4): FAISS Enhancement**
 
-**Why:** Best search quality + faster results (3-4s total)  
-**Complexity:** Medium  
-**Dependencies:** Sprint 1 metadata fetching (MUST have)  
-**Risk:** Medium  
+**Why:** Best search quality + faster results (3-4s total)
+**Complexity:** Medium
+**Dependencies:** Sprint 1 metadata fetching (MUST have)
+**Risk:** Medium
 
 **Action Items:**
 1. Choose embedding model (day 1)
@@ -444,7 +444,7 @@ model = KeyedVectors.load_word2vec_format('BioSentVec_PubMed_MIMICIII.bin', bina
 START: SearchAgent is slow (30s)
   │
   ├─ Sprint 1: Fix metadata bottleneck?
-  │   ├─ YES ✅ → 90% faster (3-4s) 
+  │   ├─ YES ✅ → 90% faster (3-4s)
   │   │           Simple, low-risk
   │   │           RECOMMENDED
   │   │

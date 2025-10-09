@@ -2,11 +2,11 @@
 
 ## 🎯 Sprint Overview
 
-**Goal:** Fix SearchAgent metadata bottleneck  
-**Timeline:** 5 days  
-**Expected Impact:** 90% faster (25s → 2.5s)  
-**Complexity:** Low (clean, simple changes)  
-**Risk:** Very Low (independent, well-tested patterns)  
+**Goal:** Fix SearchAgent metadata bottleneck
+**Timeline:** 5 days
+**Expected Impact:** 90% faster (25s → 2.5s)
+**Complexity:** Low (clean, simple changes)
+**Risk:** Very Low (independent, well-tested patterns)
 
 ---
 
@@ -54,38 +54,38 @@ async def measure_baseline():
     settings = Settings()
     query_agent = QueryAgent(settings)
     search_agent = SearchAgent(settings)
-    
+
     test_queries = [
         "breast cancer RNA-seq",
         "Alzheimer's disease proteomics",
         "COVID-19 transcriptomics"
     ]
-    
+
     results = []
-    
+
     for query_text in test_queries:
         print(f"\n{'='*60}")
         print(f"Testing: {query_text}")
         print(f"{'='*60}")
-        
+
         # Process query
         query_input = QueryInput(query=query_text)
         query_output = await query_agent.execute(query_input)
-        
+
         # Measure search time
         start_time = time.time()
         search_output = await search_agent.execute(query_output)
         elapsed_time = time.time() - start_time
-        
+
         results.append({
             'query': query_text,
             'time': elapsed_time,
             'datasets_found': len(search_output.datasets)
         })
-        
+
         print(f"Time: {elapsed_time:.2f}s")
         print(f"Datasets: {len(search_output.datasets)}")
-    
+
     # Summary
     print(f"\n{'='*60}")
     print("BASELINE SUMMARY")
@@ -93,7 +93,7 @@ async def measure_baseline():
     avg_time = sum(r['time'] for r in results) / len(results)
     print(f"Average search time: {avg_time:.2f}s")
     print(f"Target (Sprint 1): {avg_time * 0.1:.2f}s (90% faster)")
-    
+
     return results
 
 if __name__ == "__main__":
@@ -168,34 +168,34 @@ logger = logging.getLogger(__name__)
 
 class GEOClient:
     """Enhanced NCBI GEO API client with parallel fetching"""
-    
+
     def __init__(self, settings):
         self._http_client = httpx.AsyncClient(timeout=30.0)
         self._base_url = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
-        
+
         # Concurrency control
         self._max_concurrent = settings.geo_client.max_concurrent_requests or 10
         self._semaphore = asyncio.Semaphore(self._max_concurrent)
-        
+
         # Rate limiting (NCBI allows 3 req/s without key, 10 req/s with key)
         self._rate_limit = settings.geo_client.requests_per_second or 3
         self._last_request_time = 0
-    
+
     async def get_metadata(self, geo_id: str) -> GEOSeriesMetadata:
         """Fetch metadata for a single GEO dataset
-        
+
         Args:
             geo_id: GEO accession ID (e.g., 'GSE123456')
-            
+
         Returns:
             GEOSeriesMetadata object
-            
+
         Raises:
             HTTPError: If NCBI API request fails
         """
         # Apply rate limiting
         await self._rate_limit_wait()
-        
+
         # Apply concurrency control
         async with self._semaphore:
             try:
@@ -208,34 +208,34 @@ class GEOClient:
                     }
                 )
                 response.raise_for_status()
-                
+
                 data = response.json()
                 metadata = self._parse_metadata(data, geo_id)
-                
+
                 logger.debug(f"Fetched metadata for {geo_id}")
                 return metadata
-                
+
             except Exception as e:
                 logger.error(f"Failed to fetch {geo_id}: {e}")
                 raise
-    
+
     async def get_metadata_batch(
-        self, 
+        self,
         geo_ids: List[str],
         max_concurrent: int | None = None
     ) -> List[GEOSeriesMetadata]:
         """Fetch metadata for multiple datasets in parallel
-        
+
         This method significantly improves performance by fetching
         multiple datasets concurrently while respecting NCBI API limits.
-        
+
         Args:
             geo_ids: List of GEO accession IDs
             max_concurrent: Override default concurrency limit (optional)
-            
+
         Returns:
             List of GEOSeriesMetadata objects (maintains order)
-            
+
         Example:
             >>> client = GEOClient(settings)
             >>> ids = ['GSE123456', 'GSE123457', 'GSE123458']
@@ -244,35 +244,35 @@ class GEOClient:
         """
         if not geo_ids:
             return []
-        
+
         # Override concurrency if specified
         if max_concurrent:
             original_semaphore = self._semaphore
             self._semaphore = asyncio.Semaphore(max_concurrent)
-        
+
         try:
             # Create tasks for all IDs
             tasks = [self.get_metadata(geo_id) for geo_id in geo_ids]
-            
+
             # Execute in parallel with error handling
             logger.info(f"Fetching {len(geo_ids)} datasets in parallel (max_concurrent={self._semaphore._value})")
             start_time = asyncio.get_event_loop().time()
-            
+
             results = await asyncio.gather(*tasks, return_exceptions=True)
-            
+
             elapsed_time = asyncio.get_event_loop().time() - start_time
-            
+
             # Separate successes from failures
             valid_results = []
             failed_ids = []
-            
+
             for geo_id, result in zip(geo_ids, results):
                 if isinstance(result, Exception):
                     logger.error(f"Failed to fetch {geo_id}: {result}")
                     failed_ids.append(geo_id)
                 else:
                     valid_results.append(result)
-            
+
             # Log performance metrics
             success_rate = len(valid_results) / len(geo_ids) * 100
             logger.info(
@@ -280,30 +280,30 @@ class GEOClient:
                 f"({success_rate:.1f}%) in {elapsed_time:.2f}s "
                 f"({len(valid_results)/elapsed_time:.1f} datasets/sec)"
             )
-            
+
             if failed_ids:
                 logger.warning(f"Failed to fetch {len(failed_ids)} datasets: {failed_ids}")
-            
+
             return valid_results
-            
+
         finally:
             # Restore original semaphore if overridden
             if max_concurrent:
                 self._semaphore = original_semaphore
-    
+
     async def _rate_limit_wait(self):
         """Implement rate limiting to respect NCBI API limits"""
         import time
         current_time = time.time()
         time_since_last = current_time - self._last_request_time
         min_interval = 1.0 / self._rate_limit
-        
+
         if time_since_last < min_interval:
             wait_time = min_interval - time_since_last
             await asyncio.sleep(wait_time)
-        
+
         self._last_request_time = time.time()
-    
+
     def _parse_metadata(self, data: dict, geo_id: str) -> GEOSeriesMetadata:
         """Parse NCBI API response into metadata object"""
         try:
@@ -332,32 +332,32 @@ class GEOClient:
 
 async def execute(self, input_data: QueryOutput) -> SearchOutput:
     """Execute GEO database search with parallel metadata fetching"""
-    
+
     logger.info(f"Starting GEO search for: {input_data.search_terms}")
     start_time = time.time()
-    
+
     # Step 1: Build query (unchanged)
     query_string = self._build_geo_query(input_data)
     logger.debug(f"Built query: {query_string}")
-    
+
     # Step 2: Search NCBI GEO (unchanged)
     search_response = await self._geo_client.search(
         query=query_string,
         max_results=500
     )
-    
+
     total_count = search_response.count
     geo_ids = search_response.id_list[:50]  # Top 50 results
-    
+
     logger.info(f"Found {total_count} datasets, fetching top {len(geo_ids)}")
-    
+
     # Step 3: Fetch metadata (CHANGED - now parallel!)
     # OLD: Sequential fetching (25 seconds)
     # geo_datasets = []
     # for geo_id in geo_ids:
     #     metadata = await self._geo_client.get_metadata(geo_id)
     #     geo_datasets.append(metadata)
-    
+
     # NEW: Parallel fetching (2.5 seconds) ✅
     fetch_start = time.time()
     geo_datasets = await self._geo_client.get_metadata_batch(
@@ -365,23 +365,23 @@ async def execute(self, input_data: QueryOutput) -> SearchOutput:
         max_concurrent=10  # Configurable per user tier
     )
     fetch_time = time.time() - fetch_start
-    
+
     logger.info(f"Fetched {len(geo_datasets)} datasets in {fetch_time:.2f}s")
-    
+
     # Step 4: Rank and filter (unchanged)
     ranked_datasets = self._ranker.rank(
         datasets=geo_datasets,
         query_terms=input_data.search_terms
     )
-    
+
     filtered_datasets = self._apply_filters(
         datasets=ranked_datasets,
         filters=input_data.filters
     )
-    
+
     # Step 5: Return results
     total_time = time.time() - start_time
-    
+
     return SearchOutput(
         datasets=filtered_datasets[:20],  # Top 20
         total_count=total_count,
@@ -404,16 +404,16 @@ async def execute(self, input_data: QueryOutput) -> SearchOutput:
 
 geo_client:
   base_url: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
-  
+
   # Performance Settings (NEW)
   max_concurrent_requests: 10  # Number of parallel requests
   requests_per_second: 3        # NCBI rate limit (3 without API key)
   request_timeout: 30           # Timeout in seconds
-  
+
   # Retry Logic (NEW)
   retry_attempts: 3
   retry_backoff: 2              # Exponential backoff multiplier
-  
+
   # Monitoring (NEW)
   log_performance_metrics: true
   warn_on_slow_requests: true
@@ -432,17 +432,17 @@ from omics_oracle_v2.lib.config import Settings
 
 async def test_parallel_vs_sequential():
     """Compare parallel vs sequential fetching"""
-    
+
     settings = Settings()
     client = GEOClient(settings)
-    
+
     # Test with 20 datasets
     test_ids = [f"GSE{100000 + i}" for i in range(20)]
-    
+
     print("=" * 60)
     print("SEQUENTIAL FETCHING (OLD)")
     print("=" * 60)
-    
+
     start = time.time()
     sequential_results = []
     for geo_id in test_ids:
@@ -452,30 +452,30 @@ async def test_parallel_vs_sequential():
         except:
             pass
     sequential_time = time.time() - start
-    
+
     print(f"Fetched {len(sequential_results)} datasets")
     print(f"Time: {sequential_time:.2f}s")
     print(f"Rate: {len(sequential_results)/sequential_time:.1f} datasets/sec")
-    
+
     print("\n" + "=" * 60)
     print("PARALLEL FETCHING (NEW)")
     print("=" * 60)
-    
+
     start = time.time()
     parallel_results = await client.get_metadata_batch(
         geo_ids=test_ids,
         max_concurrent=10
     )
     parallel_time = time.time() - start
-    
+
     print(f"Fetched {len(parallel_results)} datasets")
     print(f"Time: {parallel_time:.2f}s")
     print(f"Rate: {len(parallel_results)/parallel_time:.1f} datasets/sec")
-    
+
     print("\n" + "=" * 60)
     print("IMPROVEMENT")
     print("=" * 60)
-    
+
     speedup = sequential_time / parallel_time
     print(f"Speedup: {speedup:.1f}x faster")
     print(f"Time saved: {sequential_time - parallel_time:.2f}s ({(1-parallel_time/sequential_time)*100:.1f}%)")
@@ -536,7 +536,7 @@ logger = logging.getLogger(__name__)
 
 class CacheService:
     """Redis-based caching service"""
-    
+
     def __init__(self, settings):
         self._redis = redis.from_url(
             settings.redis.url,
@@ -544,7 +544,7 @@ class CacheService:
             decode_responses=True
         )
         self._default_ttl = settings.cache.default_ttl or 3600
-        
+
     async def get(self, key: str) -> Optional[dict]:
         """Get value from cache"""
         try:
@@ -557,7 +557,7 @@ class CacheService:
         except Exception as e:
             logger.error(f"Cache get error for {key}: {e}")
             return None
-    
+
     async def set(self, key: str, value: dict, ttl: int | None = None):
         """Set value in cache"""
         try:
@@ -570,11 +570,11 @@ class CacheService:
             logger.debug(f"Cache SET: {key} (TTL: {ttl}s)")
         except Exception as e:
             logger.error(f"Cache set error for {key}: {e}")
-    
+
     async def delete(self, key: str):
         """Delete key from cache"""
         await self._redis.delete(key)
-    
+
     async def clear_pattern(self, pattern: str):
         """Clear all keys matching pattern"""
         keys = await self._redis.keys(pattern)
@@ -593,30 +593,30 @@ Update the `get_metadata()` method:
 
 class GEOClient:
     """NCBI GEO API client with caching"""
-    
+
     def __init__(self, settings, cache: CacheService = None):
         # ... existing initialization ...
-        
+
         # Caching
         self._cache = cache
         self._cache_enabled = settings.geo_client.cache_enabled or True
         self._cache_ttl = settings.geo_client.cache_ttl_metadata or 7 * 24 * 3600  # 7 days
-    
+
     async def get_metadata(self, geo_id: str) -> GEOSeriesMetadata:
         """Fetch metadata with caching"""
-        
+
         # Step 1: Check cache
         if self._cache and self._cache_enabled:
             cache_key = f"geo:metadata:{geo_id}"
             cached_data = await self._cache.get(cache_key)
-            
+
             if cached_data:
                 logger.debug(f"Cache HIT: {geo_id}")
                 return GEOSeriesMetadata(**cached_data)
-        
+
         # Step 2: Cache MISS - fetch from NCBI
         await self._rate_limit_wait()
-        
+
         async with self._semaphore:
             try:
                 response = await self._http_client.get(
@@ -624,10 +624,10 @@ class GEOClient:
                     params={"db": "gds", "id": geo_id, "retmode": "json"}
                 )
                 response.raise_for_status()
-                
+
                 data = response.json()
                 metadata = self._parse_metadata(data, geo_id)
-                
+
                 # Step 3: Cache the result
                 if self._cache and self._cache_enabled:
                     await self._cache.set(
@@ -635,10 +635,10 @@ class GEOClient:
                         metadata.dict(),
                         ttl=self._cache_ttl
                     )
-                
+
                 logger.debug(f"Fetched and cached: {geo_id}")
                 return metadata
-                
+
             except Exception as e:
                 logger.error(f"Failed to fetch {geo_id}: {e}")
                 raise
@@ -657,29 +657,29 @@ async def get_metadata_batch_smart(
     max_concurrent: int | None = None
 ) -> List[GEOSeriesMetadata]:
     """Fetch metadata with smart caching strategy
-    
+
     This method checks cache first, only fetches uncached datasets,
     then combines results for maximum performance.
     """
     if not geo_ids:
         return []
-    
+
     cached_results = []
     uncached_ids = []
-    
+
     # Step 1: Partition IDs by cache status
     if self._cache and self._cache_enabled:
         logger.info(f"Checking cache for {len(geo_ids)} datasets")
-        
+
         for geo_id in geo_ids:
             cache_key = f"geo:metadata:{geo_id}"
             cached_data = await self._cache.get(cache_key)
-            
+
             if cached_data:
                 cached_results.append(GEOSeriesMetadata(**cached_data))
             else:
                 uncached_ids.append(geo_id)
-        
+
         cache_hit_rate = len(cached_results) / len(geo_ids) * 100
         logger.info(
             f"Cache: {len(cached_results)}/{len(geo_ids)} hits "
@@ -687,7 +687,7 @@ async def get_metadata_batch_smart(
         )
     else:
         uncached_ids = geo_ids
-    
+
     # Step 2: Fetch uncached datasets in parallel
     uncached_results = []
     if uncached_ids:
@@ -695,14 +695,14 @@ async def get_metadata_batch_smart(
             geo_ids=uncached_ids,
             max_concurrent=max_concurrent
         )
-    
+
     # Step 3: Combine and maintain order
     all_results = cached_results + uncached_results
-    
+
     # Reorder to match original geo_ids order
     id_to_metadata = {m.geo_id: m for m in all_results}
     ordered_results = [id_to_metadata[gid] for gid in geo_ids if gid in id_to_metadata]
-    
+
     return ordered_results
 ```
 
@@ -718,10 +718,10 @@ redis:
 cache:
   enabled: true
   default_ttl: 3600  # 1 hour
-  
+
 geo_client:
   # ... existing settings ...
-  
+
   # Caching (NEW)
   cache_enabled: true
   cache_ttl_metadata: 604800      # 7 days (in seconds)
@@ -742,57 +742,57 @@ from omics_oracle_v2.lib.config import Settings
 
 async def test_caching():
     """Test cache effectiveness"""
-    
+
     settings = Settings()
     cache = CacheService(settings)
     client = GEOClient(settings, cache=cache)
-    
+
     test_ids = [f"GSE{100000 + i}" for i in range(20)]
-    
+
     # Clear cache
     await cache.clear_pattern("geo:metadata:*")
-    
+
     print("=" * 60)
     print("FIRST REQUEST (Cache Miss)")
     print("=" * 60)
-    
+
     start = time.time()
     results1 = await client.get_metadata_batch_smart(test_ids)
     time1 = time.time() - start
-    
+
     print(f"Fetched {len(results1)} datasets")
     print(f"Time: {time1:.2f}s")
-    
+
     print("\n" + "=" * 60)
     print("SECOND REQUEST (Cache Hit)")
     print("=" * 60)
-    
+
     start = time.time()
     results2 = await client.get_metadata_batch_smart(test_ids)
     time2 = time.time() - start
-    
+
     print(f"Fetched {len(results2)} datasets")
     print(f"Time: {time2:.2f}s")
-    
+
     print("\n" + "=" * 60)
     print("IMPROVEMENT")
     print("=" * 60)
-    
+
     speedup = time1 / time2
     print(f"Speedup: {speedup:.1f}x faster")
     print(f"Time saved: {time1 - time2:.2f}s ({(1-time2/time1)*100:.1f}%)")
-    
+
     # Test partial cache hit
     mixed_ids = test_ids[:10] + [f"GSE{200000 + i}" for i in range(10)]
-    
+
     print("\n" + "=" * 60)
     print("MIXED REQUEST (50% Cached)")
     print("=" * 60)
-    
+
     start = time.time()
     results3 = await client.get_metadata_batch_smart(mixed_ids)
     time3 = time.time() - start
-    
+
     print(f"Fetched {len(results3)} datasets")
     print(f"Time: {time3:.2f}s")
 
@@ -840,11 +840,11 @@ from omics_oracle_v2.lib.config import Settings
 
 async def integration_test():
     """Full end-to-end test with real queries"""
-    
+
     settings = Settings()
     query_agent = QueryAgent(settings)
     search_agent = SearchAgent(settings)
-    
+
     test_cases = [
         {
             'name': 'Breast Cancer (Popular)',
@@ -862,35 +862,35 @@ async def integration_test():
             'expected_cached': True
         }
     ]
-    
+
     results = []
-    
+
     for test in test_cases:
         print(f"\n{'='*60}")
         print(f"Test: {test['name']}")
         print(f"Query: {test['query']}")
         print(f"{'='*60}")
-        
+
         # First request
         query_input = QueryInput(query=test['query'])
         query_output = await query_agent.execute(query_input)
-        
+
         start = time.time()
         search_output1 = await search_agent.execute(query_output)
         time1 = time.time() - start
-        
+
         print(f"First request: {time1:.2f}s ({len(search_output1.datasets)} datasets)")
-        
+
         # Second request (should be cached)
         start = time.time()
         search_output2 = await search_agent.execute(query_output)
         time2 = time.time() - start
-        
+
         print(f"Second request: {time2:.2f}s (cached)")
-        
+
         speedup = time1 / time2 if time2 > 0 else 0
         print(f"Speedup: {speedup:.1f}x faster")
-        
+
         results.append({
             'test': test['name'],
             'first_time': time1,
@@ -898,22 +898,22 @@ async def integration_test():
             'speedup': speedup,
             'datasets': len(search_output1.datasets)
         })
-    
+
     # Summary
     print(f"\n{'='*60}")
     print("SPRINT 1 TEST SUMMARY")
     print(f"{'='*60}")
-    
+
     for r in results:
         print(f"\n{r['test']}:")
         print(f"  First request: {r['first_time']:.2f}s")
         print(f"  Cached: {r['cached_time']:.2f}s")
         print(f"  Speedup: {r['speedup']:.1f}x")
         print(f"  Datasets: {r['datasets']}")
-    
+
     avg_first = sum(r['first_time'] for r in results) / len(results)
     avg_cached = sum(r['cached_time'] for r in results) / len(results)
-    
+
     print(f"\nAverages:")
     print(f"  First request: {avg_first:.2f}s")
     print(f"  Cached: {avg_cached:.2f}s")
@@ -938,33 +938,33 @@ logger = logging.getLogger(__name__)
 @dataclass
 class PerformanceMetrics:
     """Track performance metrics for Sprint 1"""
-    
+
     # Metadata fetching
     metadata_requests: int = 0
     metadata_cache_hits: int = 0
     metadata_cache_misses: int = 0
     metadata_fetch_times: List[float] = field(default_factory=list)
-    
+
     # Search performance
     search_requests: int = 0
     search_times: List[float] = field(default_factory=list)
-    
+
     @property
     def cache_hit_rate(self) -> float:
         """Calculate cache hit rate"""
         total = self.metadata_cache_hits + self.metadata_cache_misses
         return (self.metadata_cache_hits / total * 100) if total > 0 else 0
-    
+
     @property
     def avg_fetch_time(self) -> float:
         """Average metadata fetch time"""
         return sum(self.metadata_fetch_times) / len(self.metadata_fetch_times) if self.metadata_fetch_times else 0
-    
+
     @property
     def avg_search_time(self) -> float:
         """Average total search time"""
         return sum(self.search_times) / len(self.search_times) if self.search_times else 0
-    
+
     def log_summary(self):
         """Log performance summary"""
         logger.info(
@@ -987,23 +987,23 @@ class SearchAgent:
     def __init__(self, settings):
         # ... existing init ...
         self._metrics = PerformanceMetrics()
-    
+
     async def execute(self, input_data: QueryOutput) -> SearchOutput:
         """Execute with metrics tracking"""
-        
+
         start_time = time.time()
-        
+
         # ... existing search logic ...
-        
+
         # Track metrics
         self._metrics.search_requests += 1
         total_time = time.time() - start_time
         self._metrics.search_times.append(total_time)
-        
+
         # Log every 10 requests
         if self._metrics.search_requests % 10 == 0:
             self._metrics.log_summary()
-        
+
         return search_output
 ```
 
@@ -1098,10 +1098,10 @@ grep "Batch fetch complete" logs/omics_oracle.log | tail -20
    ```bash
    # Stop services
    pkill -f "omics_oracle"
-   
+
    # Start Redis
    redis-server &
-   
+
    # Start OmicsOracle
    python -m omics_oracle_v2.api.main
    ```
@@ -1110,7 +1110,7 @@ grep "Batch fetch complete" logs/omics_oracle.log | tail -20
    ```bash
    # Check health
    curl http://localhost:8000/health
-   
+
    # Test search
    python test_sprint1_integration.py
    ```
@@ -1233,10 +1233,10 @@ Before marking Sprint 1 complete:
 
 ---
 
-**Sprint 1 Status:** Ready for Implementation  
-**Estimated Effort:** 16-20 hours over 5 days  
-**Expected Impact:** 90% performance improvement  
-**Risk Level:** Low  
+**Sprint 1 Status:** Ready for Implementation
+**Estimated Effort:** 16-20 hours over 5 days
+**Expected Impact:** 90% performance improvement
+**Risk Level:** Low
 **Go/No-Go:** ✅ GO!
 
 Let's start implementing! 🚀

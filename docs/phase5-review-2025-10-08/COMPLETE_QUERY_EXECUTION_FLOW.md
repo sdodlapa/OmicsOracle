@@ -1,8 +1,8 @@
 # OmicsOracle - Complete Query Execution Flow Analysis
-**Version:** 1.0  
-**Date:** October 9, 2025  
-**Purpose:** Deep-dive technical documentation of end-to-end query execution with optimization opportunities  
-**Status:** Living Document - Section by Section Analysis  
+**Version:** 1.0
+**Date:** October 9, 2025
+**Purpose:** Deep-dive technical documentation of end-to-end query execution with optimization opportunities
+**Status:** Living Document - Section by Section Analysis
 
 ---
 
@@ -290,7 +290,7 @@ Each stage includes:
 
 **Document will be updated section by section to maintain quality and avoid length limits.**
 
-**Last Updated:** October 9, 2025  
+**Last Updated:** October 9, 2025
 **Next Update:** Stage 6 (SearchAgent) - Critical Bottleneck Analysis
 
 ---
@@ -299,10 +299,10 @@ Each stage includes:
 
 ## 📋 Section Overview
 
-**Purpose:** Search NCBI GEO database for genomic datasets matching user query  
-**Current Performance:** 20-30s (keyword), 5-10s (semantic)  
-**Performance Impact:** 67% of total execution time  
-**Status:** 🔴 **CRITICAL BOTTLENECK**  
+**Purpose:** Search NCBI GEO database for genomic datasets matching user query
+**Current Performance:** 20-30s (keyword), 5-10s (semantic)
+**Performance Impact:** 67% of total execution time
+**Status:** 🔴 **CRITICAL BOTTLENECK**
 
 **What This Section Covers:**
 1. Current implementation (how it works today)
@@ -342,11 +342,11 @@ Output: SearchOutput (list of datasets)
 ```python
 async def execute(self, input_data: QueryOutput) -> SearchOutput:
     """Execute GEO database search"""
-    
+
     # Step 1: Build NCBI E-utilities query
     query_string = self._build_geo_query(input_data)
     # Example output: 'breast cancer[Title/Abstract] AND RNA-seq[Study Type] AND Homo sapiens[Organism]'
-    
+
     logger.info(f"Built GEO query: {query_string}")
 ```
 
@@ -369,10 +369,10 @@ async def execute(self, input_data: QueryOutput) -> SearchOutput:
         max_results=500,  # Get top 500 IDs
         sort_by="relevance"
     )
-    
+
     geo_ids = search_response.id_list  # ['GSE123456', 'GSE123457', ...]
     total_count = search_response.count  # 142 total results
-    
+
     logger.info(f"Found {total_count} datasets, retrieved {len(geo_ids)} IDs")
 ```
 
@@ -416,7 +416,7 @@ GET https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?
     # Step 3: Fetch full metadata for each dataset
     # 🔴 THIS IS THE PROBLEM - SEQUENTIAL LOOP
     geo_datasets = []
-    
+
     for geo_id in geo_ids[:50]:  # Only fetch top 50
         try:
             # Each call takes ~500ms
@@ -425,7 +425,7 @@ GET https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?
         except Exception as e:
             logger.error(f"Failed to fetch {geo_id}: {e}")
             continue
-    
+
     # 50 datasets × 500ms each = 25 seconds! 🔴
     logger.info(f"Fetched metadata for {len(geo_datasets)} datasets")
 ```
@@ -467,7 +467,7 @@ GET https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?
    )
    ```
 
-**Total per dataset:** ~500ms  
+**Total per dataset:** ~500ms
 **For 50 datasets:** 50 × 500ms = **25 seconds** 🔴
 
 ---
@@ -480,13 +480,13 @@ GET https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?
         datasets=geo_datasets,
         query_terms=input_data.search_terms
     )
-    
+
     # Step 5: Apply filters
     filtered_datasets = self._apply_filters(
         datasets=ranked_datasets,
         filters=input_data.filters
     )
-    
+
     return SearchOutput(
         datasets=filtered_datasets[:20],  # Top 20
         total_count=total_count,
@@ -569,12 +569,12 @@ metadatas = await fetch_metadata_batch(geo_ids, max_concurrent=10)
 ```python
 class GEOClient:
     """NCBI GEO API client"""
-    
+
     def __init__(self, settings: GEOSettings):
         self._http_client = httpx.AsyncClient()
         self._max_concurrent = settings.max_concurrent_requests  # Default: 10
         self._semaphore = asyncio.Semaphore(self._max_concurrent)
-    
+
     async def get_metadata(self, geo_id: str) -> GEOSeriesMetadata:
         """Fetch metadata for single dataset"""
         async with self._semaphore:  # Limit concurrency
@@ -583,27 +583,27 @@ class GEOClient:
                 params={"db": "gds", "id": geo_id, "retmode": "json"}
             )
             return self._parse_metadata(response.json())
-    
+
     async def get_metadata_batch(
-        self, 
+        self,
         geo_ids: list[str],
         max_concurrent: int | None = None
     ) -> list[GEOSeriesMetadata]:
         """Fetch metadata for multiple datasets in parallel
-        
+
         Args:
             geo_ids: List of GEO IDs to fetch
             max_concurrent: Override default concurrency limit
-        
+
         Returns:
             List of metadata objects (maintains order)
         """
         # Create tasks for all IDs
         tasks = [self.get_metadata(geo_id) for geo_id in geo_ids]
-        
+
         # Execute in parallel (semaphore controls concurrency)
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # Filter out errors, log failures
         valid_results = []
         for geo_id, result in zip(geo_ids, results):
@@ -611,7 +611,7 @@ class GEOClient:
                 logger.error(f"Failed to fetch {geo_id}: {result}")
             else:
                 valid_results.append(result)
-        
+
         return valid_results
 ```
 
@@ -620,19 +620,19 @@ class GEOClient:
 ```python
 async def execute(self, input_data: QueryOutput) -> SearchOutput:
     # ... search step ...
-    
+
     # OLD: Sequential (25 seconds)
     # geo_datasets = []
     # for geo_id in geo_ids[:50]:
     #     metadata = await self._geo_client.get_metadata(geo_id)
     #     geo_datasets.append(metadata)
-    
+
     # NEW: Parallel (2.5 seconds) ✅
     geo_datasets = await self._geo_client.get_metadata_batch(
         geo_ids=geo_ids[:50],
         max_concurrent=10  # Configurable!
     )
-    
+
     # ... ranking step ...
 ```
 
@@ -677,23 +677,23 @@ from omics_oracle_v2.lib.cache import CacheService
 
 class GEOClient:
     """NCBI GEO API client with caching"""
-    
+
     def __init__(self, settings: GEOSettings, cache: CacheService):
         self._http_client = httpx.AsyncClient()
         self._cache = cache
         self._cache_ttl = 7 * 24 * 3600  # 7 days (configurable)
-    
+
     async def get_metadata(self, geo_id: str) -> GEOSeriesMetadata:
         """Fetch metadata with caching"""
-        
+
         # Step 1: Check cache
         cache_key = f"geo:metadata:{geo_id}"
         cached_data = await self._cache.get(cache_key)
-        
+
         if cached_data:
             logger.debug(f"Cache HIT: {geo_id}")
             return GEOSeriesMetadata(**cached_data)
-        
+
         # Step 2: Cache MISS - fetch from NCBI
         logger.debug(f"Cache MISS: {geo_id}")
         async with self._semaphore:
@@ -702,14 +702,14 @@ class GEOClient:
                 params={"db": "gds", "id": geo_id, "retmode": "json"}
             )
             metadata = self._parse_metadata(response.json())
-        
+
         # Step 3: Cache the result
         await self._cache.set(
             key=cache_key,
             value=metadata.dict(),  # Serialize to dict
             ttl=self._cache_ttl
         )
-        
+
         return metadata
 ```
 
@@ -748,7 +748,7 @@ Improvement: 80-95% faster for repeated queries!
 
 **Concept:** Fetch datasets in intelligent batches based on priority
 
-**Current:** Fetch top 50 datasets blindly  
+**Current:** Fetch top 50 datasets blindly
 **Proposed:** Fetch in priority-based batches
 
 #### Implementation
@@ -756,31 +756,31 @@ Improvement: 80-95% faster for repeated queries!
 ```python
 async def execute(self, input_data: QueryOutput) -> SearchOutput:
     """Execute search with smart batching"""
-    
+
     # Step 1: Get all GEO IDs from search
     search_response = await self._geo_client.search(query_string, max_results=500)
     all_geo_ids = search_response.id_list  # ['GSE123456', ...]
-    
+
     # Step 2: Check which IDs are already cached
     cached_ids, uncached_ids = await self._partition_cached(all_geo_ids[:50])
-    
+
     logger.info(f"Cache stats: {len(cached_ids)} cached, {len(uncached_ids)} uncached")
-    
+
     # Step 3: Fetch cached datasets (instant)
     cached_datasets = await self._fetch_from_cache(cached_ids)
-    
+
     # Step 4: Fetch uncached datasets (parallel)
     uncached_datasets = await self._geo_client.get_metadata_batch(
         geo_ids=uncached_ids,
         max_concurrent=10
     )
-    
+
     # Step 5: Combine results
     all_datasets = cached_datasets + uncached_datasets
-    
+
     # Step 6: Rank by relevance
     ranked_datasets = self._ranker.rank(all_datasets, input_data.search_terms)
-    
+
     return SearchOutput(
         datasets=ranked_datasets[:20],
         total_count=len(all_datasets),
@@ -903,24 +903,24 @@ geo_client:
   # API Configuration
   base_url: "https://eutils.ncbi.nlm.nih.gov/entrez/eutils"
   api_key: null  # Optional: Increases rate limit
-  
+
   # Performance Tuning
   max_concurrent_requests: 10  # 🎛️ Tune based on NCBI limits
   request_timeout: 30  # seconds
   retry_attempts: 3
   retry_backoff: 2  # exponential backoff multiplier
-  
+
   # Caching Strategy
   cache_enabled: true
   cache_ttl_metadata: 604800  # 7 days (in seconds)
   cache_ttl_search: 3600      # 1 hour
   cache_ttl_quality: 604800   # 7 days
-  
+
   # Search Behavior
   default_max_results: 50
   enable_semantic_search: false  # Toggle FAISS
   semantic_fallback: true        # Use NCBI if semantic fails
-  
+
   # Rate Limiting
   requests_per_second: 3  # NCBI limit without API key
   burst_size: 10          # Allow short bursts
@@ -1094,11 +1094,11 @@ search_output = await search_agent.execute(
 
 ### Design Principles for Solutions
 
-✅ **Simple First:** Parallel + caching before complex solutions  
-✅ **Configurable:** Settings can be tuned without code changes  
-✅ **Graceful Degradation:** Failed requests don't crash pipeline  
-✅ **Observable:** Metrics for monitoring and debugging  
-✅ **Future-Proof:** Easy to swap NCBI client or add new backends  
+✅ **Simple First:** Parallel + caching before complex solutions
+✅ **Configurable:** Settings can be tuned without code changes
+✅ **Graceful Degradation:** Failed requests don't crash pipeline
+✅ **Observable:** Metrics for monitoring and debugging
+✅ **Future-Proof:** Easy to swap NCBI client or add new backends
 
 ### Next Steps
 
@@ -1109,5 +1109,5 @@ search_output = await search_agent.execute(
 
 ---
 
-**Section Status:** ✅ Complete  
+**Section Status:** ✅ Complete
 **Next Section:** Stage 5 (QueryAgent) or Stage 7 (DataAgent) - Your choice!

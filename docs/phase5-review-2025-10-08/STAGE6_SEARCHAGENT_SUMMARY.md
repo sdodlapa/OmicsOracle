@@ -46,9 +46,9 @@ for geo_id in geo_ids[:50]:
 metadatas = await get_metadata_batch(geo_ids[:50], max_concurrent=10)
 ```
 
-**Impact:** 90% faster (25s → 2.5s)  
-**Complexity:** Low (50 lines of code)  
-**Flexibility:** Configurable concurrency  
+**Impact:** 90% faster (25s → 2.5s)
+**Complexity:** Low (50 lines of code)
+**Flexibility:** Configurable concurrency
 
 ---
 
@@ -67,9 +67,9 @@ metadata = await fetch_from_ncbi(geo_id)
 await cache.set(cache_key, metadata, ttl=7days)
 ```
 
-**Impact:** 95% faster for repeated queries (25s → <1s)  
-**Complexity:** Low (30 lines of code)  
-**Flexibility:** Configurable TTL per data type  
+**Impact:** 95% faster for repeated queries (25s → <1s)
+**Complexity:** Low (30 lines of code)
+**Flexibility:** Configurable TTL per data type
 
 ---
 
@@ -83,8 +83,8 @@ cached_data = await fetch_from_cache(cached_ids)  # Instant
 uncached_data = await fetch_parallel(uncached_ids)  # 1-2s
 ```
 
-**Impact:** 96% faster on average (25s → 1s)  
-**Complexity:** Medium (100 lines of code)  
+**Impact:** 96% faster on average (25s → 1s)
+**Complexity:** Medium (100 lines of code)
 
 ---
 

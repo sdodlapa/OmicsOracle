@@ -263,7 +263,9 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
                 fetch_time = time.time() - fetch_time_fallback
                 context.set_metric("metadata_fetch_time", fetch_time)
                 context.set_metric("metadata_fetch_method", "sequential_fallback")
-                logger.info(f"Sequential fallback complete: {len(geo_datasets)} datasets in {fetch_time:.2f}s")
+                logger.info(
+                    f"Sequential fallback complete: {len(geo_datasets)} datasets in {fetch_time:.2f}s"
+                )
 
             context.set_metric("metadata_fetched_count", len(geo_datasets))
             logger.info(f"Successfully fetched {len(geo_datasets)} metadata records")

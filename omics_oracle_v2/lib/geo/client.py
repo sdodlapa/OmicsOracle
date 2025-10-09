@@ -488,8 +488,7 @@ class GEOClient:
 
         # Create tasks for all IDs
         logger.info(
-            f"Starting batch metadata fetch: {len(geo_ids)} datasets, "
-            f"max_concurrent={max_concurrent}"
+            f"Starting batch metadata fetch: {len(geo_ids)} datasets, " f"max_concurrent={max_concurrent}"
         )
         tasks = [_get_single(geo_id) for geo_id in geo_ids]
 
@@ -548,7 +547,7 @@ class GEOClient:
         - Mixed (50% cached): 1-1.5s for 50 datasets
 
         Args:
-            geo_ids: List of GEO series IDs  
+            geo_ids: List of GEO series IDs
             max_concurrent: Maximum concurrent fetches
 
         Returns:

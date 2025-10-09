@@ -178,7 +178,7 @@ With Sprint 1:
 
 ### Why FAISS Doesn't Need an LLM
 
-**Common Misconception:** "FAISS uses AI, so it needs GPT-4"  
+**Common Misconception:** "FAISS uses AI, so it needs GPT-4"
 **Reality:** FAISS uses embeddings, not text generation
 
 ```
@@ -235,7 +235,7 @@ distances, ids = index.search(embedding.reshape(1, -1), k=50)
 
 ### Week 1: Sprint 1 (Essential) ✅
 
-**Focus:** Fix metadata bottleneck  
+**Focus:** Fix metadata bottleneck
 **Tasks:**
 - Day 1-2: Parallel fetching implementation
 - Day 3-4: Redis caching integration
@@ -249,7 +249,7 @@ distances, ids = index.search(embedding.reshape(1, -1), k=50)
 
 ### Week 2: Sprint 2 (High Value) ✅
 
-**Focus:** GPT-4 cost optimization  
+**Focus:** GPT-4 cost optimization
 **Tasks:**
 - Cache GPT-4 summaries
 - Smart batching strategy
@@ -263,13 +263,13 @@ distances, ids = index.search(embedding.reshape(1, -1), k=50)
 
 ### Week 3-4: FAISS Proof of Concept (Optional) 🔮
 
-**Focus:** Evaluate if FAISS adds value  
+**Focus:** Evaluate if FAISS adds value
 **Tasks:**
 - Week 3:
   - Day 1: Evaluate embedding models
   - Day 2-3: Build offline indexing pipeline
   - Day 4-5: Generate embeddings for all datasets
-  
+
 - Week 4:
   - Day 1-2: Build FAISS index
   - Day 3-4: A/B test FAISS vs NCBI quality
@@ -280,7 +280,7 @@ distances, ids = index.search(embedding.reshape(1, -1), k=50)
 - Is 3-hour setup + 3GB storage acceptable?
 - Can we maintain weekly index updates?
 
-**If YES:** Integrate into SearchAgent (Week 5)  
+**If YES:** Integrate into SearchAgent (Week 5)
 **If NO:** Stick with optimized NCBI search (still 10-12s total, good enough!)
 
 ---
@@ -424,9 +424,9 @@ Action: Build POC, evaluate quality, make data-driven decision
 
 ---
 
-**Bottom Line:** 
+**Bottom Line:**
 
-✅ **Sprint 1 is essential regardless of FAISS plans**  
-✅ **FAISS is an enhancement that benefits from Sprint 1**  
-✅ **Do Sprint 1 first, explore FAISS later**  
+✅ **Sprint 1 is essential regardless of FAISS plans**
+✅ **FAISS is an enhancement that benefits from Sprint 1**
+✅ **Do Sprint 1 first, explore FAISS later**
 ✅ **Don't overthink it - just start with Sprint 1!**

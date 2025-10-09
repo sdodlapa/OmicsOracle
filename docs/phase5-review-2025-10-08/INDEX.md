@@ -105,6 +105,6 @@ See **SPRINT1_VS_FAISS.md** for detailed comparison.
 
 ---
 
-**Last Updated:** October 9, 2025  
-**Status:** Complete analysis, ready for Sprint 1 implementation  
+**Last Updated:** October 9, 2025
+**Status:** Complete analysis, ready for Sprint 1 implementation
 **Next:** Implement Sprint 1 parallel fetching + caching

@@ -248,9 +248,7 @@ async def test_end_to_end_search():
             fetch_time = search_output.metadata["metadata_fetch_time"]
             print(f"Metadata fetch: {fetch_time:.2f}s ({fetch_time/elapsed*100:.1f}% of total)")
 
-        results.append(
-            {"query": query_text, "total_time": elapsed, "datasets": len(search_output.datasets)}
-        )
+        results.append({"query": query_text, "total_time": elapsed, "datasets": len(search_output.datasets)})
 
     # Summary
     print("\n" + "=" * 80)
