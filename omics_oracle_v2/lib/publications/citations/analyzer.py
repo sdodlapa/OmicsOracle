@@ -1,14 +1,21 @@
 """
 Citation analyzer - extracts citations and citing papers.
 
-Uses Google Scholar to find papers that cite a given publication.
+Uses multiple sources to find papers that cite a given publication:
+1. OpenAlex (primary) - Free, official API, sustainable
+2. Google Scholar (fallback) - More comprehensive but may be blocked
+3. Semantic Scholar (enrichment) - Citation counts and metrics
+
+Multi-source approach ensures robustness and maximum coverage.
 """
 
 import logging
 from typing import List, Optional
 
 from omics_oracle_v2.lib.publications.citations.models import CitationContext
+from omics_oracle_v2.lib.publications.clients.openalex import OpenAlexClient
 from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
+from omics_oracle_v2.lib.publications.clients.semantic_scholar import SemanticScholarClient
 from omics_oracle_v2.lib.publications.models import Publication
 
 logger = logging.getLogger(__name__)
@@ -16,31 +23,70 @@ logger = logging.getLogger(__name__)
 
 class CitationAnalyzer:
     """
-    Analyze citations for a publication.
+    Analyze citations for a publication using multiple sources.
 
-    Uses Google Scholar to:
+    Source Priority:
+    1. OpenAlex - Primary source (free, reliable, no scraping)
+    2. Google Scholar - Fallback (comprehensive but may be blocked)
+    3. Semantic Scholar - Enrichment only (citation counts, metrics)
+
+    Features:
     - Find papers that cite a given publication
-    - Extract citation contexts
+    - Extract citation contexts from abstracts/full-text
     - Get metadata for citing papers
+    - Citation network analysis
+    - Citation statistics
 
     Example:
-        >>> analyzer = CitationAnalyzer(scholar_client)
+        >>> analyzer = CitationAnalyzer(
+        ...     openalex_client=openalex,
+        ...     scholar_client=scholar,  # Optional
+        ...     semantic_scholar_client=ss  # Optional
+        ... )
         >>> citing_papers = analyzer.get_citing_papers(publication)
         >>> contexts = analyzer.get_citation_contexts(publication, citing_papers[0])
     """
 
-    def __init__(self, scholar_client: GoogleScholarClient):
+    def __init__(
+        self,
+        openalex_client: Optional[OpenAlexClient] = None,
+        scholar_client: Optional[GoogleScholarClient] = None,
+        semantic_scholar_client: Optional[SemanticScholarClient] = None,
+    ):
         """
-        Initialize citation analyzer.
+        Initialize citation analyzer with multiple sources.
 
         Args:
-            scholar_client: Google Scholar client for API access
+            openalex_client: OpenAlex client (primary source)
+            scholar_client: Google Scholar client (fallback)
+            semantic_scholar_client: Semantic Scholar client (enrichment)
         """
+        self.openalex = openalex_client
         self.scholar = scholar_client
+        self.semantic_scholar = semantic_scholar_client
+        
+        # Log available sources
+        sources = []
+        if self.openalex:
+            sources.append("OpenAlex (primary)")
+        if self.scholar:
+            sources.append("Google Scholar (fallback)")
+        if self.semantic_scholar:
+            sources.append("Semantic Scholar (enrichment)")
+        
+        logger.info(f"CitationAnalyzer initialized with sources: {', '.join(sources)}")
+        
+        if not any([self.openalex, self.scholar]):
+            logger.warning("No citation sources configured - citation analysis will be limited")
 
     def get_citing_papers(self, publication: Publication, max_results: int = 100) -> List[Publication]:
         """
         Get papers that cite this publication.
+
+        Multi-source approach with fallback:
+        1. Try OpenAlex (primary - free, reliable)
+        2. Fall back to Google Scholar if OpenAlex fails
+        3. Enrich results with Semantic Scholar metrics
 
         Args:
             publication: Publication to find citations for
@@ -50,17 +96,60 @@ class CitationAnalyzer:
             List of citing publications
         """
         logger.info(f"Finding papers that cite: {publication.title}")
+        citing_papers = []
+        source_used = None
 
-        # Try to get citations using Scholar client
-        try:
-            citing_papers = self.scholar.get_citations(publication.title, max_results=max_results)
+        # Try OpenAlex first (primary source)
+        if self.openalex and self.openalex.config.enable:
+            try:
+                logger.debug("Attempting OpenAlex citation search...")
+                citing_papers = self.openalex.get_citing_papers(
+                    doi=publication.doi,
+                    max_results=max_results
+                )
+                
+                if citing_papers:
+                    source_used = "OpenAlex"
+                    logger.info(f"✓ Found {len(citing_papers)} citing papers from OpenAlex")
+                else:
+                    logger.debug("No citing papers found in OpenAlex")
+                    
+            except Exception as e:
+                logger.warning(f"OpenAlex citation search failed: {e}")
 
-            logger.info(f"Found {len(citing_papers)} citing papers")
-            return citing_papers
+        # Fall back to Google Scholar if OpenAlex didn't work
+        if not citing_papers and self.scholar:
+            try:
+                logger.debug("Falling back to Google Scholar citation search...")
+                citing_papers = self.scholar.get_citations(
+                    publication.title,
+                    max_results=max_results
+                )
+                
+                if citing_papers:
+                    source_used = "Google Scholar"
+                    logger.info(f"✓ Found {len(citing_papers)} citing papers from Google Scholar")
+                else:
+                    logger.debug("No citing papers found in Google Scholar")
+                    
+            except Exception as e:
+                logger.warning(f"Google Scholar citation search failed: {e}")
 
-        except Exception as e:
-            logger.error(f"Failed to get citing papers: {e}")
-            return []
+        # Enrich with Semantic Scholar metrics if available
+        if citing_papers and self.semantic_scholar:
+            try:
+                logger.debug("Enriching citing papers with Semantic Scholar metrics...")
+                citing_papers = self.semantic_scholar.enrich_publications(citing_papers)
+            except Exception as e:
+                logger.debug(f"Semantic Scholar enrichment failed: {e}")
+
+        # Log results
+        if citing_papers:
+            logger.info(f"✓ Citation search complete: {len(citing_papers)} papers found via {source_used}")
+        else:
+            logger.warning("No citing papers found from any source")
+
+        return citing_papers
 
     def get_citation_contexts(
         self, cited_publication: Publication, citing_publication: Publication
@@ -69,6 +158,12 @@ class CitationAnalyzer:
         Extract citation contexts from a citing paper.
 
         Citation context = text around where the paper is cited.
+
+        Multi-source context extraction:
+        1. Google Scholar snippets (if available)
+        2. OpenAlex abstract (fallback)
+        3. Citing paper abstract (final fallback)
+        4. Full-text PDF extraction (future enhancement)
 
         Args:
             cited_publication: Paper being cited
@@ -79,28 +174,53 @@ class CitationAnalyzer:
         """
         contexts = []
 
-        # Google Scholar provides snippets in search results (stored in metadata)
-        # These are the citation contexts
-        snippet = citing_publication.metadata.get("snippet")
+        # Try Google Scholar snippets first (most precise)
+        snippet = citing_publication.metadata.get("snippet") if citing_publication.metadata else None
         if snippet:
             context = CitationContext(
                 citing_paper_id=citing_publication.doi or citing_publication.title,
                 cited_paper_id=cited_publication.doi or cited_publication.title,
                 context_text=snippet,
                 sentence=snippet,
+                source="scholar_snippet"
             )
             contexts.append(context)
+            logger.debug("Using Google Scholar snippet as citation context")
 
-        # If no snippet, use abstract as context
-        elif citing_publication.abstract:
+        # Try OpenAlex citation contexts
+        elif self.openalex and cited_publication.doi and citing_publication.doi:
+            try:
+                openalex_contexts = self.openalex.get_citation_contexts(
+                    cited_doi=cited_publication.doi,
+                    citing_doi=citing_publication.doi
+                )
+                for ctx in openalex_contexts:
+                    context = CitationContext(
+                        citing_paper_id=citing_publication.doi,
+                        cited_paper_id=cited_publication.doi,
+                        context_text=ctx,
+                        paragraph=ctx,
+                        section="abstract",
+                        source="openalex"
+                    )
+                    contexts.append(context)
+                if openalex_contexts:
+                    logger.debug("Using OpenAlex contexts")
+            except Exception as e:
+                logger.debug(f"Could not get OpenAlex contexts: {e}")
+
+        # Fall back to citing paper abstract
+        if not contexts and citing_publication.abstract:
             context = CitationContext(
                 citing_paper_id=citing_publication.doi or citing_publication.title,
                 cited_paper_id=cited_publication.doi or cited_publication.title,
                 context_text=citing_publication.abstract,
                 paragraph=citing_publication.abstract,
                 section="abstract",
+                source="abstract"
             )
             contexts.append(context)
+            logger.debug("Using citing paper abstract as context")
 
         return contexts
 

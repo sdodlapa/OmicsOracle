@@ -18,6 +18,8 @@ class PublicationSource(str, Enum):
     PUBMED = "pubmed"
     PMC = "pmc"
     GOOGLE_SCHOLAR = "google_scholar"
+    OPENALEX = "openalex"
+    SEMANTIC_SCHOLAR = "semantic_scholar"
     ARXIV = "arxiv"
     BIORXIV = "biorxiv"
     MEDRXIV = "medrxiv"

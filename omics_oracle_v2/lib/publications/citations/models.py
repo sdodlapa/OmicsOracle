@@ -19,6 +19,7 @@ class CitationContext:
         sentence: Sentence containing the citation
         paragraph: Full paragraph containing the citation
         section: Paper section (intro, methods, results, discussion)
+        source: Source of context (scholar_snippet, openalex, abstract, fulltext)
     """
 
     citing_paper_id: str
@@ -27,6 +28,7 @@ class CitationContext:
     sentence: Optional[str] = None
     paragraph: Optional[str] = None
     section: Optional[str] = None
+    source: Optional[str] = "unknown"
 
 
 @dataclass

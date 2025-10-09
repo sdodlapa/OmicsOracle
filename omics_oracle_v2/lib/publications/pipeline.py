@@ -21,6 +21,7 @@ from omics_oracle_v2.lib.publications.clients.institutional_access import (
     InstitutionalAccessManager,
     InstitutionType,
 )
+from omics_oracle_v2.lib.publications.clients.openalex import OpenAlexClient, OpenAlexConfig
 from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
 from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
 from omics_oracle_v2.lib.publications.clients.semantic_scholar import (
@@ -83,33 +84,45 @@ class PublicationSearchPipeline:
         else:
             self.pubmed_client = None
 
-        # Week 3: Google Scholar (Day 13 - NOW IMPLEMENTED)
+        # OpenAlex (Primary citation source) - NEW
+        if config.enable_citations or config.enable_openalex:
+            logger.info("Initializing OpenAlex client")
+            openalex_config = OpenAlexConfig(
+                enable=True,
+                email=config.pubmed_config.email if config.pubmed_config else None,  # Use same email for polite pool
+            )
+            self.openalex_client = OpenAlexClient(openalex_config)
+        else:
+            self.openalex_client = None
+
+        # Week 3: Google Scholar (Day 13 - NOW IMPLEMENTED) - Fallback for citations
         if config.enable_scholar:
-            logger.info("Initializing Google Scholar client")
+            logger.info("Initializing Google Scholar client (fallback for citations)")
             self.scholar_client = GoogleScholarClient(config.scholar_config)
         else:
             self.scholar_client = None
 
-        # Week 3: Citation analysis (Day 16-17 - NOW IMPLEMENTED)
+        # Week 3: Citation analysis (Day 16-17 - NOW MULTI-SOURCE)
         if config.enable_citations:
-            logger.info("Initializing citation analyzer")
-            if self.scholar_client:
-                self.citation_analyzer = CitationAnalyzer(self.scholar_client)
+            logger.info("Initializing citation analyzer with multi-source support")
+            
+            # Initialize with OpenAlex as primary, Scholar as fallback
+            self.citation_analyzer = CitationAnalyzer(
+                openalex_client=self.openalex_client,
+                scholar_client=self.scholar_client,
+                semantic_scholar_client=None,  # Will be set later
+            )
 
-                # Initialize LLM-powered analysis if Scholar is available
-                logger.info(f"Initializing LLM citation analyzer (provider={config.llm_config.provider})")
-                # API keys come from environment variables
-                self.llm_client = LLMClient(
-                    provider=config.llm_config.provider,
-                    model=config.llm_config.model,
-                    cache_enabled=config.llm_config.cache_enabled,
-                    temperature=config.llm_config.temperature,
-                )
-                self.llm_citation_analyzer = LLMCitationAnalyzer(self.llm_client)
-            else:
-                logger.warning("Citation analysis requires Google Scholar - disabling")
-                self.citation_analyzer = None
-                self.llm_citation_analyzer = None
+            # Initialize LLM-powered analysis
+            logger.info(f"Initializing LLM citation analyzer (provider={config.llm_config.provider})")
+            # API keys come from environment variables
+            self.llm_client = LLMClient(
+                provider=config.llm_config.provider,
+                model=config.llm_config.model,
+                cache_enabled=config.llm_config.cache_enabled,
+                temperature=config.llm_config.temperature,
+            )
+            self.llm_citation_analyzer = LLMCitationAnalyzer(self.llm_client)
         else:
             self.citation_analyzer = None
             self.llm_citation_analyzer = None
@@ -181,6 +194,11 @@ class PublicationSearchPipeline:
         # Always enabled for citation metrics - no blocking/rate limit issues
         logger.info("Initializing Semantic Scholar client for citation enrichment")
         self.semantic_scholar_client = SemanticScholarClient(SemanticScholarConfig(enable=True))
+        
+        # Add Semantic Scholar to citation analyzer if citations are enabled
+        if self.citation_analyzer:
+            self.citation_analyzer.semantic_scholar = self.semantic_scholar_client
+            logger.info("Connected Semantic Scholar to citation analyzer for enrichment")
 
         # Day 26: Redis caching for 10-100x speedup
         if config.enable_cache:

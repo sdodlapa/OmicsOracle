@@ -164,6 +164,16 @@ class LLMConfig(BaseModel):
 
     Enables deep semantic understanding of how datasets are used in citing papers.
 
+    💰 COST CONTROLS (Added Oct 9, 2025):
+    - max_papers_to_analyze: Limit analysis to top N papers (default: 20)
+    - max_cost_per_search: Budget limit per search (default: $5.00)
+    - enable_cost_preview: Show estimated cost before running (default: True)
+    
+    Estimated costs:
+    - GPT-4: ~$0.05 per paper analysis
+    - 20 papers: ~$1.00
+    - 100 papers: ~$5.00
+
     Attributes:
         provider: LLM provider ("openai", "anthropic", "ollama")
         model: Model name
@@ -173,6 +183,9 @@ class LLMConfig(BaseModel):
         batch_size: Papers to analyze per batch
         max_tokens: Maximum tokens per response
         temperature: Generation temperature
+        max_papers_to_analyze: Maximum papers to analyze (cost control)
+        max_cost_per_search: Maximum cost per search in USD (cost control)
+        enable_cost_preview: Show cost estimate before running
     """
 
     provider: str = Field("openai", description="LLM provider")
@@ -183,6 +196,24 @@ class LLMConfig(BaseModel):
     batch_size: int = Field(5, ge=1, le=20, description="Papers per batch")
     max_tokens: int = Field(2000, ge=100, le=4000, description="Max tokens per response")
     temperature: float = Field(0.1, ge=0.0, le=1.0, description="Generation temperature")
+    
+    # Cost controls (NEW - Oct 9, 2025)
+    max_papers_to_analyze: int = Field(
+        20, 
+        ge=1, 
+        le=1000, 
+        description="Maximum papers to analyze (cost control, default: 20)"
+    )
+    max_cost_per_search: float = Field(
+        5.0, 
+        ge=0.1, 
+        le=100.0, 
+        description="Maximum cost per search in USD (default: $5.00)"
+    )
+    enable_cost_preview: bool = Field(
+        True, 
+        description="Show estimated cost before running analysis"
+    )
 
     class Config:
         """Pydantic config."""
@@ -244,17 +275,19 @@ class PublicationSearchConfig:
         deduplication: Enable cross-source deduplication
     """
 
-    # Feature toggles (Week 1-2: only PubMed)
+    # Feature toggles - UPDATED Oct 9, 2025
+    # OpenAlex now primary source for citations (replacing Google Scholar)
     enable_pubmed: bool = True
-    enable_scholar: bool = False  # Week 3
-    enable_citations: bool = False  # Week 3
-    enable_pdf_download: bool = True  # Week 4 - ENABLED
-    enable_fulltext: bool = True  # Week 4 - ENABLED
-    enable_institutional_access: bool = True  # Week 4 - NEW
-    enable_cache: bool = True  # Day 26 - Redis caching
+    enable_openalex: bool = True  # ✅ NEW - Free, sustainable citation source
+    enable_scholar: bool = False  # ⚠️ DISABLED - Scholar scraping blocked (Oct 9, 2025)
+    enable_citations: bool = True  # ✅ RE-ENABLED - Now uses OpenAlex (Oct 9, 2025)
+    enable_pdf_download: bool = True  # ✅ Week 4 - ENABLED
+    enable_fulltext: bool = True  # ✅ Week 4 - ENABLED
+    enable_institutional_access: bool = True  # ✅ Week 4 - ENABLED
+    enable_cache: bool = True  # ✅ Day 26 - Redis caching
 
     # Component configurations
-    pubmed_config: PubMedConfig = field(default_factory=lambda: PubMedConfig(email="user@example.com"))
+    pubmed_config: PubMedConfig = field(default_factory=lambda: PubMedConfig(email="sdodl001@odu.edu"))
     scholar_config: GoogleScholarConfig = field(default_factory=GoogleScholarConfig)
     pdf_config: PDFConfig = field(default_factory=PDFConfig)
     llm_config: LLMConfig = field(default_factory=LLMConfig)  # Week 3 Day 15-17
@@ -337,3 +370,122 @@ class RankingConfig:
 
         if self.citation_scaling not in ["log", "sqrt", "linear"]:
             raise ValueError(f"Invalid citation_scaling: {self.citation_scaling}")
+
+
+# =============================================================================
+# Configuration Presets (Added Oct 9, 2025)
+# =============================================================================
+
+"""
+Quick-start configuration presets for different use cases.
+
+Usage:
+    from omics_oracle_v2.lib.publications.config import PRESET_CONFIGS
+    
+    # For fast, free searches:
+    config = PRESET_CONFIGS["minimal"]
+    
+    # For comprehensive analysis (recommended):
+    config = PRESET_CONFIGS["full"]
+    
+    # For research with cost control:
+    config = PRESET_CONFIGS["research"]
+"""
+
+PRESET_CONFIGS = {
+    "minimal": PublicationSearchConfig(
+        # Fast, free, PubMed only
+        enable_pubmed=True,
+        enable_scholar=False,
+        enable_citations=False,
+        enable_pdf_download=False,
+        enable_fulltext=False,
+        enable_institutional_access=False,
+        enable_cache=True,
+    ),
+    
+    "standard": PublicationSearchConfig(
+        # Good coverage, free, no LLM costs
+        enable_pubmed=True,
+        enable_scholar=True,  # ✅ 3-5x more papers
+        enable_citations=False,  # No LLM costs
+        enable_pdf_download=True,
+        enable_fulltext=True,
+        enable_institutional_access=True,
+        enable_cache=True,
+    ),
+    
+    "full": PublicationSearchConfig(
+        # Complete analysis, all features enabled (RECOMMENDED)
+        enable_pubmed=True,
+        enable_scholar=True,
+        enable_citations=True,  # ✅ Full citation analysis!
+        enable_pdf_download=True,
+        enable_fulltext=True,
+        enable_institutional_access=True,
+        enable_cache=True,
+        llm_config=LLMConfig(
+            max_papers_to_analyze=20,  # Cost control: top 20 papers
+            max_cost_per_search=5.0,  # Budget: $5 per search
+            enable_cost_preview=True,  # Show cost before running
+        ),
+    ),
+    
+    "research": PublicationSearchConfig(
+        # For deep research, higher limits but cost-controlled
+        enable_pubmed=True,
+        enable_scholar=True,
+        enable_citations=True,
+        enable_pdf_download=True,
+        enable_fulltext=True,
+        enable_institutional_access=True,
+        enable_cache=True,
+        llm_config=LLMConfig(
+            max_papers_to_analyze=50,  # Analyze top 50 papers
+            max_cost_per_search=15.0,  # Higher budget: $15
+            enable_cost_preview=True,
+            batch_size=10,  # Larger batches for efficiency
+        ),
+    ),
+    
+    "enterprise": PublicationSearchConfig(
+        # No cost limits, maximum analysis
+        enable_pubmed=True,
+        enable_scholar=True,
+        enable_citations=True,
+        enable_pdf_download=True,
+        enable_fulltext=True,
+        enable_institutional_access=True,
+        enable_cache=True,
+        max_total_results=200,  # More papers
+        llm_config=LLMConfig(
+            max_papers_to_analyze=100,  # Analyze up to 100
+            max_cost_per_search=50.0,  # High budget: $50
+            enable_cost_preview=True,
+            batch_size=10,
+        ),
+    ),
+}
+
+
+# Convenience function for getting presets
+def get_preset_config(preset_name: str = "full") -> PublicationSearchConfig:
+    """
+    Get a preset configuration by name.
+    
+    Args:
+        preset_name: One of "minimal", "standard", "full", "research", "enterprise"
+    
+    Returns:
+        PublicationSearchConfig instance
+    
+    Example:
+        >>> config = get_preset_config("full")  # Recommended default
+        >>> config = get_preset_config("research")  # For deep analysis
+    """
+    if preset_name not in PRESET_CONFIGS:
+        raise ValueError(
+            f"Unknown preset: {preset_name}. "
+            f"Available: {', '.join(PRESET_CONFIGS.keys())}"
+        )
+    return PRESET_CONFIGS[preset_name]
