@@ -276,7 +276,8 @@ class PublicationSearchConfig:
     enable_fulltext: bool = True  # ✅ Week 4 - ENABLED
     enable_institutional_access: bool = True  # ✅ Week 4 - ENABLED
     enable_cache: bool = True  # ✅ Day 26 - Redis caching
-    enable_query_preprocessing: bool = True  # ✅ NEW - Query preprocessing with BiomedicalNER (Oct 9, 2025)
+    enable_query_preprocessing: bool = True  # ✅ Phase 1 - Query preprocessing with BiomedicalNER (Oct 9, 2025)
+    enable_synonym_expansion: bool = True  # ✅ Phase 2B - Synonym expansion with ontologies (Oct 9, 2025)
 
     # Component configurations
     pubmed_config: PubMedConfig = field(default_factory=lambda: PubMedConfig(email="sdodl001@odu.edu"))
@@ -291,6 +292,9 @@ class PublicationSearchConfig:
     # Institutional access (Week 4 - NEW)
     primary_institution: str = "gatech"  # "gatech" or "odu"
     secondary_institution: str = "odu"  # Fallback institution
+
+    # Synonym expansion (Phase 2B - NEW)
+    max_synonyms_per_term: int = 10  # Maximum synonyms to add per technique
 
     # Ranking configuration
     ranking_weights: dict = field(

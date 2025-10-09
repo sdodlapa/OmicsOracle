@@ -37,6 +37,9 @@ from omics_oracle_v2.lib.publications.ranking.ranker import PublicationRanker
 from omics_oracle_v2.lib.nlp.biomedical_ner import BiomedicalNER
 from omics_oracle_v2.lib.nlp.models import Entity, EntityType
 
+# Import synonym expansion (Phase 2B)
+from omics_oracle_v2.lib.nlp.synonym_expansion import SynonymExpander, SynonymExpansionConfig
+
 logger = logging.getLogger(__name__)
 
 
@@ -234,6 +237,27 @@ class PublicationSearchPipeline:
         else:
             self.ner = None
 
+        # Synonym expansion (NEW - Phase 2B)
+        if config.enable_synonym_expansion:
+            logger.info("Initializing synonym expansion with ontology gazetteer")
+            try:
+                synonym_config = SynonymExpansionConfig(
+                    use_ontologies=True,
+                    generate_variants=True,
+                    common_abbreviations=True,
+                    cache_enabled=True,
+                    max_synonyms_per_term=config.max_synonyms_per_term
+                )
+                self.synonym_expander = SynonymExpander(synonym_config)
+                stats = self.synonym_expander.stats()
+                logger.info(f"Synonym expansion initialized: {stats['techniques']} techniques, "
+                           f"{stats['total_terms']} terms, {stats['normalized_lookup']} lookups")
+            except Exception as e:
+                logger.warning(f"Could not load synonym expander: {e}. Synonym expansion disabled.")
+                self.synonym_expander = None
+        else:
+            self.synonym_expander = None
+
         logger.info(
             f"PublicationSearchPipeline initialized with features: "
             f"pubmed={config.enable_pubmed}, "
@@ -311,7 +335,8 @@ class PublicationSearchPipeline:
         """
         Preprocess query to extract biological entities and build optimized queries.
         
-        Phase 1 implementation: Basic entity extraction + field tagging
+        Phase 1: Basic entity extraction + field tagging
+        Phase 2B: Synonym expansion with ontologies
         
         Args:
             query: Raw search query
@@ -329,9 +354,16 @@ class PublicationSearchPipeline:
             }
         
         try:
+            # Phase 2B: Apply synonym expansion BEFORE entity extraction
+            expanded_query = query
+            if self.synonym_expander:
+                expanded_query = self.synonym_expander.expand_query(query)
+                if expanded_query != query:
+                    logger.debug(f"Query expanded: '{query}' -> '{expanded_query}'")
+            
             # Extract entities using BiomedicalNER
-            logger.debug(f"Preprocessing query: '{query}'")
-            ner_result = self.ner.extract_entities(query)
+            logger.debug(f"Preprocessing query: '{expanded_query}'")
+            ner_result = self.ner.extract_entities(expanded_query)
             
             # Group entities by type
             entities_by_type = ner_result.entities_by_type
@@ -339,10 +371,11 @@ class PublicationSearchPipeline:
             # Build source-specific queries
             return {
                 "original": query,
+                "expanded": expanded_query,
                 "entities": entities_by_type,
-                "pubmed": self._build_pubmed_query(query, entities_by_type),
-                "openalex": self._build_openalex_query(query, entities_by_type),
-                "scholar": query,  # Scholar doesn't support field tags
+                "pubmed": self._build_pubmed_query(expanded_query, entities_by_type),
+                "openalex": self._build_openalex_query(expanded_query, entities_by_type),
+                "scholar": expanded_query,  # Scholar gets expanded query
             }
             
         except Exception as e:
