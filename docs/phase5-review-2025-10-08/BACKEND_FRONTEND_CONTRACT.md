@@ -1,7 +1,7 @@
 # OmicsOracle - Backend-Frontend Integration Contract
-**Version:** 1.0
-**Date:** October 7, 2025
-**Status:** FRAMEWORK AGNOSTIC SPECIFICATION
+**Version:** 2.0  
+**Date:** October 8, 2025  
+**Status:** FRAMEWORK AGNOSTIC SPECIFICATION - Phase 4 Complete  
 **Purpose:** Define clear contract between backend and ANY frontend framework
 
 ---
@@ -14,6 +14,8 @@ This document serves as the **single source of truth** for:
 3. **What format** the data is in (schemas)
 4. **When to call** which endpoints (workflow)
 5. **How to render** features (UI patterns)
+6. **How to authenticate** users (JWT flow) 🆕
+7. **How to track costs** (GPT-4 usage) 🆕
 
 With this contract, we can **migrate to any frontend framework** (React, Vue, Svelte, Angular) without touching backend code.
 
@@ -55,22 +57,36 @@ With this contract, we can **migrate to any frontend framework** (React, Vue, Sv
 ```
 Backend API (FastAPI) - http://localhost:8000
 
-├─ /api/v1/search
+├─ /api/auth 🆕
+│  ├─ POST /login                      → Login (get JWT tokens)
+│  ├─ POST /register                   → Create account
+│  ├─ POST /logout                     → Logout (invalidate session)
+│  ├─ POST /refresh                    → Refresh access token
+│  ├─ GET /me                          → Get current user profile
+│  └─ PUT /me                          → Update user profile
+│
+├─ /api/v1/search (requires auth)
 │  ├─ POST /search                    → Basic search
 │  ├─ POST /advanced_search            → Advanced search with filters
-│  └─ GET /search/history              → Search history
+│  └─ GET /search/history              → Search history (per user)
 │
-├─ /api/v1/agents
-│  ├─ POST /analyze                    → LLM analysis of results
-│  ├─ POST /qa                         → Q&A about papers
-│  └─ POST /recommend                  → Get recommendations
+├─ /api/v1/agents (requires auth, costs GPT-4 tokens) 🆕
+│  ├─ POST /query                      → Query agent (entity extraction)
+│  ├─ POST /search                     → Search agent (multi-database)
+│  ├─ POST /analyze                    → Analysis agent (GPT-4)
+│  ├─ POST /quality                    → Quality agent (ML scoring)
+│  ├─ POST /recommend                  → Recommendation agent
+│  └─ GET /cost                        → Get cost metrics
 │
-├─ /api/v1/analysis
-│  ├─ POST /citations                  → Citation analysis
-│  ├─ POST /biomarkers                 → Biomarker extraction
-│  ├─ POST /quality                    → Quality assessment
-│  ├─ POST /trends                     → Trend analysis
-│  └─ POST /network                    → Network analysis
+├─ /api/v1/analysis (requires auth, some cost GPT-4)
+│  ├─ POST /llm                        → LLM analysis (GPT-4, ~$0.04) 🆕
+│  ├─ POST /qa                         → Q&A (GPT-4, ~$0.01) 🆕
+│  ├─ POST /citations                  → Citation analysis (free)
+│  ├─ POST /biomarkers                 → Biomarker extraction (free)
+│  ├─ POST /quality                    → Quality assessment (free)
+│  ├─ POST /trends                     → Trend analysis (free)
+│  ├─ POST /network                    → Network analysis (free)
+│  └─ GET /cost-summary                → Get user's cost summary 🆕
 │
 ├─ /api/v1/export
 │  ├─ POST /json                       → Export as JSON
@@ -83,9 +99,142 @@ Backend API (FastAPI) - http://localhost:8000
    └─ GET /settings                    → User settings
 ```
 
+**Authentication Flow:**
+- All `/api/v1/*` endpoints require `Authorization: Bearer <access_token>` header
+- Tokens expire after 60 minutes (access) and 7 days (refresh)
+- Use `/api/auth/refresh` before access token expires
+
+**Cost Tracking:**
+- `/api/v1/agents/analyze` costs ~$0.04 (GPT-4)
+- `/api/v1/analysis/llm` costs ~$0.04 (GPT-4)
+- `/api/v1/analysis/qa` costs ~$0.01 (GPT-4)
+- All other endpoints are FREE
+- Check costs with `/api/v1/analysis/cost-summary`
+
 ---
 
 ## 🔄 Data Flow Diagram
+
+### Flow 0: Authentication (NEW in Phase 4) 🆕
+
+```
+┌──────────┐
+│  USER    │
+│  VISITS  │
+│  APP     │
+└────┬─────┘
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ FRONTEND: Check Token                                        │
+│ ─────────────────────────────────────────────────────────── │
+│ const token = localStorage.getItem('access_token');         │
+│ if (!token || isExpired(token)) {                           │
+│   // Show login form                                        │
+│ } else {                                                    │
+│   // Load main app                                          │
+│ }                                                           │
+└────┬────────────────────────────────────────────────────────┘
+     │
+     │ User enters credentials
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ FRONTEND: Login                                              │
+│ ─────────────────────────────────────────────────────────── │
+│ POST /api/auth/login                                        │
+│ Body: {                                                     │
+│   username: "researcher@university.edu",                    │
+│   password: "secure_password"                               │
+│ }                                                           │
+└────┬────────────────────────────────────────────────────────┘
+     │
+     │ POST /api/auth/login
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ BACKEND: Authenticate                                        │
+│ ─────────────────────────────────────────────────────────── │
+│ 1. Validate credentials (bcrypt password check)             │
+│ 2. Generate JWT access token (60 min expiry)                │
+│ 3. Generate JWT refresh token (7 day expiry)                │
+│ 4. Return tokens + user profile                             │
+└────┬────────────────────────────────────────────────────────┘
+     │
+     │ Response: {
+     │   access_token: "eyJ...",
+     │   refresh_token: "eyJ...",
+     │   token_type: "bearer",
+     │   expires_in: 3600,
+     │   user: { id, username, role, ... }
+     │ }
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ FRONTEND: Store Tokens                                       │
+│ ─────────────────────────────────────────────────────────── │
+│ localStorage.setItem('access_token', response.access_token);│
+│ localStorage.setItem('refresh_token', response.refresh_...);│
+│ localStorage.setItem('user', JSON.stringify(response.user));│
+│ redirectTo('/dashboard');                                   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Token Refresh Flow:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ FRONTEND: Check Token Before Request                         │
+│ ─────────────────────────────────────────────────────────── │
+│ const expiresAt = getTokenExpiry(access_token);             │
+│ if (expiresAt - Date.now() < 5 * 60 * 1000) {              │
+│   // Less than 5 minutes left, refresh                     │
+│   await refreshToken();                                     │
+│ }                                                           │
+└────┬────────────────────────────────────────────────────────┘
+     │
+     │ POST /api/auth/refresh
+     │ Body: { refresh_token: "eyJ..." }
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ BACKEND: Refresh Token                                       │
+│ ─────────────────────────────────────────────────────────── │
+│ 1. Validate refresh token                                   │
+│ 2. Generate new access token (60 min)                       │
+│ 3. Return new tokens                                        │
+└────┬────────────────────────────────────────────────────────┘
+     │
+     │ Response: { access_token: "eyJ...", ... }
+     │
+     ▼
+┌─────────────────────────────────────────────────────────────┐
+│ FRONTEND: Update Token                                       │
+│ ─────────────────────────────────────────────────────────── │
+│ localStorage.setItem('access_token', new_access_token);     │
+│ // Continue with original request                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**Authenticated API Calls:**
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│ FRONTEND: Make Authenticated Request                         │
+│ ─────────────────────────────────────────────────────────── │
+│ const token = localStorage.getItem('access_token');         │
+│ fetch('/api/v1/search/search', {                            │
+│   method: 'POST',                                           │
+│   headers: {                                                │
+│     'Authorization': `Bearer ${token}`,  // JWT here!       │
+│     'Content-Type': 'application/json'                      │
+│   },                                                        │
+│   body: JSON.stringify({ query: "CRISPR" })                │
+│ });                                                         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
 
 ### Flow 1: Basic Search
 
@@ -247,6 +396,200 @@ Backend API (FastAPI) - http://localhost:8000
 ---
 
 ## 📦 API Endpoint Specifications
+
+### 0. Authentication Endpoints 🆕
+
+#### 0.1 Login
+
+**Endpoint:** `POST /api/auth/login`
+
+**Request Schema:**
+```typescript
+interface LoginRequest {
+  username: string;    // Email or username
+  password: string;    // Plain text password (encrypted over HTTPS)
+}
+```
+
+**Response Schema:**
+```typescript
+interface LoginResponse {
+  access_token: string;      // JWT token (60 min expiry)
+  refresh_token: string;     // JWT refresh token (7 day expiry)
+  token_type: "bearer";      // Always "bearer"
+  expires_in: number;        // Seconds until access token expires (3600)
+  user: {
+    id: number;
+    username: string;
+    email: string;
+    full_name: string;
+    role: "user" | "admin" | "premium";
+    affiliation?: string;
+    created_at: string;       // ISO 8601
+    quota_remaining: number;  // Remaining GPT-4 quota ($)
+  };
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/auth/login', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    username: 'researcher@university.edu',
+    password: 'secure_password'
+  })
+});
+
+const data = await response.json();
+// Store tokens
+localStorage.setItem('access_token', data.access_token);
+localStorage.setItem('refresh_token', data.refresh_token);
+localStorage.setItem('user', JSON.stringify(data.user));
+```
+
+---
+
+#### 0.2 Register
+
+**Endpoint:** `POST /api/auth/register`
+
+**Request Schema:**
+```typescript
+interface RegisterRequest {
+  username: string;
+  email: string;
+  password: string;           // Min 8 chars, mix of letters/numbers/symbols
+  full_name: string;
+  affiliation?: string;       // University, company, etc.
+}
+```
+
+**Response Schema:**
+```typescript
+interface RegisterResponse {
+  access_token: string;       // Automatically logged in
+  refresh_token: string;
+  token_type: "bearer";
+  expires_in: number;
+  user: {
+    id: number;
+    username: string;
+    email: string;
+    full_name: string;
+    role: "user";             // Default role
+    affiliation?: string;
+    created_at: string;
+    quota_remaining: number;  // Initial $10 free tier
+  };
+}
+```
+
+---
+
+#### 0.3 Refresh Token
+
+**Endpoint:** `POST /api/auth/refresh`
+
+**Request Schema:**
+```typescript
+interface RefreshRequest {
+  refresh_token: string;
+}
+```
+
+**Response Schema:**
+```typescript
+interface RefreshResponse {
+  access_token: string;       // New access token (60 min)
+  token_type: "bearer";
+  expires_in: number;
+}
+```
+
+**Example:**
+```typescript
+// Check if token needs refresh
+const expiresAt = getTokenExpiry(access_token);
+if (expiresAt - Date.now() < 5 * 60 * 1000) {
+  // Less than 5 minutes left
+  const refresh_token = localStorage.getItem('refresh_token');
+  const response = await fetch('/api/auth/refresh', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refresh_token })
+  });
+  
+  const data = await response.json();
+  localStorage.setItem('access_token', data.access_token);
+}
+```
+
+---
+
+#### 0.4 Get Current User
+
+**Endpoint:** `GET /api/auth/me`
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response Schema:**
+```typescript
+interface UserProfile {
+  id: number;
+  username: string;
+  email: string;
+  full_name: string;
+  role: "user" | "admin" | "premium";
+  affiliation?: string;
+  created_at: string;
+  last_login: string;
+  quota_remaining: number;      // GPT-4 quota remaining ($)
+  usage_stats: {
+    searches_this_month: number;
+    analyses_this_month: number;
+    total_cost_this_month: number;
+  };
+}
+```
+
+---
+
+#### 0.5 Logout
+
+**Endpoint:** `POST /api/auth/logout`
+
+**Headers:**
+```
+Authorization: Bearer <access_token>
+```
+
+**Response:**
+```typescript
+interface LogoutResponse {
+  message: "Successfully logged out";
+}
+```
+
+**Frontend Action:**
+```typescript
+await fetch('/api/auth/logout', {
+  method: 'POST',
+  headers: { 'Authorization': `Bearer ${access_token}` }
+});
+
+// Clear local storage
+localStorage.removeItem('access_token');
+localStorage.removeItem('refresh_token');
+localStorage.removeItem('user');
+redirectTo('/login');
+```
+
+---
 
 ### 1. Search Endpoint
 
@@ -489,7 +832,11 @@ interface Biomarker {
 
 ### 2. LLM Analysis Endpoint
 
-**Endpoint:** `POST /api/v1/agents/analyze`
+**Endpoint:** `POST /api/v1/agents/analyze` or `POST /api/v1/analysis/llm`
+
+**🔐 Auth Required:** Yes (`Authorization: Bearer <access_token>`)  
+**💰 Cost:** ~$0.04 per analysis (~2000 GPT-4 tokens)  
+**⏱️ Performance:** 13-15 seconds
 
 **Request Schema:**
 ```typescript
@@ -527,16 +874,46 @@ interface AnalysisResponse {
     gaps_identified?: string[];
     methodologies_summary?: string;
   };
+  cost_info: {                     // NEW! 🆕
+    tokens_used: number;           // GPT-4 tokens consumed
+    cost_usd: number;              // Cost in USD (~$0.04)
+    quota_remaining: number;       // User's remaining quota
+  };
   timestamp: string;
   processing_time_ms: number;
 }
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/v1/analysis/llm', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${access_token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    query: 'CRISPR gene editing delivery',
+    datasets: searchResults.slice(0, 10),
+    analysis_type: 'comprehensive'
+  })
+});
+
+const data = await response.json();
+// Display cost to user
+console.log(`Analysis cost: $${data.cost_info.cost_usd.toFixed(4)}`);
+console.log(`Quota remaining: $${data.cost_info.quota_remaining.toFixed(2)}`);
 ```
 
 ---
 
 ### 3. Q&A Endpoint
 
-**Endpoint:** `POST /api/v1/agents/qa`
+**Endpoint:** `POST /api/v1/agents/qa` or `POST /api/v1/analysis/qa`
+
+**🔐 Auth Required:** Yes (`Authorization: Bearer <access_token>`)  
+**💰 Cost:** ~$0.01 per question (~1000 GPT-4 tokens)  
+**⏱️ Performance:** 8-12 seconds
 
 **Request Schema:**
 ```typescript
@@ -562,12 +939,91 @@ interface QAResponse {
   }>;
   confidence: number;  // 0-1
   follow_up_questions?: string[];
+  cost_info: {                     // NEW! 🆕
+    tokens_used: number;           // GPT-4 tokens consumed
+    cost_usd: number;              // Cost in USD (~$0.01)
+    quota_remaining: number;       // User's remaining quota
+  };
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/v1/analysis/qa', {
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${access_token}`,
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    question: 'What are the main delivery challenges for CRISPR?',
+    context: searchResults.map(r => ({ title: r.title, abstract: r.abstract }))
+  })
+});
+
+const data = await response.json();
+// Show cost warning if quota is low
+if (data.cost_info.quota_remaining < 1.0) {
+  showWarning('Low quota remaining. Upgrade to premium?');
 }
 ```
 
 ---
 
-### 4. Citation Analysis Endpoint
+### 4. Cost Summary Endpoint 🆕
+
+**Endpoint:** `GET /api/v1/analysis/cost-summary`
+
+**🔐 Auth Required:** Yes (`Authorization: Bearer <access_token>`)  
+**💰 Cost:** FREE  
+**⏱️ Performance:** <1 second
+
+**Response Schema:**
+```typescript
+interface CostSummary {
+  user_id: number;
+  username: string;
+  role: "user" | "admin" | "premium";
+  current_month: {
+    analyses_count: number;
+    questions_count: number;
+    total_tokens: number;
+    total_cost_usd: number;
+  };
+  quota: {
+    monthly_limit_usd: number;      // $10 free, $50 premium
+    used_usd: number;
+    remaining_usd: number;
+    percentage_used: number;        // 0-100
+  };
+  history: Array<{
+    date: string;                   // ISO 8601
+    operation: "analysis" | "qa";
+    tokens: number;
+    cost_usd: number;
+  }>;
+}
+```
+
+**Example:**
+```typescript
+const response = await fetch('/api/v1/analysis/cost-summary', {
+  headers: {
+    'Authorization': `Bearer ${access_token}`
+  }
+});
+
+const data = await response.json();
+
+// Show usage dashboard
+renderCostDashboard({
+  used: data.quota.used_usd,
+  limit: data.quota.monthly_limit_usd,
+  percentage: data.quota.percentage_used
+});
+```
+
+---
 
 **Endpoint:** `POST /api/v1/analysis/citations`
 
@@ -1147,6 +1603,9 @@ For implementing **any** frontend framework:
 - [ ] Component unit tests
 - [ ] Integration tests
 - [ ] E2E tests
+- [ ] Authentication flow tests 🆕
+- [ ] Token refresh tests 🆕
+- [ ] Cost tracking tests 🆕
 
 ---
 
@@ -1155,6 +1614,8 @@ For implementing **any** frontend framework:
 ### API Documentation
 - Full OpenAPI spec: `http://localhost:8000/docs`
 - ReDoc: `http://localhost:8000/redoc`
+- Authentication guide: [INTEGRATION_LAYER_GUIDE.md](./INTEGRATION_LAYER_GUIDE.md)
+- API Reference: [API_REFERENCE.md](./API_REFERENCE.md)
 
 ### Example Implementations
 - Streamlit: `omics_oracle_v2/lib/dashboard/`
@@ -1169,11 +1630,70 @@ Can auto-generate API clients using:
 
 ---
 
+## ✅ Version History & Phase 4 Updates
+
+**Version 2.0 (October 8, 2025) - Phase 4 Complete:**
+
+Major Additions:
+- ✅ **Authentication System** (`/api/auth/*`)
+  - JWT-based login/logout
+  - Token refresh mechanism
+  - User registration and profile management
+  - Password security (bcrypt, 12 rounds)
+  - Role-based access control (user, admin, premium)
+
+- ✅ **Cost Tracking & Quotas**
+  - GPT-4 token and cost reporting
+  - Monthly quota management ($10 free, $50 premium)
+  - Per-operation cost transparency
+  - Cost summary endpoint
+
+- ✅ **AI Agent Endpoints** (`/api/v1/agents/*`)
+  - Query agent (entity extraction)
+  - Search agent (multi-database)
+  - Analysis agent (GPT-4, ~$0.04)
+  - Quality agent (ML scoring)
+  - Recommendation agent
+
+- ✅ **Enhanced Analysis Endpoints**
+  - LLM analysis with cost info
+  - Q&A with cost info
+  - Cost summary dashboard
+
+- ✅ **Security Enhancements**
+  - All `/api/v1/*` endpoints require authentication
+  - Bearer token authentication
+  - Token expiration handling
+  - HTTPS enforcement
+
+- ✅ **Performance Metrics**
+  - Search: 20-30s (first), <1s (cached)
+  - GPT-4 Analysis: 13-15s (~$0.04)
+  - GPT-4 Q&A: 8-12s (~$0.01)
+  - All ML operations: 1-2s (FREE)
+
+**Version 1.0 (October 7, 2025) - Initial Framework-Agnostic Contract:**
+- Basic search, analysis, and export endpoints
+- TypeScript schemas for all responses
+- UI rendering patterns
+- Multi-framework support
+
+---
+
 **This contract ensures:**
-✅ Backend remains stable regardless of frontend changes
-✅ Multiple frontends can coexist (Streamlit + React admin panel)
-✅ Easy to add new features (just extend API + update contract)
-✅ Clear testing boundaries (test API separately from UI)
-✅ Framework migrations are straightforward (same data flow)
+✅ Backend remains stable regardless of frontend changes  
+✅ Multiple frontends can coexist (Streamlit + React admin panel)  
+✅ Easy to add new features (just extend API + update contract)  
+✅ Clear testing boundaries (test API separately from UI)  
+✅ Framework migrations are straightforward (same data flow)  
+✅ **Authentication works consistently across all frontends** 🆕  
+✅ **Cost tracking is transparent to users** 🆕  
+✅ **GPT-4 quotas prevent unexpected bills** 🆕
 
 **Ready to build any frontend on top of OmicsOracle! 🚀**
+
+---
+
+**Document Version:** 2.0  
+**Last Updated:** October 8, 2025  
+**Phase:** 4 Complete - Production Ready with Authentication & Cost Management
