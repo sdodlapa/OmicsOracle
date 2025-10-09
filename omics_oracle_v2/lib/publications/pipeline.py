@@ -345,6 +345,17 @@ class PublicationSearchPipeline:
             except Exception as e:
                 logger.error(f"Google Scholar search failed: {e}")
 
+        # 1c. OpenAlex search (NEW - sustainable alternative to Scholar)
+        if self.openalex_client:
+            try:
+                logger.info("Searching OpenAlex...")
+                openalex_results = self.openalex_client.search(query, max_results=max_results, **kwargs)
+                all_publications.extend(openalex_results)
+                sources_used.append("openalex")
+                logger.info(f"OpenAlex returned {len(openalex_results)} results")
+            except Exception as e:
+                logger.error(f"OpenAlex search failed: {e}")
+
         # Step 2: Deduplicate (if enabled)
         if self.config.deduplication and len(all_publications) > 0:
             all_publications = self._deduplicate_publications(all_publications)
@@ -445,6 +456,7 @@ class PublicationSearchPipeline:
                 "config": {
                     "pubmed_enabled": self.config.enable_pubmed,
                     "scholar_enabled": self.config.enable_scholar,
+                    "openalex_enabled": self.config.enable_openalex,
                     "citations_enabled": self.config.enable_citations,
                     "pdf_enabled": self.config.enable_pdf_download,
                     "fulltext_enabled": self.config.enable_fulltext,
