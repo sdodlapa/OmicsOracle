@@ -17,7 +17,6 @@ import sys
 
 import httpx
 
-
 # Configuration
 API_BASE_URL = "http://localhost:8000/api"
 TEST_USER = {"email": "test@example.com", "password": "TestPassword123!"}
@@ -208,9 +207,7 @@ async def test_trend_forecasting(token: str, results: TestResults):
                     "Trend Forecasting", "No publications found (expected - needs DB integration)"
                 )
             else:
-                results.add_fail(
-                    "Trend Forecasting", f"HTTP {response.status_code}: {response.text[:200]}"
-                )
+                results.add_fail("Trend Forecasting", f"HTTP {response.status_code}: {response.text[:200]}")
         except Exception as e:
             results.add_fail("Trend Forecasting", str(e))
 
@@ -278,9 +275,7 @@ async def test_recommendations(token: str, results: TestResults):
 
             if response.status_code == 200:
                 data = response.json()
-                results.add_pass(
-                    "Recommendations: High-Impact", f"Found {len(data)} high-impact biomarkers"
-                )
+                results.add_pass("Recommendations: High-Impact", f"Found {len(data)} high-impact biomarkers")
             elif response.status_code == 404:
                 results.add_skip(
                     "Recommendations: High-Impact",

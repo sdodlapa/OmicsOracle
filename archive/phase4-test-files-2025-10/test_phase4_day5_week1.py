@@ -22,7 +22,6 @@ from typing import Dict, List
 
 import httpx
 
-
 # Configuration
 API_BASE_URL = "http://localhost:8000/api"
 TEST_USER = {"email": "test@example.com", "password": "TestPassword123!"}
@@ -132,9 +131,7 @@ async def test_agent_performance(token: str, summary: WeekOneSummary):
                 start = time.time()
 
                 if method == "POST":
-                    response = await client.post(
-                        f"{API_BASE_URL}{path}", headers=headers, json=data
-                    )
+                    response = await client.post(f"{API_BASE_URL}{path}", headers=headers, json=data)
                 else:
                     response = await client.get(f"{API_BASE_URL}{path}", headers=headers)
 

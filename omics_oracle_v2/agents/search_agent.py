@@ -221,18 +221,49 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             context.set_metric("raw_results_count", search_result.total_found)
             logger.info(f"Found {search_result.total_found} initial results")
 
-            # 2. Fetch metadata for the GEO IDs (batch fetch top results)
+            # 2. Fetch metadata for the GEO IDs (OPTIMIZED: parallel batch fetch)
             top_ids = search_result.geo_ids[: input_data.max_results]
-            logger.info(f"Fetching metadata for {len(top_ids)} datasets")
+            logger.info(f"Fetching metadata for {len(top_ids)} datasets (parallel batch fetch)")
 
-            geo_datasets = []
-            for geo_id in top_ids:
-                try:
-                    metadata = self._run_async(self._geo_client.get_metadata(geo_id))
-                    geo_datasets.append(metadata)
-                except Exception as e:
-                    logger.warning(f"Failed to fetch metadata for {geo_id}: {e}")
-                    # Continue with other datasets
+            # Use smart batch fetching with cache awareness (Sprint 1 optimization!)
+            # This replaces sequential loop with parallel fetching:
+            # - OLD: 50 × 500ms = 25 seconds (sequential)
+            # - NEW: ~2.5 seconds (parallel with max_concurrent=10)
+            # - CACHED: <100ms (Redis cache hit)
+            import time
+
+            fetch_start = time.time()
+
+            try:
+                geo_datasets = self._run_async(
+                    self._geo_client.batch_get_metadata_smart(geo_ids=top_ids, max_concurrent=10)
+                )
+                fetch_time = time.time() - fetch_start
+
+                context.set_metric("metadata_fetch_time", fetch_time)
+                context.set_metric("metadata_fetch_method", "parallel_smart")
+                logger.info(
+                    f"Parallel batch fetch complete: {len(geo_datasets)} datasets in {fetch_time:.2f}s "
+                    f"({len(geo_datasets)/fetch_time:.1f} datasets/sec)"
+                )
+
+            except Exception as e:
+                # Fallback to old sequential method if batch fails
+                logger.warning(f"Batch fetch failed, falling back to sequential: {e}")
+                fetch_time_fallback = time.time()
+
+                geo_datasets = []
+                for geo_id in top_ids:
+                    try:
+                        metadata = self._run_async(self._geo_client.get_metadata(geo_id))
+                        geo_datasets.append(metadata)
+                    except Exception as fetch_error:
+                        logger.warning(f"Failed to fetch metadata for {geo_id}: {fetch_error}")
+
+                fetch_time = time.time() - fetch_time_fallback
+                context.set_metric("metadata_fetch_time", fetch_time)
+                context.set_metric("metadata_fetch_method", "sequential_fallback")
+                logger.info(f"Sequential fallback complete: {len(geo_datasets)} datasets in {fetch_time:.2f}s")
 
             context.set_metric("metadata_fetched_count", len(geo_datasets))
             logger.info(f"Successfully fetched {len(geo_datasets)} metadata records")
