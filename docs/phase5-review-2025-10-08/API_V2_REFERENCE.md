@@ -1,12 +1,43 @@
 # OmicsOracle API v2 Reference
 
-**Version:** 2.0 (Phase 3)
-**Date:** October 4, 2025
-**Status:** Production Ready
+**⚠️ DEPRECATED - DO NOT USE**  
+**Status:** 🗑️ SUPERSEDED BY API_REFERENCE.md v3.0  
+**Version:** 2.0 (Phase 3)  
+**Date:** October 4, 2025  
+**Deprecated:** October 8, 2025 (Phase 4)
 
 ---
 
-## 📋 Overview
+## ⚠️ DEPRECATION NOTICE
+
+**This document is DEPRECATED and should NOT be used.**
+
+**Reasons:**
+1. ❌ **Outdated:** Shows Phase 3 status ("Production Ready" without authentication)
+2. ❌ **Security:** States "does not require authentication" - FALSE in Phase 4
+3. ❌ **Redundant:** Completely superseded by `API_REFERENCE.md` v3.0
+4. ❌ **Confusing:** Using `/api/v1/` paths that are now deprecated
+5. ❌ **Incomplete:** Missing Phase 4 features (auth, quotas, multi-agent, etc.)
+
+**Use Instead:**
+- 📄 **API_REFERENCE.md v3.0** - Complete Phase 4 API documentation
+  - All endpoints with JWT authentication
+  - Multi-agent system documented
+  - Quotas and rate limiting
+  - Cost tracking
+  - Phase 4 complete features
+
+- 📄 **API_ENDPOINT_MAPPING.md v2.0** - Endpoint mapping with auth requirements
+  - Modern `/api/` paths (not `/api/v1/`)
+  - Authentication flow
+  - Workflow, Batch, WebSocket APIs
+  - Migration guide
+
+**Action:** This file should be **archived** or **deleted** from active documentation.
+
+---
+
+## 📋 Original Overview (OUTDATED - DO NOT USE)
 
 The OmicsOracle v2 API provides a modern, production-ready interface for genomics data processing through an agent-based architecture. Built on FastAPI with comprehensive monitoring, batch processing, and real-time updates via WebSocket.
 
