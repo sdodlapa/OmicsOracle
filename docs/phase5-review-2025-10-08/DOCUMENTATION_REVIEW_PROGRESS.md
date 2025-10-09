@@ -8,13 +8,13 @@
 
 ## 📊 Overall Progress
 
-**Status:** 7 of 13 documents completed (54%)  
-**Time Spent:** ~4 hours  
-**Estimated Remaining:** ~2 hours
+**Status:** 8 of 13 documents completed (62%)  
+**Time Spent:** ~4.5 hours  
+**Estimated Remaining:** ~1.5 hours
 
 ---
 
-## ✅ Completed Documents (7/13)
+## ✅ Completed Documents (8/13)
 
 ### 1. SYSTEM_ARCHITECTURE.md ✅
 - **Status:** UPDATED & COMMITTED
@@ -258,7 +258,7 @@
 
 ### 7. AI_ANALYSIS_FLOW_DIAGRAM.md ✅
 - **Status:** UPDATED & COMMITTED
-- **Commit:** [PENDING]
+- **Commit:** cc2cd99
 - **Version:** 1.0 → 2.0 (Phase 4 Complete)
 - **Date:** October 8, 2025
 - **Size:** 378 → 614 lines (+236 lines, +62%)
@@ -298,6 +298,93 @@
 - ✅ **Phase 4 Enhancements Summary**
   - Authentication required
   - Cost tracking & quotas
+
+**Key Highlights:**
+- Complete authentication flow documented
+- Multi-agent context clarified (Agent #3 of 5)
+- Quota checking prevents cost overruns
+- Breaking changes from v1.0 documented
+- Migration guide added for developers
+
+---
+
+### 8. API_ENDPOINT_MAPPING.md ✅
+- **Status:** UPDATED (ready to commit)
+- **Commit:** [PENDING]
+- **Version:** 1.0 → 2.0 (Phase 4 Complete)
+- **Date:** October 8, 2025
+- **Size:** 264 → 586 lines (+322 lines, +122%)
+- **Time:** ~25 minutes
+
+**Major Updates:**
+- ✅ **Authentication Requirements** - CRITICAL UPDATE!
+  - ALL agent endpoints now require JWT authentication
+  - Public endpoints documented (health, auth)
+  - Protected endpoints listed with 🔒 indicator
+  - 401/403/429 error responses documented
+  
+- ✅ **Multi-Agent System Documented** - NEW!
+  - 4 operational agents (Query, Search, Data, Report)
+  - Agent capabilities endpoint added
+  - Typical workflow pattern documented
+  - Migration from old analyze endpoint
+  
+- ✅ **Phase 4 Endpoints Added**
+  - QueryClient methods (extract entities, search terms)
+  - DataClient methods (validate, quality metrics)
+  - ReportClient methods (generate, export)
+  - Marked old AnalysisClient as DEPRECATED
+  
+- ✅ **Request/Response Schemas Updated**
+  - ALL requests require `Authorization: Bearer <token>` header
+  - Query request/response (NEW)
+  - Data validation request/response (NEW)
+  - Report request/response (NEW)
+  - Updated transformation notes
+  
+- ✅ **Authentication Flow Documented**
+  - Register/login flow with examples
+  - JWT token lifecycle (60min access, 7d refresh)
+  - Token usage in requests
+  - Token refresh process
+  
+- ✅ **Rate Limiting & Quotas** - MAJOR UPDATE!
+  - Free tier: 60 req/hour, $10/month GPT-4
+  - Premium tier: 300 req/hour, $50/month GPT-4
+  - Quota checking endpoint documented
+  - Rate limit headers explained
+  - Automatic retry logic documented
+  
+- ✅ **Workflow API Documented** - NEW SECTION!
+  - Multi-agent workflow orchestration
+  - 4 workflow types (quick_search, full_analysis, etc.)
+  - Duration and cost for each workflow
+  - Status tracking endpoint
+  
+- ✅ **Batch API Documented** - NEW SECTION!
+  - Batch job submission
+  - Job status tracking
+  - Progress monitoring
+  
+- ✅ **WebSocket API Documented** - NEW SECTION!
+  - Real-time agent execution
+  - Progress updates
+  - Connection with JWT authentication
+  
+- ✅ **Migration Guide Added**
+  - Phase 3 → Phase 4 breaking changes
+  - Authentication requirement
+  - Deprecated analysis endpoint
+  - Multi-agent orchestration examples
+  - Quota awareness patterns
+
+**Key Highlights:**
+- Complete authentication requirements now documented
+- Multi-agent system fully explained
+- Workflow, Batch, and WebSocket APIs added
+- Clear migration path from Phase 3 to Phase 4
+- Integration layer update requirements listed
+- Ready for Phase 5 frontend implementation!
   - Multi-agent system integration
   - Performance metrics (13-15s)
   - Breaking changes from v1.0
