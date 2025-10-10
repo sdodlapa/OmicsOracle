@@ -30,6 +30,7 @@ from omics_oracle_v2.lib.publications.clients.semantic_scholar import (
 )
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 from omics_oracle_v2.lib.publications.deduplication import AdvancedDeduplicator
+from omics_oracle_v2.lib.publications.fulltext_manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationResult, PublicationSearchResult
 from omics_oracle_v2.lib.publications.ranking.ranker import PublicationRanker
 
@@ -187,6 +188,25 @@ class PublicationSearchPipeline:
         else:
             self.fulltext_extractor = None
 
+        # Full-text manager for OA source access (NEW - Phase 1 complete)
+        if config.enable_fulltext_retrieval:
+            import os
+
+            logger.info("Initializing FullTextManager with OA sources")
+            fulltext_config = FullTextManagerConfig(
+                enable_core=True,
+                enable_biorxiv=True,
+                enable_arxiv=True,
+                enable_crossref=True,
+                enable_openalex=True,  # Use OA URLs from OpenAlex metadata
+                core_api_key=os.getenv("CORE_API_KEY"),
+                download_pdfs=False,  # Just get URLs for now
+                max_concurrent=3,
+            )
+            self.fulltext_manager = FullTextManager(fulltext_config)
+        else:
+            self.fulltext_manager = None
+
         # Week 3 Day 14: Advanced fuzzy deduplication
         if config.fuzzy_dedup_config.enable:
             logger.info("Initializing fuzzy deduplication")
@@ -297,6 +317,13 @@ class PublicationSearchPipeline:
         if self.scholar_client:
             self.scholar_client.cleanup()
 
+        # Cleanup FullTextManager (async, use asyncio.run)
+        if self.fulltext_manager:
+            import asyncio
+
+            asyncio.run(self.fulltext_manager.cleanup())
+            logger.info("FullTextManager cleaned up")
+
         # Close cache connection (Day 26)
         # Note: cache.close() is async, call it from async context
         # For sync cleanup, we just set to None (connection will close on garbage collection)
@@ -322,6 +349,11 @@ class PublicationSearchPipeline:
 
         if self.scholar_client:
             self.scholar_client.cleanup()
+
+        # Cleanup FullTextManager
+        if self.fulltext_manager:
+            await self.fulltext_manager.cleanup()
+            logger.info("FullTextManager cleaned up")
 
         # Close cache connection properly
         if self.cache:
@@ -605,6 +637,42 @@ class PublicationSearchPipeline:
 
             except Exception as e:
                 logger.error(f"Institutional access enrichment failed: {e}")
+
+        # Step 3.5: Enrich with full-text URLs (NEW - OA sources)
+        if self.fulltext_manager and len(all_publications) > 0:
+            try:
+                import asyncio
+
+                logger.info(f"Enriching {len(all_publications)} publications with full-text URLs...")
+
+                # Initialize and get full-text (run in asyncio)
+                async def enrich_fulltext():
+                    if not self.fulltext_manager.initialized:
+                        await self.fulltext_manager.initialize()
+                    return await self.fulltext_manager.get_fulltext_batch(all_publications)
+
+                # Run async function in event loop
+                fulltext_results = asyncio.run(enrich_fulltext())
+
+                # Attach full-text URLs to publications
+                for pub, ft_result in zip(all_publications, fulltext_results):
+                    if ft_result.success:
+                        pub.metadata["fulltext_url"] = ft_result.url
+                        pub.metadata["fulltext_source"] = ft_result.source.value
+                        if ft_result.metadata:
+                            pub.metadata["fulltext_metadata"] = ft_result.metadata
+
+                # Log statistics
+                success_count = sum(1 for r in fulltext_results if r.success)
+                stats = self.fulltext_manager.get_statistics()
+                logger.info(
+                    f"Full-text enrichment: {success_count}/{len(all_publications)} "
+                    f"publications ({stats['success_rate']} success rate)"
+                )
+                logger.info(f"Sources used: {stats['by_source']}")
+
+            except Exception as e:
+                logger.error(f"Full-text enrichment failed: {e}")
 
         # Step 4: Rank publications
         ranked_results = self.ranker.rank(all_publications, query, top_k=max_results)

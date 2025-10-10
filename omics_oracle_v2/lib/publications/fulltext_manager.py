@@ -25,6 +25,7 @@ Example:
 
 import asyncio
 import logging
+import os
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -35,6 +36,11 @@ from omics_oracle_v2.lib.publications.clients.oa_sources import (
     BioRxivClient,
     COREClient,
     CrossrefClient,
+)
+from omics_oracle_v2.lib.publications.clients.oa_sources.scihub_client import SciHubClient, SciHubConfig
+from omics_oracle_v2.lib.publications.clients.oa_sources.unpaywall_client import (
+    UnpaywallClient,
+    UnpaywallConfig,
 )
 from omics_oracle_v2.lib.publications.models import Publication
 
@@ -52,6 +58,7 @@ class FullTextSource(str, Enum):
     BIORXIV = "biorxiv"
     ARXIV = "arxiv"
     CROSSREF = "crossref"
+    SCIHUB = "scihub"  # NEW - Phase 2
     CACHE = "cache"
 
 
@@ -76,12 +83,15 @@ class FullTextManagerConfig:
         enable_institutional: Try institutional access first
         enable_pmc: Try PubMed Central
         enable_openalex: Use OpenAlex OA URLs
-        enable_unpaywall: Try Unpaywall
+        enable_unpaywall: Try Unpaywall (NEW - Phase 1+)
         enable_core: Use CORE API
         enable_biorxiv: Try bioRxiv/medRxiv
         enable_arxiv: Try arXiv
         enable_crossref: Use Crossref full-text links
+        enable_scihub: Try Sci-Hub (NEW - Phase 2, use responsibly)
         core_api_key: API key for CORE
+        unpaywall_email: Email for Unpaywall API
+        scihub_use_proxy: Use proxy/Tor for Sci-Hub
         download_pdfs: Whether to download PDFs (vs. just get URLs)
         pdf_cache_dir: Directory to cache downloaded PDFs
         max_concurrent: Maximum concurrent source attempts
@@ -93,12 +103,15 @@ class FullTextManagerConfig:
         enable_institutional: bool = True,
         enable_pmc: bool = True,
         enable_openalex: bool = True,
-        enable_unpaywall: bool = True,
+        enable_unpaywall: bool = True,  # NEW - Phase 1+
         enable_core: bool = True,
         enable_biorxiv: bool = True,
         enable_arxiv: bool = True,
         enable_crossref: bool = True,
+        enable_scihub: bool = False,  # NEW - Phase 2 (disabled by default)
         core_api_key: Optional[str] = None,
+        unpaywall_email: Optional[str] = None,  # NEW
+        scihub_use_proxy: bool = False,  # NEW
         download_pdfs: bool = False,
         pdf_cache_dir: Optional[Path] = None,
         max_concurrent: int = 3,
@@ -107,12 +120,15 @@ class FullTextManagerConfig:
         self.enable_institutional = enable_institutional
         self.enable_pmc = enable_pmc
         self.enable_openalex = enable_openalex
-        self.enable_unpaywall = enable_unpaywall
+        self.enable_unpaywall = enable_unpaywall  # NEW
         self.enable_core = enable_core
         self.enable_biorxiv = enable_biorxiv
         self.enable_arxiv = enable_arxiv
         self.enable_crossref = enable_crossref
+        self.enable_scihub = enable_scihub  # NEW
         self.core_api_key = core_api_key
+        self.unpaywall_email = unpaywall_email  # NEW
+        self.scihub_use_proxy = scihub_use_proxy  # NEW
         self.download_pdfs = download_pdfs
         self.pdf_cache_dir = pdf_cache_dir or Path("data/pdfs")
         self.max_concurrent = max_concurrent
@@ -153,6 +169,8 @@ class FullTextManager:
         self.biorxiv_client: Optional[BioRxivClient] = None
         self.arxiv_client: Optional[ArXivClient] = None
         self.crossref_client: Optional[CrossrefClient] = None
+        self.unpaywall_client: Optional[UnpaywallClient] = None  # NEW
+        self.scihub_client: Optional[SciHubClient] = None  # NEW
 
         # Statistics
         self.stats = {
@@ -173,9 +191,7 @@ class FullTextManager:
 
         # Initialize CORE client
         if self.config.enable_core:
-            from omics_oracle_v2.lib.publications.clients.oa_sources.core_client import (
-                COREConfig,
-            )
+            from omics_oracle_v2.lib.publications.clients.oa_sources.core_client import COREConfig
 
             core_config = COREConfig(api_key=self.config.core_api_key)
             self.core_client = COREClient(config=core_config)
@@ -200,6 +216,21 @@ class FullTextManager:
             await self.crossref_client.__aenter__()
             logger.info("Crossref client initialized")
 
+        # Initialize Unpaywall client (NEW - Phase 1+)
+        if self.config.enable_unpaywall:
+            email = self.config.unpaywall_email or os.getenv("NCBI_EMAIL", "sdodl001@odu.edu")
+            unpaywall_config = UnpaywallConfig(email=email)
+            self.unpaywall_client = UnpaywallClient(unpaywall_config)
+            await self.unpaywall_client.__aenter__()
+            logger.info("Unpaywall client initialized")
+
+        # Initialize Sci-Hub client (NEW - Phase 2)
+        if self.config.enable_scihub:
+            scihub_config = SciHubConfig(use_proxy=self.config.scihub_use_proxy)
+            self.scihub_client = SciHubClient(scihub_config)
+            await self.scihub_client.__aenter__()
+            logger.info("⚠️  Sci-Hub client initialized (use responsibly)")
+
         self.initialized = True
         logger.info("All OA source clients initialized")
 
@@ -218,6 +249,10 @@ class FullTextManager:
             await self.arxiv_client.__aexit__(None, None, None)
         if self.crossref_client:
             await self.crossref_client.__aexit__(None, None, None)
+        if self.unpaywall_client:  # NEW
+            await self.unpaywall_client.__aexit__(None, None, None)
+        if self.scihub_client:  # NEW
+            await self.scihub_client.__aexit__(None, None, None)
 
         self.initialized = False
         logger.info("All OA source clients cleaned up")
@@ -394,8 +429,8 @@ class FullTextManager:
             return FullTextResult(success=False, error="arXiv disabled or not initialized")
 
         try:
-            # Try by arXiv ID or DOI
-            if publication.doi:
+            # Only try by arXiv ID if DOI looks like an arXiv ID (contains "arxiv")
+            if publication.doi and "arxiv" in publication.doi.lower():
                 paper = await self.arxiv_client.get_by_arxiv_id(publication.doi)
                 if paper and paper.get("pdf_url"):
                     logger.info(f"Found in arXiv by ID: {publication.doi}")
@@ -406,7 +441,7 @@ class FullTextManager:
                         metadata={"arxiv_id": paper.get("arxiv_id")},
                     )
 
-            # Try title search
+            # Try title search (only for papers without DOI or if arXiv ID lookup failed)
             if publication.title:
                 results = await self.arxiv_client.search_by_title(publication.title, max_results=1)
                 if results and results[0].get("pdf_url"):
@@ -421,7 +456,7 @@ class FullTextManager:
             return FullTextResult(success=False, error="Not found in arXiv")
 
         except Exception as e:
-            logger.warning(f"arXiv error: {e}")
+            logger.debug(f"arXiv lookup skipped: {e}")  # Changed to debug level
             return FullTextResult(success=False, error=str(e))
 
     async def _try_crossref(self, publication: Publication) -> FullTextResult:
@@ -459,6 +494,87 @@ class FullTextManager:
             logger.warning(f"Crossref error: {e}")
             return FullTextResult(success=False, error=str(e))
 
+    async def _try_unpaywall(self, publication: Publication) -> FullTextResult:
+        """
+        Try to get full-text from Unpaywall (NEW - Phase 1+).
+
+        Args:
+            publication: Publication object
+
+        Returns:
+            FullTextResult
+        """
+        if not self.config.enable_unpaywall or not self.unpaywall_client:
+            return FullTextResult(success=False, error="Unpaywall disabled or not initialized")
+
+        try:
+            # Unpaywall requires DOI
+            if not publication.doi:
+                return FullTextResult(success=False, error="No DOI for Unpaywall lookup")
+
+            result = await self.unpaywall_client.get_oa_location(publication.doi)
+            if result and result.get("is_oa"):
+                best_oa = result.get("best_oa_location", {})
+                pdf_url = best_oa.get("url_for_pdf") or best_oa.get("url")
+
+                if pdf_url:
+                    logger.info(f"Found OA via Unpaywall: {publication.doi}")
+                    return FullTextResult(
+                        success=True,
+                        source=FullTextSource.UNPAYWALL,
+                        url=pdf_url,
+                        metadata={
+                            "version": best_oa.get("version"),
+                            "license": best_oa.get("license"),
+                            "oa_status": result.get("oa_status"),
+                        },
+                    )
+
+            return FullTextResult(success=False, error="Not OA in Unpaywall")
+
+        except Exception as e:
+            logger.debug(f"Unpaywall lookup failed: {e}")
+            return FullTextResult(success=False, error=str(e))
+
+    async def _try_scihub(self, publication: Publication) -> FullTextResult:
+        """
+        Try to get full-text from Sci-Hub (NEW - Phase 2).
+
+        ⚠️  Use responsibly and in compliance with local laws.
+
+        Args:
+            publication: Publication object
+
+        Returns:
+            FullTextResult
+        """
+        if not self.config.enable_scihub or not self.scihub_client:
+            return FullTextResult(success=False, error="Sci-Hub disabled or not initialized")
+
+        try:
+            # Try DOI first, then PMID
+            identifier = publication.doi or publication.pmid
+
+            if not identifier:
+                return FullTextResult(success=False, error="No DOI or PMID for Sci-Hub lookup")
+
+            pdf_url = await self.scihub_client.get_pdf_url(identifier)
+
+            if pdf_url:
+                logger.info(f"✓ Found PDF via Sci-Hub: {identifier}")
+                return FullTextResult(
+                    success=True,
+                    source=FullTextSource.SCIHUB,
+                    url=pdf_url,
+                    metadata={"identifier": identifier},
+                )
+
+            return FullTextResult(success=False, error="Not found in Sci-Hub")
+
+        except Exception as e:
+            logger.debug(f"Sci-Hub lookup failed: {e}")
+            return FullTextResult(success=False, error=str(e))
+
     async def get_fulltext(self, publication: Publication) -> FullTextResult:
         """
         Get full-text for a publication by trying sources in priority order.
@@ -477,13 +593,16 @@ class FullTextManager:
         logger.info(f"Attempting to get full-text for: {publication.title[:60]}...")
 
         # Define waterfall order
+        # Priority: Cache > OA metadata > Legal OA sources > Sci-Hub (if enabled)
         sources = [
             ("cache", self._check_cache),
             ("openalex_oa", self._try_openalex_oa_url),
+            ("unpaywall", self._try_unpaywall),  # NEW - Phase 1+ (high success rate)
             ("core", self._try_core),
             ("biorxiv", self._try_biorxiv),
             ("arxiv", self._try_arxiv),
             ("crossref", self._try_crossref),
+            ("scihub", self._try_scihub),  # NEW - Phase 2 (last resort, if enabled)
         ]
 
         # Try each source in order
@@ -506,7 +625,7 @@ class FullTextManager:
                 logger.warning(f"Error trying source {source_name}: {e}")
 
         # No source succeeded
-        logger.warning(f"Failed to find full-text for: {publication.title[:60]}...")
+        logger.debug(f"Failed to find full-text for: {publication.title[:60]}...")  # Changed to debug
         self.stats["failures"] += 1
         return FullTextResult(success=False, error="No sources succeeded")
 
@@ -528,7 +647,9 @@ class FullTextManager:
 
         max_concurrent = max_concurrent or self.config.max_concurrent
 
-        logger.info(f"Getting full-text for {len(publications)} publications (max {max_concurrent} concurrent)...")
+        logger.info(
+            f"Getting full-text for {len(publications)} publications (max {max_concurrent} concurrent)..."
+        )
 
         # Create semaphore for concurrency control
         semaphore = asyncio.Semaphore(max_concurrent)
@@ -578,7 +699,9 @@ class FullTextManager:
 
 
 # Convenience function
-async def get_fulltext(publication: Publication, config: Optional[FullTextManagerConfig] = None) -> FullTextResult:
+async def get_fulltext(
+    publication: Publication, config: Optional[FullTextManagerConfig] = None
+) -> FullTextResult:
     """
     Convenience function to get full-text for a single publication.
 

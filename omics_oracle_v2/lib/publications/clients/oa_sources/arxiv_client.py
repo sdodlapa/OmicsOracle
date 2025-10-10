@@ -212,16 +212,21 @@ class ArXivClient(BasePublicationClient):
         """
         try:
             # Extract arXiv ID from entry ID
-            entry_id = entry.find("atom:id", self.ATOM_NS).text
+            entry_id_elem = entry.find("atom:id", self.ATOM_NS)
+            if entry_id_elem is None or not entry_id_elem.text:
+                logger.debug("Missing entry ID in arXiv response")
+                return None
+                
+            entry_id = entry_id_elem.text
             arxiv_id = entry_id.split("/abs/")[-1].replace("v1", "").replace("v2", "").replace("v3", "")
 
             # Title
             title_elem = entry.find("atom:title", self.ATOM_NS)
-            title = title_elem.text.strip() if title_elem is not None else None
+            title = title_elem.text.strip() if title_elem is not None and title_elem.text else None
 
             # Summary (abstract)
             summary_elem = entry.find("atom:summary", self.ATOM_NS)
-            abstract = summary_elem.text.strip() if summary_elem is not None else None
+            abstract = summary_elem.text.strip() if summary_elem is not None and summary_elem.text else None
 
             # Authors
             authors = []
@@ -293,7 +298,7 @@ class ArXivClient(BasePublicationClient):
         # Clean arXiv ID
         clean_id = self._extract_arxiv_id(arxiv_id)
         if not clean_id:
-            logger.warning(f"Invalid arXiv ID: {arxiv_id}")
+            logger.debug(f"Invalid arXiv ID: {arxiv_id}")  # Changed from warning to debug
             return None
 
         params = {"id_list": clean_id}

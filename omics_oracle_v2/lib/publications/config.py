@@ -5,6 +5,7 @@ All configurations use Pydantic for validation and follow the
 feature toggle pattern from AdvancedSearchPipeline.
 """
 
+import os
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -273,14 +274,22 @@ class PublicationSearchConfig:
     enable_scholar: bool = False  # ⚠️ DISABLED - Scholar scraping blocked (Oct 9, 2025)
     enable_citations: bool = True  # ✅ RE-ENABLED - Now uses OpenAlex (Oct 9, 2025)
     enable_pdf_download: bool = True  # ✅ Week 4 - ENABLED
-    enable_fulltext: bool = True  # ✅ Week 4 - ENABLED
+    enable_fulltext: bool = True  # ✅ Week 4 - ENABLED (PDF extraction)
+    enable_fulltext_retrieval: bool = True  # ✅ NEW - OA source full-text URLs (Oct 9, 2025)
     enable_institutional_access: bool = True  # ✅ Week 4 - ENABLED
     enable_cache: bool = True  # ✅ Day 26 - Redis caching
-    enable_query_preprocessing: bool = True  # ✅ Phase 1 - Query preprocessing with BiomedicalNER (Oct 9, 2025)
+    enable_query_preprocessing: bool = (
+        True  # ✅ Phase 1 - Query preprocessing with BiomedicalNER (Oct 9, 2025)
+    )
     enable_synonym_expansion: bool = True  # ✅ Phase 2B - Synonym expansion with ontologies (Oct 9, 2025)
 
     # Component configurations
-    pubmed_config: PubMedConfig = field(default_factory=lambda: PubMedConfig(email="sdodl001@odu.edu"))
+    pubmed_config: PubMedConfig = field(
+        default_factory=lambda: PubMedConfig(
+            email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"),
+            api_key=os.getenv("NCBI_API_KEY"),
+        )
+    )
     scholar_config: GoogleScholarConfig = field(default_factory=GoogleScholarConfig)
     pdf_config: PDFConfig = field(default_factory=PDFConfig)
     llm_config: LLMConfig = field(default_factory=LLMConfig)  # Week 3 Day 15-17
