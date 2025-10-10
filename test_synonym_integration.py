@@ -6,7 +6,7 @@ Tests the complete pipeline integration with synonym expansion.
 
 import pytest
 import asyncio
-from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
+from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 
 

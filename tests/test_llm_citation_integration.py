@@ -22,7 +22,7 @@ from omics_oracle_v2.lib.publications.config import (
     PubMedConfig,
 )
 from omics_oracle_v2.lib.publications.models import Publication
-from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
+from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
 
 class TestLLMCitationIntegration:

@@ -9,7 +9,7 @@ import logging
 from pathlib import Path
 
 from omics_oracle_v2.lib.geo.client import GEOClient
-from omics_oracle_v2.lib.workflows.geo_citation_pipeline import GEOCitationConfig, GEOCitationPipeline
+from omics_oracle_v2.lib.pipelines.geo_citation_pipeline import GEOCitationConfig, GEOCitationPipeline
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)

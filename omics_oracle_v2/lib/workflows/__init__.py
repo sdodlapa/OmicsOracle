@@ -4,7 +4,7 @@ Workflows package
 High-level workflows that orchestrate multiple components.
 """
 
-from omics_oracle_v2.lib.workflows.geo_citation_pipeline import (
+from omics_oracle_v2.lib.pipelines.geo_citation_pipeline import (
     CollectionResult,
     GEOCitationConfig,
     GEOCitationPipeline,

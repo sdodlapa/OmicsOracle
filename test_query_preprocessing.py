@@ -14,7 +14,7 @@ Run: python test_query_preprocessing.py
 
 import logging
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
-from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
+from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
 # Configure logging
 logging.basicConfig(

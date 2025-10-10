@@ -119,7 +119,7 @@ def test_preset_configs():
 def test_pipeline_initialization():
     """Test that pipeline can initialize with new config."""
     from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
-    from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
+    from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
     logger.info("\nTesting pipeline initialization...")
 

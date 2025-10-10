@@ -7,7 +7,7 @@ for the "polite pool" which gives 10x faster rate limits.
 """
 
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
-from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
+from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
 
 def test_email_config():

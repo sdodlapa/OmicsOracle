@@ -23,7 +23,7 @@ from omics_oracle_v2.lib.publications.models import (
     PublicationSearchResult,
     PublicationSource,
 )
-from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
+from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
 __all__ = [
     # Models

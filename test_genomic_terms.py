@@ -204,7 +204,7 @@ def test_query_optimization():
     print("QUERY OPTIMIZATION TEST")
     print("=" * 80)
     
-    from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
+    from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
     from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
     
     # Initialize pipeline with preprocessing

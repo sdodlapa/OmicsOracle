@@ -14,7 +14,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 os.environ["PYTHONHTTPSVERIFY"] = "0"
 
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
-from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
+from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
 print("\n" + "=" * 60)
 print("Testing PubMed with SSL verification DISABLED (test only)")

@@ -31,7 +31,7 @@ logger = logging.getLogger(__name__)
 
 async def main():
     """Run complete optimized pipeline test."""
-    from omics_oracle_v2.lib.workflows.geo_citation_pipeline import GEOCitationConfig, GEOCitationPipeline
+    from omics_oracle_v2.lib.pipelines.geo_citation_pipeline import GEOCitationConfig, GEOCitationPipeline
 
     # Configure pipeline
     config = GEOCitationConfig(

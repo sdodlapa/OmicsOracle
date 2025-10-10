@@ -83,7 +83,7 @@ def test_pipeline_initialization():
 
     try:
         from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
-        from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
+        from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
         config = PublicationSearchConfig(
             enable_pubmed=True,
@@ -122,7 +122,7 @@ def test_pubmed_search():
 
     try:
         from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
-        from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
+        from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
         config = PublicationSearchConfig(
             enable_pubmed=True,

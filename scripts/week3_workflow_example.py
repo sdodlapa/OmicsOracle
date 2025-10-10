@@ -23,7 +23,7 @@ from omics_oracle_v2.lib.publications.analysis.reports import DatasetImpactRepor
 from omics_oracle_v2.lib.publications.analysis.trends import TemporalTrendAnalyzer
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 from omics_oracle_v2.lib.publications.models import Dataset
-from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
+from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
 
 def print_section(title: str, width: int = 80):

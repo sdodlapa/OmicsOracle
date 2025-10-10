@@ -62,7 +62,7 @@ class TestSearchAgentPreprocessingIntegration:
         assert search_agent._preprocessing_pipeline is not None
 
         # Verify it's a PublicationSearchPipeline
-        from omics_oracle_v2.lib.publications.pipeline import PublicationSearchPipeline
+        from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
         assert isinstance(search_agent._preprocessing_pipeline, PublicationSearchPipeline)
 
