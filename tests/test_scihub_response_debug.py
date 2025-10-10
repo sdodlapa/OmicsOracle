@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.publications.clients.oa_sources.scihub_client import SciHubClient, SciHubConfig
+from omics_oracle_v2.lib.fulltext.sources.scihub_client import SciHubClient, SciHubConfig
 
 logging.basicConfig(level=logging.DEBUG, format="%(levelname)s - %(message)s")
 

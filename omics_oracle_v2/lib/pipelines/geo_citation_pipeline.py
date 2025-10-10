@@ -24,9 +24,9 @@ from omics_oracle_v2.lib.publications.citations.geo_citation_discovery import (
     CitationDiscoveryResult,
     GEOCitationDiscovery,
 )
-from omics_oracle_v2.lib.publications.fulltext_manager import FullTextManager, FullTextManagerConfig
+from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.publications.models import Publication
-from omics_oracle_v2.lib.publications.pdf_download_manager import DownloadReport, PDFDownloadManager
+from omics_oracle_v2.lib.storage.pdf.download_manager import DownloadReport, PDFDownloadManager
 
 logger = logging.getLogger(__name__)
 

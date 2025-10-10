@@ -16,7 +16,6 @@ Week 3: Enhanced publications (Scholar, citations)
 Week 4: PDF processing and full-text extraction
 """
 
-from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
 from omics_oracle_v2.lib.publications.models import (
     Publication,
@@ -34,8 +33,14 @@ __all__ = [
     # Configuration
     "PubMedConfig",
     "PublicationSearchConfig",
-    # Pipeline
+    # Pipeline (lazy import to avoid circular dependency)
     "PublicationSearchPipeline",
 ]
+
+def __getattr__(name):
+    if name == "PublicationSearchPipeline":
+        from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
+        return PublicationSearchPipeline
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 __version__ = "0.1.0"

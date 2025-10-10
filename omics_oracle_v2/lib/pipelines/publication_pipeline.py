@@ -37,7 +37,7 @@ from omics_oracle_v2.lib.publications.clients.semantic_scholar import (
 )
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 from omics_oracle_v2.lib.publications.deduplication import AdvancedDeduplicator
-from omics_oracle_v2.lib.publications.fulltext_manager import FullTextManager, FullTextManagerConfig
+from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationResult, PublicationSearchResult
 from omics_oracle_v2.lib.publications.ranking.ranker import PublicationRanker
 

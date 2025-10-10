@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 # Import the 100-paper dataset
 import importlib.util
 
-from omics_oracle_v2.lib.publications.fulltext_manager import FullTextManager, FullTextManagerConfig
+from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
 
 spec = importlib.util.spec_from_file_location(

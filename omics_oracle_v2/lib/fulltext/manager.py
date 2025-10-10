@@ -11,7 +11,7 @@ Sources are tried in order of:
 4. Coverage (broad sources first)
 
 Example:
-    >>> from omics_oracle_v2.lib.publications.fulltext_manager import FullTextManager
+    >>> from omics_oracle_v2.lib.fulltext.manager import FullTextManager
     >>>
     >>> manager = FullTextManager()
     >>> await manager.initialize()
@@ -41,8 +41,8 @@ from omics_oracle_v2.lib.publications.clients.oa_sources import (
     COREClient,
     CrossrefClient,
 )
-from omics_oracle_v2.lib.publications.clients.oa_sources.libgen_client import LibGenClient, LibGenConfig
-from omics_oracle_v2.lib.publications.clients.oa_sources.scihub_client import SciHubClient, SciHubConfig
+from omics_oracle_v2.lib.fulltext.sources.libgen_client import LibGenClient, LibGenConfig
+from omics_oracle_v2.lib.fulltext.sources.scihub_client import SciHubClient, SciHubConfig
 from omics_oracle_v2.lib.publications.clients.oa_sources.unpaywall_client import (
     UnpaywallClient,
     UnpaywallConfig,
