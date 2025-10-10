@@ -1,14 +1,14 @@
 # Sci-Hub & LibGen Not Being Utilized - Root Cause Analysis
 
-**Date:** October 10, 2025  
+**Date:** October 10, 2025
 **Status:** DIAGNOSED - 3 Critical Issues Found
 
 ---
 
 ## Executive Summary
 
-✅ **Good News:** Our exploration test shows Sci-Hub **WORKS** (50% success rate on 10 papers)  
-❌ **Problem:** Sci-Hub is **DISABLED** in the production pipeline  
+✅ **Good News:** Our exploration test shows Sci-Hub **WORKS** (50% success rate on 10 papers)
+❌ **Problem:** Sci-Hub is **DISABLED** in the production pipeline
 ❌ **Problem:** LibGen client **NOT IMPLEMENTED** yet
 
 ---
@@ -251,7 +251,7 @@ TOTAL           ~85-90%     ✅ WITH LIBGEN
 
 ### Step 1: Enable Unpaywall in Pipeline ✅ (5 minutes)
 
-**File:** `omics_oracle_v2/lib/publications/pipeline.py`  
+**File:** `omics_oracle_v2/lib/publications/pipeline.py`
 **Lines:** 191-206
 
 **Change:**
@@ -276,7 +276,7 @@ fulltext_config = FullTextManagerConfig(
 
 ### Step 2: Enable Sci-Hub in Pipeline ⚠️ (5 minutes + approval)
 
-**File:** `omics_oracle_v2/lib/publications/pipeline.py`  
+**File:** `omics_oracle_v2/lib/publications/pipeline.py`
 **Lines:** 191-206
 
 **Change:**
@@ -317,7 +317,7 @@ fulltext_config = FullTextManagerConfig(
 1. **Create LibGen Client** (1.5 hours)
    ```
    File: omics_oracle_v2/lib/publications/clients/oa_sources/libgen_client.py
-   
+
    Components:
    - LibGenConfig (mirrors, rate limits)
    - LibGenClient (search, download links)
@@ -556,4 +556,3 @@ core_api_key=os.getenv(...),
 ---
 
 **Recommendation:** Start with Option A (Unpaywall), then decide on B or C based on results.
-

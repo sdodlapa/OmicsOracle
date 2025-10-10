@@ -1,7 +1,7 @@
 # Quick Start: Synonym Expansion (Phase 2B)
 
-**What:** Automatically expand biomedical technique queries with synonyms from ontologies  
-**Why:** Get 3-5x more search results by matching alternative terminology  
+**What:** Automatically expand biomedical technique queries with synonyms from ontologies
+**Why:** Get 3-5x more search results by matching alternative terminology
 **When:** Use for genomic/omics dataset searches (GEO, ArrayExpress, PubMed, OpenAlex)
 
 ---
@@ -46,12 +46,12 @@ result = pipeline._preprocess_query("RNA-seq in liver")
 query = "DNA methylation WGBS cancer"
 expanded = pipeline._preprocess_query(query)
 
-# Expanded: "(DNA methylation OR 5-methylcytosine profiling OR CpG methylation) 
+# Expanded: "(DNA methylation OR 5-methylcytosine profiling OR CpG methylation)
 #            (WGBS OR whole-genome bisulfite sequencing OR bisulfite sequencing) cancer"
 
 # Matches:
 # - "DNA methylation" papers
-# - "5-methylcytosine" papers  
+# - "5-methylcytosine" papers
 # - "CpG methylation" papers
 # - "WGBS" papers
 # - "bisulfite sequencing" papers
@@ -65,7 +65,7 @@ expanded = pipeline._preprocess_query(query)
 query = "ATAC-seq chromatin accessibility"
 expanded = pipeline._preprocess_query(query)
 
-# Expanded: "(ATAC-seq OR assay for transposase-accessible chromatin using sequencing 
+# Expanded: "(ATAC-seq OR assay for transposase-accessible chromatin using sequencing
 #            OR ATAC seq OR transposase-accessible chromatin sequencing) chromatin accessibility"
 
 # Matches:
@@ -400,6 +400,6 @@ for query in test_queries:
 
 ---
 
-**Version:** Phase 2B.1 (Gazetteer-based Expansion)  
-**Status:** ✅ Production Ready  
+**Version:** Phase 2B.1 (Gazetteer-based Expansion)
+**Status:** ✅ Production Ready
 **Last Updated:** October 9, 2025

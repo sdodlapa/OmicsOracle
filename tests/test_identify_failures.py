@@ -6,10 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.publications.fulltext_manager import (
-    FullTextManager,
-    FullTextManagerConfig,
-)
+from omics_oracle_v2.lib.publications.fulltext_manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
 
 # Same 20 DOIs from the earlier test
@@ -39,17 +36,17 @@ DIVERSE_DOIS = [
 
 async def test_identify_failures():
     """Show which papers failed and investigate why."""
-    
+
     print("=" * 80)
     print("IDENTIFY FAILURES: Which papers can't be found?")
     print("=" * 80)
     print()
-    
+
     publications = [
         Publication(title=f"Paper {i}", doi=doi, source=PublicationSource.PUBMED)
         for i, doi in enumerate(DIVERSE_DOIS)
     ]
-    
+
     # Test with EVERYTHING enabled
     config = FullTextManagerConfig(
         enable_unpaywall=True,
@@ -62,16 +59,16 @@ async def test_identify_failures():
         scihub_use_proxy=False,
         max_concurrent=2,
     )
-    
+
     successes = []
     failures = []
-    
+
     async with FullTextManager(config) as manager:
         results = await manager.get_fulltext_batch(publications)
-        
+
         print("RESULTS:")
         print("-" * 80)
-        
+
         for doi, pub, result in zip(DIVERSE_DOIS, publications, results):
             if result.success:
                 status = "✅"
@@ -83,9 +80,9 @@ async def test_identify_failures():
                 failures.append((doi, result.error))
                 error = result.error[:40] if result.error else "Unknown"
                 print(f"{status} {doi[:45]:45} → FAILED ({error})")
-        
+
         stats = manager.get_statistics()
-    
+
     print()
     print("=" * 80)
     print("SUMMARY")
@@ -96,14 +93,14 @@ async def test_identify_failures():
     print()
     print(f"By source: {stats['by_source']}")
     print()
-    
-    if 'scihub' in stats['by_source']:
+
+    if "scihub" in stats["by_source"]:
         print(f"⭐ Sci-Hub found: {stats['by_source']['scihub']} papers")
         scihub_papers = [doi for doi, source in successes if source == "scihub"]
         for doi in scihub_papers:
             print(f"   {doi}")
         print()
-    
+
     if failures:
         print(f"❌ Failed papers ({len(failures)}):")
         for doi, error in failures:

@@ -15,6 +15,13 @@ from typing import List
 
 from omics_oracle_v2.lib.cache import AsyncRedisCache
 from omics_oracle_v2.lib.llm.client import LLMClient
+
+# Import NLP for query preprocessing (NEW)
+from omics_oracle_v2.lib.nlp.biomedical_ner import BiomedicalNER
+from omics_oracle_v2.lib.nlp.models import Entity, EntityType
+
+# Import synonym expansion (Phase 2B)
+from omics_oracle_v2.lib.nlp.synonym_expansion import SynonymExpander, SynonymExpansionConfig
 from omics_oracle_v2.lib.publications.citations.citation_finder import CitationFinder
 from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
 from omics_oracle_v2.lib.publications.clients.institutional_access import (
@@ -33,13 +40,6 @@ from omics_oracle_v2.lib.publications.deduplication import AdvancedDeduplicator
 from omics_oracle_v2.lib.publications.fulltext_manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationResult, PublicationSearchResult
 from omics_oracle_v2.lib.publications.ranking.ranker import PublicationRanker
-
-# Import NLP for query preprocessing (NEW)
-from omics_oracle_v2.lib.nlp.biomedical_ner import BiomedicalNER
-from omics_oracle_v2.lib.nlp.models import Entity, EntityType
-
-# Import synonym expansion (Phase 2B)
-from omics_oracle_v2.lib.nlp.synonym_expansion import SynonymExpander, SynonymExpansionConfig
 
 logger = logging.getLogger(__name__)
 
@@ -272,12 +272,14 @@ class PublicationSearchPipeline:
                     generate_variants=True,
                     common_abbreviations=True,
                     cache_enabled=True,
-                    max_synonyms_per_term=config.max_synonyms_per_term
+                    max_synonyms_per_term=config.max_synonyms_per_term,
                 )
                 self.synonym_expander = SynonymExpander(synonym_config)
                 stats = self.synonym_expander.stats()
-                logger.info(f"Synonym expansion initialized: {stats['techniques']} techniques, "
-                           f"{stats['total_terms']} terms, {stats['normalized_lookup']} lookups")
+                logger.info(
+                    f"Synonym expansion initialized: {stats['techniques']} techniques, "
+                    f"{stats['total_terms']} terms, {stats['normalized_lookup']} lookups"
+                )
             except Exception as e:
                 logger.warning(f"Could not load synonym expander: {e}. Synonym expansion disabled.")
                 self.synonym_expander = None
@@ -372,13 +374,13 @@ class PublicationSearchPipeline:
     def _preprocess_query(self, query: str) -> dict:
         """
         Preprocess query to extract biological entities and build optimized queries.
-        
+
         Phase 1: Basic entity extraction + field tagging
         Phase 2B: Synonym expansion with ontologies
-        
+
         Args:
             query: Raw search query
-            
+
         Returns:
             Dictionary with original query and source-specific optimized queries
         """
@@ -390,7 +392,7 @@ class PublicationSearchPipeline:
                 "openalex": query,
                 "scholar": query,
             }
-        
+
         try:
             # Phase 2B: Apply synonym expansion BEFORE entity extraction
             expanded_query = query
@@ -398,14 +400,14 @@ class PublicationSearchPipeline:
                 expanded_query = self.synonym_expander.expand_query(query)
                 if expanded_query != query:
                     logger.debug(f"Query expanded: '{query}' -> '{expanded_query}'")
-            
+
             # Extract entities using BiomedicalNER
             logger.debug(f"Preprocessing query: '{expanded_query}'")
             ner_result = self.ner.extract_entities(expanded_query)
-            
+
             # Group entities by type
             entities_by_type = ner_result.entities_by_type
-            
+
             # Build source-specific queries
             return {
                 "original": query,
@@ -415,7 +417,7 @@ class PublicationSearchPipeline:
                 "openalex": self._build_openalex_query(expanded_query, entities_by_type),
                 "scholar": expanded_query,  # Scholar gets expanded query
             }
-            
+
         except Exception as e:
             logger.warning(f"Query preprocessing failed: {e}. Using original query.")
             return {
@@ -424,26 +426,26 @@ class PublicationSearchPipeline:
                 "openalex": query,
                 "scholar": query,
             }
-    
+
     def _build_pubmed_query(self, original_query: str, entities_by_type: dict) -> str:
         """
         Build PubMed-optimized query with field tags.
-        
+
         PubMed supports field tags like:
         - [Gene Name] for genes
         - [MeSH] for diseases (Medical Subject Headings)
         - [Text Word] for general terms
         - [Author] for authors
-        
+
         Args:
             original_query: Original search query
             entities_by_type: Dictionary of entities grouped by EntityType
-            
+
         Returns:
             PubMed-optimized query string
         """
         parts = []
-        
+
         # Add gene terms with [Gene Name] tag
         if EntityType.GENE in entities_by_type:
             genes = entities_by_type[EntityType.GENE]
@@ -451,7 +453,7 @@ class PublicationSearchPipeline:
                 gene_terms = " OR ".join(f'"{g.text}"[Gene Name]' for g in genes[:5])  # Limit to top 5
                 parts.append(f"({gene_terms})")
                 logger.debug(f"PubMed query: Added {len(genes)} gene terms")
-        
+
         # Add disease terms with [MeSH] tag
         if EntityType.DISEASE in entities_by_type:
             diseases = entities_by_type[EntityType.DISEASE]
@@ -459,7 +461,7 @@ class PublicationSearchPipeline:
                 disease_terms = " OR ".join(f'"{d.text}"[MeSH]' for d in diseases[:5])
                 parts.append(f"({disease_terms})")
                 logger.debug(f"PubMed query: Added {len(diseases)} disease terms")
-        
+
         # Add technique/method terms with [Text Word]
         if EntityType.TECHNIQUE in entities_by_type:
             techniques = entities_by_type[EntityType.TECHNIQUE]
@@ -467,7 +469,7 @@ class PublicationSearchPipeline:
                 tech_terms = " OR ".join(f'"{t.text}"[Text Word]' for t in techniques[:3])
                 parts.append(f"({tech_terms})")
                 logger.debug(f"PubMed query: Added {len(techniques)} technique terms")
-        
+
         # Add organism terms
         if EntityType.ORGANISM in entities_by_type:
             organisms = entities_by_type[EntityType.ORGANISM]
@@ -475,7 +477,7 @@ class PublicationSearchPipeline:
                 org_terms = " OR ".join(f'"{o.text}"[Organism]' for o in organisms[:2])
                 parts.append(f"({org_terms})")
                 logger.debug(f"PubMed query: Added {len(organisms)} organism terms")
-        
+
         # If we have enhanced terms, combine them
         if parts:
             enhanced = " AND ".join(parts)
@@ -483,50 +485,50 @@ class PublicationSearchPipeline:
             final_query = f"({enhanced}) OR ({original_query})"
             logger.info(f"PubMed query enhanced: {len(parts)} entity groups added")
             return final_query
-        
+
         # No entities found - use original query
         logger.debug("PubMed query: No entities found, using original")
         return original_query
-    
+
     def _build_openalex_query(self, original_query: str, entities_by_type: dict) -> str:
         """
         Build OpenAlex-optimized query.
-        
+
         OpenAlex uses simple keyword search but we can prioritize important terms.
-        
+
         Args:
             original_query: Original search query
             entities_by_type: Dictionary of entities grouped by EntityType
-            
+
         Returns:
             OpenAlex-optimized query string
         """
         # Extract important terms
         important_terms = []
-        
+
         # Genes are highly specific
         if EntityType.GENE in entities_by_type:
             genes = [g.text for g in entities_by_type[EntityType.GENE][:3]]
             important_terms.extend(genes)
-        
+
         # Diseases are important
         if EntityType.DISEASE in entities_by_type:
             diseases = [d.text for d in entities_by_type[EntityType.DISEASE][:3]]
             important_terms.extend(diseases)
-        
+
         # Techniques help narrow scope
         if EntityType.TECHNIQUE in entities_by_type:
             techniques = [t.text for t in entities_by_type[EntityType.TECHNIQUE][:2]]
             important_terms.extend(techniques)
-        
+
         # If we have important terms, put them first (higher relevance)
         if important_terms:
             # Quote multi-word terms
-            quoted_terms = [f'"{term}"' if ' ' in term else term for term in important_terms]
+            quoted_terms = [f'"{term}"' if " " in term else term for term in important_terms]
             enhanced = " ".join(quoted_terms) + " " + original_query
             logger.debug(f"OpenAlex query enhanced with {len(important_terms)} priority terms")
             return enhanced
-        
+
         # No entities - use original
         return original_query
 
@@ -605,7 +607,9 @@ class PublicationSearchPipeline:
                 openalex_query = preprocessed.get("openalex", query)
                 if openalex_query != query:
                     logger.debug(f"OpenAlex optimized query: {openalex_query}")
-                openalex_results = self.openalex_client.search(openalex_query, max_results=max_results, **kwargs)
+                openalex_results = self.openalex_client.search(
+                    openalex_query, max_results=max_results, **kwargs
+                )
                 all_publications.extend(openalex_results)
                 sources_used.append("openalex")
                 logger.info(f"OpenAlex returned {len(openalex_results)} results")

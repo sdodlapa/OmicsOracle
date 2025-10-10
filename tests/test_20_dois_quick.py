@@ -16,39 +16,30 @@ DIVERSE_DOIS = [
     "10.1371/journal.pgen.1011043",
     "10.1371/journal.pbio.3002912",
     "10.1371/journal.pone.0296841",
-    
     # bioRxiv preprints (should be OA)
     "10.1101/2024.02.15.580567",
     "10.1101/2024.03.20.585912",
-    
     # Nature (mix of OA and paywalled)
     "10.1038/s41586-024-08288-w",
     "10.1038/s41467-024-46789-2",
     "10.1038/nature12373",
-    
     # Science (likely paywalled)
     "10.1126/science.adi4415",
     "10.1126/science.1058040",
-    
     # Cell Press (likely paywalled)
     "10.1016/j.cell.2024.01.029",
     "10.1016/j.molcel.2024.02.015",
-    
     # Springer (mix)
     "10.1007/s00018-024-05123-4",
     "10.1007/s10719-024-10198-7",
-    
     # Wiley (mix)
     "10.1002/advs.202308024",
     "10.1111/imm.13821",
-    
     # BMC (all OA)
     "10.1186/s13059-024-03154-0",
     "10.1186/s12915-024-01821-w",
-    
     # eLife (all OA)
     "10.7554/eLife.89410",
-    
     # Frontiers (all OA)
     "10.3389/fimmu.2024.1352169",
 ]
@@ -56,7 +47,7 @@ DIVERSE_DOIS = [
 
 async def test_20_dois():
     """Test 20 DOIs with Phase 1 vs Phase 2."""
-    
+
     print("=" * 80)
     print("QUICK COVERAGE TEST: 20 Diverse DOIs")
     print("=" * 80)
@@ -78,10 +69,7 @@ async def test_20_dois():
         max_concurrent=3,
     )
 
-    publications = [
-        Publication(title="", doi=doi, source=PublicationSource.PUBMED)
-        for doi in DIVERSE_DOIS
-    ]
+    publications = [Publication(title="", doi=doi, source=PublicationSource.PUBMED) for doi in DIVERSE_DOIS]
 
     async with FullTextManager(config1) as manager:
         results1 = await manager.get_fulltext_batch(publications)
@@ -122,8 +110,12 @@ async def test_20_dois():
     print("=" * 80)
     print("RESULTS")
     print("=" * 80)
-    print(f"Phase 1 (Legal OA):      {successes1}/{len(DIVERSE_DOIS)} ({successes1/len(DIVERSE_DOIS)*100:.1f}%)")
-    print(f"Phase 2 (+ Sci-Hub):     {successes2}/{len(DIVERSE_DOIS)} ({successes2/len(DIVERSE_DOIS)*100:.1f}%)")
+    print(
+        f"Phase 1 (Legal OA):      {successes1}/{len(DIVERSE_DOIS)} ({successes1/len(DIVERSE_DOIS)*100:.1f}%)"
+    )
+    print(
+        f"Phase 2 (+ Sci-Hub):     {successes2}/{len(DIVERSE_DOIS)} ({successes2/len(DIVERSE_DOIS)*100:.1f}%)"
+    )
     improvement = (successes2 - successes1) / len(DIVERSE_DOIS) * 100
     print(f"Improvement:             +{improvement:.1f}%")
     print()

@@ -186,7 +186,7 @@ data/geo_citation_collections/
   - GEO datasets: 20-50 KB (2-5 datasets)
   - Citing papers: 50-80 KB (50 papers × 1-1.5 KB)
   - Collection report: 1 KB
-  
+
 - **PDFs:** ~25-75 MB
   - Average: 0.5-1.5 MB per paper
   - 50 papers × 0.5-1.5 MB = 25-75 MB

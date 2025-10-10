@@ -17,7 +17,7 @@ This happens **100+ times** during citation enrichment, making the test very slo
 
 1. **Citation Analysis Feature** (`enable_citations=True`) enriches each paper with:
    - Dataset reuse detection
-   - Usage type classification  
+   - Usage type classification
    - Key findings extraction
    - Confidence scoring
 
@@ -40,7 +40,7 @@ This happens **100+ times** during citation enrichment, making the test very slo
    Batch 2: Send 5 requests → 3 succeed, 2 rejected (429)
    OpenAI SDK: "Wait 20 seconds..." → Retry
    ... (repeated 20 times)
-   
+
    Total time: ~40 seconds × 20 batches = 13-15 minutes!
    ```
 
@@ -59,7 +59,7 @@ self.llm_client = LLMClient(
 )
 ```
 
-**`LLMClient`** (synchronous) does NOT have built-in rate limiting!  
+**`LLMClient`** (synchronous) does NOT have built-in rate limiting!
 Only **`AsyncLLMClient`** has rate limiting.
 
 ### Who's Doing the Retry?
@@ -133,16 +133,16 @@ class LLMClient:
         # ... existing code ...
         self.rate_limit = rate_limit_per_minute
         self.request_times = []  # Track request timestamps
-        
+
     def _wait_for_rate_limit(self):
         """Wait if rate limit would be exceeded."""
         import time
-        
+
         current_time = time.time()
-        
+
         # Remove old request times (older than 1 minute)
         self.request_times = [t for t in self.request_times if current_time - t < 60]
-        
+
         # Check if we're at the limit
         if len(self.request_times) >= self.rate_limit:
             # Wait until oldest request is more than 60 seconds old
@@ -153,16 +153,16 @@ class LLMClient:
                 # Clean up after waiting
                 current_time = time.time()
                 self.request_times = [t for t in self.request_times if current_time - t < 60]
-        
+
         # Record this request
         self.request_times.append(current_time)
-    
+
     def generate(self, prompt, ...):
         # ... existing code ...
-        
+
         # ✅ ADD BEFORE API CALL:
         self._wait_for_rate_limit()
-        
+
         # Then call API...
         if self.provider == "openai":
             response = self._openai_generate(...)
@@ -296,10 +296,10 @@ delay_between_batches = 60  # Wait 1 minute between batches
 
 for i in range(0, len(citing_papers), batch_size):
     batch = citing_papers[i:i+batch_size]
-    
+
     # Analyze batch
     analyses = self.llm_citation_analyzer.analyze_batch(batch)
-    
+
     # Wait before next batch (unless last batch)
     if i + batch_size < len(citing_papers):
         logger.info(f"Waiting {delay_between_batches}s before next batch...")
@@ -335,7 +335,7 @@ for i in range(0, len(citing_papers), batch_size):
    ```bash
    python tests/test_robust_search_demo_fast.py
    ```
-   
+
    This validates full-text retrieval (your main goal) in 5-10 minutes instead of 30+ minutes.
 
 2. **Enable Citations for 1-2 Queries Only:**
@@ -369,12 +369,12 @@ python tests/test_robust_search_demo.py
 
 ## 📊 Current Status
 
-✅ **Full-text retrieval is FAST** (~5-10s per query)  
+✅ **Full-text retrieval is FAST** (~5-10s per query)
 ⚠️  **Citation enrichment is SLOW** (~30 min for 100 papers on free tier)
 
 The 20-second waits are **NOT a bug** - they're the OpenAI SDK complying with rate limits.
 
-**Your full-text access (Sci-Hub + LibGen) works perfectly!** 🎉  
+**Your full-text access (Sci-Hub + LibGen) works perfectly!** 🎉
 The slowness is only in the optional citation enrichment feature.
 
 ---
@@ -393,22 +393,22 @@ The slowness is only in the optional citation enrichment feature.
 
 ## ❓ FAQ
 
-**Q: Is this a bug?**  
+**Q: Is this a bug?**
 A: No, it's expected behavior. OpenAI SDK retries on rate limits.
 
-**Q: Can we make it faster without paying?**  
+**Q: Can we make it faster without paying?**
 A: Only by disabling citations or adding client-side rate limiting (still slow).
 
-**Q: Do we need citations?**  
+**Q: Do we need citations?**
 A: Not for your current goal (validating full-text access). Citations are a bonus feature.
 
-**Q: What's the fastest approach?**  
+**Q: What's the fastest approach?**
 A: Run `test_robust_search_demo_fast.py` - no citations, just full-text validation.
 
-**Q: Will caching help?**  
+**Q: Will caching help?**
 A: Yes! Second run is instant. But first run is still slow with citations enabled.
 
-**Q: How do I check my OpenAI tier?**  
+**Q: How do I check my OpenAI tier?**
 A: https://platform.openai.com/settings/organization/limits
 
 ---

@@ -1,6 +1,6 @@
 # What We Have vs. What We Need - Quick Comparison
 
-**Date:** October 9, 2025  
+**Date:** October 9, 2025
 **Context:** Post-Phase 2A analysis for Phase 2B planning
 
 ---
@@ -56,7 +56,7 @@ def extract_entities(self, text: str) -> List[Entity]:
     """Extract entities using SciSpacy."""
     doc = self.nlp(text)
     entities = []
-    
+
     for ent in doc.ents:
         entity_type = self._classify_entity(ent)
         entities.append(Entity(
@@ -65,7 +65,7 @@ def extract_entities(self, text: str) -> List[Entity]:
             start=ent.start_char,
             end=ent.end_char
         ))
-    
+
     return entities
 
 # Works great for exact matches!
@@ -92,7 +92,7 @@ def extract_entities(self, text: str) -> List[Entity]:
 def _build_pubmed_query(self, entities: List[Entity], original_query: str) -> str:
     """Build PubMed query with field tags."""
     components = []
-    
+
     for entity in entities:
         if entity.entity_type == EntityType.GENE:
             components.append(f'"{entity.text}"[Gene Name]')
@@ -100,7 +100,7 @@ def _build_pubmed_query(self, entities: List[Entity], original_query: str) -> st
             components.append(f'"{entity.text}"[MeSH]')
         elif entity.entity_type == EntityType.TECHNIQUE:
             components.append(f'"{entity.text}"[Text Word]')
-    
+
     if components:
         return "(" + " AND ".join(components) + f") OR ({original_query}[Text Word])"
     return f"{original_query}[Text Word]"
@@ -145,13 +145,13 @@ nlp.add_pipe("abbreviation_detector")
 # → Stores: ATAC-seq ↔ Assay for Transposase-Accessible Chromatin
 
 # Query becomes:
-# ("ATAC-seq"[Text Word] OR "Assay for Transposase-Accessible Chromatin"[Text Word]) 
+# ("ATAC-seq"[Text Word] OR "Assay for Transposase-Accessible Chromatin"[Text Word])
 # AND "diabetes"[MeSH]
 
 # Result: 2-3x more papers found!
 ```
 
-**Effort:** 2-3 hours  
+**Effort:** 2-3 hours
 **Impact:** HIGH (50% improvement immediately)
 
 ---
@@ -174,7 +174,7 @@ class MeSHMapper:
         "RNA-seq": "D059014",          # Sequence Analysis, RNA
         # ... 50 top techniques
     }
-    
+
     def get_mesh_synonyms(self, mesh_id: str) -> List[str]:
         """Get official MeSH entry terms."""
         # Call NCBI E-utilities
@@ -187,7 +187,7 @@ class MeSHMapper:
 # Result: Official, authoritative synonyms!
 ```
 
-**Effort:** 1 day  
+**Effort:** 1 day
 **Impact:** HIGH (authoritative synonyms, better PubMed queries)
 
 ---
@@ -206,21 +206,21 @@ class MeSHMapper:
 def generate_variants(term: str) -> Set[str]:
     """Generate spelling/format variants."""
     variants = {term}
-    
+
     # Hyphenation: ATAC-seq → ATACseq, ATAC seq
     variants.add(term.replace("-", ""))
     variants.add(term.replace("-", " "))
-    
+
     # Capitalization: ATAC-seq → atac-seq, Atac-Seq
     variants.add(term.lower())
     variants.add(term.upper())
-    
+
     # seq variants: ATAC-seq → ATAC sequencing
     if term.endswith("-seq"):
         base = term[:-4]
         variants.add(f"{base} sequencing")
         variants.add(f"{base}seq")
-    
+
     return variants
 
 # ATAC-seq → {ATAC-seq, ATACseq, atac-seq, ATAC sequencing, ...}
@@ -232,7 +232,7 @@ def generate_variants(term: str) -> Set[str]:
 # Result: Catches all spelling variants!
 ```
 
-**Effort:** 1-2 hours  
+**Effort:** 1-2 hours
 **Impact:** MEDIUM (30% more papers)
 
 ---
@@ -256,7 +256,7 @@ class OBIMapper:
         "WGBS": "OBI:0002042",
         # ... 100+ techniques
     }
-    
+
     def get_obi_info(self, obi_id: str) -> Dict:
         """Get OBI term info."""
         return {
@@ -279,7 +279,7 @@ class OBIMapper:
 # ✅ Automatic deduplication
 ```
 
-**Effort:** 2-3 days  
+**Effort:** 2-3 days
 **Impact:** VERY HIGH (comprehensive normalization)
 
 ---
@@ -303,18 +303,18 @@ class SapBERTSynonymFinder:
         self.model = AutoModel.from_pretrained(
             "cambridgeltl/SapBERT-from-PubMedBERT-fulltext"
         )
-    
+
     def are_synonyms(self, term1: str, term2: str, threshold: float = 0.85) -> bool:
         """Check if terms are synonymous using embeddings."""
         embeddings = self.encode_terms([term1, term2])
         similarity = cosine_similarity(embeddings[0], embeddings[1])
         return similarity >= threshold
-    
+
     def find_synonyms(self, canonical: str, candidates: List[str]) -> List[str]:
         """Find similar terms from candidates."""
         canonical_emb = self.encode_terms([canonical])
         candidate_embs = self.encode_terms(candidates)
-        
+
         similarities = cosine_similarity(canonical_emb, candidate_embs)
         return [c for c, sim in zip(candidates, similarities) if sim >= 0.80]
 
@@ -331,7 +331,7 @@ synonyms = finder.find_synonyms("ATAC-seq", candidates)
 # Result: Finds unknown variants automatically!
 ```
 
-**Effort:** 2-3 days  
+**Effort:** 2-3 days
 **Impact:** VERY HIGH (discovers corpus-specific terms)
 
 ---
@@ -382,8 +382,8 @@ Combined Synonyms:
  "ATAC assay"]
 
 PubMed Query:
-("ATAC-seq"[Text Word] OR "ATACseq"[Text Word] OR 
- "ATAC sequencing"[Text Word] OR 
+("ATAC-seq"[Text Word] OR "ATACseq"[Text Word] OR
+ "ATAC sequencing"[Text Word] OR
  "Assay for Transposase-Accessible Chromatin"[Text Word] OR
  "chromatin accessibility"[Text Word] OR
  "accessible chromatin"[Text Word])

@@ -13,7 +13,7 @@ import sys
 from pathlib import Path
 
 # Disable SSL verification for testing
-os.environ['SSL_VERIFY'] = 'false'
+os.environ["SSL_VERIFY"] = "false"
 
 # Add project root to path
 project_root = Path(__file__).parent
@@ -25,15 +25,15 @@ from omics_oracle_v2.lib.publications.citations.geo_citation_discovery import GE
 
 async def test_citation_fixes():
     """Test both citation discovery strategies"""
-    
-    print("="*80)
+
+    print("=" * 80)
     print("TESTING CITATION DISCOVERY FIXES")
-    print("="*80)
+    print("=" * 80)
     print()
-    
+
     # Create citation discovery instance
     discovery = GEOCitationDiscovery()
-    
+
     # Test with a real GEO dataset that has a PMID
     # GSE251935 (PMID: 38376465) - DNMT1 degradation study
     test_metadata = GEOSeriesMetadata(
@@ -45,33 +45,30 @@ async def test_citation_fixes():
         pubmed_ids=["38376465"],  # Has a PMID!
         samples=[],
         platforms=[],
-        sample_count=14
+        sample_count=14,
     )
-    
+
     print(f"Testing with dataset: {test_metadata.geo_id}")
     print(f"PMID: {test_metadata.pubmed_ids[0]}")
     print()
-    
+
     try:
         # This should work now (both bugs fixed)
-        result = await discovery.find_citing_papers(
-            geo_metadata=test_metadata,
-            max_results=50
-        )
-        
+        result = await discovery.find_citing_papers(geo_metadata=test_metadata, max_results=50)
+
         print("✅ Citation discovery completed successfully!")
         print()
         print(f"Dataset: {result.geo_id}")
         print(f"Original PMID: {result.original_pmid}")
         print(f"Total citing papers found: {len(result.citing_papers)}")
         print()
-        
+
         # Show strategy breakdown
         print("Strategy Breakdown:")
         print(f"  Strategy A (citation-based): {len(result.strategy_breakdown['strategy_a'])} papers")
         print(f"  Strategy B (mention-based):  {len(result.strategy_breakdown['strategy_b'])} papers")
         print()
-        
+
         # Show first few citing papers
         if result.citing_papers:
             print("First 5 citing papers:")
@@ -84,19 +81,19 @@ async def test_citation_fixes():
         else:
             print("⚠️ No citing papers found (dataset may be too recent)")
             print()
-        
-        print("="*80)
+
+        print("=" * 80)
         print("TEST PASSED: Both bugs fixed!")
-        print("="*80)
-        
+        print("=" * 80)
+
         return result
-        
+
     except AttributeError as e:
         print(f"❌ BUG 1 STILL PRESENT: {e}")
         print("   CitationFinder.find_citing_papers() doesn't exist")
         print("   Method implementation issue")
         return None
-        
+
     except TypeError as e:
         if "await" in str(e) or "async" in str(e):
             print(f"❌ BUG 2 STILL PRESENT: {e}")
@@ -105,10 +102,11 @@ async def test_citation_fixes():
         else:
             print(f"❌ UNEXPECTED ERROR: {e}")
         return None
-        
+
     except Exception as e:
         print(f"❌ ERROR: {type(e).__name__}: {e}")
         import traceback
+
         traceback.print_exc()
         return None
 
@@ -116,7 +114,7 @@ async def test_citation_fixes():
 async def main():
     """Run all tests"""
     result = await test_citation_fixes()
-    
+
     if result:
         print()
         print("🎉 SUCCESS: Citation discovery is working!")

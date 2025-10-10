@@ -1,7 +1,7 @@
 # Next Session Handoff - Query Execution Flow Enhancement
 
-**Date:** October 9, 2025  
-**Current Commit:** 9bdede9 - OpenAlex citation analysis implementation  
+**Date:** October 9, 2025
+**Current Commit:** 9bdede9 - OpenAlex citation analysis implementation
 **Branch:** sprint-1/parallel-metadata-fetching
 
 ---
@@ -181,9 +181,9 @@ except ValueError:  # Be specific
 
 ## Contact Points
 
-**Email:** sdodl001@odu.edu  
-**Institution:** Old Dominion University  
-**Project:** OmicsOracle  
+**Email:** sdodl001@odu.edu
+**Institution:** Old Dominion University
+**Project:** OmicsOracle
 **Current Phase:** Phase 5 Review + Enhancement
 
 ---

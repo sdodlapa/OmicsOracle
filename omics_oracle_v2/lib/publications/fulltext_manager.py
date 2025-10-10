@@ -31,21 +31,21 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from omics_oracle_v2.lib.publications.clients.institutional_access import (
+    InstitutionalAccessManager,
+    InstitutionType,
+)
 from omics_oracle_v2.lib.publications.clients.oa_sources import (
     ArXivClient,
     BioRxivClient,
     COREClient,
     CrossrefClient,
 )
+from omics_oracle_v2.lib.publications.clients.oa_sources.libgen_client import LibGenClient, LibGenConfig
 from omics_oracle_v2.lib.publications.clients.oa_sources.scihub_client import SciHubClient, SciHubConfig
 from omics_oracle_v2.lib.publications.clients.oa_sources.unpaywall_client import (
     UnpaywallClient,
     UnpaywallConfig,
-)
-from omics_oracle_v2.lib.publications.clients.oa_sources.libgen_client import LibGenClient, LibGenConfig
-from omics_oracle_v2.lib.publications.clients.institutional_access import (
-    InstitutionalAccessManager,
-    InstitutionType,
 )
 from omics_oracle_v2.lib.publications.models import Publication
 
@@ -206,9 +206,7 @@ class FullTextManager:
         # Initialize Institutional Access Manager (NEW - Priority 1)
         if self.config.enable_institutional:
             # Use Georgia Tech by default (can be configured)
-            self.institutional_manager = InstitutionalAccessManager(
-                institution=InstitutionType.GEORGIA_TECH
-            )
+            self.institutional_manager = InstitutionalAccessManager(institution=InstitutionType.GEORGIA_TECH)
             logger.info("Institutional Access Manager initialized (Georgia Tech)")
 
         # Initialize CORE client
@@ -344,7 +342,7 @@ class FullTextManager:
     async def _try_institutional_access(self, publication: Publication) -> FullTextResult:
         """
         Try to get full-text through institutional access (Georgia Tech).
-        
+
         Priority 1 source - highest quality, legal, ~45-50% coverage.
 
         Args:
@@ -359,7 +357,7 @@ class FullTextManager:
         try:
             # Get access URL through institutional subscription
             access_url = self.institutional_manager.get_access_url(publication)
-            
+
             if access_url:
                 logger.info(f"Found access via institutional: {access_url}")
                 return FullTextResult(
@@ -368,9 +366,9 @@ class FullTextManager:
                     url=access_url,
                     metadata={"method": "direct", "institution": "Georgia Tech"},
                 )
-            
+
             return FullTextResult(success=False, error="No institutional access found")
-            
+
         except Exception as e:
             logger.debug(f"Institutional access lookup failed: {e}")
             return FullTextResult(success=False, error=str(e))
@@ -680,7 +678,7 @@ class FullTextManager:
     async def get_fulltext(self, publication: Publication) -> FullTextResult:
         """
         Get full-text for a publication by trying sources in priority order.
-        
+
         OPTIMIZED WATERFALL STRATEGY (Phase 6 - Oct 10, 2025):
         - Sources ordered by: effectiveness > legality > speed
         - Institutional access first (highest quality, legal)
@@ -710,7 +708,7 @@ class FullTextManager:
         # Priority 6: bioRxiv/arXiv (preprints, specialized, legal)
         # Priority 7: Sci-Hub (~15-20% additional, gray area, use responsibly)
         # Priority 8: LibGen (~5-10% additional, gray area, use responsibly)
-        
+
         sources = [
             ("cache", self._check_cache),  # Always check cache first (instant)
             ("institutional", self._try_institutional_access),  # Priority 1: GT/ODU access

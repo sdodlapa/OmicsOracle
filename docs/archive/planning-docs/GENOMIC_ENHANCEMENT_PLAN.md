@@ -1,7 +1,7 @@
 # Genomic Technique Recognition - Enhancement Plan
 
-**Date:** October 9, 2025  
-**Status:** Gap Analysis Complete  
+**Date:** October 9, 2025
+**Status:** Gap Analysis Complete
 **Current Coverage:** 70% (needs improvement to 95%+)
 
 ---
@@ -103,11 +103,11 @@ Missing critical genomic data analysis terms:
 ```python
 # Epigenetics
 "dna methylation", "methylation", "methylation profiling",
-"wgbs", "rrbs", 
+"wgbs", "rrbs",
 "bisulfite", "bisulfite-seq",
 "whole genome bisulfite", "reduced representation bisulfite",
 
-# Chromatin accessibility  
+# Chromatin accessibility
 "atac-seq", "atac", "atacseq",
 "dnase-seq", "dnase", "dnaseseq", "dnase hypersensitivity",
 "faire-seq", "faire",
@@ -144,7 +144,7 @@ def _classify_entity(self, ent, text_lower: str) -> EntityType:
     # Check techniques EARLY (before gene/chemical/general)
     if self._is_experimental_technique(ent, text_lower):  # ✅ Move up!
         return EntityType.TECHNIQUE
-    
+
     # Then check biological entities
     if self._is_gene_entity(ent, text_lower):
         return EntityType.GENE
@@ -158,7 +158,7 @@ def _classify_entity(self, ent, text_lower: str) -> EntityType:
 ```python
 def _is_experimental_technique(self, ent, text_lower: str) -> bool:
     """Enhanced genomic technique detection."""
-    
+
     # Core NGS techniques (high priority)
     ngs_patterns = {
         "rna-seq", "rnaseq", "scrna-seq", "scrnaseq",
@@ -168,7 +168,7 @@ def _is_experimental_technique(self, ent, text_lower: str) -> bool:
         "wgbs", "rrbs",
         "hi-c", "hic",
     }
-    
+
     # Full technique names
     full_names = {
         "dna methylation",
@@ -178,29 +178,29 @@ def _is_experimental_technique(self, ent, text_lower: str) -> bool:
         "chromatin immunoprecipitation",
         "transcription factor binding",
     }
-    
+
     # Check exact matches (case-insensitive)
     if text_lower in ngs_patterns or text_lower in full_names:
         return True
-    
+
     # Check -seq suffix (most NGS techniques)
     if text_lower.endswith("-seq") or text_lower.endswith("seq"):
         return True
-    
+
     # Check sequencing in name
     if "sequencing" in text_lower:
         return True
-    
+
     # Check chromatin-related
     if "chromatin" in text_lower:
         return True
-    
+
     # Check methylation-related
     if "methylation" in text_lower:
         return True
-    
+
     # ... existing patterns ...
-    
+
     return False
 ```
 
@@ -376,8 +376,8 @@ def _is_experimental_technique(self, ent, text_lower: str) -> bool:
 
 ---
 
-**Status:** Ready to implement Phase 2A enhancements  
-**Timeline:** 1-2 hours for Phase 2A  
+**Status:** Ready to implement Phase 2A enhancements
+**Timeline:** 1-2 hours for Phase 2A
 **Impact:** 70% → 95%+ technique recognition
 
 Let's build robust genomic term handling! 🧬

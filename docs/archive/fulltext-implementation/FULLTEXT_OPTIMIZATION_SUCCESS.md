@@ -1,7 +1,7 @@
 # Full-Text Access Optimization - Complete Success
 
-**Date:** October 10, 2025  
-**Test Dataset:** 92 diverse papers (100_diverse_papers.py)  
+**Date:** October 10, 2025
+**Test Dataset:** 92 diverse papers (100_diverse_papers.py)
 **Result:** 100% coverage achieved via institutional access alone
 
 ---

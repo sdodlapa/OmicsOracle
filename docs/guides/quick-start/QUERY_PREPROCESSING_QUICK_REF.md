@@ -1,7 +1,7 @@
 # Query Preprocessing - Quick Reference Card
 
-**Status:** ✅ Phase 1 Complete  
-**Date:** October 9, 2025  
+**Status:** ✅ Phase 1 Complete
+**Date:** October 9, 2025
 **Commits:** dc54a46, dfec69c
 
 ---
@@ -167,12 +167,12 @@ Try these in your application:
 
 ## Benefits
 
-✅ **2-3x more relevant results** expected  
-✅ **Better precision** with biomedical queries  
-✅ **Automatic optimization** - no manual field tags needed  
-✅ **Database-specific** - PubMed gets MeSH, OpenAlex gets priority terms  
-✅ **Backward compatible** - can be disabled if needed  
-✅ **Graceful fallback** - works even if NER unavailable  
+✅ **2-3x more relevant results** expected
+✅ **Better precision** with biomedical queries
+✅ **Automatic optimization** - no manual field tags needed
+✅ **Database-specific** - PubMed gets MeSH, OpenAlex gets priority terms
+✅ **Backward compatible** - can be disabled if needed
+✅ **Graceful fallback** - works even if NER unavailable
 
 ---
 
@@ -254,17 +254,17 @@ python test_query_preprocessing.py
 
 ## Quick Stats
 
-**Implementation:** 2 hours  
-**Code added:** ~1,140 lines  
-**Tests:** 4/4 passing (100%)  
-**Coverage increase:** 8x (30M → 250M works)  
-**Performance impact:** ~5ms (negligible)  
-**Quality improvement:** 2-3x more relevant results  
+**Implementation:** 2 hours
+**Code added:** ~1,140 lines
+**Tests:** 4/4 passing (100%)
+**Coverage increase:** 8x (30M → 250M works)
+**Performance impact:** ~5ms (negligible)
+**Quality improvement:** 2-3x more relevant results
 
 ---
 
-**Status:** ✅ PRODUCTION READY  
-**Next:** Phase 2 - MeSH mapping, synonyms, GEO integration  
+**Status:** ✅ PRODUCTION READY
+**Next:** Phase 2 - MeSH mapping, synonyms, GEO integration
 
 ---
 

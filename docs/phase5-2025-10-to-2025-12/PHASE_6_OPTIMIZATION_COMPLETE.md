@@ -1,8 +1,8 @@
 # Phase 6: Full-Text Access Optimization - COMPLETE
 
-**Date:** October 10, 2025  
-**Status:** ✅ Optimizations Implemented  
-**Sprint:** Phase 5 (October 2025 - December 2025)  
+**Date:** October 10, 2025
+**Status:** ✅ Optimizations Implemented
+**Sprint:** Phase 5 (October 2025 - December 2025)
 
 ---
 
@@ -124,12 +124,12 @@ def _extract_pdf_url(html, mirror):
     embed_match = re.search(r'<embed[^>]+src="([^"]+)"', html, re.IGNORECASE)
     if embed_match:
         return self._normalize_url(embed_match.group(1), mirror)
-    
+
     # ✅ PATTERN 2: iframe_any_src (5.3% success)
     iframe_match = re.search(r'<iframe[^>]+src="([^"]+)"', html, re.IGNORECASE)
     if iframe_match:
         return self._normalize_url(iframe_match.group(1), mirror)
-    
+
     return None  # All other patterns removed (0% success)
 ```
 
@@ -195,11 +195,11 @@ async def _try_institutional_access(self, publication: Publication):
     """
     if not self.institutional_manager:
         return FullTextResult(success=False)
-    
+
     access_url = self.institutional_manager.get_access_url(publication)
     if access_url:
         return FullTextResult(success=True, source="institutional", url=access_url)
-    
+
     return FullTextResult(success=False)
 ```
 
@@ -452,8 +452,8 @@ Source breakdown: {
 
 ---
 
-**Status:** ✅ **Phase 6 Optimizations Complete**  
-**Next:** Test optimized system with real papers  
-**Budget Impact:** $0 (no LLM or API costs)  
-**Performance Gain:** 7-10x faster Sci-Hub, better source prioritization  
+**Status:** ✅ **Phase 6 Optimizations Complete**
+**Next:** Test optimized system with real papers
+**Budget Impact:** $0 (no LLM or API costs)
+**Performance Gain:** 7-10x faster Sci-Hub, better source prioritization
 **Coverage Target:** 88-93% (legal sources only), 93-98% (with Sci-Hub/LibGen)

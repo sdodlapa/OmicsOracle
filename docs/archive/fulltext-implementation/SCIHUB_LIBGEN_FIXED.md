@@ -1,6 +1,6 @@
 # Sci-Hub & LibGen Access - FIXED ✅
 
-**Date:** October 10, 2025  
+**Date:** October 10, 2025
 **Status:** ✅ RESOLVED - Unpaywall + Sci-Hub Now Enabled
 
 ---
@@ -99,7 +99,7 @@ TESTING: Pipeline FullText Configuration
 
 4. Testing with real paper (Nature, paywalled):
    DOI: 10.1038/nature12373
-   
+
    Result: ✅ SUCCESS
    Source: unpaywall
    URL: https://www.nature.com/articles/nature12373.pdf
@@ -253,7 +253,7 @@ The system tries sources in this order until it finds full-text:
 1. **Create LibGen Client** (2 hours)
    ```
    File: omics_oracle_v2/lib/publications/clients/oa_sources/libgen_client.py
-   
+
    Similar structure to SciHubClient:
    - Multiple mirrors (libgen.is, libgen.rs, libgen.st, libgen.li)
    - Search by DOI/title
@@ -338,7 +338,7 @@ pub = Publication(
 # Get full-text (uses all 8 sources automatically)
 async with FullTextManager() as manager:
     result = await manager.get_fulltext(pub)
-    
+
     if result.success:
         print(f"✅ Found via {result.source}: {result.url}")
     else:
@@ -551,4 +551,3 @@ The system now properly utilizes:
 - ✅ Your confirmed working mirror: sci-hub.st
 
 **Total coverage: 80-85% (up from 30-35%)**
-

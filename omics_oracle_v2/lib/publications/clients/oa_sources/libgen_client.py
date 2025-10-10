@@ -205,15 +205,15 @@ class LibGenClient:
         # Look for MD5 hash in the results table
         # LibGen format: <a href="http://library.lol/main/HASH">link</a>
         # or newer format: data-md5="HASH"
-        
+
         # Pattern 1: Direct download link with MD5
-        download_match = re.search(r'library\.lol/main/([a-f0-9]{32})', html, re.IGNORECASE)
+        download_match = re.search(r"library\.lol/main/([a-f0-9]{32})", html, re.IGNORECASE)
         if download_match:
             md5_hash = download_match.group(1)
             return {"md5": md5_hash.lower()}
 
         # Pattern 2: IPFS link with MD5
-        ipfs_match = re.search(r'cloudflare-ipfs\.com/ipfs/([a-zA-Z0-9]+)', html)
+        ipfs_match = re.search(r"cloudflare-ipfs\.com/ipfs/([a-zA-Z0-9]+)", html)
         if ipfs_match:
             ipfs_hash = ipfs_match.group(1)
             return {"ipfs": ipfs_hash}
@@ -225,7 +225,7 @@ class LibGenClient:
             return {"md5": md5_hash.lower()}
 
         # Pattern 4: Look for any MD5-like hash in download URLs
-        md5_pattern_match = re.search(r'/([a-f0-9]{32})', html, re.IGNORECASE)
+        md5_pattern_match = re.search(r"/([a-f0-9]{32})", html, re.IGNORECASE)
         if md5_pattern_match:
             md5_hash = md5_pattern_match.group(1)
             return {"md5": md5_hash.lower()}

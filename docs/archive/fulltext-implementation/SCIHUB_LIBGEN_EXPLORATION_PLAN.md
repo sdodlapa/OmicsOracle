@@ -1,6 +1,6 @@
 # Sci-Hub & LibGen Comprehensive Exploration - Plan & Progress
 
-**Date:** October 10, 2025  
+**Date:** October 10, 2025
 **Status:** Framework Complete, Ready for Execution
 
 ---
@@ -23,12 +23,12 @@ Created comprehensive framework for testing Sci-Hub and LibGen access across 100
   - **7 hybrid** papers (PNAS, Company of Biologists)
   - **5 preprints** (bioRxiv)
   - **Special cases** (Watson & Crick 1953, retracted papers, books, conferences)
-  
+
 - **Year distribution:**
   - 1950s-2010: 18 papers (older, should be in Sci-Hub)
   - 2020-2023: 64 papers (recent, may be in Sci-Hub)
   - 2024: 10 papers (very new, likely not in Sci-Hub)
-  
+
 - **Publisher coverage:**
   - All major publishers (Nature, Science, Cell, Springer, Wiley, Elsevier, ACS, RSC, APS, Oxford, Cambridge, Taylor & Francis, IOP, PNAS, EMBO, etc.)
 
@@ -340,6 +340,6 @@ We have a complete framework ready for comprehensive Sci-Hub and LibGen explorat
 
 ---
 
-*Framework Status: ✅ Complete and Ready*  
-*Next: Execute exploration and optimize clients*  
+*Framework Status: ✅ Complete and Ready*
+*Next: Execute exploration and optimize clients*
 *Expected Final Coverage: 90-95%*

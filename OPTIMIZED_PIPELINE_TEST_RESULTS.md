@@ -1,7 +1,7 @@
 # Optimized Pipeline Test Results - Complete Analysis
 
-**Date:** October 10, 2025  
-**Test Duration:** 183.9 seconds (3.1 minutes)  
+**Date:** October 10, 2025
+**Test Duration:** 183.9 seconds (3.1 minutes)
 **Query:** "Joint profiling of dna methylation and HiC data"
 
 ---
@@ -66,27 +66,27 @@ This is expected for:
 
 ```
 1. GSE251935 (PMID: 38376465)
-   Title: Tunable DNMT1 degradation reveals cooperation of DNMT1 and DNMT3B 
+   Title: Tunable DNMT1 degradation reveals cooperation of DNMT1 and DNMT3B
           in regulating DNA methylation dynamics and genome organization
    Status: Published 2024
 
-2. GSE251934 (PMID: 38376465)  
-   Title: Tunable DNMT1 degradation reveals cooperation of DNMT1 and DNMT3B 
+2. GSE251934 (PMID: 38376465)
+   Title: Tunable DNMT1 degradation reveals cooperation of DNMT1 and DNMT3B
           in regulating DNA methylation dynamics and genome organization (Hi-C)
    Status: Published 2024
 
 3. GSE242400 (PMID: 38778058)
-   Title: DNA Methylation-Based High-Resolution Mapping of Long-Distance 
+   Title: DNA Methylation-Based High-Resolution Mapping of Long-Distance
           Chromosomal Interactions in Nucleosome-Depleted Regions
    Status: Published 2024
 
 4. GSE242396 (PMID: 38778058)
-   Title: DNA Methylation-Based High-Resolution Mapping of Long-Distance 
+   Title: DNA Methylation-Based High-Resolution Mapping of Long-Distance
           Chromosomal Interactions in Nucleosome-Depleted Regions (HiC)
    Status: Published 2024
 
 5-10. GSE232xxx series
-   Title: Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation 
+   Title: Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation
           and chromatin conformation in control subjects and Alzheimer's disease patients
    Status: Unpublished (large consortium dataset)
 ```
@@ -120,7 +120,7 @@ Impact: 0 citations found via this method
 
 **Strategy B (Mention-based):**
 ```
-Method: Find papers mentioning the GEO accession ID  
+Method: Find papers mentioning the GEO accession ID
 Status: ⚠️ PARTIALLY FAILED
 Error: "object list can't be used in 'await' expression"
 Results: PubMed searches executed but returned 0 results
@@ -182,7 +182,7 @@ Impact: 0 citations found via this method
 
 ```
 Dataset Discovery Rate: 0.11 datasets/second
-Metadata Fetch Rate:    0.11 datasets/second  
+Metadata Fetch Rate:    0.11 datasets/second
 Citation Discovery Rate: N/A (0 citations found)
 
 Overall Pipeline:       ~0.11 datasets/second
@@ -260,7 +260,7 @@ Impact: Blocks Strategy A (citation-based discovery)
 
 **Bug B: Async Handling**
 ```python
-Error: object list can't be used in 'await' expression  
+Error: object list can't be used in 'await' expression
 Location: geo_citation_discovery.py, PubMed search handling
 Fix Required: Remove await or make PubMedClient truly async
 Impact: Blocks Strategy B (mention-based discovery)
@@ -277,7 +277,7 @@ Impact: Memory leak warning only
 
 ### 3. PMID Coverage Lower Than Expected
 
-**Expected:** 83% (based on title-restricted manual test)  
+**Expected:** 83% (based on title-restricted manual test)
 **Actual:** 20% (4/20 datasets)
 
 **Reason:** Search returned many unpublished recent datasets
@@ -385,7 +385,7 @@ Pipeline stages status:
 ### The User Was Right!
 
 The user's critical observation was **spot-on:**
-> "The problem seems to be either too strict (literal) or too broad (100s of datasets). 
+> "The problem seems to be either too strict (literal) or too broad (100s of datasets).
 > We need semantic meaning with AND conditions."
 
 **Result:** Implemented exactly that, achieved 20x improvement!

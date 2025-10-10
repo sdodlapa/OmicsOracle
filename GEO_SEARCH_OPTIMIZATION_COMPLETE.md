@@ -47,22 +47,22 @@
 Sample results:
 ```
 1. GSE251935 (PMID: 38376465)
-   "Tunable DNMT1 degradation reveals cooperation of DNMT1 and DNMT3B 
+   "Tunable DNMT1 degradation reveals cooperation of DNMT1 and DNMT3B
     in regulating DNA methylation dynamics and genome organization"
 
 2. GSE242400 (PMID: 38778058)
-   "DNA Methylation-Based High-Resolution Mapping of Long-Distance 
+   "DNA Methylation-Based High-Resolution Mapping of Long-Distance
     Chromosomal Interactions in Nucleosome-Depleted Regions"
 
 3. GSE189158 (PMID: 36927507)
-   "NOMe-HiC: joint profiling of genetic variants, DNA methylation, 
+   "NOMe-HiC: joint profiling of genetic variants, DNA methylation,
     chromatin accessibility, and 3D genome in the same DNA molecule"
 
 4. GSE158011 (PMID: 34551299)
    "DNA methylation maintains integrity of higher order genome architecture"
 
 5. GSE154009 (PMID: 34326481)
-   "CTCF chromatin residence time controls 3D genome organization, 
+   "CTCF chromatin residence time controls 3D genome organization,
     gene expression and DNA methylation in pluripotent cells"
 ```
 
@@ -78,14 +78,14 @@ Sample results:
 def _build_balanced_query(keywords, add_synonyms=True):
     """
     Build semantically meaningful query with field restrictions.
-    
+
     Process:
     1. Extract keywords: ['dna', 'methylation', 'hic']
     2. Group concepts: "DNA methylation" (scientific term)
     3. Add synonyms: HiC OR Hi-C OR "chromosome conformation"
     4. Apply field restriction: [Title] for highest relevance
     5. Connect with AND: requires all concepts
-    
+
     Output: "DNA methylation"[Title] AND (HiC[Title] OR Hi-C[Title])
     """
 ```
@@ -272,7 +272,7 @@ query = (term[Title]^2.0 OR term[Description]^0.5)  # Boost Title matches
 # Use biomedical ontologies (GO, MeSH, etc.)
 "DNA methylation" → Expand to:
   - DNA methylation
-  - CpG methylation  
+  - CpG methylation
   - Epigenetic modification
   - DNMT activity
 ```
@@ -334,7 +334,7 @@ This is a perfect example of how **critical thinking about search strategy** dir
 
 ---
 
-**Date:** October 10, 2025  
-**Author:** AI Assistant (with critical user feedback)  
-**Status:** ✅ Implemented and Tested  
+**Date:** October 10, 2025
+**Author:** AI Assistant (with critical user feedback)
+**Status:** ✅ Implemented and Tested
 **Result:** 18x improvement in dataset discovery while maintaining precision

@@ -1,7 +1,7 @@
 # Full-Text Access: 100-Paper Search Analysis
 
-**Date:** October 10, 2025  
-**Status:** 🟡 In Progress - Robust Search Test Running  
+**Date:** October 10, 2025
+**Status:** 🟡 In Progress - Robust Search Test Running
 **Scope:** Comprehensive analysis of full-text access across multiple test scenarios
 
 ---
@@ -89,13 +89,13 @@
 **Progress:**
 ```
 Query 1: "CRISPR gene editing cancer therapy" ✅ COMPLETE
-Query 2: "mRNA vaccine COVID-19 efficacy" ✅ COMPLETE  
+Query 2: "mRNA vaccine COVID-19 efficacy" ✅ COMPLETE
 Query 3: "machine learning drug discovery" ✅ COMPLETE
 Query 4: "gut microbiome obesity diabetes" ✅ COMPLETE
 Query 5: "single-cell RNA sequencing" ⏳ IN PROGRESS (Citation enrichment phase)
 ```
 
-**Current Phase:** Enriching citations with Semantic Scholar + OpenAI LLM  
+**Current Phase:** Enriching citations with Semantic Scholar + OpenAI LLM
 **Bottleneck:** OpenAI rate limiting (HTTP 429 → 20s waits)
 
 **Status:** ⏳ Running in background, ~80% complete
@@ -119,9 +119,9 @@ Query 5: "single-cell RNA sequencing" ⏳ IN PROGRESS (Citation enrichment phase
 
 ### Overview
 
-**File:** `scihub_exploration_results.json`  
-**Size:** 34KB  
-**Duration:** 19.56 minutes  
+**File:** `scihub_exploration_results.json`
+**Size:** 34KB
+**Duration:** 19.56 minutes
 **Tests:** 828 (92 papers × 9 mirrors)
 
 ### Mirror Performance
@@ -179,7 +179,7 @@ Query 5: "single-cell RNA sequencing" ⏳ IN PROGRESS (Citation enrichment phase
 
 **Papers Found:** 22/92 (23.9%)
 - ✅ Nature papers: Found
-- ✅ Science papers: Found  
+- ✅ Science papers: Found
 - ✅ Cell papers: Found
 - ❌ Recent 2024 papers: Not found (too new)
 
@@ -200,8 +200,8 @@ Query 5: "single-cell RNA sequencing" ⏳ IN PROGRESS (Citation enrichment phase
     </head>
     <body>
         <div>
-            <embed type="application/pdf" 
-                   src="//2024.sci-hub.se/6869/a5720a41f3ba600c32f171a17f407f8c/venter2001.pdf#navpanes=0&view=FitH" 
+            <embed type="application/pdf"
+                   src="//2024.sci-hub.se/6869/a5720a41f3ba600c32f171a17f407f8c/venter2001.pdf#navpanes=0&view=FitH"
                    id = "pdf">
             </embed>
         </div>
@@ -225,11 +225,11 @@ Query 5: "single-cell RNA sequencing" ⏳ IN PROGRESS (Citation enrichment phase
 
 ### Recommendations from Sci-Hub Analysis
 
-**IMPORTANT CLARIFICATION:** 
+**IMPORTANT CLARIFICATION:**
 
 ✅ **Production code ALREADY uses optimal "try and stop" strategy:**
 - Tries each source sequentially in waterfall
-- STOPS immediately when any source succeeds  
+- STOPS immediately when any source succeeds
 - Only tries next source if previous one failed
 - Same for patterns: tries pattern 1, if fails tries pattern 2, etc.
 
@@ -245,7 +245,7 @@ Query 5: "single-cell RNA sequencing" ⏳ IN PROGRESS (Citation enrichment phase
 1. **Remove dead code** → Simplify pattern matching
    - Keep patterns 1-3 (embed, iframe, pdf_link) - they work or serve as fallback
    - Remove patterns 4-5 (button, meta) - they have 0% success rate, just waste CPU
-   
+
 2. **Update mirror list** → Faster failure detection
    - Remove 4 non-working mirrors that always fail
    - Keeps retry logic simpler and faster
@@ -263,8 +263,8 @@ Query 5: "single-cell RNA sequencing" ⏳ IN PROGRESS (Citation enrichment phase
 
 ### Current Status (as of 02:56 AM)
 
-**Log File:** `robust_search_log.txt`  
-**Phase:** Citation enrichment (Query 5 - single-cell RNA sequencing)  
+**Log File:** `robust_search_log.txt`
+**Phase:** Citation enrichment (Query 5 - single-cell RNA sequencing)
 **Progress:** ~80% complete
 
 ### Test Configuration
@@ -420,7 +420,7 @@ Citation analysis:   ~2000+ seconds (50 papers × 100 cites × 20s per 3 cites) 
 
 **Without LLM analysis:**
 - Search phase: ~10s
-- Deduplication: ~1s  
+- Deduplication: ~1s
 - Full-text retrieval: ~10s
 - **Total per query:** ~21 seconds
 - **For 100 papers:** ~35 seconds
@@ -539,9 +539,9 @@ resource_cache = {
 ### Short-Term Actions (Today - 3 hours)
 
 4. **Update scihub_client.py** 🔧
-   
+
    **IMPORTANT:** Production already uses sequential "try and stop on success" approach ✅
-   
+
    **Current behavior (CORRECT):**
    ```python
    # Tries patterns sequentially, stops when one succeeds
@@ -551,26 +551,26 @@ resource_cache = {
        if button_match: return url   # ← Only tries if iframe failed
        # etc.
    ```
-   
+
    **What to optimize:**
    ```python
    # Current: 5 patterns tried sequentially (GOOD approach)
    # Optimization: Reorder based on success rate from exploration
-   
+
    # BEFORE (current order):
    1. embed (any src) - 14.3% success ✅ Try FIRST
-   2. iframe - 5.3% success ✅ Try SECOND  
+   2. iframe - 5.3% success ✅ Try SECOND
    3. button onclick - 0% success ❌ REMOVE (wastes CPU)
    4. meta redirect - 0% success ❌ REMOVE
    5. pdf_link - marginal ⚠️ KEEP as fallback
-   
+
    # AFTER (optimized):
    1. embed (any src) - keep as pattern 1 ✅
    2. iframe - keep as pattern 2 ✅
    3. pdf_link (protocol-relative) - keep as pattern 3 ✅
    # Remove: button, meta (never succeed)
    ```
-   
+
    **Also update mirror list:**
    - Remove 4 non-working mirrors (wf, tf, mksa.top, si)
    - Keep 4 verified working mirrors (se, ru, ren, ee)
@@ -583,11 +583,11 @@ resource_cache = {
            self.fulltext_manager = FullTextManager(...)
            self.resource_cache = {}
            self.duplicate_tracker = set()
-       
+
        async def collect_resources(self, papers):
            """Collect full-text resources without analysis."""
            pass
-       
+
        def get_metrics(self):
            """Return success rate, source breakdown, etc."""
            pass
@@ -621,10 +621,10 @@ resource_cache = {
        """Graph for tracking papers and resources."""
        def add_paper(self, doi, resource_info):
            pass
-       
+
        def has_resource(self, doi):
            pass
-       
+
        def export(self):
            """Export as JSON for persistence."""
            pass
@@ -663,8 +663,8 @@ resource_cache = {
 
 ### Step 1: Wait for Test Completion ⏳
 
-**Action:** Monitor `robust_search_log.txt` for completion  
-**Expected:** Test may timeout at 10 minutes  
+**Action:** Monitor `robust_search_log.txt` for completion
+**Expected:** Test may timeout at 10 minutes
 **Check for:** `robust_search_results.json` output file
 
 ### Step 2: Extract Full-Text Metrics 📊
@@ -688,7 +688,7 @@ grep "No full-text found" robust_search_log.txt | wc -l
 import json
 with open('robust_search_results.json') as f:
     data = json.load(f)
-    
+
 # Analyze full-text coverage
 # Extract source breakdown
 # Calculate success rates
@@ -730,7 +730,7 @@ with open('robust_search_results.json') as f:
 - No citation analysis
 - No LLM calls
 
-**Expected runtime:** <2 minutes  
+**Expected runtime:** <2 minutes
 **Target success rate:** 80-90%
 
 ---
@@ -843,6 +843,6 @@ with open('robust_search_results.json') as f:
 
 ---
 
-**Document Status:** Living document - will update as tests complete  
-**Last Updated:** October 10, 2025 03:00 AM  
+**Document Status:** Living document - will update as tests complete
+**Last Updated:** October 10, 2025 03:00 AM
 **Next Update:** After robust search test completion

@@ -6,10 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.publications.fulltext_manager import (
-    FullTextManager,
-    FullTextManagerConfig,
-)
+from omics_oracle_v2.lib.publications.fulltext_manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
 
 # Test with known paywalled papers
@@ -27,31 +24,31 @@ OPEN_ACCESS_DOIS = [
 
 async def test_detailed_breakdown():
     """Show exactly what each source finds."""
-    
+
     print("=" * 80)
     print("DETAILED BREAKDOWN: Phase 1 vs Phase 2")
     print("=" * 80)
     print()
-    
+
     # Combine test sets
     all_dois = OPEN_ACCESS_DOIS + PAYWALLED_DOIS
     labels = ["OA"] * len(OPEN_ACCESS_DOIS) + ["Paywalled"] * len(PAYWALLED_DOIS)
-    
+
     publications = [
         Publication(title=f"Paper {i}", doi=doi, source=PublicationSource.PUBMED)
         for i, doi in enumerate(all_dois)
     ]
-    
+
     print(f"Test papers ({len(all_dois)} total):")
     for doi, label in zip(all_dois, labels):
         print(f"  {doi[:35]:35} ({label})")
     print()
-    
+
     # PHASE 1: Legal OA only
     print("=" * 80)
     print("PHASE 1: Legal OA Sources Only (Sci-Hub DISABLED)")
     print("=" * 80)
-    
+
     config1 = FullTextManagerConfig(
         enable_unpaywall=True,
         enable_core=False,
@@ -62,29 +59,29 @@ async def test_detailed_breakdown():
         unpaywall_email="sdodl001@odu.edu",
         max_concurrent=2,
     )
-    
+
     phase1_results = []
     async with FullTextManager(config1) as manager:
         results = await manager.get_fulltext_batch(publications)
-        
+
         for doi, label, result in zip(all_dois, labels, results):
             status = "✅" if result.success else "❌"
             source = result.source.value if result.success else "NONE"
             phase1_results.append((doi, label, result.success, source))
             print(f"{status} {doi[:35]:35} ({label:10}) → {source}")
-        
+
         stats1 = manager.get_statistics()
-    
+
     phase1_found = sum(1 for r in results if r.success)
     print(f"\nPhase 1 Total: {phase1_found}/{len(all_dois)} ({phase1_found/len(all_dois)*100:.1f}%)")
     print(f"Sources used: {stats1['by_source']}")
     print()
-    
+
     # PHASE 2: Add Sci-Hub
     print("=" * 80)
     print("PHASE 2: Legal OA + Sci-Hub (Sci-Hub ENABLED)")
     print("=" * 80)
-    
+
     config2 = FullTextManagerConfig(
         enable_unpaywall=True,
         enable_core=False,
@@ -96,18 +93,18 @@ async def test_detailed_breakdown():
         scihub_use_proxy=False,
         max_concurrent=2,
     )
-    
+
     phase2_results = []
     scihub_filled = []
-    
+
     async with FullTextManager(config2) as manager:
         results = await manager.get_fulltext_batch(publications)
-        
+
         for i, (doi, label, result) in enumerate(zip(all_dois, labels, results)):
             status = "✅" if result.success else "❌"
             source = result.source.value if result.success else "NONE"
             phase2_results.append((doi, label, result.success, source))
-            
+
             # Check if Sci-Hub filled a gap
             phase1_success = phase1_results[i][2]
             if not phase1_success and result.success and source == "scihub":
@@ -115,16 +112,16 @@ async def test_detailed_breakdown():
                 scihub_filled.append(doi)
             else:
                 marker = ""
-            
+
             print(f"{status} {doi[:35]:35} ({label:10}) → {source}{marker}")
-        
+
         stats2 = manager.get_statistics()
-    
+
     phase2_found = sum(1 for r in results if r.success)
     print(f"\nPhase 2 Total: {phase2_found}/{len(all_dois)} ({phase2_found/len(all_dois)*100:.1f}%)")
     print(f"Sources used: {stats2['by_source']}")
     print()
-    
+
     # Summary
     print("=" * 80)
     print("SUMMARY")
@@ -133,7 +130,7 @@ async def test_detailed_breakdown():
     print(f"Phase 2 (+ Sci-Hub):    {phase2_found}/{len(all_dois)} ({phase2_found/len(all_dois)*100:.1f}%)")
     print(f"Sci-Hub filled gaps:    {len(scihub_filled)}")
     print()
-    
+
     if scihub_filled:
         print(f"✅ Papers found ONLY via Sci-Hub:")
         for doi in scihub_filled:
@@ -144,8 +141,8 @@ async def test_detailed_breakdown():
         print(f"   - Sci-Hub in Phase 2 stats? {'scihub' in stats2['by_source']}")
         print(f"   - Phase 1 failures: {len(all_dois) - phase1_found}")
         print(f"   - Phase 2 failures: {len(all_dois) - phase2_found}")
-        
-        if 'scihub' not in stats2['by_source']:
+
+        if "scihub" not in stats2["by_source"]:
             print("\n❌ PROBLEM: Sci-Hub was NEVER called!")
             print("   This means either:")
             print("   1. All papers were found by legal OA sources")

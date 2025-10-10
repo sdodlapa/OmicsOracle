@@ -1,8 +1,8 @@
 # Phase 6: GEO-to-Citation-to-PDF Collection Pipeline
 
-**Date:** October 10, 2025  
-**Status:** Planning & Design  
-**Sprint:** Phase 5 (October 2025 - December 2025)  
+**Date:** October 10, 2025
+**Status:** Planning & Design
+**Sprint:** Phase 5 (October 2025 - December 2025)
 **Priority:** High - Core Research Workflow
 
 ---
@@ -202,16 +202,16 @@ Biomedical researchers need to:
 class GEOCitationPipeline:
     """
     End-to-end pipeline: Query → GEO → Citations → PDFs
-    
+
     Features:
     - No LLM analysis (pure collection)
     - Optimized full-text retrieval (waterfall strategy)
     - Progress tracking & resumable downloads
     - Comprehensive reporting
     """
-    
+
     async def collect(
-        self, 
+        self,
         query: str,
         max_datasets: int = 10,
         max_citing_papers: int = 100,
@@ -226,12 +226,12 @@ class GEOCitationPipeline:
 class GEOCitationDiscovery:
     """
     Find papers citing GEO datasets.
-    
+
     Two strategies:
     1. Papers citing original publication (PMID)
     2. Papers mentioning GEO ID in text
     """
-    
+
     async def find_citing_papers(
         self,
         geo_metadata: GEOSeriesMetadata,
@@ -246,7 +246,7 @@ class GEOCitationDiscovery:
 class PDFDownloadManager:
     """
     Async PDF download with validation and organization.
-    
+
     Features:
     - Parallel downloads (configurable concurrency)
     - Rate limiting per source
@@ -254,7 +254,7 @@ class PDFDownloadManager:
     - PDF validation
     - Progress tracking
     """
-    
+
     async def download_batch(
         self,
         publications: List[Publication],
@@ -491,10 +491,10 @@ data/
 ## 🔍 Sci-Hub Optimization Analysis
 
 ### Data Source
-File: `scihub_exploration_results.json`  
-Test Date: October 10, 2025, 02:36 AM  
-Papers Tested: 92  
-Total Attempts: 828 (9 mirrors × 92 papers)  
+File: `scihub_exploration_results.json`
+Test Date: October 10, 2025, 02:36 AM
+Papers Tested: 92
+Total Attempts: 828 (9 mirrors × 92 papers)
 Duration: 19.56 minutes
 
 ### Findings
@@ -687,12 +687,12 @@ config = GEOCitationConfig(
     # GEO search
     geo_max_results=10,
     geo_min_samples=10,
-    
+
     # Citation discovery
     citation_max_results=100,
     include_geo_id_mentions=True,
     include_pmid_citations=True,
-    
+
     # Full-text retrieval
     fulltext_sources=[
         "institutional",  # Prioritize institutional
@@ -701,14 +701,14 @@ config = GEOCitationConfig(
         "scihub"
     ],
     skip_on_success=True,  # Skip sources after finding
-    
+
     # PDF download
     download_pdfs=True,
     max_concurrent_downloads=5,
     pdf_validation=True,
     retry_failed=True,
     max_retries=3,
-    
+
     # Storage
     output_dir="data/geo_citation_collections",
     organize_by_geo_id=True
@@ -829,6 +829,6 @@ analysis = await analyzer.analyze_collection(
 
 ---
 
-**Document Version:** 1.0  
-**Last Updated:** October 10, 2025  
+**Document Version:** 1.0
+**Last Updated:** October 10, 2025
 **Next Review:** After Phase 6.1 completion

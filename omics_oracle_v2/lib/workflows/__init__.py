@@ -5,9 +5,9 @@ High-level workflows that orchestrate multiple components.
 """
 
 from omics_oracle_v2.lib.workflows.geo_citation_pipeline import (
-    GEOCitationPipeline,
-    GEOCitationConfig,
     CollectionResult,
+    GEOCitationConfig,
+    GEOCitationPipeline,
 )
 
 __all__ = [

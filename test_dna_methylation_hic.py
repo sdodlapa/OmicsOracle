@@ -6,34 +6,28 @@ This test will show the complete flow with detailed logging at each step.
 
 import asyncio
 import logging
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-from omics_oracle_v2.lib.workflows.geo_citation_pipeline import (
-    GEOCitationPipeline,
-    GEOCitationConfig
-)
+from omics_oracle_v2.lib.workflows.geo_citation_pipeline import GEOCitationConfig, GEOCitationPipeline
 
 # Setup detailed logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
 async def test_dna_methylation_hic():
     """Test with DNA methylation + HiC query"""
-    
+
     query = "Joint profiling of dna methylation and HiC data"
-    
-    logger.info("="*80)
+
+    logger.info("=" * 80)
     logger.info("DETAILED FLOW TEST: DNA Methylation + HiC Query")
-    logger.info("="*80)
+    logger.info("=" * 80)
     logger.info(f"Query: '{query}'")
-    logger.info("="*80)
+    logger.info("=" * 80)
     logger.info("")
-    
+
     # Configure pipeline
     config = GEOCitationConfig(
         geo_max_results=3,  # Get up to 3 datasets
@@ -48,9 +42,9 @@ async def test_dna_methylation_hic():
         enable_libgen=False,
         download_pdfs=False,  # Skip PDF download for speed
         output_dir=Path("data/geo_citation_collections"),
-        organize_by_geo_id=False
+        organize_by_geo_id=False,
     )
-    
+
     logger.info("PIPELINE CONFIGURATION:")
     logger.info(f"  Max GEO datasets: {config.geo_max_results}")
     logger.info(f"  Max papers per dataset: {config.citation_max_results}")
@@ -58,7 +52,7 @@ async def test_dna_methylation_hic():
     logger.info(f"  Full-text sources: Institutional, Unpaywall, CORE")
     logger.info(f"  PDF download: {config.download_pdfs}")
     logger.info("")
-    
+
     # Initialize pipeline
     logger.info("Step 1: INITIALIZING PIPELINE")
     logger.info("-" * 80)
@@ -66,27 +60,23 @@ async def test_dna_methylation_hic():
     pipeline = GEOCitationPipeline(config)
     logger.info("✅ Pipeline initialized")
     logger.info("")
-    
+
     # Run collection with detailed tracking
     try:
         logger.info("Step 2: STARTING COLLECTION")
         logger.info("-" * 80)
-        
-        result = await pipeline.collect(
-            query=query,
-            max_datasets=3,
-            max_citing_papers=30
-        )
-        
+
+        result = await pipeline.collect(query=query, max_datasets=3, max_citing_papers=30)
+
         duration = (datetime.now() - start_time).total_seconds()
-        
+
         # Detailed results
         logger.info("")
-        logger.info("="*80)
+        logger.info("=" * 80)
         logger.info("COLLECTION COMPLETE - DETAILED RESULTS")
-        logger.info("="*80)
+        logger.info("=" * 80)
         logger.info("")
-        
+
         # GEO Datasets
         logger.info("📊 GEO DATASETS FOUND:")
         logger.info("-" * 80)
@@ -100,7 +90,7 @@ async def test_dna_methylation_hic():
         else:
             logger.info("   No datasets found")
         logger.info("")
-        
+
         # Citations
         logger.info("📝 CITING PAPERS:")
         logger.info("-" * 80)
@@ -113,24 +103,26 @@ async def test_dna_methylation_hic():
                 logger.info(f"   Year: {paper.year}")
                 logger.info(f"   Journal: {paper.journal}")
                 if paper.fulltext_url:
-                    source = getattr(paper, 'fulltext_source', 'unknown')
+                    source = getattr(paper, "fulltext_source", "unknown")
                     logger.info(f"   Full-text: ✅ Available ({source})")
                 else:
                     logger.info(f"   Full-text: ❌ Not found")
         else:
             logger.info("   No citing papers found (datasets may be unpublished or too new)")
         logger.info("")
-        
+
         # Full-text coverage
         logger.info("🔗 FULL-TEXT URL COLLECTION:")
         logger.info("-" * 80)
-        logger.info(f"Coverage: {result.fulltext_coverage:.1f}% ({len([p for p in result.citing_papers if p.fulltext_url])}/{result.total_citing_papers})")
+        logger.info(
+            f"Coverage: {result.fulltext_coverage:.1f}% ({len([p for p in result.citing_papers if p.fulltext_url])}/{result.total_citing_papers})"
+        )
         if result.fulltext_by_source:
             logger.info("\nBreakdown by source:")
             for source, count in result.fulltext_by_source.items():
                 logger.info(f"  {source}: {count} papers")
         logger.info("")
-        
+
         # Performance
         logger.info("⏱️  PERFORMANCE METRICS:")
         logger.info("-" * 80)
@@ -140,7 +132,7 @@ async def test_dna_methylation_hic():
         if result.total_citing_papers > 0:
             logger.info(f"Time per paper: {duration/result.total_citing_papers:.2f}s")
         logger.info("")
-        
+
         # Data saved
         logger.info("💾 DATA PERSISTENCE:")
         logger.info("-" * 80)
@@ -152,21 +144,25 @@ async def test_dna_methylation_hic():
                     size = file.stat().st_size
                     logger.info(f"  - {file.name} ({size:,} bytes)")
         logger.info("")
-        
+
         # Summary
-        logger.info("="*80)
+        logger.info("=" * 80)
         logger.info("EXECUTION SUMMARY")
-        logger.info("="*80)
+        logger.info("=" * 80)
         logger.info(f"✅ Query executed: '{query}'")
         logger.info(f"✅ Datasets found: {len(result.datasets_found)}")
-        logger.info(f"{'✅' if result.total_citing_papers > 0 else '⚠️ '} Citing papers: {result.total_citing_papers}")
-        logger.info(f"{'✅' if result.fulltext_coverage > 0 else '⚠️ '} Full-text coverage: {result.fulltext_coverage:.1f}%")
+        logger.info(
+            f"{'✅' if result.total_citing_papers > 0 else '⚠️ '} Citing papers: {result.total_citing_papers}"
+        )
+        logger.info(
+            f"{'✅' if result.fulltext_coverage > 0 else '⚠️ '} Full-text coverage: {result.fulltext_coverage:.1f}%"
+        )
         logger.info(f"✅ Duration: {duration:.2f}s")
         logger.info(f"✅ Data saved: {result.collection_dir}")
-        logger.info("="*80)
-        
+        logger.info("=" * 80)
+
         return result
-        
+
     except Exception as e:
         logger.error(f"❌ Pipeline failed: {e}", exc_info=True)
         raise
@@ -174,13 +170,13 @@ async def test_dna_methylation_hic():
 
 async def explain_flow():
     """Run test and explain the flow"""
-    
+
     logger.info("\n\n")
-    logger.info("╔" + "═"*78 + "╗")
-    logger.info("║" + " "*20 + "PIPELINE FLOW EXPLANATION" + " "*33 + "║")
-    logger.info("╚" + "═"*78 + "╝")
+    logger.info("╔" + "═" * 78 + "╗")
+    logger.info("║" + " " * 20 + "PIPELINE FLOW EXPLANATION" + " " * 33 + "║")
+    logger.info("╚" + "═" * 78 + "╝")
     logger.info("")
-    
+
     logger.info("This test will demonstrate the complete Phase 6 pipeline flow:")
     logger.info("")
     logger.info("1️⃣  Query Input → 'Joint profiling of dna methylation and HiC data'")
@@ -193,18 +189,18 @@ async def explain_flow():
     logger.info("")
     logger.info("Watch the logs below to see each step in action!")
     logger.info("")
-    logger.info("="*80)
+    logger.info("=" * 80)
     logger.info("")
-    
+
     result = await test_dna_methylation_hic()
-    
+
     # Post-run analysis
     logger.info("\n\n")
-    logger.info("╔" + "═"*78 + "╗")
-    logger.info("║" + " "*25 + "FLOW EVENT ANALYSIS" + " "*34 + "║")
-    logger.info("╚" + "═"*78 + "╝")
+    logger.info("╔" + "═" * 78 + "╗")
+    logger.info("║" + " " * 25 + "FLOW EVENT ANALYSIS" + " " * 34 + "║")
+    logger.info("╚" + "═" * 78 + "╝")
     logger.info("")
-    
+
     logger.info("EVENT TIMELINE:")
     logger.info("-" * 80)
     logger.info("1. Query submitted to GEO NCBI database")
@@ -217,7 +213,7 @@ async def explain_flow():
     logger.info("6. Full-text URL collection from configured sources")
     logger.info("7. JSON files written to disk")
     logger.info("")
-    
+
     logger.info("DATA COLLECTED:")
     logger.info("-" * 80)
     logger.info(f"✓ {len(result.datasets_found)} GEO datasets with full metadata")
@@ -225,7 +221,7 @@ async def explain_flow():
     logger.info(f"✓ {len([p for p in result.citing_papers if p.fulltext_url])} papers with full-text URLs")
     logger.info(f"✓ Metadata organized in: {result.collection_dir}")
     logger.info("")
-    
+
     if result.total_citing_papers == 0:
         logger.info("NOTE:")
         logger.info("-" * 80)
@@ -236,9 +232,9 @@ async def explain_flow():
         logger.info("")
         logger.info("The pipeline infrastructure is working correctly!")
         logger.info("Testing with older, well-cited datasets would show citations.")
-    
+
     logger.info("")
-    logger.info("="*80)
+    logger.info("=" * 80)
 
 
 if __name__ == "__main__":

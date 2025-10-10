@@ -49,10 +49,10 @@ class SciHubConfig(BaseModel):
     # Working mirrors show 23.9% success rate each
     mirrors: List[str] = Field(
         default_factory=lambda: [
-            "https://sci-hub.se",   # ✅ 22/92 success (23.9%) - embed_any_src
-            "https://sci-hub.ru",   # ✅ 22/92 success (23.9%) - embed_any_src
+            "https://sci-hub.se",  # ✅ 22/92 success (23.9%) - embed_any_src
+            "https://sci-hub.ru",  # ✅ 22/92 success (23.9%) - embed_any_src
             "https://sci-hub.ren",  # ✅ 22/92 success (23.9%) - embed_any_src
-            "https://sci-hub.ee",   # ✅ 22/92 success (23.9%) - iframe_any_src
+            "https://sci-hub.ee",  # ✅ 22/92 success (23.9%) - iframe_any_src
             # Removed broken mirrors (0% success, timeout/unreachable):
             # - sci-hub.st (timeout)
             # - sci-hub.si (timeout)
@@ -192,14 +192,14 @@ class SciHubClient:
     def _extract_pdf_url(self, html: str, mirror: str) -> Optional[str]:
         """
         Extract PDF URL from Sci-Hub HTML response.
-        
+
         OPTIMIZED based on comprehensive testing (Oct 10, 2025):
         - Tested 14 patterns on 92 papers across 9 mirrors (828 attempts)
         - Only 2 patterns showed success:
           1. embed_any_src: 66/460 (14.3% success rate)
           2. iframe_any_src: 22/416 (5.3% success rate)
         - All other 12 patterns had 0% success rate
-        
+
         Performance improvement: 86% fewer pattern attempts (14→2)
 
         Args:

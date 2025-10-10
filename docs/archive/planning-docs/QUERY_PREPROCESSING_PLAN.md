@@ -1,7 +1,7 @@
 # Query Preprocessing & Biological Term Extraction - Implementation Plan
 
-**Date:** October 9, 2025  
-**Context:** Enhancing query execution flow for better GEO search results  
+**Date:** October 9, 2025
+**Context:** Enhancing query execution flow for better GEO search results
 **Status:** Planning Phase
 
 ---
@@ -22,7 +22,7 @@
 - Location: `omics_oracle_v2/agents/query_agent.py`
 - Current Process:
   ```
-  User Query → Intent Detection → Entity Extraction (NER) → 
+  User Query → Intent Detection → Entity Extraction (NER) →
   Search Term Generation → GEO Search
   ```
 
@@ -67,7 +67,7 @@ SearchAgent:
 
 ### System 2: Publication Search (Pipeline)
 ```
-User: "breast cancer RNA-seq" 
+User: "breast cancer RNA-seq"
   ↓
 PublicationSearchPipeline:
   - Search PubMed with RAW query ❌
@@ -92,33 +92,33 @@ Returns: Publications about the topic
 class PublicationSearchPipeline:
     def __init__(self, config):
         # ... existing code ...
-        
+
         # Add QueryAgent for query preprocessing
         if config.enable_query_preprocessing:
             from omics_oracle_v2.agents.query_agent import QueryAgent
             self.query_agent = QueryAgent(settings)
-    
+
     def search(self, query: str, max_results: int = 50):
         """Search with query preprocessing."""
-        
+
         # Step 0: Preprocess query (NEW!)
         if self.query_agent:
             query_result = self.query_agent.execute(QueryInput(query=query))
             preprocessed = self._build_optimized_queries(query_result.output)
         else:
             preprocessed = {"default": query}  # Fallback to raw query
-        
+
         # Step 1: Search sources with optimized queries
         if self.pubmed_client:
             # Use PubMed-optimized query
             pubmed_query = preprocessed.get("pubmed", query)
             pubmed_results = self.pubmed_client.search(pubmed_query, ...)
-        
+
         if self.openalex_client:
             # Use OpenAlex-optimized query
             openalex_query = preprocessed.get("openalex", query)
             openalex_results = self.openalex_client.search(openalex_query, ...)
-        
+
         # ... rest of pipeline
 ```
 
@@ -142,16 +142,16 @@ class PublicationSearchPipeline:
 
 class QueryPreprocessor:
     """Lightweight query preprocessing for publication search."""
-    
+
     def __init__(self, ner: Optional[BiomedicalNER] = None):
         self.ner = ner or BiomedicalNER()
-    
+
     def preprocess(self, query: str) -> PreprocessedQuery:
         """Extract structure from query."""
-        
+
         # Extract entities
         ner_result = self.ner.extract_entities(query)
-        
+
         # Categorize entities
         entities_by_type = {
             "genes": [],
@@ -159,14 +159,14 @@ class QueryPreprocessor:
             "techniques": [],
             "organisms": [],
         }
-        
+
         for entity in ner_result.entities:
             if entity.entity_type == EntityType.GENE:
                 entities_by_type["genes"].append(entity.text)
             elif entity.entity_type == EntityType.DISEASE:
                 entities_by_type["diseases"].append(entity.text)
             # ... etc
-        
+
         return PreprocessedQuery(
             original=query,
             entities=entities_by_type,
@@ -174,52 +174,52 @@ class QueryPreprocessor:
             openalex_query=self._build_openalex_query(entities_by_type, query),
             geo_query=self._build_geo_query(entities_by_type, query),
         )
-    
+
     def _build_pubmed_query(self, entities: dict, original: str) -> str:
         """Build PubMed-optimized query with MeSH terms."""
         parts = []
-        
+
         # Add gene terms with field tags
         if entities["genes"]:
             gene_terms = " OR ".join(f"{g}[Gene Name]" for g in entities["genes"])
             parts.append(f"({gene_terms})")
-        
+
         # Add disease terms with MeSH
         if entities["diseases"]:
             disease_terms = " OR ".join(f"{d}[MeSH]" for d in entities["diseases"])
             parts.append(f"({disease_terms})")
-        
+
         # Combine with AND
         if parts:
             return " AND ".join(parts)
-        
+
         # Fallback to original
         return original
-    
+
     def _build_openalex_query(self, entities: dict, original: str) -> str:
         """Build OpenAlex-optimized query."""
         # OpenAlex supports filters
         parts = [original]
-        
+
         # Could add year filters, type filters etc.
         # Example: "cancer AND has_fulltext:true AND publication_year:>2020"
-        
+
         return " ".join(parts)
-    
+
     def _build_geo_query(self, entities: dict, original: str) -> str:
         """Build GEO-specific query."""
         # GEO has specific fields
         parts = []
-        
+
         if entities["genes"]:
             parts.extend(entities["genes"])
-        
+
         if entities["diseases"]:
             parts.extend(entities["diseases"])
-        
+
         if entities["organisms"]:
             parts.append(f"organism:{entities['organisms'][0]}")
-        
+
         return " ".join(parts) if parts else original
 ```
 
@@ -243,23 +243,23 @@ class QueryPreprocessor:
 
 ```python
 class PublicationSearchPipeline:
-    
+
     def __init__(self, config):
         # ... existing ...
-        
+
         # Add lightweight NER for query preprocessing
         if config.enable_query_preprocessing:
             from omics_oracle_v2.lib.nlp import BiomedicalNER
             self.ner = BiomedicalNER()
-    
+
     def _preprocess_query(self, query: str) -> dict:
         """Basic query preprocessing."""
         if not hasattr(self, 'ner') or not self.ner:
             return {"default": query}
-        
+
         # Extract entities
         result = self.ner.extract_entities(query)
-        
+
         # Build source-specific queries
         return {
             "original": query,
@@ -267,48 +267,48 @@ class PublicationSearchPipeline:
             "pubmed": self._enhance_for_pubmed(query, result.entities),
             "openalex": self._enhance_for_openalex(query, result.entities),
         }
-    
+
     def _enhance_for_pubmed(self, query: str, entities: List[Entity]) -> str:
         """Add PubMed field tags."""
         # Extract genes and diseases
         genes = [e.text for e in entities if e.entity_type == EntityType.GENE]
         diseases = [e.text for e in entities if e.entity_type == EntityType.DISEASE]
-        
+
         parts = []
-        
+
         # Add gene terms with [Gene Name] tag
         if genes:
             gene_query = " OR ".join(f'"{g}"[Gene Name]' for g in genes)
             parts.append(f"({gene_query})")
-        
+
         # Add disease terms with [MeSH] tag
         if diseases:
             disease_query = " OR ".join(f'"{d}"[MeSH]' for d in diseases[:3])  # Limit to top 3
             parts.append(f"({disease_query})")
-        
+
         # If we have enhanced terms, use them; otherwise fallback
         if parts:
             enhanced = " AND ".join(parts)
             # Also include original as OR to catch everything
             return f"({enhanced}) OR ({query})"
-        
+
         return query
-    
+
     def _enhance_for_openalex(self, query: str, entities: List[Entity]) -> str:
         """Enhance query for OpenAlex."""
         # OpenAlex uses simple keywords, but we can prioritize terms
         genes = [e.text for e in entities if e.entity_type == EntityType.GENE]
         diseases = [e.text for e in entities if e.entity_type == EntityType.DISEASE]
-        
+
         # Build query with important terms first
         important_terms = genes + diseases
         if important_terms:
             return " ".join(important_terms) + " " + query
-        
+
         return query
 ```
 
-**Implementation Time:** 1-2 hours  
+**Implementation Time:** 1-2 hours
 **Impact:** Immediate improvement in result quality
 
 ### Phase 2: Advanced Features (NEXT SPRINT)

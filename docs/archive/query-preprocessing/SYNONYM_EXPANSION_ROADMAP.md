@@ -1,7 +1,7 @@
 # Synonym Expansion & Entity Normalization - Enhancement Roadmap
 
-**Date:** October 9, 2025  
-**Status:** Gap Analysis  
+**Date:** October 9, 2025
+**Status:** Gap Analysis
 **Priority:** HIGH - Production enhancement for Phase 2B/2C
 
 ---
@@ -75,7 +75,7 @@ from scispacy.abbreviation import AbbreviationDetector
 nlp.add_pipe("abbreviation_detector")
 
 # Automatically detects:
-# "Assay for Transposase-Accessible Chromatin (ATAC-seq)" 
+# "Assay for Transposase-Accessible Chromatin (ATAC-seq)"
 # → stores ATAC-seq ↔ Assay for Transposase-Accessible Chromatin
 ```
 
@@ -85,7 +85,7 @@ nlp.add_pipe("abbreviation_detector")
 - No manual curation needed
 - Works on user's own corpus
 
-**Effort:** LOW (2-3 hours)  
+**Effort:** LOW (2-3 hours)
 **Impact:** HIGH (solves 50% of synonym problems)
 
 #### 2. **Basic Ontology Integration - MeSH** ⭐⭐⭐
@@ -113,7 +113,7 @@ def get_mesh_synonyms(mesh_id):
 - Better PubMed queries ([MeSH Major Topic])
 - Cross-database standardization
 
-**Effort:** MEDIUM (1 day)  
+**Effort:** MEDIUM (1 day)
 **Impact:** HIGH (authoritative synonyms)
 
 #### 3. **Variant Generation (Rule-based)** ⭐⭐
@@ -123,40 +123,40 @@ def get_mesh_synonyms(mesh_id):
 def generate_variants(term):
     """Generate common spelling/format variants."""
     variants = set([term])
-    
+
     # Hyphenation
     variants.add(term.replace("-", " "))
     variants.add(term.replace(" ", "-"))
     variants.add(term.replace("-", ""))
     variants.add(term.replace(" ", ""))
-    
+
     # Capitalization
     variants.add(term.upper())
     variants.add(term.lower())
     variants.add(term.title())
-    
+
     # seq variants
     if term.endswith("-seq"):
         variants.add(term.replace("-seq", "seq"))
         variants.add(term.replace("-seq", " seq"))
         variants.add(term.replace("-seq", " sequencing"))
-    
+
     # Pluralization
     if not term.endswith('s'):
         variants.add(term + 's')
-    
+
     return variants
 
 # ATAC-seq → {ATAC-seq, ATACseq, ATAC seq, atac-seq, ...}
 ```
 
-**Effort:** LOW (1-2 hours)  
+**Effort:** LOW (1-2 hours)
 **Impact:** MEDIUM (handles common variants)
 
 ### Phase 2C: Advanced (Next 1-2 weeks)
 
 #### 4. **OBI/EDAM Ontology Integration** ⭐⭐⭐
-**Tools:** 
+**Tools:**
 - OBI: http://purl.obolibrary.org/obo/obi.owl
 - EDAM: https://edamontology.org/
 
@@ -187,7 +187,7 @@ def get_obi_synonyms(obi_id):
 - Formal definitions
 - Community-maintained
 
-**Effort:** MEDIUM (2-3 days)  
+**Effort:** MEDIUM (2-3 days)
 **Impact:** HIGH (comprehensive coverage)
 
 #### 5. **SapBERT Embedding-based Synonymy** ⭐⭐⭐
@@ -213,10 +213,10 @@ def find_synonyms(canonical_term, candidate_terms, top_k=10):
     """Find most similar terms using SapBERT."""
     canonical_emb = encode_terms([canonical_term])
     candidate_embs = encode_terms(candidate_terms)
-    
+
     similarities = cosine_similarity(canonical_emb, candidate_embs)
     top_indices = np.argsort(similarities)[-top_k:]
-    
+
     return [(candidate_terms[i], similarities[i]) for i in top_indices]
 ```
 
@@ -226,7 +226,7 @@ def find_synonyms(canonical_term, candidate_terms, top_k=10):
 - High recall
 - Discovers corpus-specific terms
 
-**Effort:** MEDIUM (2-3 days)  
+**Effort:** MEDIUM (2-3 days)
 **Impact:** VERY HIGH (discovers new synonyms)
 
 #### 6. **UMLS Entity Linking** ⭐⭐
@@ -254,7 +254,7 @@ for ent in doc.ents:
 - Cross-reference to other ontologies
 - Disambiguation (ATAC protein vs ATAC-seq)
 
-**Effort:** MEDIUM (requires UMLS license + setup)  
+**Effort:** MEDIUM (requires UMLS license + setup)
 **Impact:** VERY HIGH (gold standard normalization)
 
 ### Phase 2D: Production Polish (2-3 weeks out)
@@ -270,13 +270,13 @@ def bootstrap_synonyms(technique, llm_client):
     2. Common synonyms
     3. Spelling variants
     4. Related but DISTINCT techniques (to exclude)
-    
+
     Return JSON with keys: expansion, synonyms, variants, distinct_from
     """
-    
+
     response = llm_client.complete(prompt)
     proposed = json.loads(response)
-    
+
     # Validate each synonym
     validated = []
     for syn in proposed['synonyms']:
@@ -286,7 +286,7 @@ def bootstrap_synonyms(technique, llm_client):
         # Check 2: SapBERT similarity
         elif are_synonyms(technique, syn, threshold=0.80):
             validated.append(syn)
-    
+
     return validated
 ```
 
@@ -295,7 +295,7 @@ def bootstrap_synonyms(technique, llm_client):
 - Discovers colloquial terms
 - Human-readable explanations
 
-**Effort:** LOW (1 day)  
+**Effort:** LOW (1 day)
 **Impact:** MEDIUM (good for bootstrapping)
 
 #### 8. **Corpus-based Synonym Mining** ⭐⭐
@@ -304,20 +304,20 @@ def bootstrap_synonyms(technique, llm_client):
 ```python
 def mine_corpus_synonyms(corpus, canonical_techniques, encoder="SapBERT"):
     """Find technique variants in your corpus."""
-    
+
     # Extract all noun chunks
     noun_chunks = extract_noun_chunks(corpus)
-    
+
     # Encode with SapBERT/E5
     chunk_embeddings = encode_terms(noun_chunks, encoder)
     canonical_embeddings = encode_terms(canonical_techniques, encoder)
-    
+
     # Find nearest neighbors
     for canonical, canonical_emb in zip(canonical_techniques, canonical_embeddings):
         similarities = cosine_similarity([canonical_emb], chunk_embeddings)[0]
-        top_candidates = [(noun_chunks[i], similarities[i]) 
+        top_candidates = [(noun_chunks[i], similarities[i])
                           for i in np.argsort(similarities)[-20:]]
-        
+
         # Filter with rules
         synonyms = []
         for candidate, score in top_candidates:
@@ -325,7 +325,7 @@ def mine_corpus_synonyms(corpus, canonical_techniques, encoder="SapBERT"):
                 if not is_hypernym(candidate, canonical):  # Not "sequencing"
                     if not is_distinct_technique(candidate, canonical):
                         synonyms.append(candidate)
-        
+
         yield canonical, synonyms
 ```
 
@@ -334,7 +334,7 @@ def mine_corpus_synonyms(corpus, canonical_techniques, encoder="SapBERT"):
 - Finds new acronyms
 - Corpus-tailored
 
-**Effort:** MEDIUM (2 days)  
+**Effort:** MEDIUM (2 days)
 **Impact:** MEDIUM-HIGH (finds unknown terms)
 
 ---
@@ -373,27 +373,27 @@ User Query: "ATAC-seq chromatin accessibility diabetes"
 @dataclass
 class EnhancedEntity(Entity):
     """Entity with normalization and synonyms."""
-    
+
     # Original fields
     text: str
     entity_type: EntityType
     start: int
     end: int
     confidence: float
-    
+
     # NEW: Normalization
     canonical_id: Optional[str] = None  # OBI:0002039, MESH:D019175, etc.
     canonical_name: Optional[str] = None  # Official name
-    
+
     # NEW: Synonyms
     synonyms: List[str] = field(default_factory=list)
     abbreviation: Optional[str] = None  # ATAC-seq
     expansion: Optional[str] = None     # Assay for Transposase...
-    
+
     # NEW: Ontology links
     ontology_source: Optional[str] = None  # OBI, MeSH, EDAM
     umls_cui: Optional[str] = None        # C1234567
-    
+
     # NEW: Variants
     spelling_variants: List[str] = field(default_factory=list)
 ```
@@ -466,7 +466,7 @@ CANONICAL_MAPPINGS = {
         "mesh_id": "D019175",
         "synonyms": ["methylation profiling", "methylation analysis"],
     },
-    
+
     # Chromatin Accessibility
     "ATAC-seq": {
         "expansion": "Assay for Transposase-Accessible Chromatin using sequencing",
@@ -489,7 +489,7 @@ CANONICAL_MAPPINGS = {
         "synonyms": ["open chromatin", "chromatin openness", "accessible chromatin"],
         "subtechniques": ["ATAC-seq", "DNase-seq", "FAIRE-seq"],
     },
-    
+
     # Gene Expression
     "RNA-seq": {
         "expansion": "RNA sequencing",
@@ -502,7 +502,7 @@ CANONICAL_MAPPINGS = {
         "obi_id": "OBI:0002631",
         "synonyms": ["single cell RNA-seq", "scRNAseq"],
     },
-    
+
     # ChIP-based
     "ChIP-seq": {
         "expansion": "Chromatin Immunoprecipitation Sequencing",
@@ -510,7 +510,7 @@ CANONICAL_MAPPINGS = {
         "mesh_id": "D047369",  # Chromatin Immunoprecipitation [MeSH]
         "synonyms": ["ChIP sequencing", "chromatin immunoprecipitation sequencing"],
     },
-    
+
     # 3D Genome
     "Hi-C": {
         "expansion": "Chromosome conformation capture high-throughput",
@@ -535,9 +535,9 @@ Results: 150 papers (many missed due to variant spellings)
 **After:**
 ```
 Query: "ATAC-seq diabetes"
-Expanded: "ATAC-seq" OR "ATACseq" OR "Assay for Transposase-Accessible Chromatin" 
+Expanded: "ATAC-seq" OR "ATACseq" OR "Assay for Transposase-Accessible Chromatin"
           OR "transposase-accessible chromatin sequencing"
-PubMed search: ("ATAC-seq"[Text Word] OR "ATACseq"[Text Word] 
+PubMed search: ("ATAC-seq"[Text Word] OR "ATACseq"[Text Word]
                 OR "chromatin accessibility"[MeSH]) AND "diabetes"[MeSH]
 Results: 450 papers (3x more coverage!)
 ```
@@ -546,7 +546,7 @@ Results: 450 papers (3x more coverage!)
 **Before:**
 ```
 Query 1: "ATAC-seq"
-Query 2: "ATACseq"  
+Query 2: "ATACseq"
 Query 3: "chromatin accessibility ATAC"
 → Three separate searches, duplicate results, missed connections
 ```
@@ -620,6 +620,6 @@ All queries → normalize to OBI:0002039
 
 **Status:** Roadmap complete - ready to implement Phase 2B! 🚀
 
-**Priority 1:** Abbreviation detection + MeSH integration (Week 1)  
-**Priority 2:** OBI ontology + SapBERT (Week 2)  
+**Priority 1:** Abbreviation detection + MeSH integration (Week 1)
+**Priority 2:** OBI ontology + SapBERT (Week 2)
 **Priority 3:** UMLS + corpus mining (Week 3-4)

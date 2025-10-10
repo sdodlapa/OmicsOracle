@@ -1,6 +1,6 @@
 # Refactoring Summary & Architecture Reorganization
 
-**Date:** October 10, 2025  
+**Date:** October 10, 2025
 **Purpose:** Document refactoring completed and recommend folder/file reorganization for clarity
 
 ---
@@ -71,7 +71,7 @@ class CitationFinder:
 
     This class performs PURE DATA RETRIEVAL - no LLM analysis.
     It discovers citing papers via APIs and web scraping only.
-    
+
     NOTE: For LLM-based citation content analysis, see CitationContentAnalyzer (Phase 7).
     """
 ```
@@ -601,23 +601,23 @@ Local Storage (data/geo_citation_collections/)
 ## 💡 Key Improvements
 
 ### 1. Visual Clarity
-**Before:** Files scattered across `publications/` folder  
+**Before:** Files scattered across `publications/` folder
 **After:** Each block has dedicated top-level folder
 
 ### 2. Easier Navigation
-**Before:** "Where is full-text URL discovery?" → Search through publications/  
+**Before:** "Where is full-text URL discovery?" → Search through publications/
 **After:** "Where is full-text URL discovery?" → `lib/fulltext/`
 
 ### 3. Clear Separation
-**Before:** Citations, full-text, PDFs all mixed in `publications/`  
+**Before:** Citations, full-text, PDFs all mixed in `publications/`
 **After:** Each block independent: `citations/`, `fulltext/`, `storage/`
 
 ### 4. Scalability
-**Before:** Adding new pipeline → Unclear where files go  
+**Before:** Adding new pipeline → Unclear where files go
 **After:** Adding new pipeline → Clear block-based structure
 
 ### 5. Testing
-**Before:** Hard to test blocks independently (mixed dependencies)  
+**Before:** Hard to test blocks independently (mixed dependencies)
 **After:** Each block can be tested in isolation
 
 ---
@@ -696,4 +696,3 @@ Local Storage (data/geo_citation_collections/)
 - Reorganize in next session
 
 **Your Choice!** What would you like to do next?
-

@@ -2,9 +2,9 @@
 
 ## Query Details
 
-**Query:** `"Joint profiling of dna methylation and HiC data"`  
-**Execution Date:** October 10, 2025, 17:51  
-**Duration:** 1.17 seconds  
+**Query:** `"Joint profiling of dna methylation and HiC data"`
+**Execution Date:** October 10, 2025, 17:51
+**Duration:** 1.17 seconds
 **Status:** ✅ Completed successfully
 
 ---
@@ -92,7 +92,7 @@ Error: 'CitationAnalyzer' object has no attribute 'find_citing_papers'
 **Log Evidence:**
 ```
 2025-10-10 17:51:38,734 - Strategy A: Finding papers citing PMID 36927507
-2025-10-10 17:51:38,734 - WARNING - Citation strategy failed for PMID 36927507: 
+2025-10-10 17:51:38,734 - WARNING - Citation strategy failed for PMID 36927507:
     'CitationAnalyzer' object has no attribute 'find_citing_papers'
 2025-10-10 17:51:38,734 - Found 0 papers via citation
 ```
@@ -115,7 +115,7 @@ Result: 0 papers found
 ```
 2025-10-10 17:51:38,734 - Strategy B: Finding papers mentioning GSE189158
 2025-10-10 17:51:39,027 - PubMed search found 0 results for query: GSE189158[All Fields]
-2025-10-10 17:51:39,027 - WARNING - PubMed search failed for GSE189158: 
+2025-10-10 17:51:39,027 - WARNING - PubMed search failed for GSE189158:
     object list can't be used in 'await' expression
 2025-10-10 17:51:39,027 - Found 0 papers mentioning GEO ID
 ```
@@ -203,7 +203,7 @@ collection_report.json:
 **1. GEO Dataset Metadata (Complete)**
 ```
 Dataset: GSE189158
-Title: NOMe-HiC: joint profiling of genetic variants, DNA methylation, 
+Title: NOMe-HiC: joint profiling of genetic variants, DNA methylation,
        chromatin accessibility, and 3D genome in the same DNA molecule
 
 Key Details:
@@ -221,8 +221,8 @@ Sample IDs:
 └─ GSM6734564, GSM6734565 (2 samples)
 
 Study Summary:
-"Cis-regulatory elements coordinate the regulation of their targeted 
-genes' expression. However, the joint measurement of cis-regulatory 
+"Cis-regulatory elements coordinate the regulation of their targeted
+genes' expression. However, the joint measurement of cis-regulatory
 elements' activities and their interactions in spatial proximity..."
 [Full summary available in metadata]
 ```
@@ -261,7 +261,7 @@ elements' activities and their interactions in spatial proximity..."
 1. **CitationAnalyzer.find_citing_papers()** - Method not implemented
    - **Impact:** Can't find papers citing the dataset's PMID
    - **Fix:** Implement method or use alternative approach
-   
+
 2. **PubMed async handling** - `object list can't be used in 'await' expression`
    - **Impact:** Minor - doesn't break functionality
    - **Fix:** Remove `await` or make PubMedClient properly async
@@ -422,7 +422,7 @@ Experimental Design:
 1. "breast cancer TCGA 2015[PDAT]"
    → Older, well-cited TCGA datasets
 
-2. "RNA-seq lung cancer 2016[PDAT]"  
+2. "RNA-seq lung cancer 2016[PDAT]"
    → Established cancer genomics studies
 
 3. "ChIP-seq H3K27me3 2014[PDAT]"
@@ -445,7 +445,7 @@ Experimental Design:
 ## 💡 Key Takeaways
 
 1. **Pipeline is Robust:** Completed successfully despite finding 0 citations
-2. **GEO Integration Works:** Perfect dataset discovery and metadata retrieval  
+2. **GEO Integration Works:** Perfect dataset discovery and metadata retrieval
 3. **Performance is Excellent:** 1.17s for complete search + metadata fetch
 4. **Error Handling is Solid:** Graceful degradation when citations unavailable
 5. **Citation Discovery Needs Fixes:** 2 minor issues preventing citation collection

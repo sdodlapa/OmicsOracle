@@ -1,7 +1,7 @@
 # Complete Data Flow Analysis: UI to Citation Collection
 
-**Analysis Date:** October 10, 2025  
-**Purpose:** Trace complete flow from frontend search query to publication collection  
+**Analysis Date:** October 10, 2025
+**Purpose:** Trace complete flow from frontend search query to publication collection
 **Focus:** Understand architecture layers and identify naming inconsistencies
 
 ---
@@ -75,7 +75,7 @@ async def execute_workflow(
         max_results=request.max_results,
         ...
     )
-    
+
     # Execute workflow
     result = orchestrator.execute(orchestrator_input)
 ```
@@ -106,13 +106,13 @@ class Orchestrator:
         if workflow_type == WorkflowType.FULL_ANALYSIS:
             # Stage 1: Query processing
             query_result = self.query_agent.execute(input.query)
-            
+
             # Stage 2: GEO search
             search_result = self.search_agent.execute(query_result)
-            
+
             # Stage 3: Data validation
             data_result = self.data_agent.execute(search_result)
-            
+
             # Stage 4: Report generation
             report_result = self.report_agent.execute(data_result)
 ```
@@ -226,7 +226,7 @@ GEOCitationDiscovery.find_citing_papers()
             GoogleScholarClient.get_citations()  ← Web scraping
             OR
             SemanticScholarClient.get_citations()  ← API calls
-    
+
     Strategy B: Find papers mentioning GEO ID
         ↓
         PubMedClient.search("GSE251935[All Fields]")  ← Direct search
@@ -251,20 +251,20 @@ GEOCitationDiscovery.find_citing_papers()
 # FUTURE: This is what "Analyzer" should do
 class CitationContentAnalyzer:
     """Uses LLM to analyze WHY papers cite a dataset"""
-    
+
     async def analyze_citation_context(self, citing_paper, cited_dataset):
         prompt = f"""
         This paper cites dataset {cited_dataset.geo_id}.
-        
+
         Paper abstract: {citing_paper.abstract}
         Citation context: {citing_paper.citation_context}
-        
+
         Analyze:
         1. Why did they cite this dataset?
         2. What did they use it for?
         3. What insights did they gain?
         """
-        
+
         # THIS would be true "analysis" using LLM
         return await llm.generate(prompt)
 ```
@@ -357,21 +357,21 @@ data/geo_citation_collections/
 User Query (String)
     ↓
     "Joint profiling of dna methylation and HiC data"
-    
+
     ↓ [Query Optimization]
-    
+
 Optimized Query (GEO Syntax)
     ↓
     "dna methylation"[Title] AND (hic[Title] OR Hi-C[Title] OR 3C[Title])
-    
+
     ↓ [GEO Search]
-    
+
 GEO Dataset IDs (List[str])
     ↓
     ["GSE251935", "GSE251934", "GSE242400", ...]
-    
+
     ↓ [Metadata Fetch]
-    
+
 GEO Datasets (List[GEOSeriesMetadata])
     ↓
     [
@@ -385,9 +385,9 @@ GEO Datasets (List[GEOSeriesMetadata])
         ),
         ...
     ]
-    
+
     ↓ [Citation Discovery]
-    
+
 Original Papers (From PMID)
     ↓
     Publication(
@@ -396,9 +396,9 @@ Original Papers (From PMID)
         doi="10.1038/...",
         source=PublicationSource.PUBMED
     )
-    
+
     ↓ [Find Citing Papers - Strategy A]
-    
+
 Citing Papers via Citation (List[Publication])
     ↓
     [
@@ -406,24 +406,24 @@ Citing Papers via Citation (List[Publication])
         Publication(pmid="456", title="Another citing paper", ...),
         ...
     ]
-    
+
     ↓ [Find Mentioning Papers - Strategy B]
-    
+
 Papers Mentioning GEO ID (List[Publication])
     ↓
     [
         Publication(pmid="789", title="Paper mentioning GSE251935", ...),
         ...
     ]
-    
+
     ↓ [Deduplicate & Merge]
-    
+
 All Unique Papers (List[Publication])
     ↓
     [Paper1, Paper2, ..., PaperN]
-    
+
     ↓ [Full-Text URL Collection]
-    
+
 Papers with URLs (List[Publication])
     ↓
     [
@@ -434,9 +434,9 @@ Papers with URLs (List[Publication])
         ),
         ...
     ]
-    
+
     ↓ [PDF Download]
-    
+
 Downloaded PDFs (Files on Disk)
     ↓
     data/geo_citation_collections/.../pdfs/
@@ -510,7 +510,7 @@ class CitationFinder:
 # Layer 1: Finding/Discovery (No LLM)
 class CitationFinder:
     """Finds papers that cite a publication using APIs"""
-    
+
     def find_citing_papers(self, publication) -> List[Publication]:
         """Pure data retrieval from APIs"""
         pass
@@ -518,11 +518,11 @@ class CitationFinder:
 # Layer 2: Analysis (LLM - Phase 7)
 class CitationContentAnalyzer:
     """Analyzes WHY papers cite something using LLM"""
-    
+
     async def analyze_citation_purpose(self, citing_paper, cited_item) -> AnalysisResult:
         """Use LLM to understand citation context"""
         pass
-    
+
     async def extract_usage_patterns(self, citing_papers) -> UsageReport:
         """Use LLM to identify how dataset is used"""
         pass
@@ -532,14 +532,14 @@ class GEOCitationDiscovery:
     def __init__(self):
         self.citation_finder = CitationFinder()
         self.content_analyzer = CitationContentAnalyzer()  # Phase 7
-    
+
     async def discover_and_analyze(self, geo_dataset):
         # Step 1: Find citing papers (no LLM)
         citing_papers = await self.citation_finder.find_citing_papers(...)
-        
+
         # Step 2: Analyze papers (LLM - Phase 7)
         analysis = await self.content_analyzer.analyze_citation_purpose(...)
-        
+
         return discovery_result
 ```
 
@@ -667,12 +667,12 @@ class GEOCitationDiscovery:
    mv omics_oracle_v2/lib/publications/citations/analyzer.py \
       omics_oracle_v2/lib/publications/citations/citation_finder.py
    ```
-   
+
 2. **Update all imports**
    ```python
    # BEFORE
    from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
-   
+
    # AFTER
    from omics_oracle_v2.lib.publications.citations.citation_finder import CitationFinder
    ```
@@ -692,11 +692,11 @@ class GEOCitationDiscovery:
    # NEW FILE: citation_content_analyzer.py
    class CitationContentAnalyzer:
        """Uses LLM to analyze citation content and purpose"""
-       
+
        async def analyze_why_cited(self, citing_paper, cited_item):
            """Use LLM to understand WHY paper cited this"""
            pass
-       
+
        async def extract_usage_insights(self, citing_papers, dataset):
            """Use LLM to extract how dataset was used"""
            pass
