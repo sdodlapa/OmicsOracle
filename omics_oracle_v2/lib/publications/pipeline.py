@@ -15,7 +15,7 @@ from typing import List
 
 from omics_oracle_v2.lib.cache import AsyncRedisCache
 from omics_oracle_v2.lib.llm.client import LLMClient
-from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
+from omics_oracle_v2.lib.publications.citations.citation_finder import CitationFinder
 from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
 from omics_oracle_v2.lib.publications.clients.institutional_access import (
     InstitutionalAccessManager,
@@ -117,10 +117,10 @@ class PublicationSearchPipeline:
             logger.info("Initializing citation analyzer with multi-source support")
 
             # Initialize with OpenAlex as primary, Scholar as fallback
-            self.citation_analyzer = CitationAnalyzer(
+            self.citation_finder = CitationFinder(
                 openalex_client=self.openalex_client,
                 scholar_client=self.scholar_client,
-                semantic_scholar_client=None,  # Will be set later
+                semantic_scholar_client=self.semantic_scholar_client,
             )
 
             # Initialize LLM-powered analysis
@@ -134,7 +134,7 @@ class PublicationSearchPipeline:
             )
             self.llm_citation_analyzer = LLMCitationAnalyzer(self.llm_client)
         else:
-            self.citation_analyzer = None
+            self.citation_finder = None
             self.llm_citation_analyzer = None
 
         # Week 4: Institutional access (NEW) - Initialize FIRST before PDF downloader
@@ -199,6 +199,12 @@ class PublicationSearchPipeline:
                 enable_arxiv=True,
                 enable_crossref=True,
                 enable_openalex=True,  # Use OA URLs from OpenAlex metadata
+                enable_unpaywall=True,  # ✅ ENABLED - 50% coverage improvement
+                enable_scihub=True,  # ⚠️ ENABLED - additional 25% coverage (use responsibly)
+                enable_libgen=True,  # ⚠️ ENABLED - additional 5-10% coverage (use responsibly)
+                unpaywall_email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"),
+                scihub_use_proxy=False,  # Set to True to use Tor/proxy
+                libgen_use_proxy=False,  # Set to True to use Tor/proxy
                 core_api_key=os.getenv("CORE_API_KEY"),
                 download_pdfs=False,  # Just get URLs for now
                 max_concurrent=3,
@@ -224,10 +230,10 @@ class PublicationSearchPipeline:
         logger.info("Initializing Semantic Scholar client for citation enrichment")
         self.semantic_scholar_client = SemanticScholarClient(SemanticScholarConfig(enable=True))
 
-        # Add Semantic Scholar to citation analyzer if citations are enabled
-        if self.citation_analyzer:
-            self.citation_analyzer.semantic_scholar = self.semantic_scholar_client
-            logger.info("Connected Semantic Scholar to citation analyzer for enrichment")
+        # Add Semantic Scholar to citation finder if citations are enabled
+        if self.citation_finder:
+            self.citation_finder.semantic_scholar = self.semantic_scholar_client
+            logger.info("Connected Semantic Scholar to citation finder for enrichment")
 
         # Day 26: Redis caching for 10-100x speedup
         if config.enable_cache:
@@ -678,7 +684,7 @@ class PublicationSearchPipeline:
         ranked_results = self.ranker.rank(all_publications, query, top_k=max_results)
 
         # Step 5: Citation analysis (Week 3 - conditional execution)
-        if self.citation_analyzer and ranked_results:
+        if self.citation_finder and ranked_results:
             try:
                 logger.info("Enriching with citation data...")
                 ranked_results = self._enrich_citations(ranked_results)
@@ -940,8 +946,8 @@ class PublicationSearchPipeline:
         Returns:
             Enriched results with citation analysis
         """
-        if not self.citation_analyzer:
-            logger.warning("Citation analyzer not available - skipping enrichment")
+        if not self.citation_finder:
+            logger.warning("Citation finder not available - skipping enrichment")
             return results
 
         logger.info(f"Enriching {len(results)} publications with citation data...")
@@ -953,7 +959,7 @@ class PublicationSearchPipeline:
 
                 # Phase 1: Get citing papers
                 logger.debug(f"Finding citations for: {pub.title[:50]}...")
-                citing_papers = self.citation_analyzer.get_citing_papers(
+                citing_papers = self.citation_finder.find_citing_papers(
                     pub, max_results=min(100, self.config.llm_config.batch_size * 10)
                 )
 
@@ -967,7 +973,7 @@ class PublicationSearchPipeline:
                     # Get citation contexts
                     contexts = []
                     for citing_paper in citing_papers[: self.config.llm_config.batch_size * 2]:
-                        citation_contexts = self.citation_analyzer.get_citation_contexts(pub, citing_paper)
+                        citation_contexts = self.citation_finder.get_citation_contexts(pub, citing_paper)
                         for ctx in citation_contexts:
                             contexts.append((ctx, pub, citing_paper))
 

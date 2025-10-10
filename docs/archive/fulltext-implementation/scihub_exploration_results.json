@@ -1,0 +1,307 @@
+{
+  "timestamp": "2025-10-10T02:36:52.932226",
+  "duration_minutes": 19.5565219,
+  "mirrors": {
+    "https://sci-hub.se": {
+      "total": 92,
+      "success": 22,
+      "failed": 70,
+      "success_rate": 23.91304347826087,
+      "patterns_used": {
+        "embed_any_src": 22
+      }
+    },
+    "https://sci-hub.st": {
+      "total": 0,
+      "success": 0,
+      "failed": 0,
+      "success_rate": 0,
+      "patterns_used": {}
+    },
+    "https://sci-hub.ru": {
+      "total": 92,
+      "success": 22,
+      "failed": 70,
+      "success_rate": 23.91304347826087,
+      "patterns_used": {
+        "embed_any_src": 22
+      }
+    },
+    "https://sci-hub.ren": {
+      "total": 92,
+      "success": 22,
+      "failed": 70,
+      "success_rate": 23.91304347826087,
+      "patterns_used": {
+        "embed_any_src": 22
+      }
+    },
+    "https://sci-hub.si": {
+      "total": 0,
+      "success": 0,
+      "failed": 0,
+      "success_rate": 0,
+      "patterns_used": {}
+    },
+    "https://sci-hub.ee": {
+      "total": 92,
+      "success": 22,
+      "failed": 70,
+      "success_rate": 23.91304347826087,
+      "patterns_used": {
+        "iframe_any_src": 22
+      }
+    },
+    "https://sci-hub.wf": {
+      "total": 92,
+      "success": 0,
+      "failed": 92,
+      "success_rate": 0.0,
+      "patterns_used": {}
+    },
+    "https://sci-hub.tf": {
+      "total": 92,
+      "success": 0,
+      "failed": 92,
+      "success_rate": 0.0,
+      "patterns_used": {}
+    },
+    "https://sci-hub.mksa.top": {
+      "total": 92,
+      "success": 0,
+      "failed": 92,
+      "success_rate": 0.0,
+      "patterns_used": {}
+    }
+  },
+  "patterns": {
+    "embed_any_src": {
+      "description": "Embed tag with any src attribute",
+      "successes": 66,
+      "failures": 394,
+      "success_rate": 14.347826086956522
+    },
+    "embed_pdf_src": {
+      "description": "Embed tag with .pdf in src",
+      "successes": 0,
+      "failures": 394,
+      "success_rate": 0.0
+    },
+    "iframe_any_src": {
+      "description": "iFrame with any src attribute",
+      "successes": 22,
+      "failures": 394,
+      "success_rate": 5.288461538461538
+    },
+    "iframe_pdf_src": {
+      "description": "iFrame with .pdf in src",
+      "successes": 0,
+      "failures": 394,
+      "success_rate": 0.0
+    },
+    "meta_redirect": {
+      "description": "Meta tag redirect",
+      "successes": 0,
+      "failures": 394,
+      "success_rate": 0.0
+    },
+    "js_location": {
+      "description": "JavaScript location.href redirect",
+      "successes": 0,
+      "failures": 394,
+      "success_rate": 0.0
+    },
+    "button_onclick": {
+      "description": "Button with onclick location.href",
+      "successes": 0,
+      "failures": 394,
+      "success_rate": 0.0
+    },
+    "download_link": {
+      "description": "Download link with href",
+      "successes": 0,
+      "failures": 394,
+      "success_rate": 0.0
+    },
+    "protocol_relative": {
+      "description": "Protocol-relative URL (//domain/path.pdf)",
+      "successes": 0,
+      "failures": 394,
+      "success_rate": 0.0
+    },
+    "absolute_https": {
+      "description": "Absolute HTTPS URL anywhere in HTML",
+      "successes": 0,
+      "failures": 394,
+      "success_rate": 0.0
+    },
+    "absolute_http": {
+      "description": "Absolute HTTP URL anywhere in HTML",
+      "successes": 0,
+      "failures": 394,
+      "success_rate": 0.0
+    },
+    "data_attribute": {
+      "description": "Data attribute with PDF",
+      "successes": 0,
+      "failures": 394,
+      "success_rate": 0.0
+    },
+    "pdfjs_viewer": {
+      "description": "PDF.js viewer with file parameter",
+      "successes": 0,
+      "failures": 394,
+      "success_rate": 0.0
+    },
+    "download_param": {
+      "description": "Download URL with file parameter",
+      "successes": 0,
+      "failures": 394,
+      "success_rate": 0.0
+    }
+  },
+  "papers": {},
+  "html_samples": [
+    {
+      "mirror": "https://sci-hub.se",
+      "doi": "10.1126/science.1058040",
+      "html": "<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub : {title} [{doi}]</title>\n        <meta charset = \"UTF-8\">\n        <meta name = \"viewport\" content = \"width=device-width\">\n    </head>\n    <body>\n\n        <style type = \"text/css\">\n\n            body {overflow: hidden; background-color: #eee;}\n            div {margin: 0; padding: 0}\n            embed {width: 99vw; min-height: 100vh; margin: 0; padding: 0;}\n\n        </style>\n\n        <div>\n            <embed type=\"application/pdf\" src=\"//2024.sci-hub.se/6869/a5720a41f3ba600c32f171a17f407f8c/venter2001.pdf#navpanes=0&view=FitH\" id = \"pdf\"></embed>\n        </div>\n    \n    </body>\n</html>",
+      "full_length": 647,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.se",
+      "doi": "10.1038/35057062",
+      "html": "<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub : {title} [{doi}]</title>\n        <meta charset = \"UTF-8\">\n        <meta name = \"viewport\" content = \"width=device-width\">\n    </head>\n    <body>\n\n        <style type = \"text/css\">\n\n            body {overflow: hidden; background-color: #eee;}\n            div {margin: 0; padding: 0}\n            embed {width: 99vw; min-height: 100vh; margin: 0; padding: 0;}\n\n        </style>\n\n        <div>\n            <embed type=\"application/pdf\" src=\"//2024.sci-hub.se/6753/0c279516311a003cd472ea5e75cf1430/initial-sequencing-and-analysis-of-the-human-genome-2001.pdf#navpanes=0&view=FitH\" id = \"pdf\"></embed>\n        </div>\n    \n    </body>\n</html>",
+      "full_length": 693,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.se",
+      "doi": "10.1126/science.1072994",
+      "html": "<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub : {title} [{doi}]</title>\n        <meta charset = \"UTF-8\">\n        <meta name = \"viewport\" content = \"width=device-width\">\n    </head>\n    <body>\n\n        <style type = \"text/css\">\n\n            body {overflow: hidden; background-color: #eee;}\n            div {margin: 0; padding: 0}\n            embed {width: 99vw; min-height: 100vh; margin: 0; padding: 0;}\n\n        </style>\n\n        <div>\n            <embed type=\"application/pdf\" src=\"//2024.sci-hub.se/6592/de1e4a7fd8120b882ddd99a761d76a1d/hardy2002.pdf#navpanes=0&view=FitH\" id = \"pdf\"></embed>\n        </div>\n    \n    </body>\n</html>",
+      "full_length": 646,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.se",
+      "doi": "10.1038/nature12373",
+      "html": "<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub : {title} [{doi}]</title>\n        <meta charset = \"UTF-8\">\n        <meta name = \"viewport\" content = \"width=device-width\">\n    </head>\n    <body>\n\n        <style type = \"text/css\">\n\n            body {overflow: hidden; background-color: #eee;}\n            div {margin: 0; padding: 0}\n            embed {width: 99vw; min-height: 100vh; margin: 0; padding: 0;}\n\n        </style>\n\n        <div>\n            <embed type=\"application/pdf\" src=\"//2024.sci-hub.se/2161/f1fa2076e55135dec9460db8704912d7/kucsko2013.pdf#navpanes=0&view=FitH\" id = \"pdf\"></embed>\n        </div>\n    \n    </body>\n</html>",
+      "full_length": 647,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.se",
+      "doi": "10.1016/j.cell.2013.05.039",
+      "html": "<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub : {title} [{doi}]</title>\n        <meta charset = \"UTF-8\">\n        <meta name = \"viewport\" content = \"width=device-width\">\n    </head>\n    <body>\n\n        <style type = \"text/css\">\n\n            body {overflow: hidden; background-color: #eee;}\n            div {margin: 0; padding: 0}\n            embed {width: 99vw; min-height: 100vh; margin: 0; padding: 0;}\n\n        </style>\n\n        <div>\n            <embed type=\"application/pdf\" src=\"//2024.sci-hub.se/6718/e9f0166c699bfae8d3588b62e381560a/10.1016@j.cell.2013.05.039.pdf#navpanes=0&view=FitH\" id = \"pdf\"></embed>\n        </div>\n    \n    </body>\n</html>",
+      "full_length": 663,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ru",
+      "doi": "10.1126/science.1058040",
+      "html": "<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub : {title} [{doi}]</title>\n        <meta charset = \"UTF-8\">\n        <meta name = \"viewport\" content = \"width=device-width\">\n    </head>\n    <body>\n\n        <style type = \"text/css\">\n\n            body {overflow: hidden; background-color: #eee;}\n            div {margin: 0; padding: 0}\n            embed {width: 99vw; min-height: 100vh; margin: 0; padding: 0;}\n\n        </style>\n\n        <div>\n            <embed type=\"application/pdf\" src=\"//2024.sci-hub.ru/6869/a5720a41f3ba600c32f171a17f407f8c/venter2001.pdf#navpanes=0&view=FitH\" id = \"pdf\"></embed>\n        </div>\n    \n    </body>\n</html>",
+      "full_length": 647,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ru",
+      "doi": "10.1038/35057062",
+      "html": "<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub : {title} [{doi}]</title>\n        <meta charset = \"UTF-8\">\n        <meta name = \"viewport\" content = \"width=device-width\">\n    </head>\n    <body>\n\n        <style type = \"text/css\">\n\n            body {overflow: hidden; background-color: #eee;}\n            div {margin: 0; padding: 0}\n            embed {width: 99vw; min-height: 100vh; margin: 0; padding: 0;}\n\n        </style>\n\n        <div>\n            <embed type=\"application/pdf\" src=\"//2024.sci-hub.ru/6753/0c279516311a003cd472ea5e75cf1430/initial-sequencing-and-analysis-of-the-human-genome-2001.pdf#navpanes=0&view=FitH\" id = \"pdf\"></embed>\n        </div>\n    \n    </body>\n</html>",
+      "full_length": 693,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ru",
+      "doi": "10.1126/science.1072994",
+      "html": "<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub : {title} [{doi}]</title>\n        <meta charset = \"UTF-8\">\n        <meta name = \"viewport\" content = \"width=device-width\">\n    </head>\n    <body>\n\n        <style type = \"text/css\">\n\n            body {overflow: hidden; background-color: #eee;}\n            div {margin: 0; padding: 0}\n            embed {width: 99vw; min-height: 100vh; margin: 0; padding: 0;}\n\n        </style>\n\n        <div>\n            <embed type=\"application/pdf\" src=\"//2024.sci-hub.ru/6592/de1e4a7fd8120b882ddd99a761d76a1d/hardy2002.pdf#navpanes=0&view=FitH\" id = \"pdf\"></embed>\n        </div>\n    \n    </body>\n</html>",
+      "full_length": 646,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ru",
+      "doi": "10.1038/nature12373",
+      "html": "<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub : {title} [{doi}]</title>\n        <meta charset = \"UTF-8\">\n        <meta name = \"viewport\" content = \"width=device-width\">\n    </head>\n    <body>\n\n        <style type = \"text/css\">\n\n            body {overflow: hidden; background-color: #eee;}\n            div {margin: 0; padding: 0}\n            embed {width: 99vw; min-height: 100vh; margin: 0; padding: 0;}\n\n        </style>\n\n        <div>\n            <embed type=\"application/pdf\" src=\"//2024.sci-hub.ru/2161/f1fa2076e55135dec9460db8704912d7/kucsko2013.pdf#navpanes=0&view=FitH\" id = \"pdf\"></embed>\n        </div>\n    \n    </body>\n</html>",
+      "full_length": 647,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ru",
+      "doi": "10.1016/j.cell.2013.05.039",
+      "html": "<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub : {title} [{doi}]</title>\n        <meta charset = \"UTF-8\">\n        <meta name = \"viewport\" content = \"width=device-width\">\n    </head>\n    <body>\n\n        <style type = \"text/css\">\n\n            body {overflow: hidden; background-color: #eee;}\n            div {margin: 0; padding: 0}\n            embed {width: 99vw; min-height: 100vh; margin: 0; padding: 0;}\n\n        </style>\n\n        <div>\n            <embed type=\"application/pdf\" src=\"//2024.sci-hub.ru/6718/e9f0166c699bfae8d3588b62e381560a/10.1016@j.cell.2013.05.039.pdf#navpanes=0&view=FitH\" id = \"pdf\"></embed>\n        </div>\n    \n    </body>\n</html>",
+      "full_length": 663,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ren",
+      "doi": "10.1126/science.1058040",
+      "html": "\n<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub | The Sequence of the Human Genome | 10.1126/science.1058040</title>\n        <meta charset=\"UTF-8\">\n        <meta name=\"viewport\" content=\"width=device-width\">\n        <script src=\"//img.sci-hub.shop/scripts/jquery-3.6.0.min.js\"></script>\n    </head>\n    <body>\n    <script type = \"text/javascript\">\n        \n        var menu;\n        var article;\n        var position;\n        function rollupi()\n        {\n            position = position - 2;\n            menu.style.left = position.toString() + 'vw';\n            article.style.left = (position + 20).toString() + 'vw';\n            article.style.width = (80 - position).toString() + 'vw';\n            if (position > -20)\n                setTimeout(rollupi, 33);\n            else\n                document.getElementById('rollback').style.display = 'block';\n        }\n        function rollup()\n        {\n            $.get(\"//sci-hub.ren/rollup/on?rand=\" + (Math.random() + 1).toString(36).substring(7));\n            menu = document.getElementById('minu');\n            article = document.getElementById('article');\n            position = 0;\n            rollupi();\n        }\n        function rollbacki()\n        {\n            position = position + 2;\n            menu.style.left = position.toString() + 'vw';\n            article.style.left = (position + 20).toString() + 'vw';\n            article.style.width = (80 - position).toString() + 'vw';\n            if (position < 0)\n                setTimeout(rollbacki, 33);\n        }\n        function rollback()\n        {\n            $.get(\"//sci-hub.ren/rollup/off?rand=\" + (Math.random() + 1).toString(36).substring(7));\n            menu = document.getElementById('minu');\n            article = document.getElementById('article');\n            document.getElementById('rollback').style.display = 'none';\n            document.getElementById('roll').style.display = 'block';\n            position = -20;\n            rollbacki();\n        }\n        functi",
+      "full_length": 8062,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ren",
+      "doi": "10.1038/35057062",
+      "html": "\n<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub | Initial sequencing and analysis of the human genome | 10.1038/35057062</title>\n        <meta charset=\"UTF-8\">\n        <meta name=\"viewport\" content=\"width=device-width\">\n        <script src=\"//img.sci-hub.shop/scripts/jquery-3.6.0.min.js\"></script>\n    </head>\n    <body>\n    <script type = \"text/javascript\">\n        \n        var menu;\n        var article;\n        var position;\n        function rollupi()\n        {\n            position = position - 2;\n            menu.style.left = position.toString() + 'vw';\n            article.style.left = (position + 20).toString() + 'vw';\n            article.style.width = (80 - position).toString() + 'vw';\n            if (position > -20)\n                setTimeout(rollupi, 33);\n            else\n                document.getElementById('rollback').style.display = 'block';\n        }\n        function rollup()\n        {\n            $.get(\"//sci-hub.ren/rollup/on?rand=\" + (Math.random() + 1).toString(36).substring(7));\n            menu = document.getElementById('minu');\n            article = document.getElementById('article');\n            position = 0;\n            rollupi();\n        }\n        function rollbacki()\n        {\n            position = position + 2;\n            menu.style.left = position.toString() + 'vw';\n            article.style.left = (position + 20).toString() + 'vw';\n            article.style.width = (80 - position).toString() + 'vw';\n            if (position < 0)\n                setTimeout(rollbacki, 33);\n        }\n        function rollback()\n        {\n            $.get(\"//sci-hub.ren/rollup/off?rand=\" + (Math.random() + 1).toString(36).substring(7));\n            menu = document.getElementById('minu');\n            article = document.getElementById('article');\n            document.getElementById('rollback').style.display = 'none';\n            document.getElementById('roll').style.display = 'block';\n            position = -20;\n            rollbacki();\n        }\n  ",
+      "full_length": 8218,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ren",
+      "doi": "10.1126/science.1072994",
+      "html": "\n<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub | The Amyloid Hypothesis of Alzheimer&#39;s Disease: Progress and Problems on the Road to Therapeutics | 10.1126/science.1072994</title>\n        <meta charset=\"UTF-8\">\n        <meta name=\"viewport\" content=\"width=device-width\">\n        <script src=\"//img.sci-hub.shop/scripts/jquery-3.6.0.min.js\"></script>\n    </head>\n    <body>\n    <script type = \"text/javascript\">\n        \n        var menu;\n        var article;\n        var position;\n        function rollupi()\n        {\n            position = position - 2;\n            menu.style.left = position.toString() + 'vw';\n            article.style.left = (position + 20).toString() + 'vw';\n            article.style.width = (80 - position).toString() + 'vw';\n            if (position > -20)\n                setTimeout(rollupi, 33);\n            else\n                document.getElementById('rollback').style.display = 'block';\n        }\n        function rollup()\n        {\n            $.get(\"//sci-hub.ren/rollup/on?rand=\" + (Math.random() + 1).toString(36).substring(7));\n            menu = document.getElementById('minu');\n            article = document.getElementById('article');\n            position = 0;\n            rollupi();\n        }\n        function rollbacki()\n        {\n            position = position + 2;\n            menu.style.left = position.toString() + 'vw';\n            article.style.left = (position + 20).toString() + 'vw';\n            article.style.width = (80 - position).toString() + 'vw';\n            if (position < 0)\n                setTimeout(rollbacki, 33);\n        }\n        function rollback()\n        {\n            $.get(\"//sci-hub.ren/rollup/off?rand=\" + (Math.random() + 1).toString(36).substring(7));\n            menu = document.getElementById('minu');\n            article = document.getElementById('article');\n            document.getElementById('rollback').style.display = 'none';\n            document.getElementById('roll').style.display = 'block';\n         ",
+      "full_length": 8199,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ren",
+      "doi": "10.1038/nature12373",
+      "html": "\n<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub | Nanometre-scale thermometry in a living cell | 10.1038/nature12373</title>\n        <meta charset=\"UTF-8\">\n        <meta name=\"viewport\" content=\"width=device-width\">\n        <script src=\"//img.sci-hub.shop/scripts/jquery-3.6.0.min.js\"></script>\n    </head>\n    <body>\n    <script type = \"text/javascript\">\n        \n        var menu;\n        var article;\n        var position;\n        function rollupi()\n        {\n            position = position - 2;\n            menu.style.left = position.toString() + 'vw';\n            article.style.left = (position + 20).toString() + 'vw';\n            article.style.width = (80 - position).toString() + 'vw';\n            if (position > -20)\n                setTimeout(rollupi, 33);\n            else\n                document.getElementById('rollback').style.display = 'block';\n        }\n        function rollup()\n        {\n            $.get(\"//sci-hub.ren/rollup/on?rand=\" + (Math.random() + 1).toString(36).substring(7));\n            menu = document.getElementById('minu');\n            article = document.getElementById('article');\n            position = 0;\n            rollupi();\n        }\n        function rollbacki()\n        {\n            position = position + 2;\n            menu.style.left = position.toString() + 'vw';\n            article.style.left = (position + 20).toString() + 'vw';\n            article.style.width = (80 - position).toString() + 'vw';\n            if (position < 0)\n                setTimeout(rollbacki, 33);\n        }\n        function rollback()\n        {\n            $.get(\"//sci-hub.ren/rollup/off?rand=\" + (Math.random() + 1).toString(36).substring(7));\n            menu = document.getElementById('minu');\n            article = document.getElementById('article');\n            document.getElementById('rollback').style.display = 'none';\n            document.getElementById('roll').style.display = 'block';\n            position = -20;\n            rollbacki();\n        }\n      ",
+      "full_length": 8154,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ren",
+      "doi": "10.1016/j.cell.2013.05.039",
+      "html": "\n<!DOCTYPE html>\n<html>\n    <head>\n        <title>Sci-Hub | The Hallmarks of Aging | 10.1016/j.cell.2013.05.039</title>\n        <meta charset=\"UTF-8\">\n        <meta name=\"viewport\" content=\"width=device-width\">\n        <script src=\"//img.sci-hub.shop/scripts/jquery-3.6.0.min.js\"></script>\n    </head>\n    <body>\n    <script type = \"text/javascript\">\n        \n        var menu;\n        var article;\n        var position;\n        function rollupi()\n        {\n            position = position - 2;\n            menu.style.left = position.toString() + 'vw';\n            article.style.left = (position + 20).toString() + 'vw';\n            article.style.width = (80 - position).toString() + 'vw';\n            if (position > -20)\n                setTimeout(rollupi, 33);\n            else\n                document.getElementById('rollback').style.display = 'block';\n        }\n        function rollup()\n        {\n            $.get(\"//sci-hub.ren/rollup/on?rand=\" + (Math.random() + 1).toString(36).substring(7));\n            menu = document.getElementById('minu');\n            article = document.getElementById('article');\n            position = 0;\n            rollupi();\n        }\n        function rollbacki()\n        {\n            position = position + 2;\n            menu.style.left = position.toString() + 'vw';\n            article.style.left = (position + 20).toString() + 'vw';\n            article.style.width = (80 - position).toString() + 'vw';\n            if (position < 0)\n                setTimeout(rollbacki, 33);\n        }\n        function rollback()\n        {\n            $.get(\"//sci-hub.ren/rollup/off?rand=\" + (Math.random() + 1).toString(36).substring(7));\n            menu = document.getElementById('minu');\n            article = document.getElementById('article');\n            document.getElementById('rollback').style.display = 'none';\n            document.getElementById('roll').style.display = 'block';\n            position = -20;\n            rollbacki();\n        }\n        function roll",
+      "full_length": 8130,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ee",
+      "doi": "10.1126/science.1058040",
+      "html": "<html>\n<head>\n    <title>Sci-Hub | The Sequence of the Human Genome | 10.1126/science.1058040</title>\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"viewport\" content=\"width=device-width\"/>\n<script src=\"//img.sci-hub.shop/scihub/jquery-3.3.1.min.js\"></script>\n</head>\n<body>\n<script type = \"text/javascript\">\n        function clip(element)\n        {\n          var $temp = $(\"<input>\");\n          $(\"body\").append($temp);\n          $temp.val($(element).text()).select();\n          document.execCommand(\"copy\");\n          $temp.remove();\n        }\n</script>\n<style type=\"text/css\">\n            html,\n            body {\n                height: 100%;\n                width: 100%;\n                margin: 0;\n                overflow: hidden;\n            }\n            div {\n                font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif;\n            }\n\n            #menu {\n                width: 370px;\n                height: 100%;\n                position: fixed;\n                z-index: 1;\n                top: 0;\n                left: 0;\n                background-color: white;\n                overflow-x: hidden;\n            }\n\n            #header {\n                cursor: pointer;\n            }\n            #logo {\n                background: url(\"//img.sci-hub.shop/scihub/ravenround.gif\") no-repeat;\n                width: 165px;\n                height: 157px;\n                margin-left: 18px;\n            }\n            #sci {\n                background: #bbb;\n                color: white;\n                margin: 50px 0 0 10px;\n                padding: 5px 20px 5px 25px;\n                font-size: 38px;\n            }\n            #sci:hover {\n                background: #b22222;\n            }\n            #motto {\n                color: #999;\n                margin: 18px 0 0 24px;\n                font-size: 18px;\n            }\n\n            #buttons {\n                margin-top: 30px;\n                width: 100%;\n                font-size: 22px;\n      ",
+      "full_length": 7865,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ee",
+      "doi": "10.1038/35057062",
+      "html": "<html>\n<head>\n    <title>Sci-Hub | Initial sequencing and analysis of the human genome | 10.1038/35057062</title>\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"viewport\" content=\"width=device-width\"/>\n<script src=\"//img.sci-hub.shop/scihub/jquery-3.3.1.min.js\"></script>\n</head>\n<body>\n<script type = \"text/javascript\">\n        function clip(element)\n        {\n          var $temp = $(\"<input>\");\n          $(\"body\").append($temp);\n          $temp.val($(element).text()).select();\n          document.execCommand(\"copy\");\n          $temp.remove();\n        }\n</script>\n<style type=\"text/css\">\n            html,\n            body {\n                height: 100%;\n                width: 100%;\n                margin: 0;\n                overflow: hidden;\n            }\n            div {\n                font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif;\n            }\n\n            #menu {\n                width: 370px;\n                height: 100%;\n                position: fixed;\n                z-index: 1;\n                top: 0;\n                left: 0;\n                background-color: white;\n                overflow-x: hidden;\n            }\n\n            #header {\n                cursor: pointer;\n            }\n            #logo {\n                background: url(\"//img.sci-hub.shop/scihub/ravenround.gif\") no-repeat;\n                width: 165px;\n                height: 157px;\n                margin-left: 18px;\n            }\n            #sci {\n                background: #bbb;\n                color: white;\n                margin: 50px 0 0 10px;\n                padding: 5px 20px 5px 25px;\n                font-size: 38px;\n            }\n            #sci:hover {\n                background: #b22222;\n            }\n            #motto {\n                color: #999;\n                margin: 18px 0 0 24px;\n                font-size: 18px;\n            }\n\n            #buttons {\n                margin-top: 30px;\n                width: 100%;\n                font-size: ",
+      "full_length": 8021,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ee",
+      "doi": "10.1126/science.1072994",
+      "html": "<html>\n<head>\n    <title>Sci-Hub | The Amyloid Hypothesis of Alzheimer&#39;s Disease: Progress and Problems on the Road to Therapeutics | 10.1126/science.1072994</title>\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"viewport\" content=\"width=device-width\"/>\n<script src=\"//img.sci-hub.shop/scihub/jquery-3.3.1.min.js\"></script>\n</head>\n<body>\n<script type = \"text/javascript\">\n        function clip(element)\n        {\n          var $temp = $(\"<input>\");\n          $(\"body\").append($temp);\n          $temp.val($(element).text()).select();\n          document.execCommand(\"copy\");\n          $temp.remove();\n        }\n</script>\n<style type=\"text/css\">\n            html,\n            body {\n                height: 100%;\n                width: 100%;\n                margin: 0;\n                overflow: hidden;\n            }\n            div {\n                font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif;\n            }\n\n            #menu {\n                width: 370px;\n                height: 100%;\n                position: fixed;\n                z-index: 1;\n                top: 0;\n                left: 0;\n                background-color: white;\n                overflow-x: hidden;\n            }\n\n            #header {\n                cursor: pointer;\n            }\n            #logo {\n                background: url(\"//img.sci-hub.shop/scihub/ravenround.gif\") no-repeat;\n                width: 165px;\n                height: 157px;\n                margin-left: 18px;\n            }\n            #sci {\n                background: #bbb;\n                color: white;\n                margin: 50px 0 0 10px;\n                padding: 5px 20px 5px 25px;\n                font-size: 38px;\n            }\n            #sci:hover {\n                background: #b22222;\n            }\n            #motto {\n                color: #999;\n                margin: 18px 0 0 24px;\n                font-size: 18px;\n            }\n\n            #buttons {\n                margin-top: 30px;\n",
+      "full_length": 8002,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ee",
+      "doi": "10.1038/nature12373",
+      "html": "<html>\n<head>\n    <title>Sci-Hub | Nanometre-scale thermometry in a living cell | 10.1038/nature12373</title>\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"viewport\" content=\"width=device-width\"/>\n<script src=\"//img.sci-hub.shop/scihub/jquery-3.3.1.min.js\"></script>\n</head>\n<body>\n<script type = \"text/javascript\">\n        function clip(element)\n        {\n          var $temp = $(\"<input>\");\n          $(\"body\").append($temp);\n          $temp.val($(element).text()).select();\n          document.execCommand(\"copy\");\n          $temp.remove();\n        }\n</script>\n<style type=\"text/css\">\n            html,\n            body {\n                height: 100%;\n                width: 100%;\n                margin: 0;\n                overflow: hidden;\n            }\n            div {\n                font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif;\n            }\n\n            #menu {\n                width: 370px;\n                height: 100%;\n                position: fixed;\n                z-index: 1;\n                top: 0;\n                left: 0;\n                background-color: white;\n                overflow-x: hidden;\n            }\n\n            #header {\n                cursor: pointer;\n            }\n            #logo {\n                background: url(\"//img.sci-hub.shop/scihub/ravenround.gif\") no-repeat;\n                width: 165px;\n                height: 157px;\n                margin-left: 18px;\n            }\n            #sci {\n                background: #bbb;\n                color: white;\n                margin: 50px 0 0 10px;\n                padding: 5px 20px 5px 25px;\n                font-size: 38px;\n            }\n            #sci:hover {\n                background: #b22222;\n            }\n            #motto {\n                color: #999;\n                margin: 18px 0 0 24px;\n                font-size: 18px;\n            }\n\n            #buttons {\n                margin-top: 30px;\n                width: 100%;\n                font-size: 22px",
+      "full_length": 7957,
+      "success": true
+    },
+    {
+      "mirror": "https://sci-hub.ee",
+      "doi": "10.1016/j.cell.2013.05.039",
+      "html": "<html>\n<head>\n    <title>Sci-Hub | The Hallmarks of Aging | 10.1016/j.cell.2013.05.039</title>\n    <meta charset=\"UTF-8\"/>\n    <meta name=\"viewport\" content=\"width=device-width\"/>\n<script src=\"//img.sci-hub.shop/scihub/jquery-3.3.1.min.js\"></script>\n</head>\n<body>\n<script type = \"text/javascript\">\n        function clip(element)\n        {\n          var $temp = $(\"<input>\");\n          $(\"body\").append($temp);\n          $temp.val($(element).text()).select();\n          document.execCommand(\"copy\");\n          $temp.remove();\n        }\n</script>\n<style type=\"text/css\">\n            html,\n            body {\n                height: 100%;\n                width: 100%;\n                margin: 0;\n                overflow: hidden;\n            }\n            div {\n                font-family: -apple-system, BlinkMacSystemFont, Roboto, Helvetica Neue, sans-serif;\n            }\n\n            #menu {\n                width: 370px;\n                height: 100%;\n                position: fixed;\n                z-index: 1;\n                top: 0;\n                left: 0;\n                background-color: white;\n                overflow-x: hidden;\n            }\n\n            #header {\n                cursor: pointer;\n            }\n            #logo {\n                background: url(\"//img.sci-hub.shop/scihub/ravenround.gif\") no-repeat;\n                width: 165px;\n                height: 157px;\n                margin-left: 18px;\n            }\n            #sci {\n                background: #bbb;\n                color: white;\n                margin: 50px 0 0 10px;\n                padding: 5px 20px 5px 25px;\n                font-size: 38px;\n            }\n            #sci:hover {\n                background: #b22222;\n            }\n            #motto {\n                color: #999;\n                margin: 18px 0 0 24px;\n                font-size: 18px;\n            }\n\n            #buttons {\n                margin-top: 30px;\n                width: 100%;\n                font-size: 22px;\n            }",
+      "full_length": 7933,
+      "success": true
+    }
+  ],
+  "errors": {}
+}

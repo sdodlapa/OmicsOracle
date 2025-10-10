@@ -21,7 +21,7 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
+from omics_oracle_v2.lib.publications.citations.citation_finder import CitationFinder
 from omics_oracle_v2.lib.publications.clients.openalex import OpenAlexClient, OpenAlexConfig
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
@@ -109,10 +109,9 @@ def test_citation_analyzer():
     openalex_client = OpenAlexClient(openalex_config)
 
     # Create citation analyzer (OpenAlex only, no Scholar)
-    analyzer = CitationAnalyzer(
-        openalex_client=openalex_client,
-        scholar_client=None,  # Disabled
-        semantic_scholar_client=None,
+    finder = CitationFinder(
+        openalex_client=openalex,
+        semantic_scholar_client=semantic_scholar,
     )
 
     print("✓ Citation analyzer initialized")

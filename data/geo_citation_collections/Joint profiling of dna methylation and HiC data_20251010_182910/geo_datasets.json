@@ -1,0 +1,150 @@
+[
+  {
+    "geo_id": "GSE251935",
+    "title": "Tunable DNMT1 degradation reveals cooperation of DNMT1 and DNMT3B in regulating DNA methylation dynamics and genome organization",
+    "summary": "This SuperSeries is composed of the SubSeries listed below.",
+    "pubmed_ids": [
+      "38376465"
+    ],
+    "sample_count": 14
+  },
+  {
+    "geo_id": "GSE251934",
+    "title": "Tunable DNMT1 degradation reveals cooperation of DNMT1 and DNMT3B in regulating DNA methylation dynamics and genome organization (Hi-C).",
+    "summary": "DNA methylation (DNAme) is a key epigenetic mark that regulates critical biological processes maintaining overall genome stability. Given its pleiotropic function, studies of DNAme dynamics are crucial, but currently available tools to interfere with DNAme have limitations and major cytotoxic side effects. Here, we present cell models that allow inducible and reversible DNAme modulation through DNMT1 depletion. By dynamically assessing whole genome and locus-specific effects of induced passive demethylation through cell divisions, we reveal a cooperative activity between DNMT1 and DNMT3B, but not of DNMT3A, to maintain and control DNAme. We show that gradual loss of DNAme is accompanied by progressive and reversible changes in heterochromatin, compartmentalization, and peripheral localization. DNA methylation loss coincided with a gradual reduction of cell fitness due to G1 arrest, but with minor level of mitotic failure. Altogether, this system allows DNMTs and DNA methylation studies with fine temporal resolution, which may help to reveal the etiologic link between DNAme dysfunction and human disease.",
+    "pubmed_ids": [
+      "38376465"
+    ],
+    "sample_count": 7
+  },
+  {
+    "geo_id": "GSE242400",
+    "title": "DNA Methylation-Based High-Resolution Mapping of Long-Distance Chromosomal Interactions in Nucleosome-Depleted Regions",
+    "summary": "This SuperSeries is composed of the SubSeries listed below.",
+    "pubmed_ids": [
+      "38778058"
+    ],
+    "sample_count": 82
+  },
+  {
+    "geo_id": "GSE242396",
+    "title": "DNA Methylation-Based High-Resolution Mapping of Long-Distance Chromosomal Interactions in Nucleosome-Depleted Regions (HiC)",
+    "summary": "Here, we present Methyltransferase Targeting-based chromosome Architecture Capture (MTAC), a method that maps the contacts between a target site (viewpoint) and the rest of the genome with high resolution and sensitivity. By targeting M.CviPI DNA methyltransferase to the viewpoint and by detecting differentially methylated regions, MTAC detects hundreds of intra- and inter-chromosomal interactions in the budding yeast genome that cannot be captured by  4C, Hi-C, or Micro-C.",
+    "pubmed_ids": [
+      "38778058"
+    ],
+    "sample_count": 6
+  },
+  {
+    "geo_id": "GSE232499",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c51_h1930004_SEP",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2784
+  },
+  {
+    "geo_id": "GSE232495",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c50_h1930004_MTG",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2955
+  },
+  {
+    "geo_id": "GSE232494",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c49_h1930004_GPe",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2995
+  },
+  {
+    "geo_id": "GSE232492",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c48_h1930004_A24",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2942
+  },
+  {
+    "geo_id": "GSE232442",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c47_h1930004_Pir",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2989
+  },
+  {
+    "geo_id": "GSE232420",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c46_h1930004_NAC",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2853
+  },
+  {
+    "geo_id": "GSE232321",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c45_h1930004_A46",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2928
+  },
+  {
+    "geo_id": "GSE232229",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c44_h1930004_FI",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2953
+  },
+  {
+    "geo_id": "GSE232210",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c43_h1930004_LEC",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2985
+  },
+  {
+    "geo_id": "GSE232116",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c42_h1930004_CMN",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2938
+  },
+  {
+    "geo_id": "GSE232006",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c41_h1930004_AMY",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2970
+  },
+  {
+    "geo_id": "GSE223696",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c34_h1930001_NAC",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2995
+  },
+  {
+    "geo_id": "GSE223633",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c33_h1930002_SEP",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 3026
+  },
+  {
+    "geo_id": "GSE223563",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c40_h1930004_SI",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2937
+  },
+  {
+    "geo_id": "GSE223547",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c32_h1930001_SEP",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2847
+  },
+  {
+    "geo_id": "GSE223443",
+    "title": "Epigenetic landscape of Human Brains by Single Nucleus DNA Methylation and Chromatin Conformation Profiling - m3c39_h1930004_CaB",
+    "summary": "Illustrating the cellular architecture of the human brain is critical to understanding its diverse functions and complex animal behaviors. Single nucleus methylation sequencing was applied to regions of human brains. we identified distinct cell clusters and formed them in a hierarchical taxonomy. These clusters include known primary brain cell types and possible sub-types. We use these data to identify the epigenomic characteristics and to define specific regulatory elements for each cell cluster.",
+    "pubmed_ids": [],
+    "sample_count": 2968
+  }
+]

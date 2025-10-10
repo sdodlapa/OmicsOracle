@@ -1,0 +1,172 @@
+{
+  "timestamp": "2025-10-10 16:13:05",
+  "total_papers": 92,
+  "found": 92,
+  "coverage_percentage": 100.0,
+  "elapsed_seconds": 12.194538831710815,
+  "seconds_per_paper": 0.13254933512729147,
+  "sources": {
+    "institutional": 92
+  },
+  "by_type": {
+    "paywalled": {
+      "total": 55,
+      "found": 55
+    },
+    "OA": {
+      "total": 22,
+      "found": 22
+    },
+    "hybrid": {
+      "total": 7,
+      "found": 7
+    },
+    "preprint": {
+      "total": 5,
+      "found": 5
+    },
+    "retracted": {
+      "total": 1,
+      "found": 1
+    },
+    "book": {
+      "total": 1,
+      "found": 1
+    },
+    "conference": {
+      "total": 1,
+      "found": 1
+    }
+  },
+  "by_publisher": {
+    "Science": {
+      "total": 7,
+      "found": 7
+    },
+    "Nature": {
+      "total": 10,
+      "found": 10
+    },
+    "Cell": {
+      "total": 7,
+      "found": 7
+    },
+    "Lancet": {
+      "total": 2,
+      "found": 2
+    },
+    "NEJM": {
+      "total": 1,
+      "found": 1
+    },
+    "Springer": {
+      "total": 1,
+      "found": 1
+    },
+    "Nat Genetics": {
+      "total": 1,
+      "found": 1
+    },
+    "Mol Cell": {
+      "total": 1,
+      "found": 1
+    },
+    "Neuron": {
+      "total": 1,
+      "found": 1
+    },
+    "Immunity": {
+      "total": 1,
+      "found": 1
+    },
+    "Cell Metab": {
+      "total": 1,
+      "found": 1
+    },
+    "Angew Chem": {
+      "total": 1,
+      "found": 1
+    },
+    "FEBS J": {
+      "total": 1,
+      "found": 1
+    },
+    "J Cell Physiol": {
+      "total": 1,
+      "found": 1
+    },
+    "JACS": {
+      "total": 2,
+      "found": 2
+    },
+    "Chem Rev": {
+      "total": 1,
+      "found": 1
+    },
+    "ACS Nano": {
+      "total": 1,
+      "found": 1
+    },
+    "Biochemistry": {
+      "total": 1,
+      "found": 1
+    },
+    "Chem Soc Rev": {
+      "total": 1,
+      "found": 1
+    },
+    "Energy Environ": {
+      "total": 1,
+      "found": 1
+    },
+    "Phys Rev Lett": {
+      "total": 1,
+      "found": 1
+    },
+    "Phys Rev D": {
+      "total": 1,
+      "found": 1
+    },
+    "Sci Immunol": {
+      "total": 1,
+      "found": 1
+    },
+    "Sci Transl Med": {
+      "total": 1,
+      "found": 1
+    },
+    "Brain": {
+      "total": 1,
+      "found": 1
+    },
+    "Hum Mol Genet": {
+      "total": 1,
+      "found": 1
+    },
+    "J Fluid Mech": {
+      "total": 1,
+      "found": 1
+    },
+    "Math Proc Camb": {
+      "total": 1,
+      "found": 1
+    },
+    "Autophagy": {
+      "total": 1,
+      "found": 1
+    },
+    "J Neural Eng": {
+      "total": 1,
+      "found": 1
+    },
+    "Mater Res Express": {
+      "total": 1,
+      "found": 1
+    },
+    "Wiley": {
+      "total": 1,
+      "found": 1
+    }
+  },
+  "not_found": []
+}
