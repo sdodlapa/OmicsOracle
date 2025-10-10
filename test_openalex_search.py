@@ -8,8 +8,8 @@ not just for citation analysis.
 
 import logging
 
-from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
+from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")

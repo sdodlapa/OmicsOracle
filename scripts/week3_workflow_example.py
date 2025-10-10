@@ -17,13 +17,13 @@ from datetime import datetime
 from pathlib import Path
 
 from omics_oracle_v2.lib.llm.client import LLMClient
+from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 from omics_oracle_v2.lib.publications.analysis.knowledge_graph import BiomarkerKnowledgeGraph
 from omics_oracle_v2.lib.publications.analysis.qa_system import DatasetQASystem
 from omics_oracle_v2.lib.publications.analysis.reports import DatasetImpactReportGenerator
 from omics_oracle_v2.lib.publications.analysis.trends import TemporalTrendAnalyzer
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 from omics_oracle_v2.lib.publications.models import Dataset
-from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
 
 def print_section(title: str, width: int = 80):

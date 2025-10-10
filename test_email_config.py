@@ -6,8 +6,8 @@ This verifies that your email (sdodl001@odu.edu) is properly configured
 for the "polite pool" which gives 10x faster rate limits.
 """
 
-from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
+from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 
 
 def test_email_config():

@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 async def test_pipeline_fulltext_enabled():
     """Test that pipeline initializes with Unpaywall and Sci-Hub enabled."""
-    from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
     from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
+    from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 
     print("=" * 80)
     print("TESTING: Pipeline FullText Configuration")

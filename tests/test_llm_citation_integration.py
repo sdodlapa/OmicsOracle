@@ -11,6 +11,7 @@ from unittest.mock import Mock, patch
 import pytest
 
 from omics_oracle_v2.lib.llm.client import LLMClient
+from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
 from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
 from omics_oracle_v2.lib.publications.citations.models import CitationContext, UsageAnalysis
@@ -22,7 +23,6 @@ from omics_oracle_v2.lib.publications.config import (
     PubMedConfig,
 )
 from omics_oracle_v2.lib.publications.models import Publication
-from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
 
 class TestLLMCitationIntegration:

@@ -10,6 +10,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
+from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 from omics_oracle_v2.lib.publications.analysis import (
     BiomarkerKnowledgeGraph,
     DatasetImpactReportGenerator,
@@ -19,7 +20,6 @@ from omics_oracle_v2.lib.publications.analysis import (
 from omics_oracle_v2.lib.publications.citations.models import UsageAnalysis
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
-from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
 
 class TestWeek3Integration:

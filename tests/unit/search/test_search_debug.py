@@ -7,8 +7,8 @@ import sys
 
 sys.path.insert(0, "/Users/sanjeevadodlapati/Downloads/Repos/OmicsOracle")
 
-from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
+from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 
 
 def test_search(query: str):

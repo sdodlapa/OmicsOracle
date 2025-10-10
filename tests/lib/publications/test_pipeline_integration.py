@@ -9,9 +9,9 @@ import unittest
 from datetime import datetime
 from unittest.mock import patch
 
+from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 from omics_oracle_v2.lib.publications.config import GoogleScholarConfig, PublicationSearchConfig, PubMedConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
-from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 
 
 class TestPipelineIntegration(unittest.TestCase):

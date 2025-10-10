@@ -17,8 +17,8 @@ from pathlib import Path
 # Add project to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
+from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")

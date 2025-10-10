@@ -278,8 +278,8 @@ class DashboardApp:
         with st.spinner(f"Searching for: {query}..."):
             try:
                 # Import search functionality
-                from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
                 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
+                from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 
                 # Create pipeline config
                 pipeline_config = PublicationSearchConfig(

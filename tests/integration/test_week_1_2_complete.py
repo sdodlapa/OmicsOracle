@@ -82,8 +82,8 @@ def test_pipeline_initialization():
     print("=" * 70)
 
     try:
-        from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
         from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
+        from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
 
         config = PublicationSearchConfig(
             enable_pubmed=True,
@@ -121,8 +121,8 @@ def test_pubmed_search():
     print("⚠️  This makes a real API call to NCBI PubMed")
 
     try:
-        from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
         from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
+        from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
 
         config = PublicationSearchConfig(
             enable_pubmed=True,
