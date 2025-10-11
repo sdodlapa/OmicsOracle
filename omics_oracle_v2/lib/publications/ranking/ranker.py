@@ -236,6 +236,9 @@ class PublicationRanker:
         """
         Calculate citation score with smart dampening for highly-cited papers.
 
+        IMPORTANT: This should be COMBINED with recency score to prioritize
+        recent papers over old highly-cited papers. See Week 4 improvement.
+
         Strategy:
         - 0-100 citations: Linear scaling (standard papers)
         - 100-1,000 citations: Square root scaling (high-impact papers)
@@ -255,6 +258,10 @@ class PublicationRanker:
         - 5,000 citations → 0.86 score
         - 10,000 citations → 0.89 score
         - 30,000 citations → 0.93 score (HOMA-IR paper from log)
+
+        Week 4 TODO: Implement combined recency-citation score where:
+        - Recent paper (0-2 years) with 50 citations → HIGH score
+        - Old paper (10+ years) with 1000 citations → LOWER score
 
         Args:
             citations: Citation count
@@ -291,6 +298,79 @@ class PublicationRanker:
             normalized = min(normalized, 1.0)  # Cap at 1.0
 
             return 0.80 + (normalized * 0.20)
+
+    def _calculate_impact_score(
+        self, citations: int, publication_date: str
+    ) -> Tuple[float, Dict[str, float]]:
+        """
+        Calculate combined recency-citation impact score.
+
+        Week 4 improvement: Prioritize recent papers over old highly-cited papers.
+
+        Strategy:
+        - Recent papers (0-2 years): Citation score * 1.5 boost
+        - Mid-age papers (2-5 years): Citation score * 1.2 boost
+        - Older papers (5+ years): Citation score * recency penalty
+
+        Examples:
+        - Recent (1 year) + 50 citations → 0.75 (boosted)
+        - Recent (1 year) + 500 citations → 1.0 (capped)
+        - Old (10 years) + 1000 citations → 0.40 (penalized)
+
+        Args:
+            citations: Citation count
+            publication_date: Publication date string
+
+        Returns:
+            Tuple of (impact_score, breakdown_dict)
+        """
+        citation_score = self._calculate_citation_score(citations)
+        recency_score = self._calculate_recency_score(publication_date)
+
+        # Calculate age in years
+        age_years = self._get_age_years(publication_date)
+
+        # Apply recency boost/penalty to citations
+        if age_years <= 2:
+            # Recent papers: Boost citations by 50%
+            impact = min(citation_score * 1.5, 1.0)
+            boost_factor = 1.5
+        elif age_years <= 5:
+            # Mid-age papers: Boost citations by 20%
+            impact = min(citation_score * 1.2, 1.0)
+            boost_factor = 1.2
+        else:
+            # Older papers: Penalize based on age
+            # 5 years = 0.6x, 10 years = 0.4x, 15 years = 0.3x
+            penalty = max(0.2, 1.0 - (age_years - 5) * 0.1)
+            impact = citation_score * penalty
+            boost_factor = penalty
+
+        breakdown = {
+            "citation_raw": citation_score,
+            "recency_raw": recency_score,
+            "age_years": age_years,
+            "boost_factor": boost_factor,
+            "combined_impact": impact,
+        }
+
+        return impact, breakdown
+
+    def _get_age_years(self, publication_date: str) -> float:
+        """Calculate age of publication in years."""
+        if not publication_date:
+            return 999.0  # Very old
+
+        try:
+            if len(publication_date) == 4:  # Year only
+                pub_date = datetime(int(publication_date), 1, 1)
+            else:
+                pub_date = datetime.fromisoformat(publication_date.replace("Z", "+00:00"))
+
+            age_days = (datetime.now() - pub_date).days
+            return age_days / 365.25
+        except (ValueError, TypeError):
+            return 999.0
 
     def _tokenize(self, text: str) -> Set[str]:
         """

@@ -187,7 +187,7 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
         Validate search input.
 
         Args:
-            input_data: Search input to validate
+            input_data: Search input to validate (can be SearchInput or dict)
 
         Returns:
             Validated search input
@@ -195,6 +195,19 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
         Raises:
             AgentValidationError: If validation fails
         """
+        # Convert dict to SearchInput if needed
+        if isinstance(input_data, dict):
+            # Handle dict input - convert to SearchInput
+            # Map 'query' to 'search_terms' if present
+            if "query" in input_data and "search_terms" not in input_data:
+                input_data["search_terms"] = [input_data.pop("query")]
+                input_data["original_query"] = input_data["search_terms"][0]
+
+            try:
+                input_data = SearchInput(**input_data)
+            except Exception as e:
+                raise AgentValidationError(f"Invalid input: {e}")
+
         # Pydantic already validates most constraints
         # Additional custom validation if needed
         if input_data.min_samples and input_data.min_samples < 1:

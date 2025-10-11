@@ -7,6 +7,7 @@ Supports parallel downloads with rate limiting.
 
 import asyncio
 import logging
+import ssl
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
@@ -165,9 +166,15 @@ class PDFDownloadManager:
                 filename = self._generate_filename(publication)
                 pdf_path = output_dir / filename
 
-                # Download
+                # Download with SSL context that doesn't verify certificates
+                # (needed for some academic publishers with cert issues)
                 timeout = aiohttp.ClientTimeout(total=self.timeout_seconds)
-                async with aiohttp.ClientSession(timeout=timeout) as session:
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+
+                connector = aiohttp.TCPConnector(ssl=ssl_context)
+                async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
                     async with session.get(url) as response:
                         if response.status != 200:
                             return DownloadResult(

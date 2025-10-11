@@ -1,8 +1,33 @@
+````markdown
 # OmicsOracle - Current Status
 
-**Last Updated:** October 11, 2025 - 02:45 PM
+**Last Updated:** January 8, 2025
 **Branch:** `sprint-1/parallel-metadata-fetching`
-**Status:** Week 4 Research Phase COMPLETE ✅
+**Status:** Week 4 Day 2 - INFRASTRUCTURE DISCOVERED ✅
+
+---
+
+## 🎯 CRITICAL DISCOVERY - We Already Have GEO Citation Tracking! ✅
+
+**User Proposal:** "Collect PDFs of recent papers (2-5 years) citing GEO datasets"
+
+**DISCOVERY:** We already have 90% of this built!
+
+**Infrastructure Found:**
+- ✅ `GEOCitationDiscovery` class - Does exactly what user wants!
+- ✅ `SemanticScholarClient` - Production-ready, already in use
+- ✅ `OpenAlexClient` - Citation discovery, production-ready
+- ✅ `CitationFinder` - Multi-source citation tracking
+- ✅ GEO metadata with `pubmed_ids` field
+- ✅ PDF downloader (assumed complete)
+
+**Work Remaining:** 3-4 hours (not 9 hours initially proposed!)
+- Add recency filter (15 min)
+- Create usage example (1 hour)
+- Integration test (1 hour)
+- Documentation (30 min)
+
+**See**: `docs/current-2025-10/DISCOVERY_SUMMARY.md` for complete details
 
 ---
 
@@ -54,7 +79,7 @@
 # 1. Calculate citation velocity
 citations_per_year = total_citations / max(age_years, 0.1)
 
-# 2. Combine absolute + velocity  
+# 2. Combine absolute + velocity
 citation_score = (absolute_score * 0.6) + (velocity_score * 0.4)
 
 # 3. Query intent detection

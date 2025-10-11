@@ -228,7 +228,7 @@ class FuzzyDeduplicationConfig:
         year_tolerance: Max year difference for same publication (handles preprints)
     """
 
-    enable: bool = True
+    enable: bool = False  # DISABLED - Too slow, basic dedup sufficient
     title_threshold: float = 85.0  # 0-100 fuzzy ratio
     author_threshold: float = 80.0  # 0-100 fuzzy ratio
     year_tolerance: int = 1  # Years
