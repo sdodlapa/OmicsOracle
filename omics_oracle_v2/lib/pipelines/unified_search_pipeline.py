@@ -487,6 +487,25 @@ class OmicsSearchPipeline:
         Returns:
             List of publications
         """
+        # Lazy initialize publication pipeline if not provided
+        if not self.publication_pipeline and self.config.enable_publication_search:
+            logger.info("Lazy initializing publication pipeline...")
+            try:
+                from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
+
+                pub_config = PublicationSearchConfig(
+                    enable_pubmed=True,
+                    enable_openalex=True,
+                    enable_scholar=False,  # Disable Scholar for now
+                    enable_citations=True,
+                    deduplication=True,
+                )
+                self.publication_pipeline = PublicationSearchPipeline(pub_config)
+                logger.info("Publication pipeline initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize publication pipeline: {e}")
+                return []
+
         if not self.publication_pipeline:
             logger.warning("Publication pipeline not initialized - skipping publication search")
             return []

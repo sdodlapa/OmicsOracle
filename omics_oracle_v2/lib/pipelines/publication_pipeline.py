@@ -112,6 +112,11 @@ class PublicationSearchPipeline:
         else:
             self.scholar_client = None
 
+        # Semantic Scholar for citation enrichment (FREE alternative to Google Scholar)
+        # Always enabled for citation metrics - no blocking/rate limit issues
+        logger.info("Initializing Semantic Scholar client for citation enrichment")
+        self.semantic_scholar_client = SemanticScholarClient(SemanticScholarConfig(enable=True))
+
         # Week 3: Citation analysis (Day 16-17 - NOW MULTI-SOURCE)
         if config.enable_citations:
             logger.info("Initializing citation analyzer with multi-source support")
@@ -221,16 +226,6 @@ class PublicationSearchPipeline:
             )
         else:
             self.fuzzy_deduplicator = None
-
-        # Semantic Scholar for citation enrichment (FREE alternative to Google Scholar)
-        # Always enabled for citation metrics - no blocking/rate limit issues
-        logger.info("Initializing Semantic Scholar client for citation enrichment")
-        self.semantic_scholar_client = SemanticScholarClient(SemanticScholarConfig(enable=True))
-
-        # Add Semantic Scholar to citation finder if citations are enabled
-        if self.citation_finder:
-            self.citation_finder.semantic_scholar = self.semantic_scholar_client
-            logger.info("Connected Semantic Scholar to citation finder for enrichment")
 
         # Day 26: Redis caching for 10-100x speedup
         if config.enable_cache:
