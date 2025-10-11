@@ -15,7 +15,7 @@ from omics_oracle_v2.lib.llm.prompts import (
     CLINICAL_TRANSLATION_ANALYSIS,
     DATASET_IMPACT_SYNTHESIS,
 )
-from omics_oracle_v2.lib.publications.citations.models import (
+from omics_oracle_v2.lib.citations.models import (
     ApplicationDomain,
     Biomarker,
     CitationContext,

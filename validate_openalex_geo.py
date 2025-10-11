@@ -5,7 +5,7 @@ Real-world validation: Find papers citing a GEO dataset.
 This demonstrates the complete workflow working end-to-end.
 """
 
-from omics_oracle_v2.lib.publications.clients.openalex import OpenAlexClient, OpenAlexConfig
+from omics_oracle_v2.lib.citations.clients.openalex import OpenAlexClient, OpenAlexConfig
 
 print("=" * 80)
 print("REAL-WORLD VALIDATION: GEO Dataset Citation Discovery")

@@ -20,7 +20,7 @@ from omics_oracle_v2.lib.geo.client import GEOClient
 from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.geo.query_builder import GEOQueryBuilder
 from omics_oracle_v2.lib.nlp.synonym_expansion import SynonymExpander
-from omics_oracle_v2.lib.publications.citations.geo_citation_discovery import (
+from omics_oracle_v2.lib.citations.discovery.geo_discovery import (
     CitationDiscoveryResult,
     GEOCitationDiscovery,
 )

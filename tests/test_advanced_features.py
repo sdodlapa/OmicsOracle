@@ -15,7 +15,7 @@ from omics_oracle_v2.lib.publications.analysis import (
     DatasetQASystem,
     TemporalTrendAnalyzer,
 )
-from omics_oracle_v2.lib.publications.citations.models import UsageAnalysis
+from omics_oracle_v2.lib.citations.models import UsageAnalysis
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
 
 

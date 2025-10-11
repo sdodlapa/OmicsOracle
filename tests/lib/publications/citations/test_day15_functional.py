@@ -7,7 +7,7 @@ external APIs or complex mocks.
 
 import datetime
 
-from omics_oracle_v2.lib.publications.citations.models import CitationContext, UsageAnalysis
+from omics_oracle_v2.lib.citations.models import CitationContext, UsageAnalysis
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
 
 
@@ -92,7 +92,7 @@ def test_citation_analyzer_structure():
     from unittest.mock import Mock
 
     from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
-    from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
+    from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
 
     # Create mock scholar client
     mock_scholar = Mock(spec=GoogleScholarClient)
@@ -117,7 +117,7 @@ def test_day_15_functionality_overview():
     from omics_oracle_v2.lib.llm.client import LLMClient
     from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
     from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
-    from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
+    from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
 
     # Create mocks
     mock_llm = Mock(spec=LLMClient)

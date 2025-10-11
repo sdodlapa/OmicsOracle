@@ -22,16 +22,16 @@ from omics_oracle_v2.lib.nlp.models import Entity, EntityType
 
 # Import synonym expansion (Phase 2B)
 from omics_oracle_v2.lib.nlp.synonym_expansion import SynonymExpander, SynonymExpansionConfig
-from omics_oracle_v2.lib.publications.citations.citation_finder import CitationFinder
+from omics_oracle_v2.lib.citations.discovery.finder import CitationFinder
 from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
 from omics_oracle_v2.lib.publications.clients.institutional_access import (
     InstitutionalAccessManager,
     InstitutionType,
 )
-from omics_oracle_v2.lib.publications.clients.openalex import OpenAlexClient, OpenAlexConfig
+from omics_oracle_v2.lib.citations.clients.openalex import OpenAlexClient, OpenAlexConfig
 from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
-from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
-from omics_oracle_v2.lib.publications.clients.semantic_scholar import (
+from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
+from omics_oracle_v2.lib.citations.clients.semantic_scholar import (
     SemanticScholarClient,
     SemanticScholarConfig,
 )

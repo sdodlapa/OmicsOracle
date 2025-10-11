@@ -9,7 +9,7 @@ import pytest
 
 from omics_oracle_v2.lib.llm.client import LLMClient
 from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
-from omics_oracle_v2.lib.publications.citations.models import CitationContext
+from omics_oracle_v2.lib.citations.models import CitationContext
 from omics_oracle_v2.lib.publications.models import Publication
 
 
@@ -197,7 +197,7 @@ class TestLLMCitationAnalyzer:
     def test_synthesize_dataset_impact(self, mock_llm_client, sample_cited_paper):
         """Test dataset impact synthesis."""
         # Create mock usage analyses
-        from omics_oracle_v2.lib.publications.citations.models import UsageAnalysis
+        from omics_oracle_v2.lib.citations.models import UsageAnalysis
 
         usage_analyses = [
             UsageAnalysis(
@@ -254,7 +254,7 @@ class TestLLMCitationAnalyzer:
 
     def test_biomarker_extraction(self, mock_llm_client, sample_cited_paper):
         """Test biomarker extraction from analyses."""
-        from omics_oracle_v2.lib.publications.citations.models import UsageAnalysis
+        from omics_oracle_v2.lib.citations.models import UsageAnalysis
 
         usage_analyses = [
             UsageAnalysis(
@@ -295,7 +295,7 @@ class TestLLMCitationAnalyzer:
 
     def test_domain_aggregation(self, mock_llm_client, sample_cited_paper):
         """Test application domain aggregation."""
-        from omics_oracle_v2.lib.publications.citations.models import UsageAnalysis
+        from omics_oracle_v2.lib.citations.models import UsageAnalysis
 
         usage_analyses = [
             UsageAnalysis(

@@ -9,7 +9,7 @@ import logging
 from typing import Dict, List
 
 from omics_oracle_v2.lib.llm.client import LLMClient
-from omics_oracle_v2.lib.publications.citations.models import UsageAnalysis
+from omics_oracle_v2.lib.citations.models import UsageAnalysis
 from omics_oracle_v2.lib.publications.models import Publication
 
 logger = logging.getLogger(__name__)

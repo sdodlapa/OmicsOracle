@@ -9,7 +9,7 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Set
 
-from omics_oracle_v2.lib.publications.citations.models import UsageAnalysis
+from omics_oracle_v2.lib.citations.models import UsageAnalysis
 from omics_oracle_v2.lib.publications.models import Publication
 
 logger = logging.getLogger(__name__)

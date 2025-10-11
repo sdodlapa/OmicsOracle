@@ -15,7 +15,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent))
 
-from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
+from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
 from omics_oracle_v2.lib.publications.config import GoogleScholarConfig
 
 

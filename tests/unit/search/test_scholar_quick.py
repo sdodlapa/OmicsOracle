@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
+from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
 from omics_oracle_v2.lib.publications.config import GoogleScholarConfig
 
 print("=" * 70)

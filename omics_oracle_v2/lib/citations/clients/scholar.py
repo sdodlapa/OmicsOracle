@@ -16,7 +16,7 @@ Features:
 - Robust error handling and retry logic
 
 Example:
-    >>> from omics_oracle_v2.lib.publications.clients.scholar import GoogleScholarClient
+    >>> from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
     >>> from omics_oracle_v2.lib.publications.config import GoogleScholarConfig
     >>>
     >>> config = GoogleScholarConfig(enable=True, rate_limit_seconds=5.0)
@@ -54,9 +54,9 @@ except ImportError:
 
 from omics_oracle_v2.core.exceptions import PublicationSearchError
 
-from ..config import GoogleScholarConfig
-from ..models import Publication, PublicationSource
-from .base import BasePublicationClient
+from omics_oracle_v2.lib.publications.config import GoogleScholarConfig
+from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.publications.clients.base import BasePublicationClient
 
 
 class GoogleScholarClient(BasePublicationClient):

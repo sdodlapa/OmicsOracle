@@ -12,7 +12,7 @@ API Documentation: https://docs.openalex.org/
 Rate Limits: 10 req/second for polite pool (with email), 1 req/second otherwise
 
 Example:
-    >>> from omics_oracle_v2.lib.publications.clients.openalex import OpenAlexClient
+    >>> from omics_oracle_v2.lib.citations.clients.openalex import OpenAlexClient
     >>>
     >>> client = OpenAlexClient(email="researcher@university.edu")
     >>>

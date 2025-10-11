@@ -8,7 +8,7 @@ API Documentation: https://api.semanticscholar.org/
 Rate Limits: 100 requests per 5 minutes (free tier)
 
 Example:
-    >>> from omics_oracle_v2.lib.publications.clients.semantic_scholar import SemanticScholarClient
+    >>> from omics_oracle_v2.lib.citations.clients.semantic_scholar import SemanticScholarClient
     >>> from omics_oracle_v2.lib.publications.config import SemanticScholarConfig
     >>>
     >>> config = SemanticScholarConfig()
