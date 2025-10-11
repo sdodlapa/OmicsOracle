@@ -171,6 +171,9 @@ class ContentExtractor:
         Returns:
             List of Figure objects
         """
+        if not figures:  # Handle None or empty list
+            return []
+
         result = []
         for i, fig in enumerate(figures):
             figure = Figure(
@@ -193,6 +196,9 @@ class ContentExtractor:
         Returns:
             List of Table objects
         """
+        if not tables:  # Handle None or empty list
+            return []
+
         result = []
         for i, tbl in enumerate(tables):
             table = Table(
@@ -217,6 +223,9 @@ class ContentExtractor:
         Returns:
             List of Reference objects
         """
+        if not references:  # Handle None or empty list
+            return []
+
         result = []
         for i, ref in enumerate(references):
             reference = Reference(

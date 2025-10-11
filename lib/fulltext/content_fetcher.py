@@ -7,6 +7,7 @@ and repositories, with proper rate limiting and error handling.
 
 import asyncio
 import logging
+import ssl
 from datetime import datetime
 from pathlib import Path
 from typing import Optional, Tuple
@@ -140,7 +141,12 @@ class ContentFetcher:
             try:
                 await self.rate_limiter.wait()
 
-                async with aiohttp.ClientSession() as session:
+                # Create SSL context that doesn't verify certificates (for demo)
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+
+                async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
                     async with session.get(self.efetch_base, params=params) as response:
                         if response.status == 200:
                             content = await response.text()
@@ -214,7 +220,12 @@ class ContentFetcher:
             try:
                 await self.rate_limiter.wait()
 
-                async with aiohttp.ClientSession() as session:
+                # Create SSL context that doesn't verify certificates (for demo)
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+
+                async with aiohttp.ClientSession(connector=aiohttp.TCPConnector(ssl=ssl_context)) as session:
                     async with session.get(url, timeout=aiohttp.ClientTimeout(total=60)) as response:
                         if response.status == 200:
                             content = await response.read()

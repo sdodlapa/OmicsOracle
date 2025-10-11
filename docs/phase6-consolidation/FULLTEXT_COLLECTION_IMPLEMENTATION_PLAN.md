@@ -2483,44 +2483,70 @@ class FullTextManager:
 
 ### Phase 1C: PDF Download Integration (Days 5-6)
 
-**Goal:** Integrate immediate PDF downloads with 60% success rate
+**Goal:** Integrate reliable PDF downloads for Tier 2-4 sources
 
-**UPDATED FROM ORIGINAL "PHASE 1B":**
+**⚠️ SIMPLIFIED APPROACH: Download PDFs, Defer Parsing**
+
+**Philosophy:**
+- **Download & Store** PDFs reliably for archival purposes
+- **Defer Parsing Decision** until we can evaluate all options:
+  - Traditional: GROBID, s2orc-doc2json, pdfplumber
+  - Modern: LLM-based extraction (GPT-4V, Claude with vision)
+  - Hybrid: LLM + traditional tools for validation
+- **Avoid Complexity** at this phase - focus on reliable acquisition
 
 **Tasks:**
 
-1. **Update `_try_unpaywall_content()`** (2 hours)
-   - Modify to download PDF immediately (copy from Component 3)
+1. **Update `_try_unpaywall_pdf()`** (2 hours)
+   - Download PDF immediately (use existing PDFDownloadManager)
    - Return `FullTextResult` with `pdf_path` populated
-   - Remove URL-only return logic
+   - Store URL for provenance
+   - **NO TEXT EXTRACTION** - just download and save
 
-2. **Update `_try_institutional_content()`** (2 hours)
+2. **Update `_try_institutional_pdf()`** (2 hours)
    - Same pattern as Unpaywall
-   - Download PDF immediately if institutional access available
+   - Download PDF if institutional access available
+   - **NO TEXT EXTRACTION**
 
-3. **Add PDF download retry logic** (1 hour)
-   - Enhance PDFDownloadManager with better retry
-   - Add timeout handling
+3. **Add `_try_arxiv_pdf()`, `_try_biorxiv_pdf()`** (3 hours)
+   - Implement PDF download from preprint servers
+   - Better success rate than publishers
+   - **NO TEXT EXTRACTION**
 
-4. **Create integration tests** (2 hours)
+4. **Enhance PDF download reliability** (2 hours)
+   - Better retry logic with exponential backoff
+   - Timeout handling (30s default)
+   - Validation (check PDF signature: `%PDF-`)
+   - Disk space checks
+
+5. **Create integration tests** (2 hours)
    - `tests/fulltext/test_pdf_downloads.py`
-   - `tests/fulltext/test_waterfall_integration.py`
+   - Test download success rates
+   - Test file validation
+   - Test cache behavior
 
-5. **End-to-end testing** (3 hours)
-   - Test PMC → Unpaywall fallback
+6. **End-to-end testing** (3 hours)
+   - Test PMC XML → Unpaywall PDF fallback
    - Test publications without PMC ID
    - Measure overall success rate
 
 **Testing:**
 - 50 publications with PMC IDs → 95% success (XML)
-- 50 publications without PMC → 60% success (PDF)
+- 50 publications without PMC → 60% success (PDF downloaded)
 - Combined: 80% success rate
 
 **Success Criteria:**
-- ✅ 60% success on non-PMC OA articles
-- ✅ 80% overall success rate (PMC + PDF)
+- ✅ 60% PDF download success on non-PMC OA articles
+- ✅ 80% overall success rate (XML content + PDF files)
 - ✅ <5s average PDF download time
-- ✅ No regressions in existing functionality
+- ✅ Proper file validation (PDF signature check)
+- ✅ **NO PARSING ATTEMPTED** - just reliable downloads
+
+**Phase 2 (Future): PDF Parsing Strategy**
+- Research LLM-based extraction approaches
+- Benchmark traditional tools vs. LLM extraction
+- Decide on hybrid approach
+- Implement in separate phase when ready
 
 ### Phase 2: Caching & Optimization (Week 2)
 
