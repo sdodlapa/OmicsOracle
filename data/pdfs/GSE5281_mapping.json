@@ -1,32 +1,24 @@
 {
   "geo_id": "GSE5281",
-  "timestamp": "2025-10-11T18:18:26.130516",
+  "timestamp": "2025-10-11T18:20:14.763182",
   "total_papers_found": 5,
-  "pdfs_downloaded": 3,
+  "pdfs_downloaded": 2,
   "pdfs": [
     {
-      "pmid": "38002524",
-      "doi": "10.3390/brainsci13111564",
-      "title": "Navigating the Gene Co-Expression Network and Drug Repurposing Opportunities for Brain Disorders Ass",
-      "pdf_path": "GSE5281/PMID_38002524.pdf",
-      "source_url": "https://www.mdpi.com/2076-3425/13/11/1564/pdf?version=1699350397",
-      "file_size_kb": 10039.6806640625
+      "pmid": "38167011",
+      "doi": "10.1186/s12920-023-01775-6",
+      "title": "Bioinformatic identification and experiment validation reveal 6 hub genes, promising diagnostic and ",
+      "pdf_path": "GSE5281/PMID_38167011.pdf",
+      "source_url": "https://bmcmedgenomics.biomedcentral.com/counter/pdf/10.1186/s12920-023-01775-6",
+      "file_size_kb": 4235.7314453125
     },
     {
-      "pmid": "37838728",
-      "doi": "10.1038/s41598-023-44656-9",
-      "title": "Copper metabolism-related Genes in entorhinal cortex for Alzheimer's disease.",
-      "pdf_path": "GSE5281/PMID_37838728.pdf",
-      "source_url": "https://www.nature.com/articles/s41598-023-44656-9.pdf",
-      "file_size_kb": 3441.7294921875
-    },
-    {
-      "pmid": "38053192",
-      "doi": "10.1186/s40001-023-01360-8",
-      "title": "SNAP25 is a potential target for early stage Alzheimer's disease and Parkinson's disease.",
-      "pdf_path": "GSE5281/PMID_38053192.pdf",
-      "source_url": "https://eurjmedres.biomedcentral.com/counter/pdf/10.1186/s40001-023-01360-8",
-      "file_size_kb": 2568.59765625
+      "pmid": "34758883",
+      "doi": "10.1186/s13578-021-00705-2",
+      "title": "Down-regulation of EPB41L4A-AS1 mediated the brain aging and neurodegenerative diseases via damaging",
+      "pdf_path": "GSE5281/PMID_34758883.pdf",
+      "source_url": "https://cellandbioscience.biomedcentral.com/counter/pdf/10.1186/s13578-021-00705-2",
+      "file_size_kb": 5278.5732421875
     }
   ]
 }
