@@ -78,7 +78,7 @@ Created comprehensive flow analysis documenting:
 ```
 omics_oracle_v2/lib/
 ├── pipelines/                    # NEW - All pipeline orchestrators
-│   ├── __init__.py              
+│   ├── __init__.py
 │   ├── geo_citation_pipeline.py  # Moved from workflows/
 │   └── publication_pipeline.py   # Moved from publications/pipeline.py
 ├── workflows/                    # Now only multi-agent coordination
