@@ -446,6 +446,18 @@ class OmicsSearchPipeline:
         Returns:
             List of GEO series metadata
         """
+        # Lazy initialize GEO client if not provided
+        if not self.geo_client and self.config.enable_geo_search:
+            logger.info("Lazy initializing GEO client...")
+            try:
+                from omics_oracle_v2.lib.geo.client import GEOClient
+
+                self.geo_client = GEOClient()
+                logger.info("GEO client initialized successfully")
+            except Exception as e:
+                logger.error(f"Failed to initialize GEO client: {e}")
+                return []
+
         if not self.geo_client:
             logger.warning("GEO client not initialized - skipping GEO search")
             return []

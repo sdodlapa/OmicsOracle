@@ -6,6 +6,7 @@ GEOparse for SOFT file parsing, and optional SRA metadata retrieval.
 """
 
 import asyncio
+import functools
 import logging
 import ssl
 from pathlib import Path
@@ -375,7 +376,11 @@ class GEOClient:
             logger.info(f"Retrieving metadata for {geo_id}")
 
             # Parse GEO series using GEOparse
-            gse = get_GEO(geo_id, destdir=str(self.settings.cache_dir))
+            # Run blocking get_GEO() in thread pool to avoid blocking event loop
+            loop = asyncio.get_event_loop()
+            # Use functools.partial to properly pass keyword argument
+            get_geo_func = functools.partial(get_GEO, geo_id, destdir=str(self.settings.cache_dir))
+            gse = await loop.run_in_executor(None, get_geo_func)
 
             # Extract metadata
             meta = getattr(gse, "metadata", {})
@@ -397,6 +402,14 @@ class GEOClient:
                 samples=list(getattr(gse, "gsms", {}).keys()),
                 pubmed_ids=meta.get("pubmed_id", []),
                 supplementary_files=meta.get("supplementary_file", []),
+            )
+
+            # Parse and populate structured download information
+            metadata.data_downloads = metadata.parse_download_info()
+
+            logger.info(
+                f"Found {len(metadata.supplementary_files)} downloadable files "
+                f"({metadata.get_download_summary()})"
             )
 
             # Add SRA metadata if requested
