@@ -20,9 +20,7 @@ Benefits:
 import hashlib
 import json
 import logging
-from dataclasses import asdict
-from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 try:
     import redis
@@ -34,6 +32,61 @@ except ImportError:
     logging.warning("Redis not available - caching will be disabled")
 
 logger = logging.getLogger(__name__)
+
+
+class CacheMetrics:
+    """Track cache performance metrics."""
+
+    def __init__(self):
+        self.hits = 0
+        self.misses = 0
+        self.sets = 0
+        self.errors = 0
+        self.total_requests = 0
+
+    @property
+    def hit_rate(self) -> float:
+        """Calculate cache hit rate."""
+        if self.total_requests == 0:
+            return 0.0
+        return (self.hits / self.total_requests) * 100
+
+    def record_hit(self):
+        """Record a cache hit."""
+        self.hits += 1
+        self.total_requests += 1
+
+    def record_miss(self):
+        """Record a cache miss."""
+        self.misses += 1
+        self.total_requests += 1
+
+    def record_set(self):
+        """Record a cache set operation."""
+        self.sets += 1
+
+    def record_error(self):
+        """Record a cache error."""
+        self.errors += 1
+
+    def get_summary(self) -> Dict[str, Any]:
+        """Get metrics summary."""
+        return {
+            "total_requests": self.total_requests,
+            "hits": self.hits,
+            "misses": self.misses,
+            "sets": self.sets,
+            "errors": self.errors,
+            "hit_rate": f"{self.hit_rate:.1f}%",
+        }
+
+    def log_summary(self):
+        """Log cache metrics summary."""
+        if self.total_requests > 0:
+            logger.info(
+                f"Cache Metrics: {self.hits} hits, {self.misses} misses "
+                f"({self.hit_rate:.1f}% hit rate), {self.sets} sets, {self.errors} errors"
+            )
 
 
 class RedisCache:
@@ -84,6 +137,7 @@ class RedisCache:
         self.enabled = enabled and REDIS_AVAILABLE
 
         self.client: Optional[Redis] = None
+        self.metrics = CacheMetrics()  # Add metrics tracking
 
         if self.enabled:
             self._connect()
@@ -158,12 +212,15 @@ class RedisCache:
 
             result = self.client.get(key)
             if result:
+                self.metrics.record_hit()  # Track cache hit
                 logger.debug(f"Cache HIT for query: {query[:50]}")
                 return json.loads(result)
             else:
+                self.metrics.record_miss()  # Track cache miss
                 logger.debug(f"Cache MISS for query: {query[:50]}")
                 return None
         except Exception as e:
+            self.metrics.record_error()  # Track error
             logger.error(f"Error getting cached search result: {e}")
             return None
 
@@ -204,9 +261,11 @@ class RedisCache:
             ttl = ttl or self.TTL_SEARCH_RESULTS
             self.client.setex(key, ttl, result_json)
 
+            self.metrics.record_set()  # Track cache set
             logger.debug(f"Cached search result for query: {query[:50]} (TTL={ttl}s)")
             return True
         except Exception as e:
+            self.metrics.record_error()  # Track error
             logger.error(f"Error caching search result: {e}")
             return False
 

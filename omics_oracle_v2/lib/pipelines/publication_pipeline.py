@@ -616,7 +616,7 @@ class PublicationSearchPipeline:
         # Step 3: Enrich with institutional access info (Week 4 - NEW)
         if self.institutional_manager and len(all_publications) > 0:
             try:
-                logger.info("Enriching with institutional access information...")
+                logger.info("Phase 1: Adding institutional access URLs to metadata...")
                 for pub in all_publications:
                     # Check access status
                     access_status = self.institutional_manager.check_access_status(pub)
@@ -636,6 +636,7 @@ class PublicationSearchPipeline:
 
                     if access_url:
                         pub.metadata["access_url"] = access_url
+                        logger.debug(f"  Added institutional URL for: {pub.title[:50]}...")
 
             except Exception as e:
                 logger.error(f"Institutional access enrichment failed: {e}")

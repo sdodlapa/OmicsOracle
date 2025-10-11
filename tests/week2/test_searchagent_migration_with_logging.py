@@ -273,6 +273,65 @@ def test_legacy_mode():
     return result
 
 
+async def cleanup_test_resources():
+    """Cleanup async resources created during tests."""
+    logger.info("\n" + "=" * 80)
+    logger.info("Cleaning up test resources...")
+    logger.info("=" * 80)
+
+    try:
+        # Import here to avoid circular dependencies
+        from omics_oracle_v2.agents.search_agent import SearchAgent
+        from omics_oracle_v2.core.config import Settings
+
+        # Create temporary agent to access cleanup methods
+        settings = Settings()
+        agent = SearchAgent(settings, enable_semantic=True, enable_publications=True)
+
+        # Cleanup unified pipeline resources if they exist
+        if hasattr(agent, "_unified_pipeline") and agent._unified_pipeline:
+            pipeline = agent._unified_pipeline
+
+            # Cleanup publication pipeline
+            if hasattr(pipeline, "publication_pipeline") and pipeline.publication_pipeline:
+                pub_pipeline = pipeline.publication_pipeline
+
+                # Close PDF downloader sessions
+                if hasattr(pub_pipeline, "pdf_downloader") and pub_pipeline.pdf_downloader:
+                    if hasattr(pub_pipeline.pdf_downloader, "close"):
+                        await pub_pipeline.pdf_downloader.close()
+                        logger.info("  ✓ Closed PDF downloader sessions")
+
+                # Close fulltext manager sessions
+                if hasattr(pub_pipeline, "fulltext_manager") and pub_pipeline.fulltext_manager:
+                    if hasattr(pub_pipeline.fulltext_manager, "close"):
+                        await pub_pipeline.fulltext_manager.close()
+                        logger.info("  ✓ Closed fulltext manager sessions")
+
+                # Close institutional access sessions
+                if hasattr(pub_pipeline, "institutional_manager") and pub_pipeline.institutional_manager:
+                    if hasattr(pub_pipeline.institutional_manager, "close"):
+                        await pub_pipeline.institutional_manager.close()
+                        logger.info("  ✓ Closed institutional access sessions")
+
+            # Close GEO client
+            if hasattr(pipeline, "geo_client") and pipeline.geo_client:
+                if hasattr(pipeline.geo_client, "close"):
+                    await pipeline.geo_client.close()
+                    logger.info("  ✓ Closed GEO client sessions")
+
+            # Close cache
+            if hasattr(pipeline, "cache") and pipeline.cache:
+                if hasattr(pipeline.cache, "close"):
+                    await pipeline.cache.close()
+                    logger.info("  ✓ Closed cache connections")
+
+        logger.info("\n✓ Resource cleanup complete")
+
+    except Exception as e:
+        logger.warning(f"⚠ Cleanup encountered errors (non-critical): {e}")
+
+
 def main():
     """Run all tests."""
     try:
@@ -307,6 +366,14 @@ def main():
         return 1
 
     finally:
+        # Cleanup async resources
+        logger.info("\n" + "=" * 80)
+        logger.info("Running cleanup...")
+        try:
+            asyncio.run(cleanup_test_resources())
+        except Exception as e:
+            logger.warning(f"⚠ Cleanup failed (non-critical): {e}")
+
         logger.info(f"\nLog file location: {log_file.absolute()}")
         logger.info("You can analyze this file for detailed timing and bottlenecks.")
 

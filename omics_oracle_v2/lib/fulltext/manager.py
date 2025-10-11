@@ -31,6 +31,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from omics_oracle_v2.lib.fulltext.sources.libgen_client import LibGenClient, LibGenConfig
+from omics_oracle_v2.lib.fulltext.sources.scihub_client import SciHubClient, SciHubConfig
 from omics_oracle_v2.lib.publications.clients.institutional_access import (
     InstitutionalAccessManager,
     InstitutionType,
@@ -41,8 +43,6 @@ from omics_oracle_v2.lib.publications.clients.oa_sources import (
     COREClient,
     CrossrefClient,
 )
-from omics_oracle_v2.lib.fulltext.sources.libgen_client import LibGenClient, LibGenConfig
-from omics_oracle_v2.lib.fulltext.sources.scihub_client import SciHubClient, SciHubConfig
 from omics_oracle_v2.lib.publications.clients.oa_sources.unpaywall_client import (
     UnpaywallClient,
     UnpaywallConfig,
@@ -731,12 +731,12 @@ class FullTextManager:
                 )
 
                 if result.success:
-                    logger.info(f"✓ Successfully found full-text via {source_name}")
+                    logger.info(f"  Phase 2: ✓ Verified full-text access via {source_name}")
                     self.stats["successes"] += 1
                     self.stats["by_source"][source_name] = self.stats["by_source"].get(source_name, 0) + 1
                     return result  # STOP HERE - skip remaining sources
                 else:
-                    logger.debug(f"✗ {source_name} did not find full-text")
+                    logger.debug(f"  ✗ {source_name} did not find full-text")
 
             except asyncio.TimeoutError:
                 logger.debug(f"⏱ Timeout for source {source_name}")

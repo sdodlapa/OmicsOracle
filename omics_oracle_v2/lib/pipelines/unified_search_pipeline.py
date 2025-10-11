@@ -585,6 +585,13 @@ class OmicsSearchPipeline:
         """Clean up resources."""
         logger.info("Closing OmicsSearchPipeline")
 
+        # Log cache metrics before closing
+        if self.cache and hasattr(self.cache, "metrics"):
+            try:
+                self.cache.metrics.log_summary()
+            except Exception as e:
+                logger.debug(f"Error logging cache metrics: {e}")
+
         if self.cache:
             try:
                 await self.cache.close()
