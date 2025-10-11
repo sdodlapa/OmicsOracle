@@ -14,30 +14,30 @@ from pathlib import Path
 from typing import List
 
 from omics_oracle_v2.lib.cache import AsyncRedisCache
-from omics_oracle_v2.lib.llm.client import LLMClient
-
-# Import NLP for query preprocessing (NEW)
-from omics_oracle_v2.lib.nlp.biomedical_ner import BiomedicalNER
-from omics_oracle_v2.lib.nlp.models import Entity, EntityType
-
-# Import synonym expansion (Phase 2B)
-from omics_oracle_v2.lib.nlp.synonym_expansion import SynonymExpander, SynonymExpansionConfig
-from omics_oracle_v2.lib.citations.discovery.finder import CitationFinder
-from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
-from omics_oracle_v2.lib.publications.clients.institutional_access import (
-    InstitutionalAccessManager,
-    InstitutionType,
-)
 from omics_oracle_v2.lib.citations.clients.openalex import OpenAlexClient, OpenAlexConfig
-from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
 from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
 from omics_oracle_v2.lib.citations.clients.semantic_scholar import (
     SemanticScholarClient,
     SemanticScholarConfig,
 )
+from omics_oracle_v2.lib.citations.discovery.finder import CitationFinder
+from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
+from omics_oracle_v2.lib.llm.client import LLMClient
+
+# Import NLP for query preprocessing (NEW)
+from omics_oracle_v2.lib.nlp.biomedical_ner import BiomedicalNER
+from omics_oracle_v2.lib.nlp.models import EntityType
+
+# Import synonym expansion (Phase 2B)
+from omics_oracle_v2.lib.nlp.synonym_expansion import SynonymExpander, SynonymExpansionConfig
+from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
+from omics_oracle_v2.lib.publications.clients.institutional_access import (
+    InstitutionalAccessManager,
+    InstitutionType,
+)
+from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
 from omics_oracle_v2.lib.publications.deduplication import AdvancedDeduplicator
-from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationResult, PublicationSearchResult
 from omics_oracle_v2.lib.publications.ranking.ranker import PublicationRanker
 
@@ -164,17 +164,14 @@ class PublicationSearchPipeline:
 
         # Week 4: PDF processing (after institutional access)
         if config.enable_pdf_download:
-            from pathlib import Path
+            from omics_oracle_v2.lib.storage.pdf.download_manager import PDFDownloadManager
 
-            from omics_oracle_v2.lib.publications.pdf_downloader import PDFDownloader
-
-            logger.info("Initializing PDF downloader")
-            download_dir = Path("data/pdfs")
-            self.pdf_downloader = PDFDownloader(
-                download_dir=download_dir,
-                institutional_manager=self.institutional_manager
-                if config.enable_institutional_access
-                else None,
+            logger.info("Initializing PDF download manager (async)")
+            # Use new async PDFDownloadManager (replaces old PDFDownloader)
+            self.pdf_downloader = PDFDownloadManager(
+                max_concurrent=5,
+                max_retries=3,
+                validate_pdf=True,
             )
         else:
             self.pdf_downloader = None
@@ -199,9 +196,9 @@ class PublicationSearchPipeline:
                 enable_arxiv=True,
                 enable_crossref=True,
                 enable_openalex=True,  # Use OA URLs from OpenAlex metadata
-                enable_unpaywall=True,  # ✅ ENABLED - 50% coverage improvement
-                enable_scihub=True,  # ⚠️ ENABLED - additional 25% coverage (use responsibly)
-                enable_libgen=True,  # ⚠️ ENABLED - additional 5-10% coverage (use responsibly)
+                enable_unpaywall=True,  # ENABLED - 50% coverage improvement
+                enable_scihub=True,  # WARNING: ENABLED - additional 25% coverage (use responsibly)
+                enable_libgen=True,  # WARNING: ENABLED - additional 5-10% coverage (use responsibly)
                 unpaywall_email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"),
                 scihub_use_proxy=False,  # Set to True to use Tor/proxy
                 libgen_use_proxy=False,  # Set to True to use Tor/proxy

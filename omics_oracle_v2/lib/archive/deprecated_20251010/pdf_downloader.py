@@ -2,9 +2,11 @@
 
 Downloads PDFs from institutional access URLs, OA repositories, and PMC.
 Supports concurrent downloads with deduplication.
+
+DEPRECATED: October 10, 2025
+Use omics_oracle_v2.lib.storage.pdf.download_manager.PDFDownloadManager instead.
 """
 
-import hashlib
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
