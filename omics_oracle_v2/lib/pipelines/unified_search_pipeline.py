@@ -14,7 +14,7 @@ Week 1 implementation following golden pattern from AdvancedSearchPipeline.
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from omics_oracle_v2.lib.cache.redis_cache import RedisCache
 from omics_oracle_v2.lib.geo import GEOClient
@@ -108,6 +108,24 @@ class SearchResult:
     search_time_ms: float = 0.0
     cache_hit: bool = False
     metadata: Dict = field(default_factory=dict)
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert to dictionary for JSON serialization."""
+        return {
+            "query": self.query,
+            "optimized_query": self.optimized_query,
+            "query_type": self.query_type,
+            "geo_datasets": [
+                d.model_dump() if hasattr(d, "model_dump") else d.__dict__ for d in self.geo_datasets
+            ],
+            "publications": [
+                p.model_dump() if hasattr(p, "model_dump") else p.__dict__ for p in self.publications
+            ],
+            "total_results": self.total_results,
+            "search_time_ms": self.search_time_ms,
+            "cache_hit": self.cache_hit,
+            "metadata": self.metadata,
+        }
 
 
 class OmicsSearchPipeline:

@@ -248,8 +248,13 @@ class RedisCache:
             key = self._make_key("search", search_type, query_hash)
 
             # Convert result to JSON
-            if hasattr(result, "to_dict"):
+            # Priority: model_dump() (Pydantic v2) > to_dict() > dict() (Pydantic v1) > __dict__
+            if hasattr(result, "model_dump"):
+                result_dict = result.model_dump()
+            elif hasattr(result, "to_dict"):
                 result_dict = result.to_dict()
+            elif hasattr(result, "dict"):
+                result_dict = result.dict()
             elif hasattr(result, "__dict__"):
                 result_dict = result.__dict__
             else:
