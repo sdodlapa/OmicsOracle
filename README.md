@@ -164,6 +164,44 @@ curl -X POST http://localhost:8000/api/agents/search \
 
 ---
 
+## 🔧 Using Pipelines
+
+OmicsOracle provides **5 specialized pipelines** for different research workflows:
+
+### Which Pipeline Should I Use?
+
+- **🧬 GEO Dataset → Citations → PDFs**: Use [`GEOCitationPipeline`](docs/pipelines/PIPELINE_DECISION_GUIDE.md#1-geocitationpipeline)
+- **📚 Search Publications by Topic**: Use [`PublicationSearchPipeline`](docs/pipelines/PIPELINE_DECISION_GUIDE.md#2-publicationsearchpipeline)
+- **🔍 Search Your Indexed Data**: Use [`AdvancedSearchPipeline`](docs/pipelines/PIPELINE_DECISION_GUIDE.md#3-advancedsearchpipeline)
+- **❓ Ask Questions About Papers**: Use [`RAGPipeline`](docs/pipelines/PIPELINE_DECISION_GUIDE.md#4-ragpipeline)
+- **📊 Generate Embeddings**: Use [`GEOEmbeddingPipeline`](docs/pipelines/PIPELINE_DECISION_GUIDE.md#5-geoembeddingpipeline)
+
+**📘 Complete guide with examples:** [docs/pipelines/PIPELINE_DECISION_GUIDE.md](docs/pipelines/PIPELINE_DECISION_GUIDE.md)
+
+### Quick Pipeline Examples
+
+```python
+# Complete GEO workflow (dataset → citations → PDFs)
+from omics_oracle_v2.lib.pipelines.geo_citation_pipeline import GEOCitationPipeline
+pipeline = GEOCitationPipeline()
+result = await pipeline.collect(geo_id="GSE123456")
+
+# Search publications across PubMed, OpenAlex, Scholar
+from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
+pipeline = PublicationSearchPipeline(config)
+result = pipeline.search("CRISPR gene editing")
+
+# Semantic search over your indexed data
+from omics_oracle_v2.lib.search.advanced import AdvancedSearchPipeline
+pipeline = AdvancedSearchPipeline(config)
+pipeline.add_documents(documents)  # Index first
+result = pipeline.search("What is ATAC-seq used for?", return_answer=True)
+```
+
+**Not sure which to use?** See the [Pipeline Decision Guide](docs/pipelines/PIPELINE_DECISION_GUIDE.md) for detailed comparison and decision tree.
+
+---
+
 ## 🏗️ Architecture
 
 ```
