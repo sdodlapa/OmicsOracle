@@ -187,3 +187,7 @@ data/downloads/
 dist/
 build/
 *.egg-info/
+
+# LLM Cache files (dynamic, not source code)
+data/llm_cache/*.json
+test_week2_cache_integration.py
