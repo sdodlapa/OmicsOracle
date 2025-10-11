@@ -619,13 +619,35 @@ ab -n 1000 -c 50 -p search_request.json http://localhost:8000/api/search
 
 ---
 
-## Week 4 Preview: PDF Processing
+## Week 4 Preview: PDF Processing & Ranking Improvements
 
 **Goals:**
-1. Enable PDF download (configurable)
-2. Full-text extraction from PDFs
-3. Storage management and cleanup
-4. Background processing pipeline
+1. **Ranking improvement**: Fix citation scoring to prioritize recent papers
+   - Current: Old papers with many citations ranked highest
+   - Target: Recent papers ranked highest, citations as secondary signal
+   - Implementation: Recency-first scoring with citation dampening
+2. Enable PDF download (configurable)
+3. Full-text extraction from PDFs
+4. Storage management and cleanup
+5. Background processing pipeline
+
+**Ranking Fix Details:**
+```python
+# Current (WRONG - favors old papers):
+citation_score = log(citations + 1) / log(30828 + 1)  # 0.00 → 0.93
+recency_bonus = 0.05 if age < 365 days else 0.00
+final_score = citation_score + recency_bonus
+
+# Proposed (RIGHT - favors recent papers):
+recency_score = exp(-age_days / 365)  # 1.0 → 0.37 over 1 year
+citation_signal = min(log(citations + 1) / 5, 0.3)  # Capped at 0.3
+final_score = 0.7 * recency_score + 0.3 * citation_signal
+
+# Examples:
+# New paper (0 citations, 0 days): 0.7 * 1.0 + 0.3 * 0.0 = 0.70
+# Popular recent (50 cit, 30 days): 0.7 * 0.92 + 0.3 * 0.24 = 0.71
+# Seminal old (30k cit, 3650 days): 0.7 * 0.00 + 0.3 * 0.30 = 0.09
+```
 
 **Prerequisite:** Week 3 performance optimizations complete
 
@@ -692,6 +714,16 @@ git push --tags
 3. **Cache bug**: Fixed immediately
    - Rationale: Critical issue blocking all performance gains
    - Priority: CRITICAL
+
+4. **Citation scoring reversal**: Identified but deferred to Week 4
+   - Current issue: Old papers with many citations get highest weight
+   - Desired: Recent papers should get highest weight
+   - Example problem:
+     * 30,828 citations → 0.93 score (HOMA-IR - seminal but old)
+     * 0 citations → 0.00 score (new paper - potentially most relevant)
+   - Rationale: Stay focused on Week 3 performance goals
+   - Priority: HIGH (user experience improvement)
+   - Proposed solution: Invert scoring or use recency-first ranking
 
 ### Decisions Pending
 1. **GEO vector index**: Build now or wait?
