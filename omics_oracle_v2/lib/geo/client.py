@@ -490,11 +490,17 @@ class GEOClient:
         semaphore = asyncio.Semaphore(max_concurrent)
 
         async def _get_single(geo_id: str) -> tuple[str, Optional[GEOSeriesMetadata]]:
-            """Fetch single metadata with concurrency control."""
+            """Fetch single metadata with concurrency control and timeout."""
             async with semaphore:
                 try:
-                    metadata = await self.get_metadata(geo_id)
+                    # Week 3 Day 2: Add 30s timeout to prevent hanging
+                    metadata = await asyncio.wait_for(
+                        self.get_metadata(geo_id), timeout=30.0
+                    )
                     return geo_id, metadata
+                except asyncio.TimeoutError:
+                    logger.warning(f"Timeout fetching {geo_id} after 30s")
+                    return geo_id, None
                 except GEOError as e:
                     logger.error(f"Failed to get metadata for {geo_id}: {e}")
                     return geo_id, None
