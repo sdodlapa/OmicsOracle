@@ -54,7 +54,7 @@ class UnifiedSearchConfig:
     enable_publication_search: bool = True
     enable_query_optimization: bool = True
     enable_caching: bool = True
-    enable_deduplication: bool = True
+    enable_deduplication: bool = False  # DISABLED by default for speed - GEO IDs are unique anyway
 
     # Query optimization
     enable_sapbert: bool = True  # Enable SapBERT embeddings for synonyms
@@ -273,11 +273,19 @@ class OmicsSearchPipeline:
         # Step 1: Check cache
         cache_hit = False
         if use_cache and self._cache_available:
-            cached_result = await self._check_cache(query)
-            if cached_result:
-                logger.info("Cache hit - returning cached results")
-                cached_result.cache_hit = True
-                return cached_result
+            try:
+                # Determine search type for cache key
+                cache_search_type = search_type or "auto"
+                cache_key = f"{query}:{cache_search_type}"
+                cached = await self.cache.get_search_result(cache_key, search_type=cache_search_type)
+                if cached:
+                    logger.info("Cache hit - returning cached results")
+                    # Reconstruct SearchResult from cached data
+                    cached_result = SearchResult(**cached)
+                    cached_result.cache_hit = True
+                    return cached_result
+            except Exception as e:
+                logger.warning(f"Cache check failed: {e}")
 
         # Step 2: Analyze query type
         analysis = self.query_analyzer.analyze(query)
@@ -341,6 +349,15 @@ class OmicsSearchPipeline:
                 logger.info("Publication search disabled - skipping")
 
         # Step 5: Deduplicate results
+        # 5a: Deduplicate GEO datasets by accession ID
+        if geo_datasets:
+            original_geo_count = len(geo_datasets)
+            geo_datasets = self._deduplicate_geo_datasets(geo_datasets)
+            geo_dupes_removed = original_geo_count - len(geo_datasets)
+            if geo_dupes_removed > 0:
+                logger.info(f"Removed {geo_dupes_removed} duplicate GEO datasets")
+
+        # 5b: Deduplicate publications using advanced fuzzy matching
         if self.deduplicator and publications:
             logger.info(f"Deduplicating {len(publications)} publications")
             original_count = len(publications)
@@ -488,6 +505,33 @@ class OmicsSearchPipeline:
             logger.error(f"GEO search failed: {e}")
             return []
 
+    def _deduplicate_geo_datasets(self, datasets: List[GEOSeriesMetadata]) -> List[GEOSeriesMetadata]:
+        """
+        Remove duplicate GEO datasets by accession ID.
+
+        Simple ID-based deduplication for GEO datasets. Unlike publications,
+        GEO datasets have unique accession IDs (GSE123456), so we can use
+        simple set-based deduplication.
+
+        Args:
+            datasets: List of GEO datasets
+
+        Returns:
+            Deduplicated list of datasets
+        """
+        seen_ids = set()
+        unique_datasets = []
+
+        for dataset in datasets:
+            geo_id = dataset.geo_id  # FIXED: Use geo_id, not accession
+            if geo_id not in seen_ids:
+                seen_ids.add(geo_id)
+                unique_datasets.append(dataset)
+            else:
+                logger.debug(f"Skipping duplicate GEO dataset: {geo_id}")
+
+        return unique_datasets
+
     async def _search_publications(self, query: str, max_results: int) -> List[Publication]:
         """
         Search publications by query.
@@ -509,7 +553,7 @@ class OmicsSearchPipeline:
                     enable_pubmed=True,
                     enable_openalex=True,
                     enable_scholar=False,  # Disable Scholar for now
-                    enable_citations=True,
+                    enable_citations=False,  # DISABLED - No LLM analysis (use frontend toggle instead)
                     deduplication=True,
                 )
                 self.publication_pipeline = PublicationSearchPipeline(pub_config)
@@ -524,13 +568,17 @@ class OmicsSearchPipeline:
 
         try:
             logger.info(f"Searching publications: '{query}' (max_results={max_results})")
-            # Note: PublicationSearchPipeline.search() returns PublicationSearchResult
-            search_result = await self.publication_pipeline.search(query, max_results=max_results)
-            publications = search_result.publications
+            # Note: PublicationSearchPipeline.search() is synchronous, not async
+            search_result = self.publication_pipeline.search(query, max_results=max_results)
+
+            # Extract Publication objects from PublicationSearchResult wrappers
+            # PublicationSearchResult has .publication attribute
+            publications = [result.publication for result in search_result.publications]
+
             logger.info(f"Found {len(publications)} publications")
             return publications
         except Exception as e:
-            logger.error(f"Publication search failed: {e}")
+            logger.error(f"Publication search failed: {e}", exc_info=True)
             return []
 
     async def close(self) -> None:

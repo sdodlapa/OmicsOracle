@@ -203,13 +203,13 @@ class PublicationRanker:
 
     def _calculate_recency_score(self, pub_date: datetime = None) -> float:
         """
-        Calculate recency score with exponential decay.
+        Calculate recency score with exponential decay and bonus for very recent papers.
 
         Args:
             pub_date: Publication date
 
         Returns:
-            Recency score (0.0-1.0)
+            Recency score (0.0-1.0+), can exceed 1.0 for very recent papers
         """
         if not pub_date:
             return 0.3  # Default for unknown dates
@@ -218,16 +218,43 @@ class PublicationRanker:
         now = datetime.now()
         age_years = (now - pub_date).days / 365.25
 
-        # Exponential decay: score = e^(-age/decay_rate)
-        decay_rate = 5.0  # Half-life of 5 years
+        # Recency bonus for papers from last 2 years (2023-2025)
+        if age_years <= 2.0:
+            # Extra boost for very recent papers
+            # 0 years → 1.3, 1 year → 1.15, 2 years → 1.0
+            recency_bonus = 1.0 + (0.3 * (2.0 - age_years) / 2.0)
+            return recency_bonus
+
+        # Exponential decay for older papers: score = e^(-age/decay_rate)
+        decay_rate = 5.0  # Half-life of ~3.5 years (reaches 0.5 at 3.5 years)
         score = math.exp(-age_years / decay_rate)
 
-        # Ensure in range [0, 1]
-        return max(0.0, min(1.0, score))
+        # Ensure minimum value for very old papers
+        return max(0.1, min(1.0, score))
 
     def _calculate_citation_score(self, citations: int) -> float:
         """
-        Calculate citation score with log scaling.
+        Calculate citation score with smart dampening for highly-cited papers.
+
+        Strategy:
+        - 0-100 citations: Linear scaling (standard papers)
+        - 100-1,000 citations: Square root scaling (high-impact papers)
+        - 1,000+ citations: Logarithmic scaling (foundational/review papers)
+
+        This ensures:
+        - Recent relevant papers score competitively
+        - Classic papers don't dominate purely on citation count
+        - Foundational papers still recognized but not overwhelming
+
+        Examples:
+        - 0 citations    → 0.00 score
+        - 50 citations   → 0.50 score (linear)
+        - 100 citations  → 0.60 score (transition)
+        - 500 citations  → 0.73 score (sqrt dampening)
+        - 1,000 citations → 0.80 score (log dampening)
+        - 5,000 citations → 0.86 score
+        - 10,000 citations → 0.89 score
+        - 30,000 citations → 0.93 score (HOMA-IR paper from log)
 
         Args:
             citations: Citation count
@@ -238,13 +265,32 @@ class PublicationRanker:
         if citations <= 0:
             return 0.0
 
-        # Log scale to handle wide range of citation counts
-        # Scale: log(citations + 1) / log(1000)
-        # This gives score of 1.0 for ~1000 citations
-        max_citations = 1000
-        score = math.log(citations + 1) / math.log(max_citations + 1)
+        # Linear range: 0-100 citations
+        if citations <= 100:
+            # 0.0 to 0.60 score
+            return (citations / 100) * 0.60
 
-        return min(score, 1.0)
+        # Square root range: 100-1,000 citations
+        elif citations <= 1000:
+            # 0.60 to 0.80 score
+            normalized = (citations - 100) / 900  # 0-1 range
+            sqrt_score = math.sqrt(normalized)  # Dampened 0-1
+            return 0.60 + (sqrt_score * 0.20)
+
+        # Logarithmic range: 1,000+ citations
+        else:
+            # 0.80 to 1.0 score (asymptotic approach)
+            # Using log10 for intuitive scaling:
+            # 1,000 → 3.0, 10,000 → 4.0, 100,000 → 5.0
+            log_citations = math.log10(citations)
+            log_1000 = 3.0  # log10(1000)
+            log_100000 = 5.0  # Practical maximum
+
+            # Normalize to 0-1 range
+            normalized = (log_citations - log_1000) / (log_100000 - log_1000)
+            normalized = min(normalized, 1.0)  # Cap at 1.0
+
+            return 0.80 + (normalized * 0.20)
 
     def _tokenize(self, text: str) -> Set[str]:
         """

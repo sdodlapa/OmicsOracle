@@ -1033,11 +1033,30 @@ class PublicationSearchPipeline:
 
         # Download PDFs in batch
         logger.info(f"Downloading PDFs for {len(publications)} publications...")
-        downloaded = self.pdf_downloader.download_batch(publications, max_workers=5)
+        try:
+            # PDFDownloadManager.download_batch() is async, need to run in event loop
+            # It does NOT accept max_workers parameter
+            import asyncio
+
+            pdf_dir = Path("data/pdfs")
+            pdf_dir.mkdir(parents=True, exist_ok=True)
+
+            # Run async download in event loop
+            download_report = asyncio.run(
+                self.pdf_downloader.download_batch(
+                    publications=publications, output_dir=pdf_dir, url_field="fulltext_url"
+                )
+            )
+            logger.info(
+                f"PDF download complete: {download_report.successful}/{download_report.total} successful"
+            )
+        except Exception as e:
+            logger.error(f"PDF download failed: {e}", exc_info=True)
 
         # Extract full text if enabled
         if self.pdf_text_extractor and self.config.enable_fulltext:
-            logger.info(f"Extracting full text from {len(downloaded)} PDFs...")
+            pdf_count = len([p for p in publications if p.pdf_path and Path(p.pdf_path).exists()])
+            logger.info(f"Extracting full text from {pdf_count} PDFs...")
 
             for pub in publications:
                 if pub.pdf_path and Path(pub.pdf_path).exists():
@@ -1064,8 +1083,8 @@ class PublicationSearchPipeline:
                     except Exception as e:
                         logger.error(f"Text extraction failed for {pub.title[:50]}...: {e}")
 
-        # Log download statistics
-        if downloaded:
+        # Log download statistics if PDFs were downloaded
+        if self.pdf_downloader and download_report.successful > 0:
             stats = self.pdf_downloader.get_download_stats()
             logger.info(
                 f"PDF download complete: {stats['total_pdfs']} PDFs, " f"{stats['total_size_mb']} MB total"
