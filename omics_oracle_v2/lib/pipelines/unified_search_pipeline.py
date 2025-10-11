@@ -503,17 +503,18 @@ class OmicsSearchPipeline:
             search_result = await self.geo_client.search(query, max_results=max_results)
 
             # GEO client returns SearchResult with geo_ids
-            # Now fetch metadata for each ID
+            # Now fetch metadata for each ID using smart batch fetching
+            # (Week 3 Day 1 optimization: parallel + cache-aware)
             if search_result.geo_ids:
                 logger.info(f"Found {len(search_result.geo_ids)} GEO IDs, fetching metadata...")
-                metadata_list = []
-                for geo_id in search_result.geo_ids:
-                    try:
-                        metadata = await self.geo_client.get_metadata(geo_id)
-                        if metadata:
-                            metadata_list.append(metadata)
-                    except Exception as e:
-                        logger.warning(f"Failed to fetch metadata for {geo_id}: {e}")
+
+                # Use smart batch fetching: checks cache first, fetches uncached in parallel
+                # First request: ~2-3s for 50 datasets (parallel)
+                # Second request: <100ms for 50 datasets (cached)
+                metadata_list = await self.geo_client.batch_get_metadata_smart(
+                    geo_ids=search_result.geo_ids,
+                    max_concurrent=10,  # Parallel fetching with semaphore control
+                )
 
                 logger.info(f"Retrieved metadata for {len(metadata_list)} GEO datasets")
                 return metadata_list
