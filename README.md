@@ -13,6 +13,8 @@
 
 OmicsOracle is a **production-ready** platform that revolutionizes biomedical research by combining AI agents, semantic search, and comprehensive GEO dataset analysis. Find and analyze relevant genomic datasets in **seconds instead of hours**.
 
+> **📘 New to OmicsOracle?** Start with our [**Pipeline Decision Guide**](docs/pipelines/PIPELINE_DECISION_GUIDE.md) to choose the right workflow for your research needs!
+
 ### 🎯 Key Features
 
 ✅ **Intelligent Search**
@@ -164,7 +166,36 @@ curl -X POST http://localhost:8000/api/agents/search \
 
 ---
 
-## 🔧 Using Pipelines
+## � Examples & Quick Start
+
+### Quick Test
+
+Validate your setup in seconds:
+
+```bash
+python quick_test.py
+```
+
+This tests:
+- ✅ Environment configuration
+- ✅ API connectivity
+- ✅ Core functionality
+- ✅ Performance improvements
+
+### Browse Examples
+
+Explore **real-world examples** in the [`examples/`](examples/) directory:
+
+- **[Sprint Demos](examples/sprint-demos/)** - Feature demonstrations (parallel fetching, OpenAlex integration)
+- **[Pipeline Examples](examples/pipeline-examples/)** - Complete workflow examples (GEO → citations → PDFs)
+- **[Feature Examples](examples/feature-examples/)** - Individual features (synonyms, query preprocessing)
+- **[Validation Scripts](examples/validation/)** - Testing and validation tools
+
+📘 **See all examples:** [examples/README.md](examples/README.md)
+
+---
+
+## �🔧 Using Pipelines
 
 OmicsOracle provides **5 specialized pipelines** for different research workflows:
 
