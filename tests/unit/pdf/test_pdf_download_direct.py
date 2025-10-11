@@ -17,7 +17,9 @@ from omics_oracle_v2.lib.publications.clients.institutional_access import (
     InstitutionalAccessManager,
     InstitutionType,
 )
-from omics_oracle_v2.lib.publications.fulltext_extractor import FullTextExtractor
+import pytest
+
+from omics_oracle_v2.lib.publications.pdf_text_extractor import PDFTextExtractor
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
 from omics_oracle_v2.lib.publications.pdf_downloader import PDFDownloader
 
@@ -60,8 +62,8 @@ def test_pdf_download():
     print("2. Initializing PDF downloader...")
     downloader = PDFDownloader(download_dir=Path("data/pdfs"), institutional_manager=institutional_manager)
 
-    print("3. Initializing full-text extractor...")
-    extractor = FullTextExtractor()
+    print("3. Initializing PDF text extractor...")
+    extractor = PDFTextExtractor()
 
     # Get PDF URLs
     print("\n4. Getting PDF URLs via institutional access...")
@@ -167,7 +169,7 @@ def test_with_sample_pdf():
             test_pdf = pdfs[0]
             print(f"\nTesting: {test_pdf}")
 
-            extractor = FullTextExtractor()
+            extractor = PDFTextExtractor()
             text = extractor.extract_from_pdf(test_pdf)
 
             if text:

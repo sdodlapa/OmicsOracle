@@ -1,7 +1,10 @@
-"""Full-text extraction from PDFs and HTML for OmicsOracle.
+"""PDF text extraction for OmicsOracle.
 
-Supports multiple extraction methods with fallbacks.
+Extracts text content from PDF files using multiple methods with fallbacks.
 Handles modern PDFs, scanned PDFs, and HTML sources.
+
+Note: This extractor focuses on extracting text FROM PDFs.
+For finding PDF URLs, see FullTextManager in lib/fulltext/manager.py
 """
 
 import logging
@@ -37,8 +40,15 @@ except ImportError:
     logger.warning("BeautifulSoup not installed - HTML extraction disabled")
 
 
-class FullTextExtractor:
-    """Extract full text from PDFs and HTML sources."""
+class PDFTextExtractor:
+    """Extract text content from PDF files.
+
+    Supports multiple extraction methods with automatic fallback:
+    1. pdfplumber (best for modern PDFs with tables)
+    2. PyPDF2 (fallback for simple text extraction)
+
+    Also supports HTML text extraction via BeautifulSoup.
+    """
 
     def __init__(self):
         """Initialize full-text extractor."""

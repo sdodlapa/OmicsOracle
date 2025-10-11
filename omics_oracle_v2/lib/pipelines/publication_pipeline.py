@@ -178,12 +178,12 @@ class PublicationSearchPipeline:
 
         # Week 4: Full-text extraction
         if config.enable_fulltext:
-            from omics_oracle_v2.lib.publications.fulltext_extractor import FullTextExtractor
+            from omics_oracle_v2.lib.publications.pdf_text_extractor import PDFTextExtractor
 
-            logger.info("Initializing full-text extractor")
-            self.fulltext_extractor = FullTextExtractor()
+            logger.info("Initializing PDF text extractor")
+            self.pdf_text_extractor = PDFTextExtractor()
         else:
-            self.fulltext_extractor = None
+            self.pdf_text_extractor = None
 
         # Full-text manager for OA source access (NEW - Phase 1 complete)
         if config.enable_fulltext_retrieval:
@@ -722,7 +722,7 @@ class PublicationSearchPipeline:
                 logger.error(f"PDF download failed: {e}")
 
         # Step 7: Full-text extraction (Week 4 - conditional execution)
-        if self.fulltext_extractor and ranked_results:
+        if self.pdf_text_extractor and ranked_results:
             try:
                 logger.info("Extracting full text...")
                 ranked_results = self._extract_fulltext(ranked_results)
@@ -1041,7 +1041,7 @@ class PublicationSearchPipeline:
         downloaded = self.pdf_downloader.download_batch(publications, max_workers=5)
 
         # Extract full text if enabled
-        if self.fulltext_extractor and self.config.enable_fulltext:
+        if self.pdf_text_extractor and self.config.enable_fulltext:
             logger.info(f"Extracting full text from {len(downloaded)} PDFs...")
 
             for pub in publications:
@@ -1050,7 +1050,7 @@ class PublicationSearchPipeline:
                         from datetime import datetime
 
                         # Extract text
-                        full_text = self.fulltext_extractor.extract_from_pdf(Path(pub.pdf_path))
+                        full_text = self.pdf_text_extractor.extract_from_pdf(Path(pub.pdf_path))
 
                         if full_text:
                             pub.full_text = full_text
@@ -1059,7 +1059,7 @@ class PublicationSearchPipeline:
                             pub.extraction_date = datetime.now()
 
                             # Get text stats
-                            stats = self.fulltext_extractor.get_text_stats(full_text)
+                            stats = self.pdf_text_extractor.get_text_stats(full_text)
                             pub.metadata["text_stats"] = stats
 
                             logger.info(f"Extracted {stats['words']} words from {pub.title[:50]}...")

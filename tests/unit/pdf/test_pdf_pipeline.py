@@ -157,9 +157,9 @@ def test_pdf_extractor_directly():
     print("Direct PDF Extraction Test")
     print("=" * 80)
 
-    from omics_oracle_v2.lib.publications.fulltext_extractor import FullTextExtractor
+    from omics_oracle_v2.lib.publications.pdf_text_extractor import PDFTextExtractor
 
-    extractor = FullTextExtractor()
+    extractor = PDFTextExtractor()
 
     # Check capabilities
     print("\nExtraction capabilities:")
