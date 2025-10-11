@@ -13,15 +13,15 @@ from pathlib import Path
 # Add project to path
 sys.path.insert(0, str(Path(__file__).parent))
 
+import pytest
+
 from omics_oracle_v2.lib.publications.clients.institutional_access import (
     InstitutionalAccessManager,
     InstitutionType,
 )
-import pytest
-
-from omics_oracle_v2.lib.publications.pdf_text_extractor import PDFTextExtractor
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
 from omics_oracle_v2.lib.publications.pdf_downloader import PDFDownloader
+from omics_oracle_v2.lib.publications.pdf_text_extractor import PDFTextExtractor
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
