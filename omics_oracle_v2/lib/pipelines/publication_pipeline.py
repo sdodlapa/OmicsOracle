@@ -1141,3 +1141,10 @@ class PublicationSearchPipeline:
         if self.config.enable_institutional_access:
             features.append(f"institutional_access_{self.config.primary_institution}")
         return features
+
+    async def close(self) -> None:
+        """Clean up async resources (Week 3 Day 3: Session cleanup)."""
+        if hasattr(self, 'pdf_downloader') and self.pdf_downloader:
+            await self.pdf_downloader.close()
+        if hasattr(self, 'fulltext_manager') and self.fulltext_manager:
+            await self.fulltext_manager.close()
