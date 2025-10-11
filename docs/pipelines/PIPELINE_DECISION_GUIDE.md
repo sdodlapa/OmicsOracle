@@ -3,6 +3,8 @@
 **Last Updated:** October 10, 2025
 **Purpose:** Help users choose the right pipeline for their use case
 
+> **📊 Visual Learner?** Check out the [**Pipeline Flow Diagram**](PIPELINE_FLOW_DIAGRAM.md) for an interactive flowchart showing how pipelines work together in real queries!
+
 ---
 
 ## 🚀 Quick Decision Tree

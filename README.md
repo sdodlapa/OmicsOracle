@@ -3,7 +3,23 @@
 **AI-Powered Biomedical Dataset Discovery Platform**
 
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
+[![FastAPI](https://## 🔧 Using Pipelines
+
+OmicsOracle provides **5 specialized pipelines** for different research workflows:
+
+> **📊 New!** See the [**Pipeline Flow Diagram**](docs/pipelines/PIPELINE_FLOW_DIAGRAM.md) for a visual guide showing how pipelines interact in end-to-end queries!
+
+### Which Pipeline Should I Use?
+
+- **🧬 GEO Dataset → Citations → PDFs**: Use [`GEOCitationPipeline`](docs/pipelines/PIPELINE_DECISION_GUIDE.md#1-geocitationpipeline)
+- **📚 Search Publications by Topic**: Use [`PublicationSearchPipeline`](docs/pipelines/PIPELINE_DECISION_GUIDE.md#2-publicationsearchpipeline)
+- **🔍 Search Your Indexed Data**: Use [`AdvancedSearchPipeline`](docs/pipelines/PIPELINE_DECISION_GUIDE.md#3-advancedsearchpipeline)
+- **❓ Ask Questions About Papers**: Use [`RAGPipeline`](docs/pipelines/PIPELINE_DECISION_GUIDE.md#4-ragpipeline)
+- **📊 Generate Embeddings**: Use [`GEOEmbeddingPipeline`](docs/pipelines/PIPELINE_DECISION_GUIDE.md#5-geoembeddingpipeline)
+
+**📘 Guides:**
+- [Pipeline Decision Guide](docs/pipelines/PIPELINE_DECISION_GUIDE.md) - Detailed comparison and decision tree
+- [Pipeline Flow Diagram](docs/pipelines/PIPELINE_FLOW_DIAGRAM.md) - Visual flowchart of end-to-end query processingo/badge/FastAPI-0.104+-green.svg)](https://fastapi.tiangolo.com/)
 [![Tests](https://img.shields.io/badge/tests-220+-green.svg)](tests/)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
