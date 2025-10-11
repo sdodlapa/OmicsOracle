@@ -423,7 +423,8 @@ class OmicsSearchPipeline:
         try:
             await self.cache.set_search_result(
                 query,
-                result,
+                search_type=result.query_type,  # FIX: Add missing search_type parameter
+                result=result,
                 ttl=self.config.cache_ttl_search,
             )
             logger.debug(f"Cached results for query: {query}")
