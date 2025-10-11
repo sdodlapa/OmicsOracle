@@ -11,11 +11,10 @@ This pipeline brings together:
 Week 1 implementation following golden pattern from AdvancedSearchPipeline.
 """
 
-import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional
 
 from omics_oracle_v2.lib.cache.redis_cache import RedisCache
 from omics_oracle_v2.lib.geo import GEOClient
@@ -430,7 +429,7 @@ class OmicsSearchPipeline:
 
         try:
             logger.info(f"Fetching GEO metadata for {geo_id}")
-            metadata = await self.geo_client.get_series_metadata(geo_id)
+            metadata = await self.geo_client.get_metadata(geo_id)
             return [metadata] if metadata else []
         except Exception as e:
             logger.error(f"Failed to fetch GEO metadata for {geo_id}: {e}")
@@ -453,9 +452,26 @@ class OmicsSearchPipeline:
 
         try:
             logger.info(f"Searching GEO: '{query}' (max_results={max_results})")
-            results = await self.geo_client.search(query, max_results=max_results)
-            logger.info(f"Found {len(results)} GEO datasets")
-            return results
+            search_result = await self.geo_client.search(query, max_results=max_results)
+
+            # GEO client returns SearchResult with geo_ids
+            # Now fetch metadata for each ID
+            if search_result.geo_ids:
+                logger.info(f"Found {len(search_result.geo_ids)} GEO IDs, fetching metadata...")
+                metadata_list = []
+                for geo_id in search_result.geo_ids:
+                    try:
+                        metadata = await self.geo_client.get_metadata(geo_id)
+                        if metadata:
+                            metadata_list.append(metadata)
+                    except Exception as e:
+                        logger.warning(f"Failed to fetch metadata for {geo_id}: {e}")
+
+                logger.info(f"Retrieved metadata for {len(metadata_list)} GEO datasets")
+                return metadata_list
+            else:
+                logger.info("No GEO datasets found")
+                return []
         except Exception as e:
             logger.error(f"GEO search failed: {e}")
             return []
