@@ -45,6 +45,24 @@ class QueryResponse(BaseResponse):
     entity_counts: Dict[str, int] = Field(..., description="Count by entity type")
 
 
+class FullTextContent(BaseModel):
+    """Parsed and normalized full-text content from a publication."""
+
+    pmid: str = Field(..., description="PubMed ID")
+    title: str = Field(..., description="Publication title")
+    abstract: str = Field(default="", description="Abstract text")
+    methods: str = Field(default="", description="Methods section")
+    results: str = Field(default="", description="Results section")
+    discussion: str = Field(default="", description="Discussion section")
+    introduction: Optional[str] = Field(default="", description="Introduction section")
+    conclusion: Optional[str] = Field(default="", description="Conclusion section")
+    references: List[str] = Field(default_factory=list, description="Reference citations")
+    figures_captions: List[str] = Field(default_factory=list, description="Figure captions")
+    tables_captions: List[str] = Field(default_factory=list, description="Table captions")
+    format: str = Field(default="unknown", description="Source format (jats/pdf/latex)")
+    parse_date: str = Field(default="", description="When the content was parsed")
+
+
 class DatasetResponse(BaseModel):
     """Dataset metadata response."""
 
@@ -56,6 +74,32 @@ class DatasetResponse(BaseModel):
     platform: Optional[str] = Field(None, description="Platform technology")
     relevance_score: float = Field(..., description="Relevance score")
     match_reasons: List[str] = Field(..., description="Reasons for match")
+    
+    # Publication and citation info
+    publication_date: Optional[str] = Field(None, description="Public release date")
+    submission_date: Optional[str] = Field(None, description="Submission date")
+    pubmed_ids: List[str] = Field(default_factory=list, description="Associated PubMed IDs")
+    
+    # Full-text content fields
+    fulltext: List[FullTextContent] = Field(default_factory=list, description="Full-text content from publications")
+    fulltext_status: str = Field(default="not_downloaded", description="Status: not_downloaded/downloading/available/failed/partial")
+    fulltext_count: int = Field(default=0, description="Number of full-text papers available")
+
+
+class PublicationResponse(BaseModel):
+    """Publication metadata response."""
+    
+    pmid: Optional[str] = Field(None, description="PubMed ID")
+    pmc_id: Optional[str] = Field(None, description="PubMed Central ID")
+    doi: Optional[str] = Field(None, description="DOI")
+    title: str = Field(..., description="Publication title")
+    abstract: Optional[str] = Field(None, description="Abstract")
+    authors: List[str] = Field(default_factory=list, description="Authors")
+    journal: Optional[str] = Field(None, description="Journal name")
+    publication_date: Optional[str] = Field(None, description="Publication date")
+    geo_ids_mentioned: List[str] = Field(default_factory=list, description="GEO IDs mentioned in the paper")
+    fulltext_available: bool = Field(default=False, description="Whether full text is available")
+    pdf_path: Optional[str] = Field(None, description="Path to downloaded PDF")
 
 
 class SearchResponse(BaseResponse):
@@ -65,6 +109,9 @@ class SearchResponse(BaseResponse):
     datasets: List[DatasetResponse] = Field(..., description="Ranked dataset results")
     search_terms_used: List[str] = Field(..., description="Search terms used")
     filters_applied: Dict[str, Any] = Field(..., description="Filters applied")
+    search_logs: List[str] = Field(default=[], description="Search process logs for debugging")
+    publications: List[PublicationResponse] = Field(default_factory=list, description="Related publications")
+    publications_count: int = Field(default=0, description="Number of related publications found")
 
 
 class QualityMetricsResponse(BaseModel):

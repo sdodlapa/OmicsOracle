@@ -157,6 +157,65 @@
             border-color: #cbd5e0;
         }
 
+        /* Search Logs Panel */
+        .search-logs-panel {
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .search-logs-header {
+            background: #edf2f7;
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 500;
+            color: #2d3748;
+            user-select: none;
+        }
+
+        .search-logs-header:hover {
+            background: #e2e8f0;
+        }
+
+        .logs-toggle {
+            font-size: 12px;
+            color: #718096;
+            transition: transform 0.3s;
+        }
+
+        .logs-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+
+        .search-logs-content {
+            padding: 16px;
+            font-family: 'SF Mono', 'Monaco', 'Courier New', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .search-logs-content.collapsed {
+            display: none;
+        }
+
+        .log-entry {
+            padding: 6px 0;
+            color: #4a5568;
+        }
+
+        .log-entry:before {
+            content: '▸ ';
+            color: #718096;
+            margin-right: 4px;
+        }
+
         /* Results Section */
         .results-section {
             background: white;
@@ -165,6 +224,63 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             margin-bottom: 30px;
             display: none;
+        }
+        
+        /* Search Logs Panel */
+        .search-logs-panel {
+            background: #f8f9fa;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .search-logs-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            background: #edf2f7;
+            cursor: pointer;
+            user-select: none;
+            font-weight: 500;
+            color: #4a5568;
+            transition: background 0.2s;
+        }
+        
+        .search-logs-header:hover {
+            background: #e2e8f0;
+        }
+        
+        .logs-toggle {
+            font-size: 12px;
+            transition: transform 0.2s;
+        }
+        
+        .logs-toggle.collapsed {
+            transform: rotate(-90deg);
+        }
+        
+        .search-logs-content {
+            padding: 16px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 13px;
+            line-height: 1.8;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .search-logs-content.collapsed {
+            display: none;
+        }
+        
+        .log-line {
+            padding: 4px 0;
+            color: #2d3748;
+        }
+        
+        .log-line:hover {
+            background: #f7fafc;
         }
 
         .results-header {
@@ -190,7 +306,6 @@
             padding: 20px;
             margin-bottom: 15px;
             transition: all 0.3s;
-            cursor: pointer;
         }
 
         .dataset-card:hover {
@@ -198,22 +313,47 @@
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
         }
 
-        .dataset-card.selected {
-            border-color: #667eea;
-            background: #f7fafc;
-        }
-
         .dataset-header {
             display: flex;
             justify-content: space-between;
             align-items: start;
             margin-bottom: 12px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .dataset-id {
             font-weight: 600;
             color: #2d3748;
             font-size: 16px;
+        }
+
+        /* Clickable GSE ID link */
+        .dataset-id-link {
+            font-weight: 700;
+            font-size: 15px;
+            color: #2b6cb0;
+            background: linear-gradient(135deg, #e6f2ff 0%, #cfe7ff 100%);
+            padding: 6px 12px;
+            border-radius: 6px;
+            border: 1px solid #90cdf4;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s;
+        }
+
+        .dataset-id-link:hover {
+            background: linear-gradient(135deg, #cfe7ff 0%, #b3d9ff 100%);
+            border-color: #63b3ed;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(43, 108, 176, 0.2);
+        }
+
+        .external-link-icon {
+            font-size: 12px;
+            opacity: 0.7;
         }
 
         .quality-badge {
@@ -243,6 +383,177 @@
             font-size: 14px;
             margin-bottom: 10px;
             line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .dataset-summary {
+            color: #718096;
+            font-size: 13px;
+            margin-bottom: 12px;
+            line-height: 1.6;
+            padding: 10px;
+            background: #f7fafc;
+            border-radius: 6px;
+            border-left: 3px solid #e2e8f0;
+        }
+
+        /* Publication info section */
+        .publication-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding: 10px 12px;
+            background: #fffaf0;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            font-size: 13px;
+            border-left: 3px solid #ed8936;
+        }
+
+        .publication-info .info-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        /* Full-text status indicator */
+        .fulltext-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-bottom: 12px;
+            font-weight: 500;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .fulltext-status.available {
+            background: #e6f9f0;
+            border-left: 3px solid #38a169;
+            color: #22543d;
+        }
+
+        .fulltext-status.downloading {
+            background: #fffbeb;
+            border-left: 3px solid #ecc94b;
+            color: #744210;
+        }
+
+        .fulltext-status.pending {
+            background: #e6f2ff;
+            border-left: 3px solid #4299e1;
+            color: #2c5282;
+        }
+
+        .fulltext-status .status-icon {
+            font-size: 16px;
+        }
+
+        .fulltext-status .status-text {
+            flex: 1;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .btn-ai-analyze {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-ai-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-ai-analyze:active {
+            transform: translateY(0);
+        }
+
+        /* Download Papers Button */
+        .btn-download-papers {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-right: 8px;
+        }
+
+        .btn-download-papers:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-download-papers:active {
+            transform: translateY(0);
+        }
+
+        .btn-download-papers:disabled {
+            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        /* Disabled AI Analysis Button (no PMIDs or no download) */
+        .btn-ai-disabled {
+            background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-ai-disabled:hover {
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Analysis Type Badges */
+        .analysis-badge {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .analysis-badge-pending {
+            background: rgba(251, 191, 36, 0.3);
+            color: #fef3c7;
+        }
+
+        .analysis-badge-disabled {
+            background: rgba(255, 255, 255, 0.2);
+            color: #d1d5db;
         }
 
         .dataset-meta {
@@ -257,6 +568,140 @@
             display: flex;
             align-items: center;
             gap: 5px;
+        }
+
+        /* Full-text Status Styles */
+        .fulltext-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin: 12px 0;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .fulltext-status.available {
+            background: #e7f5e7;
+            border-left: 3px solid #43e97b;
+            color: #2d5016;
+        }
+
+        .fulltext-status.downloading {
+            background: #fff8e1;
+            border-left: 3px solid #ffa726;
+            color: #7a4f01;
+        }
+
+        .fulltext-status.pending {
+            background: #e3f2fd;
+            border-left: 3px solid #64b5f6;
+            color: #0d47a1;
+        }
+
+        .fulltext-status.failed {
+            background: #ffebee;
+            border-left: 3px solid #ef5350;
+            color: #c62828;
+        }
+
+        .status-icon {
+            font-size: 16px;
+        }
+
+        .status-text {
+            flex: 1;
+        }
+
+        /* Inline Analysis Styles */
+        .inline-analysis {
+            margin-top: 15px;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 2000px;
+            }
+        }
+
+        .analysis-divider {
+            height: 2px;
+            background: linear-gradient(to right, #e2e8f0, #667eea, #e2e8f0);
+            margin: 15px 0;
+        }
+
+        .analysis-content-inline {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .analysis-content-inline h4 {
+            color: #2d3748;
+            font-size: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .analysis-content-inline p {
+            color: #4a5568;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 12px;
+        }
+
+        .analysis-content-inline ul {
+            margin-left: 20px;
+            margin-bottom: 12px;
+        }
+
+        .analysis-content-inline li {
+            color: #4a5568;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-bottom: 8px;
+        }
+
+        .score-grid-inline {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 15px 0;
+        }
+
+        .score-item-inline {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .score-value-inline {
+            display: block;
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .score-label-inline {
+            display: block;
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* Analysis Section */
@@ -444,6 +889,142 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Copyable Error Modal */
+        .error-modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.2s;
+        }
+
+        .error-modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 0;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .error-modal-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .error-modal-header h3 {
+            margin: 0;
+            color: #2d3748;
+            font-size: 20px;
+        }
+
+        .error-modal-close {
+            color: #718096;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        .error-modal-close:hover {
+            background-color: #f7fafc;
+            color: #2d3748;
+        }
+
+        .error-modal-body {
+            padding: 25px;
+        }
+
+        .error-message-box {
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 13px;
+            color: #2d3748;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+            user-select: text;
+            cursor: text;
+        }
+
+        .error-modal-footer {
+            padding: 15px 25px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn-copy-error {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-copy-error:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-copy-error.copied {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        }
+
+        .btn-close-modal {
+            background: #e2e8f0;
+            color: #2d3748;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-close-modal:hover {
+            background: #cbd5e0;
+        }
     </style>
 </head>
 <body>
@@ -491,6 +1072,17 @@
 
         <!-- Results Section -->
         <div id="results-section" class="results-section">
+            <!-- Search Logs Panel (collapsible) -->
+            <div id="search-logs-panel" class="search-logs-panel" style="display: none;">
+                <div class="search-logs-header" onclick="toggleSearchLogs()">
+                    <span>🔍 Search Process Details</span>
+                    <span id="logs-toggle" class="logs-toggle">▼</span>
+                </div>
+                <div id="search-logs-content" class="search-logs-content">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+            
             <div class="results-header">
                 <h3>Search Results</h3>
                 <span id="result-count" class="result-count"></span>
@@ -584,12 +1176,19 @@
 
                 const data = await response.json();
                 currentResults = data.datasets || [];
+                
+                // Display search logs if available
+                if (data.search_logs && data.search_logs.length > 0) {
+                    displaySearchLogs(data.search_logs);
+                }
 
-                // Display results
+                // Display results immediately
                 displayResults(currentResults);
 
                 // Show results section
                 document.getElementById('results-section').style.display = 'block';
+
+                // Note: Full-text enrichment is now manual (user clicks "Download Papers" button)
 
             } catch (error) {
                 console.error('Search error:', error);
@@ -598,6 +1197,178 @@
                 searchBtn.disabled = false;
                 searchBtn.textContent = 'Search';
             }
+        }
+
+        // Download papers for a specific dataset (manual trigger)
+        async function downloadPapersForDataset(index) {
+            const dataset = currentResults[index];
+            const cardElement = document.getElementById(`card-${index}`);
+            const downloadBtn = cardElement.querySelector('.btn-download-papers');
+            const aiBtn = cardElement.querySelector('.btn-ai-analyze');
+            
+            if (!dataset.pubmed_ids || dataset.pubmed_ids.length === 0) {
+                alert('No publications available for this dataset');
+                return;
+            }
+
+            try {
+                // Update button to show loading
+                const originalText = downloadBtn.innerHTML;
+                downloadBtn.disabled = true;
+                downloadBtn.innerHTML = '⏳ Downloading...';
+                
+                console.log(`Downloading papers for ${dataset.geo_id}...`);
+
+                // Call enrichment API for this single dataset
+                const response = await authenticatedFetch('http://localhost:8000/api/agents/enrich-fulltext?max_papers=3', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify([dataset])
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Server error:', errorText);
+                    throw new Error(`Download failed: ${response.statusText} - ${errorText}`);
+                }
+
+                const enrichedDatasets = await response.json();
+                const enriched = enrichedDatasets[0];
+                
+                console.log(`Download result for ${dataset.geo_id}:`, enriched);
+                console.log(`- Status: ${enriched.fulltext_status}`);
+                console.log(`- Papers downloaded: ${enriched.fulltext_count}`);
+                console.log(`- PubMed IDs: ${dataset.pubmed_ids.join(', ')}`);
+
+                // Update currentResults with enriched data
+                currentResults[index] = enriched;
+
+                // Re-render this specific card to show updated status
+                displayResults(currentResults);
+
+                // Show detailed status message with copyable modal
+                if (enriched.fulltext_count > 0) {
+                    const message = `✅ Success! Downloaded ${enriched.fulltext_count} of ${dataset.pubmed_ids.length} paper(s).
+
+Status: ${enriched.fulltext_status}
+
+You can now use AI Analysis.`;
+                    showErrorModal('Download Success', message);
+                } else if (enriched.fulltext_status === 'failed') {
+                    const message = `⚠️ Download Failed After Trying All Sources
+
+Sources tried (in order):
+1. Institutional Access (Georgia Tech & Old Dominion)
+2. PubMed Central
+3. Unpaywall
+4. CORE
+5. OpenAlex
+6. bioRxiv/arXiv
+7. Crossref
+8. Sci-Hub (last resort)
+9. LibGen (final fallback)
+
+PubMed IDs: ${dataset.pubmed_ids.join(', ')}
+
+Reason: Papers are behind paywalls not covered by any source.
+
+AI Analysis will use GEO metadata only.`;
+                    showErrorModal('Download Failed', message);
+                } else if (enriched.fulltext_status === 'partial') {
+                    const message = `⚠️ Partial Success
+
+Some papers could not be downloaded even after trying all sources.
+
+Downloaded: ${enriched.fulltext_count} of ${dataset.pubmed_ids.length} papers
+
+AI Analysis will use available content.`;
+                    showErrorModal('Partial Success', message);
+                } else {
+                    const message = `⚠️ No papers downloaded
+
+Status: ${enriched.fulltext_status}
+
+AI Analysis will use GEO summary only.`;
+                    showErrorModal('No Papers Downloaded', message);
+                }
+
+            } catch (error) {
+                console.error('Download error:', error);
+                const errorMessage = `Failed to download papers. Please try again.
+
+Error Details:
+${error.message}
+
+Stack Trace:
+${error.stack || 'Not available'}`;
+                showErrorModal('Download Error', errorMessage);
+                
+                // Restore button
+                downloadBtn.disabled = false;
+                downloadBtn.innerHTML = originalText;
+            }
+        }
+        
+        // Display search logs in collapsible panel
+        function displaySearchLogs(logs) {
+            const panel = document.getElementById('search-logs-panel');
+            const content = document.getElementById('search-logs-content');
+            
+            if (!logs || logs.length === 0) {
+                panel.style.display = 'none';
+                return;
+            }
+            
+            // Show panel
+            panel.style.display = 'block';
+            
+            // Populate logs
+            content.innerHTML = logs.map(log => 
+                `<div class="log-line">${log}</div>`
+            ).join('');
+            
+            // Expand by default
+            content.classList.remove('collapsed');
+            document.getElementById('logs-toggle').classList.remove('collapsed');
+        }
+        
+        // Toggle search logs visibility
+        function toggleSearchLogs() {
+            const content = document.getElementById('search-logs-content');
+            const toggle = document.getElementById('logs-toggle');
+            
+            content.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
+        }
+
+        // Display search logs
+        function displaySearchLogs(logs) {
+            const panel = document.getElementById('search-logs-panel');
+            const content = document.getElementById('search-logs-content');
+            
+            if (!logs || logs.length === 0) {
+                panel.style.display = 'none';
+                return;
+            }
+            
+            // Show panel
+            panel.style.display = 'block';
+            
+            // Populate logs
+            content.innerHTML = logs.map(log => `<div class="log-entry">${log}</div>`).join('');
+            
+            // Start collapsed
+            content.classList.add('collapsed');
+            document.getElementById('logs-toggle').classList.add('collapsed');
+        }
+        
+        // Toggle search logs panel
+        function toggleSearchLogs() {
+            const content = document.getElementById('search-logs-content');
+            const toggle = document.getElementById('logs-toggle');
+            
+            content.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
         }
 
         // Display search results
@@ -619,22 +1390,118 @@
 
             countElement.textContent = `${results.length} dataset${results.length !== 1 ? 's' : ''} found`;
 
-            container.innerHTML = results.map((dataset, index) => `
-                <div class="dataset-card" onclick="selectDataset(${index})">
-                    <div class="dataset-header">
-                        <div class="dataset-id">${dataset.geo_id || 'Unknown'}</div>
-                        <span class="quality-badge quality-${getQualityClass(dataset.relevance_score || 0.5)}">
-                            Relevance: ${Math.round((dataset.relevance_score || 0.5) * 100)}%
-                        </span>
+            container.innerHTML = results.map((dataset, index) => {
+                // Build full-text status indicator
+                let fulltextStatus = '';
+                if (dataset.fulltext_count > 0) {
+                    fulltextStatus = `
+                        <div class="fulltext-status available">
+                            <span class="status-icon">✓</span>
+                            <span class="status-text">${dataset.fulltext_count} PDF${dataset.fulltext_count > 1 ? 's' : ''} available for AI analysis</span>
+                        </div>
+                    `;
+                } else if (dataset.fulltext_status === 'downloading') {
+                    fulltextStatus = `
+                        <div class="fulltext-status downloading">
+                            <span class="status-icon">⏳</span>
+                            <span class="status-text">Downloading PDFs...</span>
+                        </div>
+                    `;
+                } else if (dataset.pubmed_ids && dataset.pubmed_ids.length > 0 && dataset.fulltext_status === 'not_downloaded') {
+                    fulltextStatus = `
+                        <div class="fulltext-status pending">
+                            <span class="status-icon">📥</span>
+                            <span class="status-text">PDF download pending...</span>
+                        </div>
+                    `;
+                }
+
+                // Format publication date
+                let publicationInfo = '';
+                if (dataset.publication_date) {
+                    const pubDate = new Date(dataset.publication_date);
+                    const now = new Date();
+                    const daysOld = Math.floor((now - pubDate) / (1000 * 60 * 60 * 24));
+                    const yearsOld = Math.floor(daysOld / 365);
+                    
+                    let ageText = '';
+                    if (yearsOld > 0) {
+                        ageText = `${yearsOld} year${yearsOld > 1 ? 's' : ''} old`;
+                    } else if (daysOld > 30) {
+                        const monthsOld = Math.floor(daysOld / 30);
+                        ageText = `${monthsOld} month${monthsOld > 1 ? 's' : ''} old`;
+                    } else {
+                        ageText = `${daysOld} day${daysOld > 1 ? 's' : ''} old`;
+                    }
+                    
+                    publicationInfo = `
+                        <div class="publication-info">
+                            <span class="info-item">📅 Published: ${pubDate.toLocaleDateString()} (${ageText})</span>
+                            ${dataset.pubmed_ids && dataset.pubmed_ids.length > 0 ? 
+                                `<span class="info-item">📄 ${dataset.pubmed_ids.length} linked paper${dataset.pubmed_ids.length > 1 ? 's' : ''}</span>` 
+                                : '<span class="info-item">⚠️ No linked publications</span>'}
+                        </div>
+                    `;
+                }
+                
+                return `
+                    <div class="dataset-card" id="card-${index}">
+                        <div class="dataset-header">
+                            <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=${dataset.geo_id}" 
+                               target="_blank" 
+                               class="dataset-id-link" 
+                               title="View on NCBI GEO (opens in new window)"
+                               onclick="event.stopPropagation()">
+                                ${dataset.geo_id || 'Unknown'}
+                                <span class="external-link-icon">🔗</span>
+                            </a>
+                            ${dataset.pubmed_ids && dataset.pubmed_ids.length > 0 ? 
+                                (dataset.fulltext_count > 0 ?
+                                    // Full-text downloaded - enable AI Analysis
+                                    `<button class="btn-ai-analyze" onclick="event.stopPropagation(); selectDataset(${index})" title="AI Analysis with ${dataset.fulltext_count} full-text paper(s)">
+                                        🤖 AI Analysis
+                                        <span class="analysis-badge">✓ ${dataset.fulltext_count} PDF${dataset.fulltext_count > 1 ? 's' : ''}</span>
+                                    </button>`
+                                    :
+                                    // PMIDs exist but no PDFs - show download button
+                                    `<button class="btn-download-papers" onclick="event.stopPropagation(); downloadPapersForDataset(${index})" title="Download ${dataset.pubmed_ids.length} linked paper(s) for AI analysis">
+                                        📥 Download ${dataset.pubmed_ids.length} Paper${dataset.pubmed_ids.length > 1 ? 's' : ''}
+                                    </button>
+                                    <button class="btn-ai-analyze btn-ai-disabled" disabled title="Download papers first to enable AI analysis">
+                                        🤖 AI Analysis
+                                        <span class="analysis-badge analysis-badge-disabled">Download Required</span>
+                                    </button>`
+                                )
+                                : 
+                                // No PMIDs - disable everything
+                                `<button class="btn-ai-analyze btn-ai-disabled" disabled title="AI analysis requires linked publications (none available for this dataset)">
+                                    🤖 AI Analysis
+                                    <span class="analysis-badge analysis-badge-disabled">No Publications</span>
+                                </button>`
+                            }
+                        </div>
+                        <div class="dataset-title">${dataset.title || 'No description available'}</div>
+                        <div class="dataset-summary">${dataset.summary || dataset.description || 'No summary available'}</div>
+                        
+                        ${publicationInfo}
+                        ${fulltextStatus}
+                        
+                        <!-- Inline Analysis Section (Initially Hidden) -->
+                        <div class="inline-analysis" id="analysis-${index}" style="display: none;">
+                            <div class="analysis-divider"></div>
+                            <div class="analysis-content-inline" id="analysis-content-${index}">
+                                <!-- Analysis will be inserted here -->
+                            </div>
+                        </div>
+                        
+                        <div class="dataset-meta">
+                            <span class="meta-item">🧬 ${dataset.organism || 'Unknown organism'}</span>
+                            <span class="meta-item">🔬 ${dataset.platform || 'Unknown platform'}</span>
+                            <span class="meta-item">📊 ${dataset.sample_count || 'N/A'} samples</span>
+                        </div>
                     </div>
-                    <div class="dataset-title">${dataset.title || 'No description available'}</div>
-                    <div class="dataset-meta">
-                        <span class="meta-item">🧬 ${dataset.organism || 'Unknown organism'}</span>
-                        <span class="meta-item">🔬 ${dataset.platform || 'Unknown platform'}</span>
-                        <span class="meta-item">📊 ${dataset.sample_count || 'N/A'} samples</span>
-                    </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // Get quality class
@@ -648,17 +1515,194 @@
         async function selectDataset(index) {
             selectedDataset = currentResults[index];
 
-            // Highlight selected
-            document.querySelectorAll('.dataset-card').forEach((card, i) => {
-                if (i === index) {
-                    card.classList.add('selected');
-                } else {
-                    card.classList.remove('selected');
-                }
-            });
+            // Request GPT-4 analysis (inline)
+            await analyzeDatasetInline(selectedDataset, index);
+        }
 
-            // Request GPT-4 analysis
-            await analyzeDataset(selectedDataset);
+        // Analyze dataset with GPT-4 (Inline Display)
+        async function analyzeDatasetInline(dataset, index) {
+            const analysisContainer = document.getElementById(`analysis-${index}`);
+            const analysisContent = document.getElementById(`analysis-content-${index}`);
+            const button = document.querySelector(`#card-${index} .btn-ai-analyze`);
+
+            // Show the analysis section
+            analysisContainer.style.display = 'block';
+
+            // Check if dataset has PMIDs for full-text analysis
+            const hasFullText = dataset.pubmed_ids && dataset.pubmed_ids.length > 0;
+            const analysisTypeLabel = hasFullText ? 'Full-Text Analysis' : 'GEO Summary Analysis';
+            
+            // Disable button and show loading state
+            button.disabled = true;
+            button.innerHTML = '⏳ Analyzing...';
+
+            // Show loading skeleton with analysis type warning
+            analysisContent.innerHTML = `
+                ${!hasFullText ? `
+                    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); 
+                                padding: 12px 16px; 
+                                border-radius: 8px; 
+                                border-left: 4px solid #f59e0b;
+                                margin-bottom: 15px;
+                                display: flex;
+                                align-items: start;
+                                gap: 10px;">
+                        <span style="font-size: 20px;">⚠️</span>
+                        <div>
+                            <strong style="color: #92400e; display: block; margin-bottom: 4px;">Limited Analysis Mode</strong>
+                            <span style="color: #78350f; font-size: 13px;">
+                                This dataset has no linked publications. Analysis will be based on the GEO summary only, 
+                                without detailed experimental methods or full-text insights.
+                            </span>
+                        </div>
+                    </div>
+                ` : ''}
+                <div class="skeleton" style="height: 80px; border-radius: 6px; margin-bottom: 10px;"></div>
+                <div class="skeleton" style="height: 120px; border-radius: 6px; margin-bottom: 10px;"></div>
+                <div class="skeleton" style="height: 100px; border-radius: 6px;"></div>
+            `;
+
+            try {
+                // Call AI analysis API
+                const response = await authenticatedFetch('http://localhost:8000/api/agents/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        datasets: [dataset],
+                        query: currentQuery,
+                        max_datasets: 1
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Analysis failed');
+                }
+
+                const analysis = await response.json();
+
+                // Display analysis inline
+                displayAnalysisInline(analysis, dataset, analysisContent);
+
+                // Update button to "Hide Analysis"
+                button.disabled = false;
+                button.innerHTML = '✓ Analysis Complete';
+                button.style.background = 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)';
+
+            } catch (error) {
+                console.error('Analysis error:', error);
+                analysisContent.innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #e53e3e;">
+                        <div style="font-size: 32px; margin-bottom: 10px;">⚠️</div>
+                        <h4>Analysis failed</h4>
+                        <p style="color: #718096;">Please try again</p>
+                    </div>
+                `;
+                
+                // Reset button
+                button.disabled = false;
+                button.innerHTML = '🤖 AI Analysis';
+                button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            }
+        }
+
+        // Display GPT-4 analysis inline
+        function displayAnalysisInline(analysis, dataset, contentElement) {
+            const summary = analysis.analysis || analysis.summary || 'No analysis available';
+            const findings = analysis.insights || analysis.key_findings || analysis.findings || [];
+            const recommendations = analysis.recommendations || [];
+            const scores = {
+                relevance: dataset.relevance_score || 0.85,
+                quality: dataset.relevance_score || 0.85,
+                confidence: 0.90
+            };
+
+            // Check if dataset has PMIDs
+            const hasFullText = dataset.pubmed_ids && dataset.pubmed_ids.length > 0;
+            
+            contentElement.innerHTML = `
+                <!-- Warning for limited analysis -->
+                ${!hasFullText ? `
+                    <div style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); 
+                                padding: 12px 16px; 
+                                border-radius: 8px; 
+                                border-left: 4px solid #f59e0b;
+                                margin-bottom: 15px;
+                                display: flex;
+                                align-items: start;
+                                gap: 10px;">
+                        <span style="font-size: 20px;">⚠️</span>
+                        <div>
+                            <strong style="color: #92400e; display: block; margin-bottom: 4px;">Limited Analysis Mode</strong>
+                            <span style="color: #78350f; font-size: 13px;">
+                                This analysis is based on GEO summary only (no linked publications available).
+                            </span>
+                        </div>
+                    </div>
+                ` : `
+                    <div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); 
+                                padding: 12px 16px; 
+                                border-radius: 8px; 
+                                border-left: 4px solid #10b981;
+                                margin-bottom: 15px;
+                                display: flex;
+                                align-items: start;
+                                gap: 10px;">
+                        <span style="font-size: 20px;">✅</span>
+                        <div>
+                            <strong style="color: #065f46; display: block; margin-bottom: 4px;">Full-Text Analysis</strong>
+                            <span style="color: #047857; font-size: 13px;">
+                                Enhanced with ${dataset.pubmed_ids.length} linked publication${dataset.pubmed_ids.length > 1 ? 's' : ''} 
+                                ${dataset.fulltext_count > 0 ? `(${dataset.fulltext_count} full-text available)` : ''}
+                            </span>
+                        </div>
+                    </div>
+                `}
+                
+                <!-- Quality Scores -->
+                <div style="margin-bottom: 20px;">
+                    <h4>📊 Quality Assessment</h4>
+                    <div class="score-grid-inline">
+                        <div class="score-item-inline">
+                            <span class="score-value-inline">${Math.round(scores.relevance * 100)}%</span>
+                            <span class="score-label-inline">Relevance</span>
+                        </div>
+                        <div class="score-item-inline">
+                            <span class="score-value-inline">${Math.round(scores.quality * 100)}%</span>
+                            <span class="score-label-inline">Quality</span>
+                        </div>
+                        <div class="score-item-inline">
+                            <span class="score-value-inline">${Math.round(scores.confidence * 100)}%</span>
+                            <span class="score-label-inline">Confidence</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AI Summary -->
+                <div style="margin-bottom: 20px;">
+                    <h4>🤖 AI Summary</h4>
+                    <p>${summary}</p>
+                </div>
+
+                <!-- Key Findings -->
+                ${findings.length > 0 ? `
+                    <div style="margin-bottom: 20px;">
+                        <h4>🔍 Key Findings</h4>
+                        <ul>
+                            ${findings.map(f => `<li>${f}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+
+                <!-- Recommendations -->
+                ${recommendations.length > 0 ? `
+                    <div>
+                        <h4>💡 Recommendations</h4>
+                        <ul>
+                            ${recommendations.map(r => `<li>${r}</li>`).join('')}
+                        </ul>
+                    </div>
+                ` : ''}
+            `;
         }
 
         // Analyze dataset with GPT-4
@@ -796,6 +1840,51 @@
             URL.revokeObjectURL(url);
         }
 
+        // Copyable Error Modal Functions
+        function showErrorModal(title, message) {
+            const modal = document.getElementById('errorModal');
+            const modalTitle = document.getElementById('errorModalTitle');
+            const modalMessage = document.getElementById('errorModalMessage');
+            
+            modalTitle.textContent = title;
+            modalMessage.textContent = message;
+            modal.style.display = 'block';
+            
+            // Reset copy button
+            const copyBtn = document.getElementById('btnCopyError');
+            copyBtn.textContent = '📋 Copy Error Details';
+            copyBtn.classList.remove('copied');
+        }
+
+        function closeErrorModal() {
+            document.getElementById('errorModal').style.display = 'none';
+        }
+
+        function copyErrorMessage() {
+            const message = document.getElementById('errorModalMessage').textContent;
+            navigator.clipboard.writeText(message).then(() => {
+                const copyBtn = document.getElementById('btnCopyError');
+                copyBtn.textContent = '✅ Copied!';
+                copyBtn.classList.add('copied');
+                
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 Copy Error Details';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy:', err);
+                alert('Failed to copy to clipboard');
+            });
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('errorModal');
+            if (event.target === modal) {
+                closeErrorModal();
+            }
+        }
+
         // Enter key to search
         document.getElementById('search-query').addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
@@ -803,5 +1892,24 @@
             }
         });
     </script>
+
+    <!-- Copyable Error Modal -->
+    <div id="errorModal" class="error-modal">
+        <div class="error-modal-content">
+            <div class="error-modal-header">
+                <h3 id="errorModalTitle">Error Details</h3>
+                <button class="error-modal-close" onclick="closeErrorModal()">&times;</button>
+            </div>
+            <div class="error-modal-body">
+                <div id="errorModalMessage" class="error-message-box">
+                    Error message will appear here
+                </div>
+            </div>
+            <div class="error-modal-footer">
+                <button id="btnCopyError" class="btn-copy-error" onclick="copyErrorMessage()">📋 Copy Error Details</button>
+                <button class="btn-close-modal" onclick="closeErrorModal()">Close</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
