@@ -315,6 +315,12 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
             geo_datasets = search_result.geo_datasets
             context.set_metric("raw_geo_count", len(geo_datasets))
 
+            # Extract publications (ALWAYS include, even if no datasets found)
+            publications = search_result.publications
+            context.set_metric("publications_count", len(publications))
+            
+            logger.info(f"Found {len(publications)} related publications")
+
             # Apply SearchAgent-specific filters (min_samples)
             filtered_datasets = self._apply_filters(geo_datasets, input_data)
             context.set_metric("filtered_count", len(filtered_datasets))
@@ -334,6 +340,8 @@ class SearchAgent(Agent[SearchInput, SearchOutput]):
                 total_found=search_result.total_results,
                 search_terms_used=input_data.search_terms,
                 filters_applied=filters_applied,
+                publications=publications,  # NEW: Include publications!
+                publications_count=len(publications),
             )
 
         except Exception as e:

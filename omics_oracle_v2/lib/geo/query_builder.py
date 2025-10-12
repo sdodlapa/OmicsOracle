@@ -12,45 +12,23 @@ from typing import List, Set
 logger = logging.getLogger(__name__)
 
 # Common stop words to remove from queries
+# Based on empirical testing: these words reduce GEO search recall without adding specificity
 STOP_WORDS = {
-    "a",
-    "an",
-    "and",
-    "are",
-    "as",
-    "at",
-    "be",
-    "by",
-    "for",
-    "from",
-    "has",
-    "he",
-    "in",
-    "is",
-    "it",
-    "its",
-    "of",
-    "on",
-    "that",
-    "the",
-    "to",
-    "was",
-    "will",
-    "with",
-    "data",
-    "dataset",
-    "datasets",
-    "analysis",
-    "study",
-    "studies",
-    "using",
-    "based",
-    "joint",
-    "profiling",
-    "integrated",
-    "combined",
-    "multi",
-    "comprehensive",
+    # Articles
+    "a", "an", "the",
+    # Conjunctions  
+    "and", "or", "but", "nor",
+    # Prepositions
+    "of", "to", "in", "for", "on", "at", "from", "by", "with", "about",
+    # Pronouns
+    "it", "its", "he", "she", "they", "this", "that", "these", "those",
+    # Verbs (common)
+    "is", "are", "was", "were", "be", "been", "being", "have", "has", "had",
+    "do", "does", "did", "will", "would", "should", "could", "may", "might",
+    # Generic research terms (not specific enough for GEO)
+    "data", "dataset", "datasets", "analysis", "study", "studies",
+    "research", "investigation", "experiment", "experiments",
+    "using", "used", "based", "via", "through",
 }
 
 # GEO-specific field mappings
@@ -182,77 +160,36 @@ class GEOQueryBuilder:
 
     def _build_balanced_query(self, keywords: List[str], add_synonyms: bool = True) -> str:
         """
-        Build balanced query grouping related terms (balanced precision/recall).
+        Build balanced query optimized for NCBI GEO search behavior.
 
-        Strategy:
-        - Extract core concepts (nouns, techniques)
-        - Group technique synonyms with OR
-        - Connect concept groups with AND
-        - Prefer Title field for highest relevance
-
+        CRITICAL FINDING FROM TESTING:
+        - NCBI treats space-separated terms as implicit AND with fuzzy matching
+        - Field restrictions ([Title]) and explicit AND/OR operators REDUCE results
+        - Quotes break search completely
+        - Stopwords ("of", "and", "the") reduce recall significantly
+        
+        OPTIMAL STRATEGY:
+        - Remove stopwords
+        - Keep important scientific terms
+        - Use space-separated keywords (NCBI handles it as fuzzy AND)
+        - NO field tags, NO quotes, NO boolean operators
+        
         Example Input: ['dna', 'methylation', 'hic']
-        Example Output: '"DNA methylation"[Title] AND (HiC[Title] OR Hi-C[Title] OR "chromosome conformation"[Title])'
-
-        This gives ~10-50 highly relevant results vs 1 (too strict) or 100+ (too broad)
+        Example Output: 'dna methylation hic'
+        
+        This gives optimal results: not too broad (OR), not too narrow (explicit AND),
+        and matches how NCBI actually searches (fuzzy matching across all fields)
         """
-        # Identify techniques in keywords
-        technique_groups = []
-        regular_keywords = []
-        used_keywords = set()
-
-        for keyword in keywords:
-            if keyword in used_keywords:
-                continue
-
-            # Check if this is a known technique
-            is_technique = False
-            if add_synonyms:
-                for tech_name, synonyms in self.technique_synonyms.items():
-                    if keyword in tech_name or any(keyword in syn.lower() for syn in synonyms):
-                        # Create OR group with synonyms, restricted to Title field
-                        synonym_list = [keyword] + [s for s in synonyms if s.lower() != keyword]
-                        # Apply field restriction to each synonym
-                        field_synonyms = [
-                            f"{syn}[Title]" if " " not in syn else f'"{syn}"[Title]' for syn in synonym_list
-                        ]
-                        technique_groups.append(f"({' OR '.join(field_synonyms)})")
-                        used_keywords.add(keyword)
-                        is_technique = True
-                        break
-
-            if not is_technique:
-                regular_keywords.append(keyword)
-                used_keywords.add(keyword)
-
-        # Group regular keywords into concepts (e.g., "DNA methylation")
-        # Look for adjacent scientific terms and group them
-        concept_groups = []
-        i = 0
-        while i < len(regular_keywords):
-            # Check if we can form a multi-word concept
-            if i + 1 < len(regular_keywords):
-                two_word = f"{regular_keywords[i]} {regular_keywords[i+1]}"
-                # Check if this forms a known scientific term
-                if self._is_scientific_concept(two_word):
-                    concept_groups.append(f'"{two_word}"[Title]')
-                    i += 2
-                    continue
-
-            # Single word concept
-            if len(regular_keywords[i]) > 2:  # Skip very short words
-                concept_groups.append(f"{regular_keywords[i]}[Title]")
-            i += 1
-
-        # Combine into query with AND logic
-        query_parts = concept_groups + technique_groups
-
-        if len(query_parts) == 1:
-            return query_parts[0]
-        elif len(query_parts) == 0:
-            # Fallback: use original keywords without field restriction
-            return " AND ".join(keywords)
-        else:
-            return " AND ".join(query_parts)
+        # Filter out very short or non-meaningful keywords
+        meaningful_keywords = [k for k in keywords if len(k) >= 3]
+        
+        if not meaningful_keywords:
+            # Fallback to original keywords if filtering removes everything
+            meaningful_keywords = keywords
+        
+        # Simple space-separated format - NCBI does the rest!
+        # This is the format that works best based on empirical testing
+        return " ".join(meaningful_keywords)
 
     def _is_scientific_concept(self, phrase: str) -> bool:
         """

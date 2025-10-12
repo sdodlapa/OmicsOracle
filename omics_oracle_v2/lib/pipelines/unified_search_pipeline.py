@@ -19,6 +19,7 @@ from typing import Any, Dict, List, Optional
 from omics_oracle_v2.lib.cache.redis_cache import RedisCache
 from omics_oracle_v2.lib.geo import GEOClient
 from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
+from omics_oracle_v2.lib.geo.query_builder import GEOQueryBuilder
 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 from omics_oracle_v2.lib.publications.deduplication import AdvancedDeduplicator
 from omics_oracle_v2.lib.publications.models import Publication
@@ -172,6 +173,10 @@ class OmicsSearchPipeline:
         # Initialize query analyzer (always enabled - lightweight)
         logger.info("Initializing QueryAnalyzer")
         self.query_analyzer = QueryAnalyzer()
+        
+        # Initialize GEO query builder (always enabled for GEO search optimization)
+        logger.info("Initializing GEOQueryBuilder")
+        self.geo_query_builder = GEOQueryBuilder()
 
         # Initialize query optimizer (conditional)
         if config.enable_query_optimization:
@@ -311,12 +316,24 @@ class OmicsSearchPipeline:
             f"Query analysis: type={analysis.search_type.value}, confidence={analysis.confidence:.2f}"
         )
 
+        # HYBRID MODE: Search both GEO and publications for maximum recall
+        # Publications often contain richer semantic context than GEO metadata
+        # and link to datasets via data availability statements
+        if analysis.search_type == SearchType.AUTO:
+            logger.info("AUTO mode: Enabling HYBRID search (GEO + Publications)")
+            analysis.search_type = SearchType.HYBRID
+        elif analysis.search_type == SearchType.PUBLICATIONS:
+            logger.info("PUBLICATIONS mode: Enabling HYBRID to also find linked datasets")
+            analysis.search_type = SearchType.HYBRID
+
         # Override query type if specified
         if search_type:
             if search_type.lower() == "geo":
                 analysis.search_type = SearchType.GEO
             elif search_type.lower() == "publication":
                 analysis.search_type = SearchType.PUBLICATIONS
+            elif search_type.lower() == "hybrid":
+                analysis.search_type = SearchType.HYBRID
             logger.info(f"Query type overridden to: {analysis.search_type.value}")
 
         # Step 3: Optimize query (if enabled and not GEO ID fast path)
@@ -338,25 +355,111 @@ class OmicsSearchPipeline:
         # Step 4: Route and execute searches
         geo_datasets = []
         publications = []
+        geo_from_publications = []
 
         # GEO ID fast path
         if analysis.search_type == SearchType.GEO_ID and analysis.geo_ids:
             logger.info(f"GEO ID detected: {analysis.geo_ids[0]} - fast path")
             geo_datasets = await self._search_geo_by_id(analysis.geo_ids[0])
 
-        # Dataset search
+        # HYBRID: Run both GEO and publication searches in parallel
+        elif analysis.search_type == SearchType.HYBRID:
+            logger.info("🔄 HYBRID search: Running GEO + Publication searches in parallel")
+            
+            # Prepare tasks for parallel execution
+            tasks = []
+            
+            # GEO search task
+            if self.config.enable_geo_search:
+                geo_optimized_query = self.geo_query_builder.build_query(
+                    optimized_query, 
+                    mode="balanced"
+                )
+                if geo_optimized_query != optimized_query:
+                    logger.info(f"GEO query optimized: '{optimized_query}' -> '{geo_optimized_query}'")
+                
+                geo_task = self._search_geo(
+                    geo_optimized_query,
+                    max_results=max_geo_results or self.config.max_geo_results,
+                )
+                tasks.append(geo_task)
+            else:
+                tasks.append(None)
+            
+            # Publication search task
+            if self.config.enable_publication_search:
+                pub_task = self._search_publications(
+                    optimized_query,
+                    max_results=max_publication_results or self.config.max_publication_results,
+                )
+                tasks.append(pub_task)
+            else:
+                tasks.append(None)
+            
+            # Execute in parallel
+            import asyncio
+            results = await asyncio.gather(*[t for t in tasks if t is not None], return_exceptions=True)
+            
+            # Process results
+            result_idx = 0
+            if self.config.enable_geo_search:
+                if isinstance(results[result_idx], Exception):
+                    logger.error(f"GEO search failed: {results[result_idx]}")
+                    geo_datasets = []
+                else:
+                    geo_datasets = results[result_idx]
+                result_idx += 1
+            
+            if self.config.enable_publication_search:
+                if isinstance(results[result_idx], Exception):
+                    logger.error(f"Publication search failed: {results[result_idx]}")
+                    publications = []
+                else:
+                    publications = results[result_idx]
+            
+            # Extract GEO IDs from publications and fetch those datasets
+            if publications:
+                logger.info(f"📄 Extracting GEO IDs from {len(publications)} publications...")
+                geo_ids_from_pubs = await self._extract_geo_ids_from_publications(publications)
+                
+                if geo_ids_from_pubs:
+                    logger.info(f"🔍 Found {len(geo_ids_from_pubs)} GEO IDs in publications: {geo_ids_from_pubs[:5]}...")
+                    geo_from_publications = await self._fetch_geo_datasets_by_ids(geo_ids_from_pubs)
+                    logger.info(f"✅ Successfully fetched {len(geo_from_publications)} datasets from publications")
+            
+            # Merge GEO results (direct + from publications)
+            if geo_from_publications:
+                all_geo = self._merge_and_deduplicate_datasets(geo_datasets, geo_from_publications)
+                logger.info(
+                    f"📊 Hybrid results: {len(all_geo)} unique datasets "
+                    f"({len(geo_datasets)} direct + {len(geo_from_publications)} from publications)"
+                )
+                geo_datasets = all_geo
+
+        # Dataset search (GEO only)
         elif analysis.search_type == SearchType.GEO or analysis.search_type == SearchType.AUTO:
             if self.config.enable_geo_search:
                 logger.info("Executing GEO dataset search")
+                
+                # CRITICAL: Use GEOQueryBuilder to optimize query for NCBI E-utilities
+                # This removes stopwords and formats query for optimal GEO search results
+                geo_optimized_query = self.geo_query_builder.build_query(
+                    optimized_query, 
+                    mode="balanced"
+                )
+                
+                if geo_optimized_query != optimized_query:
+                    logger.info(f"GEO query optimized: '{optimized_query}' -> '{geo_optimized_query}'")
+                
                 geo_datasets = await self._search_geo(
-                    optimized_query,
+                    geo_optimized_query,
                     max_results=max_geo_results or self.config.max_geo_results,
                 )
             else:
                 logger.info("GEO search disabled - skipping")
 
-        # Publication search
-        if analysis.search_type == SearchType.PUBLICATIONS or analysis.search_type == SearchType.AUTO:
+        # Publication search (publications only)
+        elif analysis.search_type == SearchType.PUBLICATIONS:
             if self.config.enable_publication_search:
                 logger.info("Executing publication search")
                 publications = await self._search_publications(
@@ -385,6 +488,23 @@ class OmicsSearchPipeline:
 
         # Step 6: Build result
         search_time_ms = (time.time() - start_time) * 1000
+        
+        # Build metadata with hybrid search stats
+        metadata = {
+            "query_confidence": analysis.confidence,
+            "geo_ids": analysis.geo_ids,
+            "entities_detected": len(optimization_result.entities) if optimization_result else 0,
+            "query_variations": len(optimization_result.get_all_query_variations())
+            if optimization_result
+            else 0,
+        }
+        
+        # Add hybrid search metrics if applicable
+        if analysis.search_type == SearchType.HYBRID and geo_from_publications:
+            metadata["hybrid_mode"] = True
+            metadata["geo_from_publications_count"] = len(geo_from_publications)
+            metadata["geo_direct_count"] = len(geo_datasets) - len(geo_from_publications)
+        
         result = SearchResult(
             query=query,
             optimized_query=optimized_query,
@@ -394,14 +514,7 @@ class OmicsSearchPipeline:
             total_results=len(geo_datasets) + len(publications),
             search_time_ms=search_time_ms,
             cache_hit=cache_hit,
-            metadata={
-                "query_confidence": analysis.confidence,
-                "geo_ids": analysis.geo_ids,
-                "entities_detected": len(optimization_result.entities) if optimization_result else 0,
-                "query_variations": len(optimization_result.get_all_query_variations())
-                if optimization_result
-                else 0,
-            },
+            metadata=metadata,
         )
 
         logger.info(
@@ -599,6 +712,105 @@ class OmicsSearchPipeline:
         except Exception as e:
             logger.error(f"Publication search failed: {e}", exc_info=True)
             return []
+
+    async def _extract_geo_ids_from_publications(self, publications: List) -> List[str]:
+        """
+        Extract GEO accession numbers (GSE IDs) from publication metadata.
+        
+        Args:
+            publications: List of publication objects
+            
+        Returns:
+            List of unique GEO IDs found
+        """
+        import re
+        
+        geo_pattern = re.compile(r'\bGSE\d{5,}\b')  # Match GSE12345 (5+ digits)
+        geo_ids = set()
+        
+        for pub in publications:
+            # Search in abstract
+            if hasattr(pub, 'abstract') and pub.abstract:
+                matches = geo_pattern.findall(pub.abstract)
+                geo_ids.update(matches)
+            
+            # Search in full text (if available)
+            if hasattr(pub, 'full_text') and pub.full_text:
+                matches = geo_pattern.findall(pub.full_text)
+                geo_ids.update(matches)
+            
+            # Search in title (less common but possible)
+            if hasattr(pub, 'title') and pub.title:
+                matches = geo_pattern.findall(pub.title)
+                geo_ids.update(matches)
+        
+        geo_id_list = list(geo_ids)
+        logger.info(f"Extracted {len(geo_id_list)} unique GEO IDs from {len(publications)} publications: {geo_id_list[:5]}...")
+        return geo_id_list
+
+    async def _fetch_geo_datasets_by_ids(self, geo_ids: List[str]) -> List:
+        """
+        Fetch GEO datasets by their accession IDs.
+        
+        Args:
+            geo_ids: List of GEO accession IDs (e.g., ['GSE12345', 'GSE67890'])
+            
+        Returns:
+            List of GEO dataset objects
+        """
+        if not geo_ids:
+            return []
+        
+        datasets = []
+        
+        try:
+            # Use batch fetch for efficiency
+            logger.info(f"Fetching {len(geo_ids)} GEO datasets via batch fetch...")
+            batch_results = await self.geo_client.batch_get_metadata_smart(geo_ids)
+            datasets = [ds for ds in batch_results if ds is not None]
+            logger.info(f"Successfully fetched {len(datasets)}/{len(geo_ids)} datasets")
+        except Exception as e:
+            logger.error(f"Batch fetch failed: {e}, falling back to individual fetches")
+            
+            # Fallback: Fetch individually
+            for geo_id in geo_ids:
+                try:
+                    dataset_list = await self._search_geo_by_id(geo_id)
+                    if dataset_list:
+                        datasets.extend(dataset_list)
+                except Exception as fetch_error:
+                    logger.warning(f"Failed to fetch {geo_id}: {fetch_error}")
+        
+        return datasets
+
+    def _merge_and_deduplicate_datasets(self, list1: List, list2: List) -> List:
+        """
+        Merge two lists of datasets and remove duplicates by GEO ID.
+        
+        Args:
+            list1: First list of datasets
+            list2: Second list of datasets
+            
+        Returns:
+            Merged list with no duplicate GEO IDs
+        """
+        seen_ids = set()
+        merged = []
+        
+        for dataset in list1 + list2:
+            # Try different attribute names for GEO ID
+            geo_id = (
+                getattr(dataset, 'geo_id', None) or 
+                getattr(dataset, 'accession', None) or
+                getattr(dataset, 'id', None)
+            )
+            
+            if geo_id and geo_id not in seen_ids:
+                seen_ids.add(geo_id)
+                merged.append(dataset)
+        
+        logger.info(f"Merged datasets: {len(list1)} + {len(list2)} = {len(merged)} unique")
+        return merged
 
     async def close(self) -> None:
         """Clean up resources."""

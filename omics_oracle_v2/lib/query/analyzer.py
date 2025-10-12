@@ -21,6 +21,7 @@ class SearchType(Enum):
     GEO_ID = "geo_id"  # Direct GEO ID lookup
     GEO = "geo"  # GEO dataset keyword search
     PUBLICATIONS = "publications"  # Publication search
+    HYBRID = "hybrid"  # Search both GEO and publications
     AUTO = "auto"  # Auto-detect from query
 
 

@@ -56,6 +56,8 @@ class SearchOutput(BaseModel):
     total_found: int = Field(..., description="Total number of results found", ge=0)
     search_terms_used: List[str] = Field(..., description="Search terms that were actually used")
     filters_applied: Dict[str, str] = Field(default_factory=dict, description="Filters that were applied")
+    publications: List = Field(default_factory=list, description="Related publications (even if no datasets found)")
+    publications_count: int = Field(default=0, description="Number of related publications found")
 
     def get_top_datasets(self, n: int = 10) -> List[RankedDataset]:
         """
