@@ -28,6 +28,7 @@ from omics_oracle_v2.api.models.responses import (
     DatasetResponse,
     DataValidationResponse,
     EntityResponse,
+    PublicationResponse,
     QualityMetricsResponse,
     QueryResponse,
     ReportResponse,
@@ -235,6 +236,9 @@ async def execute_search_agent(
     """
     start_time = time.time()
 
+    # Collect search logs for frontend display
+    search_logs = []
+
     try:
         # Import here to avoid circular dependency
         from omics_oracle_v2.api.dependencies import get_settings
@@ -242,14 +246,23 @@ async def execute_search_agent(
         settings = get_settings()
         agent = SearchAgent(settings=settings, enable_semantic=request.enable_semantic)
 
+        # Log original query
+        original_query = " ".join(request.search_terms)
+        search_logs.append(f"🔍 Original query: '{original_query}'")
+        logger.info(f"Search request: '{original_query}' (semantic={request.enable_semantic})")
+
         # Log semantic search status
         if request.enable_semantic:
             if agent.is_semantic_search_available():
+                search_logs.append("✨ Using semantic search with AI-powered query expansion")
                 logger.info("Using semantic search with query expansion and hybrid ranking")
             else:
+                search_logs.append("⚠️ Semantic search unavailable, using keyword search")
                 logger.warning(
                     "Semantic search requested but index unavailable, falling back to keyword search"
                 )
+        else:
+            search_logs.append("📝 Using unified pipeline with query preprocessing")
 
         # Execute agent
         search_input = SearchInput(
@@ -267,6 +280,58 @@ async def execute_search_agent(
 
         output = result.output
 
+        # Extract search information from agent result metadata
+        metadata = result.metadata if result.metadata else {}
+
+        # Add detailed logging for debugging
+        if "raw_geo_count" in metadata:
+            search_logs.append(f"📦 Raw GEO datasets fetched: {metadata['raw_geo_count']}")
+
+        if "filtered_count" in metadata:
+            search_logs.append(f"🔍 After filtering: {metadata['filtered_count']}")
+
+        if "ranked_count" in metadata:
+            search_logs.append(f"📊 After ranking: {metadata['ranked_count']}")
+
+        # Add query optimization logs from metadata
+        if "query_type" in metadata:
+            query_type = metadata["query_type"]
+            if query_type == "hybrid":
+                search_logs.append("🔄 Query type: HYBRID (GEO + Publications)")
+            else:
+                search_logs.append(f"📊 Query type: {query_type}")
+
+        # Add hybrid search stats
+        if "hybrid_mode" in metadata and metadata["hybrid_mode"]:
+            geo_from_pubs = metadata.get("geo_from_publications_count", 0)
+            geo_direct = metadata.get("geo_direct_count", 0)
+            search_logs.append(f"🔗 Hybrid search: {geo_direct} direct + {geo_from_pubs} from publications")
+
+        if "optimized_query" in metadata:
+            optimized = metadata["optimized_query"]
+            if optimized != original_query:
+                search_logs.append(f"🔧 Optimized query: '{optimized}'")
+            else:
+                search_logs.append("ℹ️ Query used as-is (no optimization needed)")
+
+        if "cache_hit" in metadata:
+            if metadata["cache_hit"]:
+                search_logs.append("⚡ Cache hit - results returned from cache")
+            else:
+                search_logs.append("🔄 Fresh search - results fetched from GEO")
+
+        if "search_time_ms" in metadata:
+            search_time = metadata["search_time_ms"]
+            search_logs.append(f"⏱️ Search time: {search_time:.2f}ms")
+
+        # Add result counts
+        search_logs.append(f"✅ Found {output.total_found} datasets total")
+        if output.publications_count > 0:
+            search_logs.append(f"📄 Found {output.publications_count} related publications")
+        if output.filters_applied:
+            filter_str = ", ".join([f"{k}={v}" for k, v in output.filters_applied.items()])
+            search_logs.append(f"🎯 Filters applied: {filter_str}")
+
         # Convert datasets to response format
         datasets = [
             DatasetResponse(
@@ -278,11 +343,44 @@ async def execute_search_agent(
                 platform=ranked.dataset.platforms[0] if ranked.dataset.platforms else None,
                 relevance_score=ranked.relevance_score,
                 match_reasons=ranked.match_reasons,
+                publication_date=ranked.dataset.publication_date,  # When dataset was made public
+                submission_date=ranked.dataset.submission_date,  # When dataset was submitted
+                pubmed_ids=ranked.dataset.pubmed_ids,  # Include PMIDs for full-text enrichment
             )
             for ranked in output.datasets
         ]
 
+        # Convert publications to response format
+        publications = []
+        if output.publications:
+            for pub in output.publications:
+                # Extract GEO IDs from abstract/full text
+                import re
+
+                geo_ids = []
+                if hasattr(pub, "abstract") and pub.abstract:
+                    geo_ids.extend(re.findall(r"\bGSE\d{5,}\b", pub.abstract))
+                if hasattr(pub, "full_text") and pub.full_text:
+                    geo_ids.extend(re.findall(r"\bGSE\d{5,}\b", pub.full_text))
+
+                publications.append(
+                    PublicationResponse(
+                        pmid=getattr(pub, "pmid", None),
+                        pmc_id=getattr(pub, "pmc_id", None),
+                        doi=getattr(pub, "doi", None),
+                        title=getattr(pub, "title", ""),
+                        abstract=getattr(pub, "abstract", None),
+                        authors=getattr(pub, "authors", []),
+                        journal=getattr(pub, "journal", None),
+                        publication_date=getattr(pub, "publication_date", None),
+                        geo_ids_mentioned=list(set(geo_ids)),  # Deduplicate
+                        fulltext_available=hasattr(pub, "full_text") and pub.full_text is not None,
+                        pdf_path=getattr(pub, "pdf_path", None),
+                    )
+                )
+
         execution_time_ms = (time.time() - start_time) * 1000
+        search_logs.append(f"⏰ Total execution time: {execution_time_ms:.2f}ms")
 
         return SearchResponse(
             success=True,
@@ -292,6 +390,9 @@ async def execute_search_agent(
             datasets=datasets,
             search_terms_used=output.search_terms_used,
             filters_applied=output.filters_applied,
+            search_logs=search_logs,
+            publications=publications,
+            publications_count=len(publications),
         )
 
     except HTTPException:
@@ -301,6 +402,136 @@ async def execute_search_agent(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Search error: {str(e)}",
+        )
+
+
+@router.post(
+    "/enrich-fulltext",
+    response_model=List[DatasetResponse],
+    summary="Enrich Datasets with Full-Text Content",
+)
+async def enrich_fulltext(
+    datasets: List[DatasetResponse],
+    max_papers: int = 3,
+):
+    """
+    Enrich datasets with full-text content from linked publications.
+
+    Uses FullTextManager directly (same approach as PublicationSearchPipeline).
+
+    This endpoint:
+    1. Takes datasets with PubMed IDs
+    2. Fetches full publication metadata from PubMed (DOI, PMC ID)
+    3. Downloads PDFs using FullTextManager.get_fulltext_batch() (concurrent!)
+    4. Returns datasets with fulltext URLs
+
+    **Note:** This is a public endpoint for demo purposes (async background task).
+
+    Args:
+        datasets: List of datasets to enrich (must have pubmed_ids)
+        max_papers: Maximum papers to download per dataset (1-10)
+
+    Returns:
+        List of datasets with full-text URLs attached
+    """
+    import os
+
+    from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
+    from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient, PubMedConfig
+
+    start_time = time.time()
+
+    try:
+        # Initialize FullTextManager (same config as PublicationSearchPipeline)
+        logger.info("Initializing FullTextManager with all sources...")
+        fulltext_config = FullTextManagerConfig(
+            enable_institutional=True,
+            enable_pmc=True,
+            enable_unpaywall=True,
+            enable_openalex=True,
+            enable_core=True,
+            enable_biorxiv=True,
+            enable_arxiv=True,
+            enable_crossref=True,
+            enable_scihub=True,  # User requested
+            enable_libgen=True,  # User requested
+            download_pdfs=True,  # Download PDFs for parsing
+            unpaywall_email=os.getenv("UNPAYWALL_EMAIL", "research@omicsoracle.ai"),
+            core_api_key=os.getenv("CORE_API_KEY"),
+        )
+        fulltext_manager = FullTextManager(fulltext_config)
+
+        # Initialize PubMed client for metadata fetching
+        pubmed_client = PubMedClient(PubMedConfig(email=os.getenv("NCBI_EMAIL", "research@omicsoracle.ai")))
+
+        # Initialize manager
+        if not fulltext_manager.initialized:
+            await fulltext_manager.initialize()
+
+        enriched_datasets = []
+
+        for dataset in datasets:
+            if not dataset.pubmed_ids:
+                logger.warning(f"Dataset {dataset.geo_id} has no PubMed IDs")
+                enriched_datasets.append(dataset)
+                continue
+
+            # Limit to max_papers
+            pmids_to_fetch = dataset.pubmed_ids[:max_papers]
+            logger.info(f"Enriching {dataset.geo_id} with {len(pmids_to_fetch)} PMIDs...")
+
+            # Fetch full metadata from PubMed (gets DOI, PMC ID, etc.)
+            publications = []
+            for pmid in pmids_to_fetch:
+                try:
+                    pub = pubmed_client.fetch_by_id(pmid)
+                    if pub:
+                        publications.append(pub)
+                        logger.info(f"✅ Fetched metadata for PMID {pmid}: DOI={pub.doi}, PMC={pub.pmcid}")
+                except Exception as e:
+                    logger.error(f"Error fetching metadata for PMID {pmid}: {e}")
+
+            if not publications:
+                logger.warning(f"No publications fetched for {dataset.geo_id}")
+                enriched_datasets.append(dataset)
+                continue
+
+            # BATCH DOWNLOAD (same as PublicationSearchPipeline - WORKING CODE!)
+            logger.info(f"🚀 Batch downloading full-text for {len(publications)} publications...")
+            fulltext_results = await fulltext_manager.get_fulltext_batch(publications)
+
+            # Attach results to dataset metadata
+            dataset.fulltext = []
+            for pub, result in zip(publications, fulltext_results):
+                if result.success:
+                    fulltext_info = {
+                        "pmid": pub.pmid,
+                        "title": pub.title,
+                        "url": result.url,
+                        "source": result.source.value,
+                        "pdf_path": result.pdf_path if result.pdf_path else None,
+                    }
+                    dataset.fulltext.append(fulltext_info)
+                    logger.info(f"✅ Got full-text for {pub.pmid} from {result.source.value}")
+
+            dataset.fulltext_count = len(dataset.fulltext)
+            dataset.fulltext_status = "available" if dataset.fulltext else "failed"
+            enriched_datasets.append(dataset)
+
+            # Log statistics (same as pipeline)
+            stats = fulltext_manager.get_statistics()
+            logger.info(f"Sources used: {stats.get('by_source', {})}")
+
+        execution_time_ms = (time.time() - start_time) * 1000
+        logger.info(f"Enriched {len(enriched_datasets)} datasets in {execution_time_ms:.2f}ms")
+
+        return enriched_datasets
+
+    except Exception as e:
+        logger.error(f"Full-text enrichment failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Enrichment error: {str(e)}",
         )
 
 
@@ -587,35 +818,76 @@ async def analyze_datasets(
         # Limit datasets
         datasets_to_analyze = request.datasets[: request.max_datasets]
 
-        # Build comprehensive analysis prompt
+        # Build comprehensive analysis prompt with full-text when available
         dataset_summaries = []
+        total_fulltext_papers = 0
+
         for i, ds in enumerate(datasets_to_analyze, 1):
-            dataset_summaries.append(
-                f"{i}. **{ds.geo_id}** (Relevance: {int(ds.relevance_score * 100)}%)\n"
-                f"   Title: {ds.title}\n"
-                f"   Organism: {ds.organism or 'N/A'}, Samples: {ds.sample_count or 0}\n"
-                f"   Summary: {ds.summary[:300]}..."
-            )
+            # Start with basic dataset info
+            dataset_info = [
+                f"{i}. **{ds.geo_id}** (Relevance: {int(ds.relevance_score * 100)}%)",
+                f"   Title: {ds.title}",
+                f"   Organism: {ds.organism or 'N/A'}, Samples: {ds.sample_count or 0}",
+                f"   GEO Summary: {ds.summary[:200] if ds.summary else 'No summary'}...",
+            ]
+
+            # Add full-text content if available
+            if ds.fulltext and len(ds.fulltext) > 0:
+                dataset_info.append(
+                    f"\n   📄 Full-text content from {len(ds.fulltext)} linked publication(s):"
+                )
+                total_fulltext_papers += len(ds.fulltext)
+
+                for j, ft in enumerate(ds.fulltext[:2], 1):  # Max 2 papers per dataset to manage tokens
+                    dataset_info.extend(
+                        [
+                            f"\n   Paper {j}: {ft.title[:100]}... (PMID: {ft.pmid})",
+                            f"   Abstract: {ft.abstract[:250] if ft.abstract else 'N/A'}...",
+                            f"   Methods: {ft.methods[:400] if ft.methods else 'N/A'}...",
+                            f"   Results: {ft.results[:400] if ft.results else 'N/A'}...",
+                            f"   Discussion: {ft.discussion[:250] if ft.discussion else 'N/A'}...",
+                        ]
+                    )
+            else:
+                dataset_info.append("   ⚠️ No full-text available (analyzing GEO summary only)")
+
+            dataset_summaries.append("\n".join(dataset_info))
+
+        # Build analysis prompt with full-text context
+        fulltext_note = (
+            f"\n\nIMPORTANT: You have access to full-text content from {total_fulltext_papers} scientific papers "
+            f"(Methods, Results, Discussion sections). Use these to provide detailed, specific insights "
+            f"about experimental design, methodologies, and key findings."
+            if total_fulltext_papers > 0
+            else "\n\nNote: Analysis based on GEO metadata only (no full-text papers available)."
+        )
 
         analysis_prompt = f"""
 User searched for: "{request.query}"
 
 Found {len(datasets_to_analyze)} relevant datasets:
 
-{chr(10).join(dataset_summaries)}
+{chr(10).join(dataset_summaries)}{fulltext_note}
 
 Analyze these datasets and provide:
 
 1. **Overview**: Which datasets are most relevant to the user's query and why?
+   {f"Reference specific findings from the Methods and Results sections." if total_fulltext_papers > 0 else ""}
+
 2. **Comparison**: How do these datasets differ in methodology and scope?
+   {f"Compare experimental approaches described in the Methods sections." if total_fulltext_papers > 0 else ""}
+
 3. **Key Insights**: What are the main scientific findings or approaches?
+   {f"Cite specific results and conclusions from the papers." if total_fulltext_papers > 0 else ""}
+
 4. **Recommendations**: Which dataset(s) would you recommend for:
    - Basic understanding of the topic
-   - Advanced analysis
+   - Advanced analysis and replication
    - Method development
 
 Write for a researcher who wants expert guidance on which datasets to use.
-Be specific and cite dataset IDs (GSE numbers).
+Be specific and cite dataset IDs (GSE numbers){f" and PMIDs" if total_fulltext_papers > 0 else ""}.
+{f"Ground your analysis in the actual experimental details from the papers." if total_fulltext_papers > 0 else ""}
 """
 
         # Call LLM
