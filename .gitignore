@@ -83,6 +83,12 @@ data/exports/*
 data/analytics/*
 !data/analytics/.gitkeep
 
+# Full-text cache and downloaded files (generated, not source)
+data/fulltext/pdfs/
+data/fulltext/parsed/
+data/fulltext/tables_extracted/
+data/fulltext/cache.db
+
 # MagicMock
 MagicMock/
 
