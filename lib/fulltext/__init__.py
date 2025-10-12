@@ -6,6 +6,8 @@ various sources including PubMed Central, Unpaywall, institutional repositories,
 and gray-area sources.
 """
 
+from lib.fulltext.content_extractor import ContentExtractor
+from lib.fulltext.content_fetcher import ContentFetcher
 from lib.fulltext.models import (
     Author,
     ContentType,
@@ -17,6 +19,7 @@ from lib.fulltext.models import (
     SourceType,
     Table,
 )
+from lib.fulltext.pdf_downloader import PDFDownloader, download_pdf_from_doi
 
 __all__ = [
     "ContentType",
@@ -28,4 +31,8 @@ __all__ = [
     "Section",
     "FullTextContent",
     "FullTextResult",
+    "ContentFetcher",
+    "ContentExtractor",
+    "PDFDownloader",
+    "download_pdf_from_doi",
 ]

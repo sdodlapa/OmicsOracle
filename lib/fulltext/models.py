@@ -28,6 +28,7 @@ class SourceType(Enum):
     INSTITUTIONAL = "institutional"
     CORE = "core"
     ARXIV = "arxiv"
+    BIORXIV = "biorxiv"
     SCIHUB = "scihub"
     LIBGEN = "libgen"
     PUBLISHER = "publisher"
