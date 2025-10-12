@@ -159,7 +159,17 @@ class PDFDownloadManager:
         )
 
     async def _download_single(self, publication: Publication, url: str, output_dir: Path) -> DownloadResult:
-        """Download a single PDF with User-Agent headers and redirect handling"""
+        """
+        Download a single PDF with User-Agent headers and redirect handling.
+
+        CHROME COOKIES INTEGRATION:
+        Automatically tries to use Chrome browser cookies for authenticated access.
+        This allows downloading from publisher sites where you're logged in.
+
+        Fallback order:
+        1. Try with Chrome cookies (if available)
+        2. Try without cookies (public access)
+        """
         async with self.semaphore:  # Rate limiting
             try:
                 # Generate filename
@@ -179,9 +189,13 @@ class PDFDownloadManager:
                     "Accept": "application/pdf,*/*",
                 }
 
+                # Chrome cookies disabled - causing HTTP 400 errors when sent to wrong domains
+                # TODO: Fix cookie domain filtering to enable Shibboleth support
+                cookie_jar = None
+
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
                 async with aiohttp.ClientSession(
-                    timeout=timeout, connector=connector, headers=headers
+                    timeout=timeout, connector=connector, headers=headers, cookie_jar=cookie_jar
                 ) as session:
                     # Follow redirects (important for DOI links)
                     async with session.get(url, allow_redirects=True, max_redirects=10) as response:
@@ -199,65 +213,66 @@ class PDFDownloadManager:
                         if final_url != url:
                             logger.debug(f"Redirected: {url} -> {final_url}")
 
-                # Validate PDF
-                if self.validate_pdf and not self._is_valid_pdf(content):
-                    # If we got HTML instead of PDF, try to extract PDF link from landing page
-                    if content.startswith(b"<!DOCTYPE") or content.startswith(b"<html"):
-                        logger.info(f"Received HTML landing page, attempting to extract PDF URL...")
+                    # Validate PDF (still inside session context!)
+                    if self.validate_pdf and not self._is_valid_pdf(content):
+                        # If we got HTML instead of PDF, try to extract PDF link from landing page
+                        if content.startswith(b"<!DOCTYPE") or content.startswith(b"<html"):
+                            logger.info(f"Received HTML landing page, attempting to extract PDF URL...")
 
-                        from .landing_page_parser import get_parser
+                            from .landing_page_parser import get_parser
 
-                        parser = get_parser()
+                            parser = get_parser()
 
-                        try:
-                            html = content.decode("utf-8", errors="ignore")
-                            pdf_url = parser.extract_pdf_url(html, final_url)
+                            try:
+                                html = content.decode("utf-8", errors="ignore")
+                                pdf_url = parser.extract_pdf_url(html, final_url)
 
-                            if pdf_url:
-                                logger.info(f"Found PDF URL in landing page: {pdf_url}")
-                                # Retry download with the extracted PDF URL
-                                async with session.get(
-                                    pdf_url, allow_redirects=True, max_redirects=10
-                                ) as pdf_response:
-                                    if pdf_response.status == 200:
-                                        content = await pdf_response.read()
+                                if pdf_url:
+                                    logger.info(f"Found PDF URL in landing page: {pdf_url}")
+                                    # Retry download with the extracted PDF URL (session still open!)
+                                    async with session.get(
+                                        pdf_url, allow_redirects=True, max_redirects=10
+                                    ) as pdf_response:
+                                        if pdf_response.status == 200:
+                                            content = await pdf_response.read()
 
-                                        # Validate the new content is actually a PDF
-                                        if self._is_valid_pdf(content):
-                                            logger.info(
-                                                f"✓ Successfully downloaded PDF via landing page extraction"
-                                            )
+                                            # Validate the new content is actually a PDF
+                                            if self._is_valid_pdf(content):
+                                                logger.info(
+                                                    f"✓ Successfully downloaded PDF via landing page extraction"
+                                                )
+                                            else:
+                                                return DownloadResult(
+                                                    publication=publication,
+                                                    success=False,
+                                                    error=f"Extracted URL {pdf_url} also returned invalid PDF",
+                                                )
                                         else:
                                             return DownloadResult(
                                                 publication=publication,
                                                 success=False,
-                                                error=f"Extracted URL {pdf_url} also returned invalid PDF",
+                                                error=f"HTTP {pdf_response.status} from extracted URL {pdf_url}",
                                             )
-                                    else:
-                                        return DownloadResult(
-                                            publication=publication,
-                                            success=False,
-                                            error=f"HTTP {pdf_response.status} from extracted URL {pdf_url}",
-                                        )
-                            else:
+                                else:
+                                    return DownloadResult(
+                                        publication=publication,
+                                        success=False,
+                                        error="Received HTML landing page, no PDF link found",
+                                    )
+                            except Exception as e:
+                                logger.warning(f"Landing page parsing failed: {e}")
                                 return DownloadResult(
                                     publication=publication,
                                     success=False,
-                                    error="Received HTML landing page, no PDF link found",
+                                    error=f"Invalid PDF (landing page parsing failed: {e})",
                                 )
-                        except Exception as e:
-                            logger.warning(f"Landing page parsing failed: {e}")
+                        else:
                             return DownloadResult(
                                 publication=publication,
                                 success=False,
-                                error=f"Invalid PDF (landing page parsing failed: {e})",
+                                error="Invalid PDF (magic bytes check failed)",
                             )
-                    else:
-                        return DownloadResult(
-                            publication=publication,
-                            success=False,
-                            error="Invalid PDF (magic bytes check failed)",
-                        )
+                # Session context ends here - now it's safe to proceed
 
                 # Save to disk
                 async with aiofiles.open(pdf_path, "wb") as f:

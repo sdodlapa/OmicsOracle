@@ -319,13 +319,13 @@ class FullTextManager:
     async def _check_cache(self, publication: Publication) -> FullTextResult:
         """
         Check if full-text is already available locally.
-        
+
         ENHANCED (Oct 11, 2025):
         - Uses SmartCache to check ALL possible local file locations
         - Checks XML files (best quality) before PDFs
         - Checks source-specific directories (arxiv/, pmc/, institutional/, etc.)
         - Falls back to hash-based cache (legacy system)
-        
+
         This prevents unnecessary API calls when files are already downloaded
         but stored in source-specific directories.
 
@@ -336,30 +336,30 @@ class FullTextManager:
             FullTextResult with local file info if found
         """
         from omics_oracle_v2.lib.fulltext.smart_cache import SmartCache
-        
+
         cache = SmartCache()
         result = cache.find_local_file(publication)
-        
+
         if result.found:
             logger.info(
                 f"✓ Found local {result.file_type.upper()}: "
                 f"{result.file_path.name} "
                 f"({result.size_bytes // 1024} KB, source: {result.source})"
             )
-            
+
             return FullTextResult(
                 success=True,
                 source=FullTextSource.CACHE,
-                pdf_path=result.file_path if result.file_type == 'pdf' else None,
+                pdf_path=result.file_path if result.file_type == "pdf" else None,
                 metadata={
-                    'cached': True,
-                    'file_type': result.file_type,
-                    'source': result.source,
-                    'size': result.size_bytes,
-                    'path': str(result.file_path)
+                    "cached": True,
+                    "file_type": result.file_type,
+                    "source": result.source,
+                    "size": result.size_bytes,
+                    "path": str(result.file_path),
                 },
             )
-        
+
         logger.debug("No local files found, will try remote sources")
         return FullTextResult(success=False, error="Not in cache")
 
@@ -368,58 +368,43 @@ class FullTextManager:
         Try to get full-text through institutional access (Georgia Tech/ODU).
 
         Priority 1 source - highest quality, legal, ~45-50% coverage.
-        
-        ENHANCED (Oct 11, 2025):
-        - Attempts to download and save PDF to data/fulltext/pdf/institutional/
-        - Returns saved file path if successful
-        - Falls back to URL-only if download not possible (session-based)
+
+        HOW IT WORKS:
+        - Georgia Tech: Returns DOI URL (expects VPN/on-campus access)
+        - ODU: Returns EZProxy URL (proxy-based authentication)
+
+        IMPORTANT: This will typically return HTTP 403 if not on institution's network.
+        The Tiered Waterfall system handles this by automatically trying other sources.
+
+        EXPECTED FLOW:
+        1. Institutional → Returns DOI URL
+        2. Download attempt → HTTP 403 (not on VPN) ❌
+        3. Waterfall retry → PMC succeeds ✅
+
+        This is CORRECT behavior - institutional access works for users on campus/VPN,
+        while other users automatically fall back to open access sources.
 
         Args:
             publication: Publication object
 
         Returns:
-            FullTextResult with saved PDF path if download successful
+            FullTextResult with URL (may require VPN/institutional auth to download)
         """
         if not self.config.enable_institutional or not self.institutional_manager:
             return FullTextResult(success=False, error="Institutional access not enabled")
 
         try:
             # Get access URL through institutional subscription
+            # Note: This returns DOI URL for Georgia Tech (requires VPN)
             access_url = self.institutional_manager.get_access_url(publication)
 
             if not access_url:
                 return FullTextResult(success=False, error="No institutional access found")
-            
+
             logger.info(f"Found access via institutional: {access_url}")
-            
-            # Try to download PDF if it's a direct PDF link
-            # Note: Some institutional links require session/authentication
-            # and may not work with direct download
-            if access_url.endswith('.pdf') or 'pdf' in access_url.lower():
-                from omics_oracle_v2.lib.fulltext.download_utils import download_and_save_pdf
-                
-                saved_path = await download_and_save_pdf(
-                    url=access_url,
-                    publication=publication,
-                    source='institutional',
-                    timeout=self.config.timeout_per_source
-                )
-                
-                if saved_path:
-                    return FullTextResult(
-                        success=True,
-                        source=FullTextSource.INSTITUTIONAL,
-                        url=access_url,
-                        pdf_path=saved_path,
-                        metadata={
-                            "method": "direct",
-                            "institution": "Georgia Tech",
-                            "saved_to": str(saved_path),
-                            "cached": True
-                        },
-                    )
-            
-            # Return URL even if download failed (user can access via browser)
+
+            # Return URL (PDFDownloadManager will try to download)
+            # If download fails (HTTP 403), Tiered Waterfall will retry with other sources
             return FullTextResult(
                 success=True,
                 source=FullTextSource.INSTITUTIONAL,
@@ -434,117 +419,120 @@ class FullTextManager:
     async def _try_pmc(self, publication: Publication) -> FullTextResult:
         """
         Try to get full-text from PubMed Central (PMC).
-        
+
         PMC is the #1 legal source with 6M+ free full-text articles.
-        Supports both XML (JATS format) and PDF downloads.
-        
-        URL patterns:
-        - https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmcid}/
-        - https://pmc.ncbi.nlm.nih.gov/articles/PMC{pmcid}/
-        - PDF: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmcid}/pdf/
-        
+        Uses PMC OA Web Service API to get correct OA FTP URLs.
+
+        API: https://www.ncbi.nlm.nih.gov/pmc/tools/oa-service/
+        Returns XML with FTP links to PDF/TGZ files.
+
         Args:
             publication: Publication object with pmid or pmc_id
-            
+
         Returns:
-            FullTextResult with PDF download link or XML content
+            FullTextResult with correct FTP PDF download link
         """
         if not self.config.enable_pmc:
             return FullTextResult(success=False, error="PMC disabled")
-        
+
         try:
+            import ssl
+            import xml.etree.ElementTree as ET
+
+            import aiohttp
+
             # Extract PMC ID from publication
             pmc_id = None
-            
+
             # Method 1: Direct pmcid attribute (most reliable - from PubMed fetch)
-            if hasattr(publication, 'pmcid') and publication.pmcid:
-                pmc_id = publication.pmcid.replace('PMC', '').strip()
+            if hasattr(publication, "pmcid") and publication.pmcid:
+                pmc_id = publication.pmcid.replace("PMC", "").strip()
                 logger.info(f"Using PMC ID from publication.pmcid: PMC{pmc_id}")
-            
+
             # Method 2: Legacy pmc_id attribute
-            elif hasattr(publication, 'pmc_id') and publication.pmc_id:
-                pmc_id = publication.pmc_id.replace('PMC', '').strip()
+            elif hasattr(publication, "pmc_id") and publication.pmc_id:
+                pmc_id = publication.pmc_id.replace("PMC", "").strip()
                 logger.info(f"Using PMC ID from publication.pmc_id: PMC{pmc_id}")
-            
+
             # Method 3: Extract from publication metadata
-            elif publication.metadata and publication.metadata.get('pmc_id'):
-                pmc_id = publication.metadata['pmc_id'].replace('PMC', '').strip()
+            elif publication.metadata and publication.metadata.get("pmc_id"):
+                pmc_id = publication.metadata["pmc_id"].replace("PMC", "").strip()
                 logger.info(f"Using PMC ID from metadata: PMC{pmc_id}")
-            
+
             # Method 4: Fetch PMC ID from PMID using E-utilities (fallback)
-            elif hasattr(publication, 'pmid') and publication.pmid:
-                import aiohttp
-                import ssl
-                
+            elif hasattr(publication, "pmid") and publication.pmid:
                 # Create SSL context that doesn't verify certificates (for institutional networks)
                 ssl_context = ssl.create_default_context()
                 ssl_context.check_hostname = False
                 ssl_context.verify_mode = ssl.CERT_NONE
-                
+
                 # Use PubMed E-utilities to convert PMID → PMCID
                 pmid = publication.pmid
                 url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={pmid}&format=json"
-                
+
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
                 async with aiohttp.ClientSession(connector=connector) as session:
                     async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
                         if response.status == 200:
                             data = await response.json()
-                            records = data.get('records', [])
+                            records = data.get("records", [])
                             if records and len(records) > 0:
-                                pmc_id = records[0].get('pmcid', '').replace('PMC', '').strip()
+                                pmc_id = records[0].get("pmcid", "").replace("PMC", "").strip()
                                 logger.info(f"Converted PMID {pmid} → PMC{pmc_id} via E-utilities")
-            
+
             if not pmc_id:
                 return FullTextResult(success=False, error="No PMC ID found")
-            
+
             # Ensure PMC ID is numeric only
             pmc_id = pmc_id.strip()
-            
-            # Build URLs
-            web_url = f"https://pmc.ncbi.nlm.nih.gov/articles/PMC{pmc_id}/"
-            pdf_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/pdf/"
-            
-            # Try to download PDF
-            from omics_oracle_v2.lib.fulltext.download_utils import download_and_save_pdf
-            
-            saved_path = await download_and_save_pdf(
-                url=pdf_url,
-                publication=publication,
-                source='pmc',
-                timeout=self.config.timeout_per_source
-            )
-            
-            if saved_path:
-                logger.info(f"✅ Downloaded PMC{pmc_id} PDF successfully")
-                return FullTextResult(
-                    success=True,
-                    source=FullTextSource.PMC,
-                    url=web_url,
-                    pdf_path=saved_path,
-                    metadata={
-                        "pmc_id": f"PMC{pmc_id}",
-                        "pdf_url": pdf_url,
-                        "web_url": web_url,
-                        "saved_to": str(saved_path),
-                        "format": "pdf"
-                    }
-                )
-            else:
-                # PDF download failed but article exists - return web URL
-                logger.warning(f"PMC{pmc_id} exists but PDF download failed, returning web URL")
-                return FullTextResult(
-                    success=True,
-                    source=FullTextSource.PMC,
-                    url=web_url,
-                    metadata={
-                        "pmc_id": f"PMC{pmc_id}",
-                        "pdf_url": pdf_url,
-                        "web_url": web_url,
-                        "format": "web"
-                    }
-                )
-                
+
+            # Use PMC OA Web Service to get the correct FTP download URL
+            oa_api_url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC{pmc_id}"
+
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+
+            connector = aiohttp.TCPConnector(ssl=ssl_context)
+            async with aiohttp.ClientSession(connector=connector) as session:
+                async with session.get(oa_api_url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                    if response.status != 200:
+                        return FullTextResult(success=False, error=f"PMC OA API returned {response.status}")
+
+                    xml_content = await response.text()
+
+                    # Parse XML to find PDF link
+                    root = ET.fromstring(xml_content)
+
+                    # Look for PDF link: <link format="pdf" href="ftp://..." />
+                    pdf_link = None
+                    for link in root.findall('.//link[@format="pdf"]'):
+                        href = link.get("href")
+                        if href:
+                            # Convert ftp:// to https:// (both work, but https is more compatible)
+                            pdf_link = href.replace(
+                                "ftp://ftp.ncbi.nlm.nih.gov/", "https://ftp.ncbi.nlm.nih.gov/"
+                            )
+                            break
+
+                    if not pdf_link:
+                        return FullTextResult(success=False, error="No PDF link in PMC OA response")
+
+                    # Return correct OA FTP URL for PDFDownloadManager
+                    logger.info(f"✅ Found PMC{pmc_id} OA PDF URL: {pdf_link}")
+                    return FullTextResult(
+                        success=True,
+                        source=FullTextSource.PMC,
+                        url=pdf_link,  # Correct OA FTP URL
+                        metadata={
+                            "pmc_id": f"PMC{pmc_id}",
+                            "pdf_url": pdf_link,
+                            "web_url": f"https://pmc.ncbi.nlm.nih.gov/articles/PMC{pmc_id}/",
+                            "format": "pdf",
+                            "access": "open_access",
+                        },
+                    )
+
         except Exception as e:
             logger.warning(f"PMC lookup failed: {e}")
             return FullTextResult(success=False, error=str(e))
@@ -623,7 +611,7 @@ class FullTextManager:
     async def _try_biorxiv(self, publication: Publication) -> FullTextResult:
         """
         Try to get full-text from bioRxiv/medRxiv.
-        
+
         ENHANCED (Oct 11, 2025):
         - Downloads and saves PDF to data/fulltext/pdf/biorxiv/
         - Returns saved file path for immediate use
@@ -646,45 +634,20 @@ class FullTextManager:
             result = await self.biorxiv_client.get_by_doi(publication.doi)
             if not result or not result.get("pdf_url"):
                 return FullTextResult(success=False, error="Not a bioRxiv paper or not found")
-            
+
             pdf_url = result["pdf_url"]
             logger.info(f"Found in bioRxiv: {publication.doi}")
-            
-            # NEW: Download and save PDF to biorxiv-specific directory
-            from omics_oracle_v2.lib.fulltext.download_utils import download_and_save_pdf
-            
-            saved_path = await download_and_save_pdf(
+
+            # Return PDF URL for PDFDownloadManager
+            return FullTextResult(
+                success=True,
+                source=FullTextSource.BIORXIV,
                 url=pdf_url,
-                publication=publication,
-                source='biorxiv',
-                timeout=self.config.timeout_per_source
+                metadata={
+                    "biorxiv_id": result.get("biorxiv_id"),
+                    "version": result.get("version"),
+                },
             )
-            
-            if saved_path:
-                return FullTextResult(
-                    success=True,
-                    source=FullTextSource.BIORXIV,
-                    url=pdf_url,
-                    pdf_path=saved_path,  # Return saved path
-                    metadata={
-                        "biorxiv_id": result.get("biorxiv_id"),
-                        "version": result.get("version"),
-                        "saved_to": str(saved_path),
-                        "cached": True
-                    },
-                )
-            else:
-                # Found URL but download failed - still return URL
-                return FullTextResult(
-                    success=True,
-                    source=FullTextSource.BIORXIV,
-                    url=pdf_url,
-                    metadata={
-                        "biorxiv_id": result.get("biorxiv_id"),
-                        "version": result.get("version"),
-                        "download_failed": True
-                    },
-                )
 
         except Exception as e:
             logger.warning(f"bioRxiv error: {e}")
@@ -693,7 +656,7 @@ class FullTextManager:
     async def _try_arxiv(self, publication: Publication) -> FullTextResult:
         """
         Try to get full-text from arXiv.
-        
+
         ENHANCED (Oct 11, 2025):
         - Downloads and saves PDF to data/fulltext/pdf/arxiv/
         - Returns saved file path for immediate use
@@ -712,7 +675,7 @@ class FullTextManager:
             pdf_url = None
             arxiv_id = None
             method = None
-            
+
             # Only try by arXiv ID if DOI looks like an arXiv ID (contains "arxiv")
             if publication.doi and "arxiv" in publication.doi.lower():
                 paper = await self.arxiv_client.get_by_arxiv_id(publication.doi)
@@ -730,41 +693,20 @@ class FullTextManager:
                     pdf_url = results[0]["pdf_url"]
                     arxiv_id = results[0].get("arxiv_id")
                     method = "title"
-            
+
             if not pdf_url:
                 return FullTextResult(success=False, error="Not found in arXiv")
-            
-            # NEW: Download and save PDF to arxiv-specific directory
-            from omics_oracle_v2.lib.fulltext.download_utils import download_and_save_pdf
-            
-            saved_path = await download_and_save_pdf(
+
+            # Return PDF URL for PDFDownloadManager
+            return FullTextResult(
+                success=True,
+                source=FullTextSource.ARXIV,
                 url=pdf_url,
-                publication=publication,
-                source='arxiv',
-                timeout=self.config.timeout_per_source
+                metadata={
+                    "arxiv_id": arxiv_id,
+                    "method": method,
+                },
             )
-            
-            if saved_path:
-                return FullTextResult(
-                    success=True,
-                    source=FullTextSource.ARXIV,
-                    url=pdf_url,
-                    pdf_path=saved_path,  # Return saved path
-                    metadata={
-                        "arxiv_id": arxiv_id,
-                        "method": method,
-                        "saved_to": str(saved_path),
-                        "cached": True
-                    },
-                )
-            else:
-                # Found URL but download failed - still return URL
-                return FullTextResult(
-                    success=True,
-                    source=FullTextSource.ARXIV,
-                    url=pdf_url,
-                    metadata={"arxiv_id": arxiv_id, "method": method, "download_failed": True},
-                )
 
         except Exception as e:
             logger.debug(f"arXiv lookup skipped: {e}")  # Changed to debug level
@@ -852,7 +794,7 @@ class FullTextManager:
         Try to get full-text from Sci-Hub (Phase 2).
 
         ⚠️  Use responsibly and in compliance with local laws.
-        
+
         ENHANCED (Oct 11, 2025):
         - Downloads and saves PDF to data/fulltext/pdf/scihub/
         - Returns saved file path for immediate use
@@ -878,40 +820,19 @@ class FullTextManager:
 
             if not pdf_url:
                 return FullTextResult(success=False, error="Not found in Sci-Hub")
-            
+
             logger.info(f"✓ Found PDF via Sci-Hub: {identifier}")
-            
-            # NEW: Download and save PDF to scihub-specific directory
-            from omics_oracle_v2.lib.fulltext.download_utils import download_and_save_pdf
-            
-            saved_path = await download_and_save_pdf(
+
+            # Return PDF URL for PDFDownloadManager
+            return FullTextResult(
+                success=True,
+                source=FullTextSource.SCIHUB,
                 url=pdf_url,
-                publication=publication,
-                source='scihub',
-                timeout=self.config.timeout_per_source
+                metadata={
+                    "identifier": identifier,
+                    "warning": "Use responsibly and in compliance with local laws",
+                },
             )
-            
-            if saved_path:
-                return FullTextResult(
-                    success=True,
-                    source=FullTextSource.SCIHUB,
-                    url=pdf_url,
-                    pdf_path=saved_path,
-                    metadata={
-                        "identifier": identifier,
-                        "saved_to": str(saved_path),
-                        "cached": True,
-                        "warning": "Use responsibly and in compliance with local laws"
-                    },
-                )
-            else:
-                # Found URL but download failed - still return URL
-                return FullTextResult(
-                    success=True,
-                    source=FullTextSource.SCIHUB,
-                    url=pdf_url,
-                    metadata={"identifier": identifier, "download_failed": True},
-                )
 
         except Exception as e:
             logger.debug(f"Sci-Hub lookup failed: {e}")
@@ -922,7 +843,7 @@ class FullTextManager:
         Try to get full-text from LibGen (Phase 3).
 
         ⚠️  Use responsibly and in compliance with local laws.
-        
+
         ENHANCED (Oct 11, 2025):
         - Downloads and saves PDF to data/fulltext/pdf/libgen/
         - Returns saved file path for immediate use
@@ -946,40 +867,19 @@ class FullTextManager:
 
             if not pdf_url:
                 return FullTextResult(success=False, error="Not found in LibGen")
-            
+
             logger.info(f"✓ Found PDF via LibGen: {publication.doi}")
-            
-            # NEW: Download and save PDF to libgen-specific directory
-            from omics_oracle_v2.lib.fulltext.download_utils import download_and_save_pdf
-            
-            saved_path = await download_and_save_pdf(
+
+            # Return PDF URL for PDFDownloadManager
+            return FullTextResult(
+                success=True,
+                source=FullTextSource.LIBGEN,
                 url=pdf_url,
-                publication=publication,
-                source='libgen',
-                timeout=self.config.timeout_per_source
+                metadata={
+                    "doi": publication.doi,
+                    "warning": "Use responsibly and in compliance with local laws",
+                },
             )
-            
-            if saved_path:
-                return FullTextResult(
-                    success=True,
-                    source=FullTextSource.LIBGEN,
-                    url=pdf_url,
-                    pdf_path=saved_path,
-                    metadata={
-                        "doi": publication.doi,
-                        "saved_to": str(saved_path),
-                        "cached": True,
-                        "warning": "Use responsibly and in compliance with local laws"
-                    },
-                )
-            else:
-                # Found URL but download failed - still return URL
-                return FullTextResult(
-                    success=True,
-                    source=FullTextSource.LIBGEN,
-                    url=pdf_url,
-                    metadata={"doi": publication.doi, "download_failed": True},
-                )
 
         except Exception as e:
             logger.debug(f"LibGen lookup failed: {e}")
@@ -988,20 +888,20 @@ class FullTextManager:
     async def get_parsed_content(self, publication: Publication) -> Optional[Dict]:
         """
         Get parsed structured content for a publication with smart caching.
-        
+
         NEW (Phase 3 - Oct 11, 2025):
         This is the SMART way to access full-text content:
         1. Check parsed cache first (instant <10ms, 200x faster than parsing!)
         2. If not cached, get PDF/XML via waterfall
         3. Parse the content (tables, figures, sections - ~2s)
         4. Cache the parsed result for future access
-        
+
         PERFORMANCE:
         - First access: ~2-3s (download + parse)
         - Subsequent access: ~10ms (cache hit) = 200x faster!
         - Cache hit rate: 90%+ after warmup
         - API calls saved: 95%+ reduction
-        
+
         Returns structured content dict:
         {
             'title': str,
@@ -1012,25 +912,26 @@ class FullTextManager:
             'references': [{'title': str, 'doi': str, ...], ...],
             'metadata': {...}
         }
-        
+
         Args:
             publication: Publication object
-        
+
         Returns:
             Dict with parsed content, or None if unavailable
-        
+
         Example:
             >>> content = await manager.get_parsed_content(publication)
             >>> if content:
             >>>     print(f"Tables: {len(content['tables'])}")
             >>>     print(f"Sections: {len(content['sections'])}")
         """
-        from omics_oracle_v2.lib.fulltext.parsed_cache import get_parsed_cache
-        from datetime import datetime
         import time
-        
+        from datetime import datetime
+
+        from omics_oracle_v2.lib.fulltext.parsed_cache import get_parsed_cache
+
         cache = get_parsed_cache()
-        
+
         # STEP 1: Check parsed cache (instant!)
         cached = await cache.get(publication.id)
         if cached:
@@ -1040,55 +941,49 @@ class FullTextManager:
                 f"tables: {len(cached.get('content', {}).get('tables', []))}, "
                 f"figures: {len(cached.get('content', {}).get('figures', []))})"
             )
-            return cached.get('content')
-        
+            return cached.get("content")
+
         logger.info(f"Parsed cache MISS for {publication.id}, will download and parse...")
-        
+
         # STEP 2: Get PDF/XML via waterfall
         start_time = time.time()
         result = await self.get_fulltext(publication)
-        
+
         if not result.success:
             logger.warning(f"Could not get full-text for {publication.id}")
             return None
-        
+
         # STEP 3: Parse the content
         # Import parser here to avoid circular imports
         try:
             from omics_oracle_v2.lib.fulltext.pdf_parser import PDFExtractor
-            
+
             parser = PDFExtractor()
-            
+
             # Determine file path
             if result.pdf_path:
                 file_path = result.pdf_path
-                file_type = 'pdf'
-            elif result.metadata and result.metadata.get('path'):
-                file_path = Path(result.metadata['path'])
-                file_type = result.metadata.get('file_type', 'pdf')
+                file_type = "pdf"
+            elif result.metadata and result.metadata.get("path"):
+                file_path = Path(result.metadata["path"])
+                file_type = result.metadata.get("file_type", "pdf")
             else:
                 logger.warning(f"No local file available for {publication.id}")
                 return None
-            
+
             # Parse content
             logger.info(f"Parsing {file_type.upper()}: {file_path.name}...")
-            
-            if file_type == 'pdf':
+
+            if file_type == "pdf":
                 parsed = await parser.extract_text(file_path)
             else:
                 # For XML/NXML, we'd use a different parser
                 # For now, just return basic structure
-                content_text = file_path.read_text(encoding='utf-8')
-                parsed = {
-                    'text': content_text,
-                    'sections': [],
-                    'tables': [],
-                    'figures': [],
-                    'references': []
-                }
-            
+                content_text = file_path.read_text(encoding="utf-8")
+                parsed = {"text": content_text, "sections": [], "tables": [], "figures": [], "references": []}
+
             parse_duration_ms = int((time.time() - start_time) * 1000)
-            
+
             # STEP 4: Cache the parsed content
             await cache.save(
                 publication_id=publication.id,
@@ -1096,22 +991,24 @@ class FullTextManager:
                 source_file=str(file_path),
                 source_type=file_type,
                 parse_duration_ms=parse_duration_ms,
-                quality_score=None  # TODO: Calculate quality score
+                quality_score=None,  # TODO: Calculate quality score
             )
-            
+
             logger.info(
                 f"✓ Parsed and cached {publication.id} "
                 f"({parse_duration_ms}ms, {len(parsed.get('tables', []))} tables, "
                 f"{len(parsed.get('figures', []))} figures)"
             )
-            
+
             return parsed
-            
+
         except Exception as e:
             logger.error(f"Error parsing content for {publication.id}: {e}")
             return None
-    
-    async def get_fulltext(self, publication: Publication) -> FullTextResult:
+
+    async def get_fulltext(
+        self, publication: Publication, skip_sources: Optional[List[str]] = None
+    ) -> FullTextResult:
         """
         Get full-text for a publication by trying sources in priority order.
 
@@ -1121,7 +1018,7 @@ class FullTextManager:
         - Open access second (legal, good coverage)
         - Sci-Hub/LibGen last (legal gray area, use as fallback)
         - STOPS at first success (skip remaining sources)
-        
+
         NOTE (Phase 3 - Oct 11, 2025):
         For structured content access, use get_parsed_content() instead!
         That method provides smart caching and returns parsed structures
@@ -1129,6 +1026,7 @@ class FullTextManager:
 
         Args:
             publication: Publication object
+            skip_sources: List of source names to skip (for waterfall retry)
 
         Returns:
             FullTextResult with success status and content/URL
@@ -1138,7 +1036,11 @@ class FullTextManager:
 
         self.stats["total_attempts"] += 1
 
+        skip_sources = skip_sources or []
+
         logger.info(f"Attempting to get full-text for: {publication.title[:60]}...")
+        if skip_sources:
+            logger.info(f"  Skipping already-tried sources: {', '.join(skip_sources)}")
 
         # OPTIMIZED WATERFALL ORDER (based on Phase 6 analysis):
         # Priority 0: Cache (instant, free)
@@ -1168,6 +1070,11 @@ class FullTextManager:
 
         # WATERFALL: Try each source in order, STOP at first success
         for source_name, source_func in sources:
+            # Skip sources that were already tried
+            if source_name in skip_sources:
+                logger.debug(f"  ⏭  Skipping {source_name} (already tried)")
+                continue
+
             try:
                 result = await asyncio.wait_for(
                     source_func(publication),

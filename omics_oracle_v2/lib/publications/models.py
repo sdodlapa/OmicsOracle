@@ -70,6 +70,8 @@ class Publication(BaseModel):
     # Links
     url: Optional[str] = None
     pdf_url: Optional[str] = None
+    fulltext_url: Optional[str] = None  # URL for PDF download (set by FullTextManager)
+    fulltext_source: Optional[str] = None  # Source that provided the URL (institutional, pmc, etc.)
 
     # Full-text content (Week 4 - PDF download feature)
     full_text: Optional[str] = None

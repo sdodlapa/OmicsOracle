@@ -50,6 +50,9 @@ class FullTextContent(BaseModel):
 
     pmid: str = Field(..., description="PubMed ID")
     title: str = Field(..., description="Publication title")
+    url: Optional[str] = Field(default="", description="Full-text URL")
+    source: Optional[str] = Field(default="", description="Source (institutional, pmc, etc.)")
+    pdf_path: Optional[str] = Field(default=None, description="Local PDF file path")
     abstract: str = Field(default="", description="Abstract text")
     methods: str = Field(default="", description="Methods section")
     results: str = Field(default="", description="Results section")
@@ -74,21 +77,25 @@ class DatasetResponse(BaseModel):
     platform: Optional[str] = Field(None, description="Platform technology")
     relevance_score: float = Field(..., description="Relevance score")
     match_reasons: List[str] = Field(..., description="Reasons for match")
-    
+
     # Publication and citation info
     publication_date: Optional[str] = Field(None, description="Public release date")
     submission_date: Optional[str] = Field(None, description="Submission date")
     pubmed_ids: List[str] = Field(default_factory=list, description="Associated PubMed IDs")
-    
+
     # Full-text content fields
-    fulltext: List[FullTextContent] = Field(default_factory=list, description="Full-text content from publications")
-    fulltext_status: str = Field(default="not_downloaded", description="Status: not_downloaded/downloading/available/failed/partial")
+    fulltext: List[FullTextContent] = Field(
+        default_factory=list, description="Full-text content from publications"
+    )
+    fulltext_status: str = Field(
+        default="not_downloaded", description="Status: not_downloaded/downloading/available/failed/partial"
+    )
     fulltext_count: int = Field(default=0, description="Number of full-text papers available")
 
 
 class PublicationResponse(BaseModel):
     """Publication metadata response."""
-    
+
     pmid: Optional[str] = Field(None, description="PubMed ID")
     pmc_id: Optional[str] = Field(None, description="PubMed Central ID")
     doi: Optional[str] = Field(None, description="DOI")

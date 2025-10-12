@@ -435,14 +435,16 @@ async def enrich_fulltext(
         List of datasets with full-text URLs attached
     """
     import os
+    from pathlib import Path
 
     from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
     from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient, PubMedConfig
+    from omics_oracle_v2.lib.storage.pdf.download_manager import PDFDownloadManager
 
     start_time = time.time()
 
     try:
-        # Initialize FullTextManager (same config as PublicationSearchPipeline)
+        # Initialize FullTextManager (for getting PDF URLs from various sources)
         logger.info("Initializing FullTextManager with all sources...")
         fulltext_config = FullTextManagerConfig(
             enable_institutional=True,
@@ -455,11 +457,16 @@ async def enrich_fulltext(
             enable_crossref=True,
             enable_scihub=True,  # User requested
             enable_libgen=True,  # User requested
-            download_pdfs=True,  # Download PDFs for parsing
+            download_pdfs=False,  # ⚠️ CRITICAL: DO NOT download here, we use PDFDownloadManager instead
             unpaywall_email=os.getenv("UNPAYWALL_EMAIL", "research@omicsoracle.ai"),
             core_api_key=os.getenv("CORE_API_KEY"),
         )
         fulltext_manager = FullTextManager(fulltext_config)
+
+        # Initialize PDFDownloadManager (for actually downloading and validating PDFs)
+        pdf_downloader = PDFDownloadManager(
+            max_concurrent=3, max_retries=2, timeout_seconds=30, validate_pdf=True
+        )
 
         # Initialize PubMed client for metadata fetching
         pubmed_client = PubMedClient(PubMedConfig(email=os.getenv("NCBI_EMAIL", "research@omicsoracle.ai")))
@@ -496,50 +503,243 @@ async def enrich_fulltext(
                 enriched_datasets.append(dataset)
                 continue
 
-            # BATCH DOWNLOAD (same as PublicationSearchPipeline - WORKING CODE!)
-            logger.info(f"🚀 Batch downloading full-text for {len(publications)} publications...")
+            # STEP 1: Get URLs from all sources (same as pipeline)
+            logger.info(f"� Finding full-text URLs for {len(publications)} publications from all sources...")
             fulltext_results = await fulltext_manager.get_fulltext_batch(publications)
 
-            # Attach results to dataset metadata
-            dataset.fulltext = []
+            # DEBUG: Log all fulltext results
+            logger.warning(f"📊 FULLTEXT RESULTS: Received {len(fulltext_results)} results")
+            for idx, (pub, result) in enumerate(zip(publications, fulltext_results)):
+                logger.warning(
+                    f"   [{idx+1}] PMID {pub.pmid}: success={result.success}, source={result.source.value if result.success else 'NONE'}, has_url={bool(result.url)}"
+                )
+
+            # STEP 2: Set fulltext_url on publications for PDFDownloadManager
+            logger.warning(f"🔗 STEP 2: Setting fulltext URLs on publication objects...")
+            urls_set = 0
             for pub, result in zip(publications, fulltext_results):
-                if result.success:
-                    # Try to get parsed content if PDF was downloaded
-                    parsed_content = None
-                    if result.pdf_path:
-                        try:
-                            parsed_content = await fulltext_manager.get_parsed_content(pub)
-                            logger.info(f"📄 Parsed PDF content for {pub.pmid}")
-                        except Exception as e:
-                            logger.warning(f"Failed to parse PDF for {pub.pmid}: {e}")
-                    
-                    # Build fulltext info with parsed content
-                    fulltext_info = {
-                        "pmid": pub.pmid,
-                        "title": pub.title or parsed_content.get("title") if parsed_content else pub.title,
-                        "url": result.url,
-                        "source": result.source.value,
-                        "pdf_path": result.pdf_path if result.pdf_path else None,
-                    }
-                    
-                    # Add parsed sections if available
-                    if parsed_content:
-                        fulltext_info.update({
+                if result.success and result.url:
+                    pub.fulltext_url = result.url
+                    pub.fulltext_source = result.source.value
+                    urls_set += 1
+                    logger.warning(f"   ✅ PMID {pub.pmid}: URL set from {result.source.value}")
+                else:
+                    logger.warning(
+                        f"   ❌ PMID {pub.pmid}: NO URL (success={result.success}, url={bool(result.url)})"
+                    )
+            logger.warning(f"📊 STEP 2 COMPLETE: Set URLs on {urls_set}/{len(publications)} publications")
+
+            # STEP 3: Download PDFs with waterfall retry on failure
+            logger.info(f"🔍 STEP 3: Preparing to download PDFs with waterfall fallback...")
+            publications_with_urls = [
+                p for p in publications if hasattr(p, "fulltext_url") and p.fulltext_url
+            ]
+            logger.info(f"   Found {len(publications_with_urls)} publications with URLs")
+
+            if publications_with_urls:
+                logger.info(f"⬇️  Downloading {len(publications_with_urls)} PDFs using PDFDownloadManager...")
+                pdf_dir = Path("data/fulltext/pdfs")
+                pdf_dir.mkdir(parents=True, exist_ok=True)
+
+                # First attempt with initial URLs
+                download_report = await pdf_downloader.download_batch(
+                    publications=publications_with_urls, output_dir=pdf_dir, url_field="fulltext_url"
+                )
+                logger.warning(
+                    f"📊 STEP 3A: First attempt - Downloaded {download_report.successful}/{download_report.total} PDFs"
+                )
+
+                # STEP 3B: WATERFALL RETRY - For failed downloads, try next sources
+                failed_pubs = []
+                for result in download_report.results:
+                    if not result.success:
+                        failed_pubs.append(result.publication)
+                        logger.warning(
+                            f"   � PMID {result.publication.pmid}: Will retry with next source (failed: {result.error})"
+                        )
+
+                if failed_pubs:
+                    logger.warning(
+                        f"🔄 STEP 3B: TIERED WATERFALL RETRY for {len(failed_pubs)} failed downloads..."
+                    )
+                    logger.warning(f"   Strategy: Keep trying ALL remaining sources until success")
+
+                    # For each failed publication, try ALL remaining sources in waterfall
+                    retry_successes = 0
+                    for pub in failed_pubs:
+                        tried_sources = [pub.fulltext_source] if hasattr(pub, "fulltext_source") else []
+                        logger.warning(
+                            f"   🔄 PMID {pub.pmid}: Starting waterfall retry (already tried: {', '.join(tried_sources)})"
+                        )
+
+                        # Keep trying until we get a successful download or run out of sources
+                        max_attempts = 10  # Safety limit (we have 11 sources total)
+                        attempt = 0
+                        download_succeeded = False
+
+                        while not download_succeeded and attempt < max_attempts:
+                            attempt += 1
+
+                            # Get next URL from waterfall, skipping all tried sources
+                            retry_result = await fulltext_manager.get_fulltext(
+                                pub, skip_sources=tried_sources
+                            )
+
+                            if not retry_result.success or not retry_result.url:
+                                logger.warning(
+                                    f"      ❌ Attempt {attempt}: No more sources available in waterfall"
+                                )
+                                break
+
+                            # Found alternative - try downloading
+                            current_source = retry_result.source.value
+                            tried_sources.append(current_source)
+                            pub.fulltext_url = retry_result.url
+                            pub.fulltext_source = current_source
+                            logger.warning(f"      🆕 Attempt {attempt}: Trying {current_source}")
+
+                            # Try to download this single PDF
+                            single_result = await pdf_downloader._download_single(
+                                pub, retry_result.url, pdf_dir
+                            )
+
+                            if single_result.success and single_result.pdf_path:
+                                pub.pdf_path = str(single_result.pdf_path)
+                                retry_successes += 1
+                                download_succeeded = True
+                                logger.warning(
+                                    f"      ✅ SUCCESS via {current_source}! Size: {single_result.file_size / 1024:.1f} KB"
+                                )
+                                # Add to results
+                                download_report.results.append(single_result)
+                            else:
+                                logger.warning(
+                                    f"      ⚠️  {current_source} failed: {single_result.error} - trying next source..."
+                                )
+
+                        if not download_succeeded:
+                            logger.warning(
+                                f"      ❌ EXHAUSTED: Tried {len(tried_sources)} sources, none succeeded"
+                            )
+
+                    if retry_successes > 0:
+                        download_report.successful += retry_successes
+                        download_report.failed -= retry_successes
+                        logger.warning(
+                            f"📊 RETRY COMPLETE: {retry_successes} additional PDFs downloaded from alternative sources"
+                        )
+
+                logger.warning(
+                    f"✅ STEP 3 COMPLETE: Downloaded {download_report.successful}/{download_report.total} PDFs (including retries)"
+                )
+
+                # STEP 3C: Set pdf_path on publications from all download results
+                logger.warning(f"🔍 STEP 3C: Setting pdf_path on publications from download results...")
+                paths_set = 0
+                for result in download_report.results:
+                    if result.success and result.pdf_path:
+                        result.publication.pdf_path = str(result.pdf_path)
+                        paths_set += 1
+                        logger.warning(
+                            f"   ✅ PMID {result.publication.pmid}: pdf_path={result.pdf_path.name}, size={result.pdf_path.stat().st_size} bytes"
+                        )
+                    else:
+                        logger.warning(
+                            f"   ❌ PMID {result.publication.pmid}: Download FAILED after retry - {result.error}"
+                        )
+                logger.warning(
+                    f"📊 STEP 3C COMPLETE: Set pdf_path on {paths_set}/{len(publications_with_urls)} publications"
+                )
+            else:
+                logger.warning("❌ STEP 3 SKIPPED: No publications with URLs found")
+
+            # STEP 4: Parse PDFs and attach to dataset
+            logger.info(f"🔍 STEP 4: Parsing PDFs and building fulltext data...")
+            dataset.fulltext = []
+            added_count = 0
+            skipped_no_url = 0
+            skipped_no_pdf = 0
+
+            for pub in publications:
+                # Skip if no URL found
+                if not hasattr(pub, "fulltext_url") or not pub.fulltext_url:
+                    logger.debug(f"   Skipping PMID {pub.pmid}: no fulltext_url")
+                    skipped_no_url += 1
+                    continue
+
+                # Try to get parsed content if PDF was downloaded
+                parsed_content = None
+                has_pdf = hasattr(pub, "pdf_path") and pub.pdf_path and Path(pub.pdf_path).exists()
+
+                if has_pdf:
+                    logger.info(f"📄 Parsing PDF for PMID {pub.pmid} from {pub.pdf_path}...")
+                    try:
+                        parsed_content = await fulltext_manager.get_parsed_content(pub)
+                        logger.info(
+                            f"   ✅ Parsed {Path(pub.pdf_path).stat().st_size // 1024} KB PDF: "
+                            f"abstract={len(parsed_content.get('abstract', ''))} chars, "
+                            f"methods={len(parsed_content.get('methods', ''))} chars"
+                        )
+                    except Exception as e:
+                        logger.error(f"   ❌ Failed to parse PDF for {pub.pmid}: {e}")
+                else:
+                    logger.warning(
+                        f"⚠️  PMID {pub.pmid}: No PDF file (pdf_path={getattr(pub, 'pdf_path', 'NOT SET')})"
+                    )
+                    skipped_no_pdf += 1
+                    # CRITICAL FIX: Skip this publication - don't add URL-only entries!
+                    logger.warning(
+                        f"   ❌ SKIPPING PMID {pub.pmid}: No PDF downloaded, not counting as success"
+                    )
+                    continue
+
+                # Build fulltext info - ONLY if we have parsed content
+                fulltext_info = {
+                    "pmid": pub.pmid,
+                    "title": pub.title or (parsed_content.get("title") if parsed_content else pub.title),
+                    "url": pub.fulltext_url,
+                    "source": pub.fulltext_source if hasattr(pub, "fulltext_source") else "unknown",
+                    "pdf_path": str(pub.pdf_path) if hasattr(pub, "pdf_path") and pub.pdf_path else None,
+                }
+
+                # Add parsed sections if available
+                if parsed_content:
+                    fulltext_info.update(
+                        {
                             "abstract": parsed_content.get("abstract", ""),
                             "methods": parsed_content.get("methods", ""),
                             "results": parsed_content.get("results", ""),
                             "discussion": parsed_content.get("discussion", ""),
                             "introduction": parsed_content.get("introduction", ""),
                             "conclusion": parsed_content.get("conclusion", ""),
-                        })
-                        logger.info(f"✅ Got full-text with parsed content for {pub.pmid} from {result.source.value}")
-                    else:
-                        logger.info(f"✅ Got full-text URL for {pub.pmid} from {result.source.value} (no PDF parsing)")
-                    
+                        }
+                    )
+                    logger.warning(
+                        f"   ✅ Added PMID {pub.pmid} with {len(parsed_content.get('abstract', ''))} char abstract"
+                    )
                     dataset.fulltext.append(fulltext_info)
+                    added_count += 1
+                else:
+                    logger.warning(
+                        f"   ❌ SKIPPING PMID {pub.pmid}: PDF parsing failed, not adding to fulltext"
+                    )
 
+            logger.warning(
+                f"📊 STEP 4 COMPLETE: Added {added_count} entries to fulltext (skipped {skipped_no_url} without URL, {skipped_no_pdf} without PDF)"
+            )
             dataset.fulltext_count = len(dataset.fulltext)
-            dataset.fulltext_status = "available" if dataset.fulltext else "failed"
+
+            # More accurate status based on actual PDFs downloaded
+            if dataset.fulltext_count == 0:
+                dataset.fulltext_status = "failed"
+            elif dataset.fulltext_count < len(publications):
+                dataset.fulltext_status = "partial"
+            else:
+                dataset.fulltext_status = "available"
+
+            logger.warning(
+                f"📊 FINAL STATUS: fulltext_count={dataset.fulltext_count}/{len(publications)}, fulltext_status={dataset.fulltext_status}"
+            )
             enriched_datasets.append(dataset)
 
             # Log statistics (same as pipeline)
@@ -841,6 +1041,17 @@ async def analyze_datasets(
 
         # Limit datasets
         datasets_to_analyze = request.datasets[: request.max_datasets]
+
+        # DEBUG: Log what we received
+        for ds in datasets_to_analyze:
+            logger.info(f"🔍 Dataset {ds.geo_id}: has {len(ds.fulltext) if ds.fulltext else 0} fulltext items")
+            if ds.fulltext and len(ds.fulltext) > 0:
+                for ft in ds.fulltext:
+                    logger.info(
+                        f"   📄 PMID {ft.pmid}: pdf_path={ft.pdf_path}, "
+                        f"abstract_len={len(ft.abstract) if ft.abstract else 0}, "
+                        f"methods_len={len(ft.methods) if ft.methods else 0}"
+                    )
 
         # Build comprehensive analysis prompt with full-text when available
         dataset_summaries = []
