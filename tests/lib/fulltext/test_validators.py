@@ -5,15 +5,16 @@ Tests XML and PDF validation with various edge cases.
 """
 
 import hashlib
-import pytest
 from pathlib import Path
 
+import pytest
+
 from lib.fulltext.validators import (
-    XMLValidator,
-    PDFValidator,
     ContentValidator,
-    validate_xml_file,
+    PDFValidator,
+    XMLValidator,
     validate_pdf_file,
+    validate_xml_file,
 )
 
 
@@ -140,7 +141,8 @@ class TestXMLValidator:
     def test_quality_score_calculation(self, validator):
         """Test quality score calculation."""
         # High quality: large size, all elements, figures/tables/refs
-        rich_xml = """<?xml version="1.0"?>
+        rich_xml = (
+            """<?xml version="1.0"?>
 <article>
     <article-meta>
         <article-title>High Quality Article</article-title>
@@ -152,7 +154,9 @@ class TestXMLValidator:
     <body>
         <fig id="fig1"><caption>Figure 1</caption></fig>
         <table-wrap id="table1"><caption>Table 1</caption></table-wrap>
-        """ + ("x" * 60000) + """
+        """
+            + ("x" * 60000)
+            + """
     </body>
     <back>
         <ref-list>
@@ -161,20 +165,16 @@ class TestXMLValidator:
         </ref-list>
     </back>
 </article>"""
-
-        is_valid, metadata, error = rich_xml_validation = validator.validate(
-            rich_xml, "PMC_RICH"
         )
+
+        is_valid, metadata, error = rich_xml_validation = validator.validate(rich_xml, "PMC_RICH")
 
         assert is_valid is True
         assert metadata["quality_score"] > 0.8  # Should be high quality
 
     def test_custom_required_elements(self):
         """Test validator with custom required elements."""
-        validator = XMLValidator(
-            min_xml_size=50,
-            required_elements=["article-title", "pub-date"]
-        )
+        validator = XMLValidator(min_xml_size=50, required_elements=["article-title", "pub-date"])
 
         xml = """<?xml version="1.0"?>
 <article>
@@ -290,12 +290,7 @@ startxref
 
     def test_encrypted_pdf_warning(self, validator, caplog):
         """Test encrypted PDF is detected."""
-        encrypted = (
-            b"%PDF-1.4\n"
-            + b"/Encrypt << /Filter /Standard >>\n"
-            + b"x" * 20000
-            + b"\n%%EOF"
-        )
+        encrypted = b"%PDF-1.4\n" + b"/Encrypt << /Filter /Standard >>\n" + b"x" * 20000 + b"\n%%EOF"
 
         is_valid, metadata, error = validator.validate(encrypted, "encrypted")
 
@@ -350,7 +345,9 @@ class TestContentValidator:
 <article>
     <article-title>Report Test</article-title>
     <abstract><p>Abstract</p></abstract>
-</article>""".encode("utf-8")
+</article>""".encode(
+            "utf-8"
+        )
 
         is_valid, report = validator.validate_and_report(xml, "xml", "PMC_REPORT")
 
@@ -377,9 +374,7 @@ class TestContentValidator:
         """Test validate_and_report with invalid UTF-8 XML."""
         invalid_xml = b"\xff\xfe<?xml"  # Invalid UTF-8
 
-        is_valid, report = validator.validate_and_report(
-            invalid_xml, "xml", "BAD_ENCODING"
-        )
+        is_valid, report = validator.validate_and_report(invalid_xml, "xml", "BAD_ENCODING")
 
         assert is_valid is False
         assert report["valid"] is False
@@ -482,9 +477,7 @@ class TestRealFileValidation:
                 pdf_content = f.read()
 
             is_valid, metadata, error = validator.validate(pdf_content, pdf_file.stem)
-            results.append(
-                (pdf_file.name, is_valid, metadata.get("size", 0) / 1024 / 1024)
-            )
+            results.append((pdf_file.name, is_valid, metadata.get("size", 0) / 1024 / 1024))
 
         # All should be valid
         assert all(valid for _, valid, _ in results)

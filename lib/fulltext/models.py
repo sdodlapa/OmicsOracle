@@ -32,6 +32,7 @@ class SourceType(Enum):
     SCIHUB = "scihub"
     LIBGEN = "libgen"
     PUBLISHER = "publisher"
+    PDF = "pdf"  # For direct PDF extraction
 
 
 @dataclass

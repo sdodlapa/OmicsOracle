@@ -7,14 +7,11 @@ Tests the PDFExtractor class which parses PDF files using:
 - pdfplumber as fallback
 """
 
-import pytest
 from pathlib import Path
 
-from lib.fulltext.pdf_extractor import (
-    PDFExtractor,
-    extract_tables_from_pdf,
-    extract_text_from_pdf,
-)
+import pytest
+
+from lib.fulltext.pdf_extractor import PDFExtractor, extract_tables_from_pdf, extract_text_from_pdf
 
 
 class TestPDFExtractor:
@@ -145,9 +142,7 @@ class TestPDFExtractor:
 
     def test_extract_structured_content(self, extractor, sample_pdf):
         """Test full structured content extraction."""
-        content = extractor.extract_structured_content(
-            sample_pdf, extract_tables=True, extract_images=False
-        )
+        content = extractor.extract_structured_content(sample_pdf, extract_tables=True, extract_images=False)
 
         assert content is not None
         assert hasattr(content, "sections")
@@ -204,9 +199,7 @@ class TestPDFExtractor:
 
     def test_extract_with_table_extraction_disabled(self, extractor, sample_pdf):
         """Test extraction with tables disabled (faster)."""
-        content = extractor.extract_structured_content(
-            sample_pdf, extract_tables=False, extract_images=False
-        )
+        content = extractor.extract_structured_content(sample_pdf, extract_tables=False, extract_images=False)
 
         assert content is not None
         assert len(content.tables) == 0  # Should be empty when disabled
@@ -266,9 +259,7 @@ class TestPDFIntegration:
             pytest.skip("Test PDF not available")
 
         extractor = PDFExtractor()
-        content = extractor.extract_structured_content(
-            pdf_path, extract_tables=True, extract_images=False
-        )
+        content = extractor.extract_structured_content(pdf_path, extract_tables=True, extract_images=False)
 
         # Verify complete structure
         assert content.title is not None  # May be empty for PDFs
@@ -291,9 +282,9 @@ class TestPDFIntegration:
             pytest.skip("Test PDF not available")
 
         # Use the integration function
-        from lib.fulltext.manager_integration import try_pdf_extraction
-
         import asyncio
+
+        from lib.fulltext.manager_integration import try_pdf_extraction
 
         result = asyncio.run(try_pdf_extraction(pdf_path, extract_tables=True))
 
