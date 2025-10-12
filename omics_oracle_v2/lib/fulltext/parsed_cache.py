@@ -55,8 +55,8 @@ class ParsedCache:
 
     Cache Structure:
         data/fulltext/parsed/
-        ├── {publication_id}.json       # Uncompressed (for debugging)
-        └── {publication_id}.json.gz    # Compressed (production)
+        +-- {publication_id}.json       # Uncompressed (for debugging)
+        +-- {publication_id}.json.gz    # Compressed (production)
 
     Cache Entry Format:
         {
@@ -101,10 +101,22 @@ class ParsedCache:
         self.ttl_days = ttl_days
         self.use_compression = use_compression
 
+        # Initialize normalizer (lazy import to avoid circular dependencies)
+        self._normalizer = None
+
         # Ensure directory exists
         self.cache_dir.mkdir(parents=True, exist_ok=True)
 
         logger.debug(f"ParsedCache initialized: {self.cache_dir}")
+
+    @property
+    def normalizer(self):
+        """Lazy-load normalizer to avoid circular imports."""
+        if self._normalizer is None:
+            from omics_oracle_v2.lib.fulltext.normalizer import ContentNormalizer
+
+            self._normalizer = ContentNormalizer()
+        return self._normalizer
 
     async def get(self, publication_id: str) -> Optional[Dict[str, Any]]:
         """
@@ -149,7 +161,7 @@ class ParsedCache:
                 logger.info(f"Cache stale: {publication_id} (age: {self._get_age_days(data)} days)")
                 return None
 
-            logger.info(f"✓ Cache hit: {publication_id} (age: {self._get_age_days(data)} days)")
+            logger.info(f"OK Cache hit: {publication_id} (age: {self._get_age_days(data)} days)")
 
             # NEW (Phase 4): Update last accessed time in database
             try:
@@ -170,9 +182,78 @@ class ParsedCache:
             try:
                 cache_file.unlink()
                 logger.info(f"Deleted corrupted cache file: {cache_file}")
-            except:
+            except Exception:  # noqa: E722
                 pass
             return None
+
+    async def get_normalized(self, publication_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get cached content in normalized format.
+
+        This method automatically converts content to the unified normalized
+        format if needed. The normalized version is cached for future access.
+
+        NEW (Phase 5 - Oct 11, 2025):
+        - On-the-fly format normalization
+        - All formats (JATS XML, PDF, LaTeX) -> Simple unified structure
+        - Cached result for fast subsequent access
+        - Enables format-agnostic downstream processing
+
+        Args:
+            publication_id: Unique identifier for the publication
+
+        Returns:
+            Normalized content dict if found, None otherwise
+
+        Example:
+            >>> # Get in normalized format (auto-converts if needed)
+            >>> normalized = await cache.get_normalized("PMC9876543")
+            >>>
+            >>> # Now simple access regardless of original format!
+            >>> methods = normalized['text']['sections'].get('methods', '')
+            >>> tables = normalized['tables']
+            >>> print(f"Found {len(tables)} tables")
+        """
+        # Get content (original or normalized)
+        content = await self.get(publication_id)
+
+        if content is None:
+            return None
+
+        # Check if already normalized
+        metadata = content.get("metadata", {})
+        if "normalized_version" in metadata:
+            logger.debug(f"Content already normalized: {publication_id}")
+            return content
+
+        # Normalize on-the-fly
+        logger.info(f"Normalizing {publication_id} from {content.get('source_type', 'unknown')} format")
+
+        try:
+            normalized = self.normalizer.normalize(content)
+
+            # Save normalized version for next time
+            # (This replaces the original, but we keep source_format in metadata)
+            # Extract metadata carefully to avoid issues
+            metadata = normalized.get("metadata", {})
+
+            await self.save(
+                publication_id=metadata.get("publication_id", publication_id),
+                content=normalized,
+                source_file=content.get("source_file"),
+                source_type=metadata.get("source_format", content.get("source_type", "pdf")),
+                parse_duration_ms=content.get("parse_duration_ms"),
+                quality_score=content.get("quality_score"),
+            )
+
+            logger.info(f"OK Normalized and cached: {publication_id}")
+
+            return normalized
+
+        except Exception as e:
+            logger.error(f"Error normalizing {publication_id}: {e}")
+            # Return original on error
+            return content
 
     async def save(
         self,
@@ -240,7 +321,7 @@ class ParsedCache:
                 cache_file.write_text(json.dumps(cache_entry, indent=2), encoding="utf-8")
 
             file_size_kb = cache_file.stat().st_size // 1024
-            logger.info(f"💾 Cached parsed content: {publication_id} ({file_size_kb} KB)")
+            logger.info(f"SAVED Cached parsed content: {publication_id} ({file_size_kb} KB)")
 
             # NEW (Phase 4): Save metadata to database for fast search
             try:
@@ -402,7 +483,7 @@ class ParsedCache:
                 else:
                     age_distribution[">90d"] += 1
 
-            except:
+            except Exception:  # noqa: E722
                 pass
 
         return {
@@ -428,7 +509,7 @@ class ParsedCache:
             cached_at = datetime.fromisoformat(cache_entry.get("cached_at", "2000-01-01"))
             age = datetime.now() - cached_at
             return age > timedelta(days=self.ttl_days)
-        except:
+        except Exception:  # noqa: E722
             return True  # If can't parse date, consider stale
 
     def _get_age_days(self, cache_entry: Dict[str, Any]) -> int:
@@ -437,7 +518,7 @@ class ParsedCache:
             cached_at = datetime.fromisoformat(cache_entry.get("cached_at", "2000-01-01"))
             age = datetime.now() - cached_at
             return age.days
-        except:
+        except Exception:  # noqa: E722
             return 999  # Unknown age
 
 
