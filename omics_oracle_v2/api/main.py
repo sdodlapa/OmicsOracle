@@ -214,10 +214,6 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
         dashboard_path = static_dir / "dashboard_v2.html"
         if dashboard_path.exists():
             return FileResponse(dashboard_path)
-        # Fallback to original dashboard
-        dashboard_path = static_dir / "dashboard.html"
-        if dashboard_path.exists():
-            return FileResponse(dashboard_path)
         return JSONResponse(
             status_code=404,
             content={"error": "Dashboard not found"},

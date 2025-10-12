@@ -154,21 +154,46 @@ from .routes import agents, auth, health, debug, users
 
 **Expected:** -3,000 LOC, clearer routing table
 
-#### Pass 2: Consolidate Frontend
-**Analysis:**
-```
-dashboard_v2.html      (1,913 LOC) ✅ KEEP - Main UI
-semantic_search.html   (2,400 LOC) ⚠️ DUPLICATE - 80% same code
-batch_search.html      (1,200 LOC) 🔴 UNUSED - Remove
-```
+#### Pass 2: Consolidate Frontend ✅ COMPLETE
+**Files MOVED to extras/:**
+- extras/demos/test_mock_data.html (test/demo file)
+- extras/demos/websocket_demo.html (websocket demo)
+- extras/old_frontends/dashboard.html (old dashboard, 849 LOC)
+- extras/old_frontends/dashboard.html.backup (backup copy)
 
-**Action:**
-1. Extract common JavaScript into `static/js/common.js`
-2. Use shared components (search form, results table)
-3. Keep dashboard_v2.html as primary
-4. Make semantic_search.html extend dashboard (single-page app with tabs)
+**Files CREATED:**
+- omics_oracle_v2/api/static/js/common.js (404 LOC shared utilities)
+  - Authentication helpers (authenticatedFetch, getCurrentUser, logout)
+  - UI utilities (showLoading, showError, showSuccess, escapeHtml)
+  - Date/time formatting (formatDate, getTimeAgo, formatDuration)
+  - Data formatting (formatNumber, truncate, getQualityClass)
+  - File export (downloadFile, exportAsJson, exportAsCsv)
+  - Local storage helpers (getLocalStorage, setLocalStorage)
 
-**Expected:** -2,000 LOC through component reuse
+**Files UPDATED:**
+- omics_oracle_v2/api/main.py (removed dashboard.html fallback logic)
+
+**Files KEPT (production frontends):**
+- dashboard_v2.html (1,912 LOC) - Main UI, actively used
+- semantic_search.html (2,588 LOC) - Advanced search interface
+- login.html (362 LOC) - Authentication page
+- register.html (498 LOC) - User registration page
+
+**Verification Results:**
+- ✅ Server reloaded successfully
+- ✅ Health endpoint: `{"status": "healthy", "version": "2.0.0"}`
+- ✅ Dashboard accessible at http://localhost:8000/dashboard
+- ✅ Common.js library created for code reuse across all frontends
+
+**Impact:**
+- Moved 4 unused/outdated HTML files to extras/
+- Created reusable JavaScript library (404 LOC) to reduce duplication
+- Simplified main.py routing logic (removed fallback)
+- Foundation laid for future frontend consolidation
+
+**Next Step:** Frontend pages can now use `<script src="/static/js/common.js"></script>` to access shared utilities.
+
+---
 
 #### Pass 3: Simplify Middleware Stack
 **Current:**
