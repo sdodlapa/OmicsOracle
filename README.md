@@ -125,11 +125,9 @@ After starting:
 
 **View Logs:**
 ```bash
-# API logs
-tail -f /tmp/omics_api.log
-
-# Dashboard logs
-tail -f /tmp/omics_dashboard.log
+```bash
+tail -f logs/omics_api.log
+```
 ```
 
 📖 **Detailed guide:** [docs/STARTUP_GUIDE.md](docs/STARTUP_GUIDE.md)
