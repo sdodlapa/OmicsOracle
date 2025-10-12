@@ -431,6 +431,124 @@ class FullTextManager:
             logger.debug(f"Institutional access lookup failed: {e}")
             return FullTextResult(success=False, error=str(e))
 
+    async def _try_pmc(self, publication: Publication) -> FullTextResult:
+        """
+        Try to get full-text from PubMed Central (PMC).
+        
+        PMC is the #1 legal source with 6M+ free full-text articles.
+        Supports both XML (JATS format) and PDF downloads.
+        
+        URL patterns:
+        - https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmcid}/
+        - https://pmc.ncbi.nlm.nih.gov/articles/PMC{pmcid}/
+        - PDF: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmcid}/pdf/
+        
+        Args:
+            publication: Publication object with pmid or pmc_id
+            
+        Returns:
+            FullTextResult with PDF download link or XML content
+        """
+        if not self.config.enable_pmc:
+            return FullTextResult(success=False, error="PMC disabled")
+        
+        try:
+            # Extract PMC ID from publication
+            pmc_id = None
+            
+            # Method 1: Direct pmcid attribute (most reliable - from PubMed fetch)
+            if hasattr(publication, 'pmcid') and publication.pmcid:
+                pmc_id = publication.pmcid.replace('PMC', '').strip()
+                logger.info(f"Using PMC ID from publication.pmcid: PMC{pmc_id}")
+            
+            # Method 2: Legacy pmc_id attribute
+            elif hasattr(publication, 'pmc_id') and publication.pmc_id:
+                pmc_id = publication.pmc_id.replace('PMC', '').strip()
+                logger.info(f"Using PMC ID from publication.pmc_id: PMC{pmc_id}")
+            
+            # Method 3: Extract from publication metadata
+            elif publication.metadata and publication.metadata.get('pmc_id'):
+                pmc_id = publication.metadata['pmc_id'].replace('PMC', '').strip()
+                logger.info(f"Using PMC ID from metadata: PMC{pmc_id}")
+            
+            # Method 4: Fetch PMC ID from PMID using E-utilities (fallback)
+            elif hasattr(publication, 'pmid') and publication.pmid:
+                import aiohttp
+                import ssl
+                
+                # Create SSL context that doesn't verify certificates (for institutional networks)
+                ssl_context = ssl.create_default_context()
+                ssl_context.check_hostname = False
+                ssl_context.verify_mode = ssl.CERT_NONE
+                
+                # Use PubMed E-utilities to convert PMID → PMCID
+                pmid = publication.pmid
+                url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={pmid}&format=json"
+                
+                connector = aiohttp.TCPConnector(ssl=ssl_context)
+                async with aiohttp.ClientSession(connector=connector) as session:
+                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            records = data.get('records', [])
+                            if records and len(records) > 0:
+                                pmc_id = records[0].get('pmcid', '').replace('PMC', '').strip()
+                                logger.info(f"Converted PMID {pmid} → PMC{pmc_id} via E-utilities")
+            
+            if not pmc_id:
+                return FullTextResult(success=False, error="No PMC ID found")
+            
+            # Ensure PMC ID is numeric only
+            pmc_id = pmc_id.strip()
+            
+            # Build URLs
+            web_url = f"https://pmc.ncbi.nlm.nih.gov/articles/PMC{pmc_id}/"
+            pdf_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/pdf/"
+            
+            # Try to download PDF
+            from omics_oracle_v2.lib.fulltext.download_utils import download_and_save_pdf
+            
+            saved_path = await download_and_save_pdf(
+                url=pdf_url,
+                publication=publication,
+                source='pmc',
+                timeout=self.config.timeout_per_source
+            )
+            
+            if saved_path:
+                logger.info(f"✅ Downloaded PMC{pmc_id} PDF successfully")
+                return FullTextResult(
+                    success=True,
+                    source=FullTextSource.PMC,
+                    url=web_url,
+                    pdf_path=saved_path,
+                    metadata={
+                        "pmc_id": f"PMC{pmc_id}",
+                        "pdf_url": pdf_url,
+                        "web_url": web_url,
+                        "saved_to": str(saved_path),
+                        "format": "pdf"
+                    }
+                )
+            else:
+                # PDF download failed but article exists - return web URL
+                logger.warning(f"PMC{pmc_id} exists but PDF download failed, returning web URL")
+                return FullTextResult(
+                    success=True,
+                    source=FullTextSource.PMC,
+                    url=web_url,
+                    metadata={
+                        "pmc_id": f"PMC{pmc_id}",
+                        "pdf_url": pdf_url,
+                        "web_url": web_url,
+                        "format": "web"
+                    }
+                )
+                
+        except Exception as e:
+            logger.warning(f"PMC lookup failed: {e}")
+            return FullTextResult(success=False, error=str(e))
+
     async def _try_openalex_oa_url(self, publication: Publication) -> FullTextResult:
         """
         Try to get full-text from OpenAlex OA URL.
@@ -1023,26 +1141,29 @@ class FullTextManager:
         logger.info(f"Attempting to get full-text for: {publication.title[:60]}...")
 
         # OPTIMIZED WATERFALL ORDER (based on Phase 6 analysis):
+        # Priority 0: Cache (instant, free)
         # Priority 1: Institutional Access (~45-50% coverage, legal, highest quality)
-        # Priority 2: Unpaywall (~25-30% additional coverage, legal OA aggregator)
-        # Priority 3: CORE (~10-15% additional, legal academic repository)
-        # Priority 4: OpenAlex OA URLs (metadata-driven, legal)
-        # Priority 5: Crossref (publisher links, legal)
-        # Priority 6: bioRxiv/arXiv (preprints, specialized, legal)
-        # Priority 7: Sci-Hub (~15-20% additional, gray area, use responsibly)
-        # Priority 8: LibGen (~5-10% additional, gray area, use responsibly)
+        # Priority 2: PMC (~6M articles, legal, highest quality)
+        # Priority 3: Unpaywall (~25-30% additional coverage, legal OA aggregator)
+        # Priority 4: CORE (~10-15% additional, legal academic repository)
+        # Priority 5: OpenAlex OA URLs (metadata-driven, legal)
+        # Priority 6: Crossref (publisher links, legal)
+        # Priority 7: bioRxiv/arXiv (preprints, specialized, legal)
+        # Priority 8: Sci-Hub (~15-20% additional, gray area, use responsibly)
+        # Priority 9: LibGen (~5-10% additional, gray area, use responsibly)
 
         sources = [
             ("cache", self._check_cache),  # Always check cache first (instant)
             ("institutional", self._try_institutional_access),  # Priority 1: GT/ODU access
-            ("unpaywall", self._try_unpaywall),  # Priority 2: Legal OA (25-30%)
-            ("core", self._try_core),  # Priority 3: CORE.ac.uk (10-15%)
-            ("openalex_oa", self._try_openalex_oa_url),  # Priority 4: OA metadata
-            ("crossref", self._try_crossref),  # Priority 5: Publisher links
-            ("biorxiv", self._try_biorxiv),  # Priority 6a: Biomedical preprints
-            ("arxiv", self._try_arxiv),  # Priority 6b: Other preprints
-            ("scihub", self._try_scihub),  # Priority 7: Sci-Hub (optimized, 23.9% per mirror)
-            ("libgen", self._try_libgen),  # Priority 8: LibGen (fallback)
+            ("pmc", self._try_pmc),  # Priority 2: PubMed Central (6M articles) **CRITICAL FIX**
+            ("unpaywall", self._try_unpaywall),  # Priority 3: Legal OA (25-30%)
+            ("core", self._try_core),  # Priority 4: CORE.ac.uk (10-15%)
+            ("openalex_oa", self._try_openalex_oa_url),  # Priority 5: OA metadata
+            ("crossref", self._try_crossref),  # Priority 6: Publisher links
+            ("biorxiv", self._try_biorxiv),  # Priority 7a: Biomedical preprints
+            ("arxiv", self._try_arxiv),  # Priority 7b: Other preprints
+            ("scihub", self._try_scihub),  # Priority 8: Sci-Hub (optimized, 23.9% per mirror)
+            ("libgen", self._try_libgen),  # Priority 9: LibGen (fallback)
         ]
 
         # WATERFALL: Try each source in order, STOP at first success

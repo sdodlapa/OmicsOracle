@@ -9,6 +9,8 @@ Date: October 11, 2025
 """
 
 import logging
+import os
+import ssl
 from pathlib import Path
 from typing import Optional
 
@@ -21,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 async def download_file(url: str, timeout: int = 30) -> Optional[bytes]:
     """
-    Download file from URL.
+    Download file from URL with SSL bypass support for institutional networks.
 
     Args:
         url: URL to download from
@@ -36,7 +38,16 @@ async def download_file(url: str, timeout: int = 30) -> Optional[bytes]:
         >>>     print(f"Downloaded {len(content)} bytes")
     """
     try:
-        async with aiohttp.ClientSession() as session:
+        # Create SSL context that bypasses verification if needed (institutional networks)
+        ssl_context = None
+        if os.getenv("PYTHONHTTPSVERIFY", "1") == "0":
+            ssl_context = ssl.create_default_context()
+            ssl_context.check_hostname = False
+            ssl_context.verify_mode = ssl.CERT_NONE
+            logger.debug("SSL verification disabled for download")
+        
+        connector = aiohttp.TCPConnector(ssl=ssl_context) if ssl_context else None
+        async with aiohttp.ClientSession(connector=connector) as session:
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=timeout)) as response:
                 if response.status == 200:
                     content = await response.read()
