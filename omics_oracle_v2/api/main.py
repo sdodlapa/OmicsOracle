@@ -34,19 +34,12 @@ from omics_oracle_v2.api.metrics import PrometheusMetricsMiddleware
 from omics_oracle_v2.api.middleware import ErrorHandlingMiddleware, RequestLoggingMiddleware
 from omics_oracle_v2.api.routes import (
     agents_router,
-    analytics_router,
     auth_router,
-    batch_router,
     health_router,
     metrics_router,
-    predictions_router,
-    recommendations_router,
     users_router,
     websocket_router,
-    workflows_router,
 )
-from omics_oracle_v2.api.routes.quotas import router as quotas_router
-from omics_oracle_v2.api.routes.workflows_dev import router as workflows_dev_router
 from omics_oracle_v2.cache import close_redis_client, get_redis_client
 from omics_oracle_v2.core import Settings
 from omics_oracle_v2.database import close_db, init_db
@@ -171,24 +164,13 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     # Main API routes (no version - simpler)
     app.include_router(auth_router, prefix="/api")
     app.include_router(users_router, prefix="/api")
-    app.include_router(quotas_router, prefix="/api")
     app.include_router(agents_router, prefix="/api/agents", tags=["Agents"])
-    app.include_router(workflows_router, prefix="/api/workflows", tags=["Workflows"])
-    app.include_router(workflows_dev_router, prefix="/api/workflows", tags=["Workflows (Dev)"])
-    app.include_router(batch_router, prefix="/api", tags=["Batch"])
     app.include_router(websocket_router, prefix="/ws", tags=["WebSocket"])
     app.include_router(metrics_router, tags=["Metrics"])
-
-    # ML-enhanced routes (Day 29)
-    app.include_router(recommendations_router, prefix="/api/recommendations", tags=["ML - Recommendations"])
-    app.include_router(predictions_router, prefix="/api/predictions", tags=["ML - Predictions"])
-    app.include_router(analytics_router, prefix="/api/analytics", tags=["ML - Analytics"])
 
     # Legacy v1 routes for backwards compatibility (will be removed after frontend updates)
     app.include_router(auth_router, prefix="/api/v1")
     app.include_router(agents_router, prefix="/api/v1/agents")
-    app.include_router(workflows_router, prefix="/api/v1/workflows")
-    app.include_router(batch_router, prefix="/api/v1")
 
     # Mount static files
     static_dir = Path(__file__).parent / "static"
@@ -253,10 +235,10 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
             content={"error": "Search interface not found"},
         )
 
-    # Root endpoint
-    @app.get("/", tags=["Root"])
-    async def root():
-        """Root endpoint with API information."""
+    # API Info endpoint (removed duplicate root endpoint)
+    @app.get("/api", tags=["Root"])
+    async def api_info():
+        """API information endpoint."""
         return {
             "name": api_settings.title,
             "version": api_settings.version,

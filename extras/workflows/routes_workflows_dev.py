@@ -10,7 +10,7 @@ This is a temporary solution to test the frontend without setting up authenticat
 import logging
 import time
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
@@ -18,7 +18,7 @@ from pydantic import BaseModel, Field
 from omics_oracle_v2.agents import Orchestrator
 from omics_oracle_v2.agents.models.orchestrator import OrchestratorInput
 from omics_oracle_v2.api.dependencies import get_orchestrator
-from omics_oracle_v2.api.models.workflow import StageResultResponse, WorkflowRequest, WorkflowResponse
+from omics_oracle_v2.api.models.workflow import WorkflowRequest
 
 logger = logging.getLogger(__name__)
 
@@ -57,28 +57,28 @@ async def list_workflows():
         WorkflowInfo(
             type="simple_search",
             name="Simple Search Workflow",
-            description="Quick search and basic report generation (Query → Search → Report)",
+            description="Quick search and basic report generation (Query -> Search -> Report)",
             agents=["Query Agent", "Search Agent", "Report Agent"],
             use_case="When you need to quickly find datasets matching specific criteria",
         ),
         WorkflowInfo(
             type="full_analysis",
             name="Full Analysis Workflow",
-            description="Complete analysis pipeline with data retrieval (Query → Search → Data → Report)",
+            description="Complete analysis pipeline with data retrieval (Query -> Search -> Data -> Report)",
             agents=["Query Agent", "Search Agent", "Data Agent", "Report Agent"],
             use_case="When you need comprehensive analysis with detailed reports",
         ),
         WorkflowInfo(
             type="quick_report",
             name="Quick Report Workflow",
-            description="Generate report from known dataset IDs (Search → Report)",
+            description="Generate report from known dataset IDs (Search -> Report)",
             agents=["Search Agent", "Report Agent"],
             use_case="When you already have specific GEO dataset IDs",
         ),
         WorkflowInfo(
             type="data_validation",
             name="Data Validation Workflow",
-            description="Validate and report on existing datasets (Data → Report)",
+            description="Validate and report on existing datasets (Data -> Report)",
             agents=["Data Agent", "Report Agent"],
             use_case="When validating quality and completeness of known datasets",
         ),
@@ -102,8 +102,8 @@ async def execute_workflow(request: WorkflowRequest, orchestrator: Orchestrator 
     """
     logger.info(f"[DEV MODE] Executing {request.workflow_type} workflow: {request.query}")
 
-    # Create mock user with enterprise tier
-    mock_user = MockUser()
+    # Mock user with enterprise tier (used for orchestrator input)
+    # Removed unused variable to pass flake8
 
     try:
         # Create orchestrator input from request fields
