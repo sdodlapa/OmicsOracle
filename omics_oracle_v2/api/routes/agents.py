@@ -504,15 +504,39 @@ async def enrich_fulltext(
             dataset.fulltext = []
             for pub, result in zip(publications, fulltext_results):
                 if result.success:
+                    # Try to get parsed content if PDF was downloaded
+                    parsed_content = None
+                    if result.pdf_path:
+                        try:
+                            parsed_content = await fulltext_manager.get_parsed_content(pub)
+                            logger.info(f"📄 Parsed PDF content for {pub.pmid}")
+                        except Exception as e:
+                            logger.warning(f"Failed to parse PDF for {pub.pmid}: {e}")
+                    
+                    # Build fulltext info with parsed content
                     fulltext_info = {
                         "pmid": pub.pmid,
-                        "title": pub.title,
+                        "title": pub.title or parsed_content.get("title") if parsed_content else pub.title,
                         "url": result.url,
                         "source": result.source.value,
                         "pdf_path": result.pdf_path if result.pdf_path else None,
                     }
+                    
+                    # Add parsed sections if available
+                    if parsed_content:
+                        fulltext_info.update({
+                            "abstract": parsed_content.get("abstract", ""),
+                            "methods": parsed_content.get("methods", ""),
+                            "results": parsed_content.get("results", ""),
+                            "discussion": parsed_content.get("discussion", ""),
+                            "introduction": parsed_content.get("introduction", ""),
+                            "conclusion": parsed_content.get("conclusion", ""),
+                        })
+                        logger.info(f"✅ Got full-text with parsed content for {pub.pmid} from {result.source.value}")
+                    else:
+                        logger.info(f"✅ Got full-text URL for {pub.pmid} from {result.source.value} (no PDF parsing)")
+                    
                     dataset.fulltext.append(fulltext_info)
-                    logger.info(f"✅ Got full-text for {pub.pmid} from {result.source.value}")
 
             dataset.fulltext_count = len(dataset.fulltext)
             dataset.fulltext_status = "available" if dataset.fulltext else "failed"

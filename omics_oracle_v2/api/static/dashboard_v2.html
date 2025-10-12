@@ -999,6 +999,9 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn-copy-error:hover {
@@ -1008,22 +1011,6 @@
 
         .btn-copy-error.copied {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        }
-
-        .btn-close-modal {
-            background: #e2e8f0;
-            color: #2d3748;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .btn-close-modal:hover {
-            background: #cbd5e0;
         }
     </style>
 </head>
@@ -1253,7 +1240,7 @@
 Status: ${enriched.fulltext_status}
 
 You can now use AI Analysis.`;
-                    showErrorModal('Download Success', message);
+                    showErrorModal('Download Success', message, true); // true = success, no copy button
                 } else if (enriched.fulltext_status === 'failed') {
                     const message = `⚠️ Download Failed After Trying All Sources
 
@@ -1841,19 +1828,24 @@ ${error.stack || 'Not available'}`;
         }
 
         // Copyable Error Modal Functions
-        function showErrorModal(title, message) {
+        function showErrorModal(title, message, isSuccess = false) {
             const modal = document.getElementById('errorModal');
             const modalTitle = document.getElementById('errorModalTitle');
             const modalMessage = document.getElementById('errorModalMessage');
+            const copyBtn = document.getElementById('btnCopyError');
             
             modalTitle.textContent = title;
             modalMessage.textContent = message;
             modal.style.display = 'block';
             
-            // Reset copy button
-            const copyBtn = document.getElementById('btnCopyError');
-            copyBtn.textContent = '📋 Copy Error Details';
-            copyBtn.classList.remove('copied');
+            // Show/hide copy button based on success vs error
+            if (isSuccess) {
+                copyBtn.style.display = 'none'; // Hide copy button for success messages
+            } else {
+                copyBtn.style.display = 'inline-flex'; // Show for errors
+                copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 6px"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg> Copy';
+                copyBtn.classList.remove('copied');
+            }
         }
 
         function closeErrorModal() {
@@ -1864,11 +1856,11 @@ ${error.stack || 'Not available'}`;
             const message = document.getElementById('errorModalMessage').textContent;
             navigator.clipboard.writeText(message).then(() => {
                 const copyBtn = document.getElementById('btnCopyError');
-                copyBtn.textContent = '✅ Copied!';
+                copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 6px"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg> Copied!';
                 copyBtn.classList.add('copied');
                 
                 setTimeout(() => {
-                    copyBtn.textContent = '📋 Copy Error Details';
+                    copyBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 6px"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg> Copy';
                     copyBtn.classList.remove('copied');
                 }, 2000);
             }).catch(err => {
@@ -1906,8 +1898,13 @@ ${error.stack || 'Not available'}`;
                 </div>
             </div>
             <div class="error-modal-footer">
-                <button id="btnCopyError" class="btn-copy-error" onclick="copyErrorMessage()">📋 Copy Error Details</button>
-                <button class="btn-close-modal" onclick="closeErrorModal()">Close</button>
+                <button id="btnCopyError" class="btn-copy-error" onclick="copyErrorMessage()">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="margin-right: 6px">
+                        <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/>
+                        <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/>
+                    </svg>
+                    Copy
+                </button>
             </div>
         </div>
     </div>
