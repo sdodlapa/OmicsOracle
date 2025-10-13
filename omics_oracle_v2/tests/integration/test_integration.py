@@ -19,7 +19,7 @@ import pytest
 
 from omics_oracle_v2.core import AISettings, GEOSettings, NLPSettings, Settings
 from omics_oracle_v2.core.exceptions import AIError, ConfigurationError, GEOError, NLPError
-from omics_oracle_v2.lib.ai import SummarizationClient, SummaryType
+from omics_oracle_v2.lib.analysis.ai import SummarizationClient, SummaryType
 from omics_oracle_v2.lib.geo import GEOClient
 from omics_oracle_v2.lib.nlp import BiomedicalNER
 from omics_oracle_v2.lib.nlp.models import EntityType
@@ -408,7 +408,7 @@ class TestDataFlow:
 
     def test_ai_output_structure(self):
         """Test AI output structure is consistent."""
-        from omics_oracle_v2.lib.ai import SummaryResponse
+        from omics_oracle_v2.lib.analysis.ai import SummaryResponse
 
         # Create a response
         response = SummaryResponse(
@@ -470,7 +470,7 @@ class TestImports:
 
         # Import all v2 modules  # noqa: F401 - imports needed for test
         from omics_oracle_v2.core import Settings  # noqa: F401
-        from omics_oracle_v2.lib.ai import SummarizationClient  # noqa: F401
+        from omics_oracle_v2.lib.analysis.ai import SummarizationClient  # noqa: F401
         from omics_oracle_v2.lib.geo import GEOClient  # noqa: F401
         from omics_oracle_v2.lib.nlp import BiomedicalNER  # noqa: F401
 

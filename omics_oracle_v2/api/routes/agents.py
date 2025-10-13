@@ -721,7 +721,7 @@ async def analyze_datasets(
     try:
         # Import here to avoid circular dependency
         from omics_oracle_v2.api.dependencies import get_settings
-        from omics_oracle_v2.lib.ai.client import SummarizationClient
+        from omics_oracle_v2.lib.analysis.ai.client import SummarizationClient
 
         settings = get_settings()
 

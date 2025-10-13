@@ -12,7 +12,7 @@ import pytest
 
 from omics_oracle_v2.lib.citations.models import UsageAnalysis
 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
-from omics_oracle_v2.lib.publications.analysis import (
+from omics_oracle_v2.lib.analysis.publications import (
     BiomarkerKnowledgeGraph,
     DatasetImpactReportGenerator,
     DatasetQASystem,

@@ -11,7 +11,7 @@ Key Components:
     - Utilities: Token estimation and metadata preparation
 
 Example:
-    >>> from omics_oracle_v2.lib.ai import SummarizationClient, SummaryType
+    >>> from omics_oracle_v2.lib.analysis.ai import SummarizationClient, SummaryType
     >>> from omics_oracle_v2.core import Settings
     >>>
     >>> settings = Settings()

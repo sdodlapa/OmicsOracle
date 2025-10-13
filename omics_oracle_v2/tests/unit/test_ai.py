@@ -14,7 +14,7 @@ from pydantic import ValidationError
 
 from omics_oracle_v2.core import AISettings, Settings
 from omics_oracle_v2.core.exceptions import AIError
-from omics_oracle_v2.lib.ai import (
+from omics_oracle_v2.lib.analysis.ai import (
     BatchSummaryRequest,
     BatchSummaryResponse,
     ModelInfo,
@@ -24,7 +24,7 @@ from omics_oracle_v2.lib.ai import (
     SummaryResponse,
     SummaryType,
 )
-from omics_oracle_v2.lib.ai.utils import (
+from omics_oracle_v2.lib.analysis.ai.utils import (
     aggregate_batch_statistics,
     estimate_tokens,
     extract_technical_details,

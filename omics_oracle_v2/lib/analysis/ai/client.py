@@ -8,11 +8,11 @@ support for different summary types and batch processing.
 import logging
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
-from ...core.config import AISettings
-from ...core.exceptions import AIError
+from omics_oracle_v2.core.config import AISettings
+from omics_oracle_v2.core.exceptions import AIError
 
 if TYPE_CHECKING:
-    from ...core.config import Settings
+    from omics_oracle_v2.core.config import Settings
 
 from .models import BatchSummaryResponse, ModelInfo, SummaryResponse, SummaryType
 from .prompts import PromptBuilder
@@ -48,8 +48,8 @@ class SummarizationClient:
         Args:
             settings: AI configuration settings or full Settings object
         """
-        from ...core.config import Settings as FullSettings
-        from ...core.config import get_settings
+        from omics_oracle_v2.core.config import Settings as FullSettings
+        from omics_oracle_v2.core.config import get_settings
 
         if settings is None:
             all_settings = get_settings()
