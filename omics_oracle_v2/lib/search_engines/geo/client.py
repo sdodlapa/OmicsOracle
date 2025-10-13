@@ -204,8 +204,8 @@ class GEOClient:
         Args:
             settings: GEO configuration settings or full Settings object
         """
-        from ...core.config import Settings as FullSettings
-        from ...core.config import get_settings
+        from omics_oracle_v2.core.config import Settings as FullSettings
+        from omics_oracle_v2.core.config import get_settings
 
         if settings is None:
             all_settings = get_settings()
