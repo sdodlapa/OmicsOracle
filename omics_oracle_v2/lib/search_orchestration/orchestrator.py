@@ -543,12 +543,25 @@ class SearchOrchestrator:
         return unique
 
     async def close(self):
-        """Clean up resources."""
+        """Clean up resources.
+
+        Week 3 Day 3: Added GEO client cleanup to cascade close() calls.
+        """
         logger.info("Closing SearchOrchestrator")
 
+        # Close GEO client (Week 3 Day 3)
+        if self.geo_client:
+            try:
+                await self.geo_client.close()
+                logger.debug("GEO client closed")
+            except Exception as e:
+                logger.warning(f"GEO client close failed: {e}")
+
+        # Close cache
         if self.cache:
             try:
                 await self.cache.close()
+                logger.debug("Cache closed")
             except Exception as e:
                 logger.warning(f"Cache close failed: {e}")
 

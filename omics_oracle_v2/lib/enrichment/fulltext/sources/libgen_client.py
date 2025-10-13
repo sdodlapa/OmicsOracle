@@ -127,8 +127,16 @@ class LibGenClient:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
+        await self.close()
+
+    async def close(self) -> None:
+        """Close the aiohttp session.
+
+        Week 3 Day 3: Added explicit close() method for proper resource cleanup.
+        """
         if self.session:
             await self.session.close()
+            self.session = None
 
     async def _rate_limit(self):
         """Apply rate limiting."""
