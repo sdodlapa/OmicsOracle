@@ -3,8 +3,8 @@ FastAPI Dependency Injection
 
 Provides dependencies for FastAPI endpoints.
 
-Note: get_search_agent() removed - /api/agents/search now uses OmicsSearchPipeline directly.
-      SearchAgent is kept only for Orchestrator compatibility.
+Note: All agent dependencies removed - agents archived to extras/agents/.
+      Main search uses SearchOrchestrator directly (lib/search/orchestrator.py).
 """
 
 import logging
@@ -12,7 +12,6 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 
-from omics_oracle_v2.agents import DataAgent, Orchestrator, QueryAgent, ReportAgent
 from omics_oracle_v2.api.config import APISettings
 from omics_oracle_v2.core import Settings
 
@@ -22,10 +21,6 @@ logger = logging.getLogger(__name__)
 # Singleton instances
 _settings: Optional[Settings] = None
 _api_settings: Optional[APISettings] = None
-_query_agent: Optional[QueryAgent] = None
-_data_agent: Optional[DataAgent] = None
-_report_agent: Optional[ReportAgent] = None
-_orchestrator: Optional[Orchestrator] = None
 
 
 def get_settings() -> Settings:
@@ -44,36 +39,12 @@ def get_api_settings() -> APISettings:
     return _api_settings
 
 
-def get_query_agent(settings: Settings = Depends(get_settings)) -> QueryAgent:
-    """Get Query Agent instance (singleton)."""
-    global _query_agent
-    if _query_agent is None:
-        _query_agent = QueryAgent(settings=settings)
-    return _query_agent
-
-
-def get_data_agent(settings: Settings = Depends(get_settings)) -> DataAgent:
-    """Get Data Agent instance (singleton)."""
-    global _data_agent
-    if _data_agent is None:
-        _data_agent = DataAgent(settings=settings)
-    return _data_agent
-
-
-def get_report_agent(settings: Settings = Depends(get_settings)) -> ReportAgent:
-    """Get Report Agent instance (singleton)."""
-    global _report_agent
-    if _report_agent is None:
-        _report_agent = ReportAgent(settings=settings)
-    return _report_agent
-
-
-def get_orchestrator(settings: Settings = Depends(get_settings)) -> Orchestrator:
-    """Get Orchestrator instance (singleton)."""
-    global _orchestrator
-    if _orchestrator is None:
-        _orchestrator = Orchestrator(settings=settings)
-    return _orchestrator
+# Agent dependencies removed - all agents archived to extras/agents/
+# The following functions have been removed:
+#   - get_query_agent()
+#   - get_data_agent()
+#   - get_report_agent()
+#   - get_orchestrator()
 
 
 async def verify_api_settings(

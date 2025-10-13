@@ -26,11 +26,13 @@ Example:
 
 from .base import Agent, AgentResult, AgentState
 from .context import AgentContext, ExecutionContext
-from .data_agent import DataAgent
+
+# Agents archived to extras/agents/ - no longer used by production dashboard
+# from .data_agent import DataAgent
+# from .orchestrator import Orchestrator
+# from .query_agent import QueryAgent
+# from .report_agent import ReportAgent
 from .exceptions import AgentError, AgentExecutionError, AgentStateError, AgentTimeoutError
-from .orchestrator import Orchestrator
-from .query_agent import QueryAgent
-from .report_agent import ReportAgent
 
 __all__ = [
     # Base classes
@@ -45,9 +47,9 @@ __all__ = [
     "AgentExecutionError",
     "AgentStateError",
     "AgentTimeoutError",
-    # Agents
-    "QueryAgent",
-    "DataAgent",
-    "ReportAgent",
-    "Orchestrator",
+    # Agents archived - removed from exports
+    # "QueryAgent",
+    # "DataAgent",
+    # "ReportAgent",
+    # "Orchestrator",
 ]
