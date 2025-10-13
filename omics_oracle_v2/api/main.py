@@ -139,7 +139,12 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
         openapi_url="/openapi.json",
     )
 
-    # Add CORS middleware
+    # ============================================================================
+    # MIDDLEWARE STACK (order matters - last added runs first)
+    # ============================================================================
+
+    # 1. CORS - Allow frontend to call API from different origin
+    #    ESSENTIAL for dashboard_v2.html to communicate with backend
     app.add_middleware(
         CORSMiddleware,
         allow_origins=api_settings.cors_origins,
@@ -148,15 +153,39 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
         allow_headers=api_settings.cors_allow_headers,
     )
 
-    # Add custom middleware (order matters - last added runs first)
-    app.add_middleware(PrometheusMetricsMiddleware)
-    app.add_middleware(RequestLoggingMiddleware)
-    app.add_middleware(ErrorHandlingMiddleware)
+    # 2. Metrics - Prometheus metrics collection
+    #    OPTIONAL: Can disable for development/demo mode
+    if api_settings.enable_prometheus_metrics:
+        app.add_middleware(PrometheusMetricsMiddleware)
+        logger.info("Prometheus metrics middleware enabled")
+    else:
+        logger.info("Prometheus metrics disabled")
 
-    # Add rate limiting middleware (should run early in the chain)
+    # 3. Request Logging - Log all requests/responses with timing
+    #    ESSENTIAL for debugging and monitoring
+    if api_settings.enable_request_logging:
+        app.add_middleware(RequestLoggingMiddleware)
+        logger.info("Request logging middleware enabled")
+    else:
+        logger.info("Request logging disabled")
+
+    # 4. Error Handling - Catch unhandled exceptions and return JSON errors
+    #    ESSENTIAL for consistent error responses
+    app.add_middleware(ErrorHandlingMiddleware)
+    logger.info("Error handling middleware enabled")
+
+    # 5. Rate Limiting - Enforce tier-based quotas (requires Redis + auth)
+    #    OPTIONAL: Not needed for demo mode, requires user authentication
+    #    Note: Currently enabled=True but doesn't add headers (auth disabled for agents)
     if settings.rate_limit.enabled:
         app.add_middleware(RateLimitMiddleware, settings=settings)
-        logger.info("Rate limiting middleware enabled")
+        logger.info("Rate limiting middleware enabled (requires Redis + authentication)")
+    else:
+        logger.info("Rate limiting disabled - running in demo mode")
+
+    # ============================================================================
+    # ROUTERS - API Endpoints
+    # ============================================================================
 
     # Include routers
     app.include_router(health_router, prefix="/health", tags=["Health"])

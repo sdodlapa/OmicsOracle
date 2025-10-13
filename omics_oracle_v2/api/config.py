@@ -46,6 +46,10 @@ class APISettings(BaseSettings):
     rate_limit_enabled: bool = True
     rate_limit_requests_per_minute: int = 60
 
+    # Middleware Features
+    enable_prometheus_metrics: bool = Field(default=True, description="Enable Prometheus metrics collection")
+    enable_request_logging: bool = Field(default=True, description="Enable request/response logging")
+
     # Timeouts
     request_timeout_seconds: int = 300  # 5 minutes
     workflow_timeout_seconds: int = 600  # 10 minutes
