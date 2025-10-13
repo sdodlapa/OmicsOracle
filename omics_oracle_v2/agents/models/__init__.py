@@ -9,7 +9,7 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-from ...lib.nlp.models import Entity, EntityType
+from ...lib.query_processing.nlp.models import Entity, EntityType
 
 
 class QueryIntent(str, Enum):

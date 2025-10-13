@@ -33,7 +33,10 @@ except ImportError:
     HAS_BIOMEDICAL_NER = False
 
 try:
-    from omics_oracle_v2.lib.query_processing.nlp.synonym_expansion import SynonymExpander, SynonymExpansionConfig
+    from omics_oracle_v2.lib.query_processing.nlp.synonym_expansion import (
+        SynonymExpander,
+        SynonymExpansionConfig,
+    )
 
     HAS_SYNONYM_EXPANDER = True
 except ImportError:
