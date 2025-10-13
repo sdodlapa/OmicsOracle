@@ -81,6 +81,12 @@ class GEOSettings(BaseSettings):
     max_retries: int = Field(default=3, ge=0, le=10, description="Maximum retry attempts for API calls")
     timeout: int = Field(default=30, ge=1, le=300, description="Request timeout in seconds")
     verify_ssl: bool = Field(default=True, description="Verify SSL certificates for API calls")
+    max_concurrent_fetches: int = Field(
+        default=20,
+        ge=1,
+        le=100,
+        description="Maximum concurrent GEO metadata fetches (Week 3 Day 2: 10-50 recommended)",
+    )
 
 
 class AISettings(BaseSettings):

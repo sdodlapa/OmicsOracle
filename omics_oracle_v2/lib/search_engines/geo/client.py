@@ -74,7 +74,7 @@ class NCBIClient:
         self.session: Optional[aiohttp.ClientSession] = None
 
     async def _get_session(self) -> aiohttp.ClientSession:
-        """Get or create aiohttp session."""
+        """Get or create optimized aiohttp session."""
         if self.session is None:
             # Create SSL context if verification is disabled
             ssl_context = None
@@ -84,8 +84,24 @@ class NCBIClient:
                 ssl_context.verify_mode = ssl.CERT_NONE
                 logger.warning("SSL verification disabled - use only for testing")
 
-            connector = aiohttp.TCPConnector(ssl=ssl_context)
-            self.session = aiohttp.ClientSession(connector=connector)
+            # Week 3 Day 2: Optimized connector for parallel fetching
+            connector = aiohttp.TCPConnector(
+                ssl=ssl_context,
+                limit=50,  # Total connection pool size
+                limit_per_host=20,  # Connections per host (matches max_concurrent)
+                ttl_dns_cache=300,  # Cache DNS for 5 minutes
+                force_close=False,  # Reuse connections
+                enable_cleanup_closed=True,  # Clean up closed connections
+            )
+
+            # Week 3 Day 2: Add timeout configuration
+            timeout = aiohttp.ClientTimeout(
+                total=60,  # Total timeout per request
+                connect=10,  # Connection timeout
+                sock_read=30,  # Socket read timeout
+            )
+
+            self.session = aiohttp.ClientSession(connector=connector, timeout=timeout)
 
         return self.session
 
@@ -454,7 +470,7 @@ class GEOClient:
             return None
 
     async def batch_get_metadata(
-        self, geo_ids: List[str], max_concurrent: int = 10, return_list: bool = False
+        self, geo_ids: List[str], max_concurrent: int = 20, return_list: bool = False
     ) -> Union[Dict[str, GEOSeriesMetadata], List[GEOSeriesMetadata]]:
         """
         Retrieve metadata for multiple GEO series concurrently with optimized performance.
@@ -468,7 +484,7 @@ class GEOClient:
 
         Args:
             geo_ids: List of GEO series IDs
-            max_concurrent: Maximum concurrent requests (default: 10)
+            max_concurrent: Maximum concurrent requests (default: 20, Week 3 Day 2 optimization)
             return_list: If True, return ordered list; if False, return dict (default: False)
 
         Returns:
@@ -550,7 +566,7 @@ class GEOClient:
             return metadata_dict
 
     async def batch_get_metadata_smart(
-        self, geo_ids: List[str], max_concurrent: int = 10
+        self, geo_ids: List[str], max_concurrent: int = 20
     ) -> List[GEOSeriesMetadata]:
         """
         Smart batch metadata fetching with cache-aware optimization.
@@ -565,7 +581,7 @@ class GEOClient:
 
         Args:
             geo_ids: List of GEO series IDs
-            max_concurrent: Maximum concurrent fetches
+            max_concurrent: Maximum concurrent fetches (default: 20, Week 3 Day 2 optimization)
 
         Returns:
             List of metadata in same order as input geo_ids
