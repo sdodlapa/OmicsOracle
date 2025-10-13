@@ -332,20 +332,25 @@ class SearchOrchestrator:
 
         try:
             # Build GEO-optimized query (adds Entrez tags for better precision)
+            logger.info(f"[GEO] Original query: '{query}'")
             geo_query = self.geo_query_builder.build_query(query, mode="balanced")
             if geo_query != query:
-                logger.info(f"🔧 GEO query optimized: '{query}' -> '{geo_query}'")
+                logger.info(f"[GEO] Query optimized: '{query}' -> '{geo_query}'")
+            else:
+                logger.info(f"[GEO] Query used as-is (no optimization)")
 
-            logger.info(f"🔍 Searching GEO: '{geo_query}'")
+            logger.info(f"[GEO] Executing search with query: '{geo_query}'")
 
             # GEOClient.search() returns SearchResult with geo_ids
             search_result = await self.geo_client.search(geo_query, max_results=max_results)
 
             if not search_result.geo_ids:
-                logger.info("📊 GEO: No datasets found")
+                logger.info("[GEO] No datasets found")
                 return []
 
-            logger.info(f"📊 GEO: {len(search_result.geo_ids)} dataset IDs found, fetching metadata...")
+            logger.info(
+                f"[GEO] Found {len(search_result.geo_ids)} dataset IDs, fetching metadata..."
+            )
 
             # Fetch metadata for each ID
             datasets = []
@@ -359,7 +364,7 @@ class SearchOrchestrator:
                     continue
 
             logger.info(
-                f"📊 GEO: Successfully fetched metadata for {len(datasets)}/{len(search_result.geo_ids)} datasets"
+                f"[GEO] Successfully fetched metadata for {len(datasets)}/{len(search_result.geo_ids)} datasets"
             )
             return datasets
         except Exception as e:
