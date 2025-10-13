@@ -7,10 +7,12 @@ to comprehensive research reports.
 
 Agent Types:
     - QueryAgent: Natural language query processing with NLP
-    - SearchAgent: GEO database search and retrieval
     - DataAgent: Metadata extraction and validation
     - ReportAgent: AI-powered report generation
     - Orchestrator: Multi-agent workflow coordination
+
+Note: SearchAgent has been removed (archived to extras/agents/).
+      Use omics_oracle_v2.lib.pipelines.unified_search_pipeline.OmicsSearchPipeline directly.
 
 Example:
     >>> from omics_oracle_v2.agents import Orchestrator
@@ -29,7 +31,6 @@ from .exceptions import AgentError, AgentExecutionError, AgentStateError, AgentT
 from .orchestrator import Orchestrator
 from .query_agent import QueryAgent
 from .report_agent import ReportAgent
-from .search_agent import SearchAgent
 
 __all__ = [
     # Base classes
@@ -46,7 +47,6 @@ __all__ = [
     "AgentTimeoutError",
     # Agents
     "QueryAgent",
-    "SearchAgent",
     "DataAgent",
     "ReportAgent",
     "Orchestrator",

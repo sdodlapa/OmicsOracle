@@ -12,11 +12,11 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from omics_oracle_v2.agents import DataAgent, QueryAgent, ReportAgent, SearchAgent
+from omics_oracle_v2.agents import DataAgent, QueryAgent, ReportAgent
 from omics_oracle_v2.agents.models import QueryInput
 from omics_oracle_v2.agents.models.data import DataInput
 from omics_oracle_v2.agents.models.report import ReportInput
-from omics_oracle_v2.agents.models.search import RankedDataset, SearchInput
+from omics_oracle_v2.agents.models.search import RankedDataset  # Keep for response building
 from omics_oracle_v2.api.dependencies import get_data_agent, get_query_agent, get_report_agent
 from omics_oracle_v2.api.models.requests import (
     DataValidationRequest,
@@ -37,6 +37,8 @@ from omics_oracle_v2.api.models.responses import (
 )
 from omics_oracle_v2.auth.dependencies import get_current_user
 from omics_oracle_v2.auth.models import User
+from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
+from omics_oracle_v2.lib.pipelines.unified_search_pipeline import OmicsSearchPipeline, UnifiedSearchConfig
 
 logger = logging.getLogger(__name__)
 
@@ -211,20 +213,24 @@ async def execute_query_agent(
         )
 
 
-@router.post("/search", response_model=SearchResponse, summary="Execute Search Agent")
-async def execute_search_agent(
+@router.post("/search", response_model=SearchResponse, summary="Search Datasets and Publications")
+async def execute_search(
     request: SearchRequest,
 ):
     """
-    Execute the Search Agent to find datasets in GEO database.
+    Search for datasets and publications using the unified OmicsSearchPipeline.
 
-    This endpoint searches the NCBI GEO database using provided search terms
-    and filters, returning ranked results.
+    This endpoint searches across multiple sources:
+    - NCBI GEO database for omics datasets
+    - PubMed for biomedical publications
+    - OpenAlex for open access articles
 
-    Supports two search modes:
-    - **Keyword Search (default)**: Traditional GEO search with keyword matching
-    - **Semantic Search**: AI-powered search with query expansion, hybrid ranking,
-      and cross-encoder reranking (requires FAISS index)
+    Features:
+    - **Intelligent query analysis**: Auto-detects query type (GEO ID, keyword, etc.)
+    - **Query optimization**: NER + SapBERT semantic expansion
+    - **Hybrid search**: Searches both datasets and publications in parallel
+    - **Redis caching**: 1000x speedup for cached queries
+    - **Cross-source linking**: Finds datasets mentioned in publications
 
     **Note:** This endpoint is public for demo purposes. No authentication required.
 
@@ -232,7 +238,7 @@ async def execute_search_agent(
         request: Search request with terms, filters, result limit, and semantic flag
 
     Returns:
-        SearchResponse: Ranked dataset results with relevance scores
+        SearchResponse: Ranked dataset and publication results with relevance scores
     """
     start_time = time.time()
 
@@ -240,97 +246,158 @@ async def execute_search_agent(
     search_logs = []
 
     try:
-        # Import here to avoid circular dependency
-        from omics_oracle_v2.api.dependencies import get_settings
+        # Initialize unified pipeline
+        search_logs.append("📝 Using unified search pipeline with query optimization")
+        logger.info("Initializing OmicsSearchPipeline")
 
-        settings = get_settings()
-        agent = SearchAgent(settings=settings, enable_semantic=request.enable_semantic)
+        # Build search config
+        config = UnifiedSearchConfig(
+            enable_geo_search=True,
+            enable_publication_search=True,
+            max_geo_results=request.max_results,
+            max_publication_results=50,
+            enable_caching=True,
+            enable_query_optimization=not request.enable_semantic,  # Use optimization unless semantic mode
+        )
 
-        # Log original query
+        pipeline = OmicsSearchPipeline(config)
+
+        # Build query from search terms
         original_query = " ".join(request.search_terms)
         search_logs.append(f"🔍 Original query: '{original_query}'")
         logger.info(f"Search request: '{original_query}' (semantic={request.enable_semantic})")
 
-        # Log semantic search status
-        if request.enable_semantic:
-            if agent.is_semantic_search_available():
-                search_logs.append("✨ Using semantic search with AI-powered query expansion")
-                logger.info("Using semantic search with query expansion and hybrid ranking")
-            else:
-                search_logs.append("⚠️ Semantic search unavailable, using keyword search")
-                logger.warning(
-                    "Semantic search requested but index unavailable, falling back to keyword search"
-                )
-        else:
-            search_logs.append("📝 Using unified pipeline with query preprocessing")
+        # Apply GEO filters to query (organism, study_type)
+        query_parts = [original_query]
+        filters_applied = {}
 
-        # Execute agent
-        search_input = SearchInput(
-            search_terms=request.search_terms,
-            filters=request.filters or {},
-            max_results=request.max_results,
+        if request.filters:
+            organism = request.filters.get("organism")
+            if organism:
+                query_parts.append(f'"{organism}"[Organism]')
+                filters_applied["organism"] = organism
+                logger.info(f"Added organism filter: {organism}")
+
+            study_type = request.filters.get("study_type")
+            if study_type:
+                query_parts.append(f'"{study_type}"[DataSet Type]')
+                filters_applied["study_type"] = study_type
+                logger.info(f"Added study type filter: {study_type}")
+
+        query = " AND ".join(query_parts) if len(query_parts) > 1 else query_parts[0]
+
+        if query != original_query:
+            search_logs.append(f"🎯 Query with filters: '{query}'")
+
+        # Execute unified search
+        logger.info(f"Executing unified search: '{query}'")
+        search_result = await pipeline.search(
+            query=query,
+            max_geo_results=request.max_results,
+            max_publication_results=50,
+            use_cache=True,
         )
-        result = agent.execute(search_input)
 
-        if not result.success:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Search failed: {result.error}",
+        # Log pipeline metrics
+        logger.info(
+            f"Pipeline complete: type={search_result.query_type}, "
+            f"cache={search_result.cache_hit}, time={search_result.search_time_ms:.2f}ms, "
+            f"results={search_result.total_results}"
+        )
+
+        # Add query optimization logs
+        query_type = search_result.query_type
+        if query_type == "hybrid":
+            search_logs.append("🔄 Query type: HYBRID (GEO + Publications)")
+        else:
+            search_logs.append(f"📊 Query type: {query_type}")
+
+        if search_result.optimized_query and search_result.optimized_query != original_query:
+            search_logs.append(f"🔧 Optimized query: '{search_result.optimized_query}'")
+        else:
+            search_logs.append("ℹ️ Query used as-is (no optimization needed)")
+
+        if search_result.cache_hit:
+            search_logs.append("⚡ Cache hit - results returned from cache")
+        else:
+            search_logs.append("🔄 Fresh search - results fetched from sources")
+
+        search_logs.append(f"⏱️ Pipeline search time: {search_result.search_time_ms:.2f}ms")
+
+        # Extract GEO datasets
+        geo_datasets = search_result.geo_datasets
+        search_logs.append(f"📦 Raw GEO datasets fetched: {len(geo_datasets)}")
+
+        # Apply min_samples filter if specified
+        min_samples = request.filters.get("min_samples") if request.filters else None
+        if min_samples:
+            min_samples_int = int(min_samples)
+            geo_datasets = [d for d in geo_datasets if d.sample_count and d.sample_count >= min_samples_int]
+            filters_applied["min_samples"] = str(min_samples_int)
+            search_logs.append(f"� After min_samples={min_samples_int} filter: {len(geo_datasets)}")
+            logger.info(f"Filtered by min_samples={min_samples_int}: {len(geo_datasets)} remain")
+
+        # Simple ranking by keyword relevance
+        ranked_datasets = []
+        search_terms_lower = {term.lower() for term in request.search_terms}
+
+        for dataset in geo_datasets:
+            score = 0.0
+            reasons = []
+
+            # Title matches (weight: 0.4)
+            title_lower = (dataset.title or "").lower()
+            title_matches = sum(1 for term in search_terms_lower if term in title_lower)
+            if title_matches > 0:
+                score += min(0.4, title_matches * 0.2)
+                reasons.append(f"Title matches {title_matches} term(s)")
+
+            # Summary matches (weight: 0.3)
+            summary_lower = (dataset.summary or "").lower()
+            summary_matches = sum(1 for term in search_terms_lower if term in summary_lower)
+            if summary_matches > 0:
+                score += min(0.3, summary_matches * 0.15)
+                reasons.append(f"Summary matches {summary_matches} term(s)")
+
+            # Sample count bonus (up to 0.15)
+            if dataset.sample_count:
+                if dataset.sample_count >= 100:
+                    score += 0.15
+                    reasons.append(f"Large sample size: {dataset.sample_count}")
+                elif dataset.sample_count >= 50:
+                    score += 0.10
+                    reasons.append(f"Good sample size: {dataset.sample_count}")
+                elif dataset.sample_count >= 10:
+                    score += 0.05
+                    reasons.append(f"Adequate sample size: {dataset.sample_count}")
+
+            # Ensure minimum score
+            if not reasons:
+                reasons.append("General database match")
+                score = 0.1
+
+            score = min(1.0, score)
+            ranked_datasets.append(
+                RankedDataset(dataset=dataset, relevance_score=score, match_reasons=reasons)
             )
 
-        output = result.output
+        # Sort by relevance (highest first)
+        ranked_datasets.sort(key=lambda d: d.relevance_score, reverse=True)
+        search_logs.append(f"📊 After ranking: {len(ranked_datasets)} datasets")
 
-        # Extract search information from agent result metadata
-        metadata = result.metadata if result.metadata else {}
+        # Extract publications
+        publications = search_result.publications
+        search_logs.append(f"📄 Found {len(publications)} related publications")
 
-        # Add detailed logging for debugging
-        if "raw_geo_count" in metadata:
-            search_logs.append(f"📦 Raw GEO datasets fetched: {metadata['raw_geo_count']}")
-
-        if "filtered_count" in metadata:
-            search_logs.append(f"🔍 After filtering: {metadata['filtered_count']}")
-
-        if "ranked_count" in metadata:
-            search_logs.append(f"📊 After ranking: {metadata['ranked_count']}")
-
-        # Add query optimization logs from metadata
-        if "query_type" in metadata:
-            query_type = metadata["query_type"]
-            if query_type == "hybrid":
-                search_logs.append("🔄 Query type: HYBRID (GEO + Publications)")
-            else:
-                search_logs.append(f"📊 Query type: {query_type}")
-
-        # Add hybrid search stats
-        if "hybrid_mode" in metadata and metadata["hybrid_mode"]:
-            geo_from_pubs = metadata.get("geo_from_publications_count", 0)
-            geo_direct = metadata.get("geo_direct_count", 0)
-            search_logs.append(f"🔗 Hybrid search: {geo_direct} direct + {geo_from_pubs} from publications")
-
-        if "optimized_query" in metadata:
-            optimized = metadata["optimized_query"]
-            if optimized != original_query:
-                search_logs.append(f"🔧 Optimized query: '{optimized}'")
-            else:
-                search_logs.append("ℹ️ Query used as-is (no optimization needed)")
-
-        if "cache_hit" in metadata:
-            if metadata["cache_hit"]:
-                search_logs.append("⚡ Cache hit - results returned from cache")
-            else:
-                search_logs.append("🔄 Fresh search - results fetched from GEO")
-
-        if "search_time_ms" in metadata:
-            search_time = metadata["search_time_ms"]
-            search_logs.append(f"⏱️ Search time: {search_time:.2f}ms")
+        # Add search mode to filters
+        filters_applied["search_mode"] = search_result.query_type
+        filters_applied["cache_hit"] = str(search_result.cache_hit)
+        filters_applied["optimized"] = str(search_result.optimized_query != original_query)
 
         # Add result counts
-        search_logs.append(f"✅ Found {output.total_found} datasets total")
-        if output.publications_count > 0:
-            search_logs.append(f"📄 Found {output.publications_count} related publications")
-        if output.filters_applied:
-            filter_str = ", ".join([f"{k}={v}" for k, v in output.filters_applied.items()])
-            search_logs.append(f"🎯 Filters applied: {filter_str}")
+        search_logs.append(
+            f"✅ Total results: {len(ranked_datasets)} datasets, {len(publications)} publications"
+        )
 
         # Convert datasets to response format
         datasets = [
@@ -343,17 +410,17 @@ async def execute_search_agent(
                 platform=ranked.dataset.platforms[0] if ranked.dataset.platforms else None,
                 relevance_score=ranked.relevance_score,
                 match_reasons=ranked.match_reasons,
-                publication_date=ranked.dataset.publication_date,  # When dataset was made public
-                submission_date=ranked.dataset.submission_date,  # When dataset was submitted
-                pubmed_ids=ranked.dataset.pubmed_ids,  # Include PMIDs for full-text enrichment
+                publication_date=ranked.dataset.publication_date,
+                submission_date=ranked.dataset.submission_date,
+                pubmed_ids=ranked.dataset.pubmed_ids,
             )
-            for ranked in output.datasets
+            for ranked in ranked_datasets
         ]
 
         # Convert publications to response format
-        publications = []
-        if output.publications:
-            for pub in output.publications:
+        publication_responses = []
+        if publications:
+            for pub in publications:
                 # Extract GEO IDs from abstract/full text
                 import re
 
@@ -363,7 +430,19 @@ async def execute_search_agent(
                 if hasattr(pub, "full_text") and pub.full_text:
                     geo_ids.extend(re.findall(r"\bGSE\d{5,}\b", pub.full_text))
 
-                publications.append(
+                # Handle publication_date (can be datetime or string)
+                pub_date = getattr(pub, "publication_date", None)
+                if pub_date:
+                    if isinstance(pub_date, datetime):
+                        pub_date_str = pub_date.isoformat()
+                    elif hasattr(pub_date, "year"):  # datetime-like object
+                        pub_date_str = f"{pub_date.year:04d}-{getattr(pub_date, 'month', 1):02d}-{getattr(pub_date, 'day', 1):02d}"
+                    else:
+                        pub_date_str = str(pub_date)
+                else:
+                    pub_date_str = None
+
+                publication_responses.append(
                     PublicationResponse(
                         pmid=getattr(pub, "pmid", None),
                         pmc_id=getattr(pub, "pmc_id", None),
@@ -372,8 +451,8 @@ async def execute_search_agent(
                         abstract=getattr(pub, "abstract", None),
                         authors=getattr(pub, "authors", []),
                         journal=getattr(pub, "journal", None),
-                        publication_date=getattr(pub, "publication_date", None),
-                        geo_ids_mentioned=list(set(geo_ids)),  # Deduplicate
+                        publication_date=pub_date_str,
+                        geo_ids_mentioned=list(set(geo_ids)),
                         fulltext_available=hasattr(pub, "full_text") and pub.full_text is not None,
                         pdf_path=getattr(pub, "pdf_path", None),
                     )
@@ -386,13 +465,22 @@ async def execute_search_agent(
             success=True,
             execution_time_ms=execution_time_ms,
             timestamp=datetime.now(timezone.utc),
-            total_found=output.total_found,
+            total_found=search_result.total_results,
             datasets=datasets,
-            search_terms_used=output.search_terms_used,
-            filters_applied=output.filters_applied,
+            search_terms_used=request.search_terms,
+            filters_applied=filters_applied,
             search_logs=search_logs,
-            publications=publications,
-            publications_count=len(publications),
+            publications=publication_responses,
+            publications_count=len(publication_responses),
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Search execution failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Search error: {str(e)}",
         )
 
     except HTTPException:

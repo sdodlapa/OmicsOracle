@@ -1,6 +1,9 @@
 """Orchestrator agent for coordinating multi-agent workflows."""
 
+import asyncio
+import logging
 import time
+from typing import List
 
 from omics_oracle_v2.agents.base import Agent
 from omics_oracle_v2.agents.data_agent import DataAgent
@@ -14,32 +17,48 @@ from omics_oracle_v2.agents.models.orchestrator import (
     WorkflowType,
 )
 from omics_oracle_v2.agents.models.report import ReportFormat, ReportInput, ReportType
-from omics_oracle_v2.agents.models.search import SearchInput
+from omics_oracle_v2.agents.models.search import RankedDataset, SearchInput, SearchOutput
 from omics_oracle_v2.agents.query_agent import QueryAgent
 from omics_oracle_v2.agents.report_agent import ReportAgent
-from omics_oracle_v2.agents.search_agent import SearchAgent
+from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
+from omics_oracle_v2.lib.pipelines.unified_search_pipeline import OmicsSearchPipeline, UnifiedSearchConfig
+
+logger = logging.getLogger(__name__)
 
 
 class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
     """Orchestrator for multi-agent biomedical research workflows.
 
-    Coordinates QueryAgent, SearchAgent, DataAgent, and ReportAgent to execute
+    Coordinates QueryAgent, OmicsSearchPipeline, DataAgent, and ReportAgent to execute
     complete research workflows from user query to final report.
+
+    Note: Previously used SearchAgent, now uses OmicsSearchPipeline directly for cleaner architecture.
     """
 
     def __init__(self, settings):
-        """Initialize Orchestrator with all sub-agents."""
+        """Initialize Orchestrator with all sub-agents and search pipeline."""
         super().__init__(settings)
 
-        # Initialize all sub-agents
+        # Initialize query, data, and report agents
         self.query_agent = QueryAgent(settings)
-        self.search_agent = SearchAgent(settings)
         self.data_agent = DataAgent(settings)
         self.report_agent = ReportAgent(settings)
 
+        # Initialize search pipeline (replaces SearchAgent)
+        search_config = UnifiedSearchConfig(
+            enable_geo_search=True,
+            enable_publication_search=True,
+            enable_query_optimization=True,
+            enable_caching=True,
+            max_geo_results=100,
+            max_publication_results=50,
+        )
+        self.search_pipeline = OmicsSearchPipeline(search_config)
+        logger.info("Orchestrator initialized with OmicsSearchPipeline")
+
     def cleanup(self) -> None:
         """Cleanup all sub-agents."""
-        for agent in [self.query_agent, self.search_agent, self.data_agent, self.report_agent]:
+        for agent in [self.query_agent, self.data_agent, self.report_agent]:
             try:
                 agent.cleanup()
             except Exception:
@@ -391,39 +410,80 @@ class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
     def _execute_search_stage(
         self, input_data: OrchestratorInput, query_result: WorkflowResult
     ) -> WorkflowResult:
-        """Execute dataset search stage."""
+        """Execute dataset search stage using OmicsSearchPipeline."""
         start_time = time.time()
 
         try:
-            # Build search input from query results
-            search_input = SearchInput(
-                search_terms=query_result.output.search_terms,
-                original_query=input_data.query,  # Pass original query for context
-                max_results=input_data.max_results,
-                organism=input_data.organisms[0] if input_data.organisms else None,
-                min_samples=input_data.min_samples,
-                study_type=input_data.study_types[0] if input_data.study_types else None,
+            # Extract query from query results
+            query = " ".join(query_result.output.search_terms)
+
+            # Build query with GEO filters (organism, study_type)
+            query_with_filters = self._build_search_query(query, input_data)
+
+            logger.info(f"Orchestrator executing search: '{query_with_filters}'")
+
+            # Execute search using pipeline
+            search_result = asyncio.run(
+                self.search_pipeline.search(
+                    query=query_with_filters,
+                    max_geo_results=input_data.max_results,
+                    max_publication_results=50,
+                    use_cache=True,
+                )
             )
 
-            result = self.search_agent.execute(search_input)
+            # Apply min_samples filter if specified
+            geo_datasets = search_result.geo_datasets
+            if input_data.min_samples:
+                geo_datasets = self._filter_datasets_by_samples(geo_datasets, input_data.min_samples)
+                logger.info(
+                    f"Filtered by min_samples={input_data.min_samples}: {len(geo_datasets)} datasets remain"
+                )
+
+            # Rank datasets by relevance
+            ranked_datasets = self._rank_datasets(geo_datasets, query_result.output.search_terms)
+
+            # Build SearchOutput to match expected format
+            search_output = SearchOutput(
+                datasets=ranked_datasets,
+                total_found=len(ranked_datasets),
+                search_terms_used=query_result.output.search_terms,
+                filters_applied={
+                    "search_mode": search_result.query_type,
+                    "cache_hit": str(search_result.cache_hit),
+                    "organism": input_data.organisms[0] if input_data.organisms else None,
+                    "study_type": input_data.study_types[0] if input_data.study_types else None,
+                    "min_samples": str(input_data.min_samples) if input_data.min_samples else None,
+                },
+                publications=search_result.publications,
+                publications_count=len(search_result.publications),
+            )
+
             execution_time = (time.time() - start_time) * 1000
 
             return WorkflowResult(
                 stage=WorkflowStage.DATASET_SEARCH,
-                success=result.success,
-                agent_name="SearchAgent",
-                output=result.output,
-                error=result.error,
+                success=True,
+                agent_name="OmicsSearchPipeline",
+                output=search_output,
+                error=None,
                 execution_time_ms=execution_time,
-                metadata=result.metadata,
+                metadata={
+                    "query_type": search_result.query_type,
+                    "optimized_query": search_result.optimized_query,
+                    "cache_hit": search_result.cache_hit,
+                    "search_time_ms": search_result.search_time_ms,
+                    "total_results": search_result.total_results,
+                },
             )
 
         except Exception as e:
             execution_time = (time.time() - start_time) * 1000
+            logger.error(f"Search stage failed: {e}", exc_info=True)
             return WorkflowResult(
                 stage=WorkflowStage.DATASET_SEARCH,
                 success=False,
-                agent_name="SearchAgent",
+                agent_name="OmicsSearchPipeline",
                 error=str(e),
                 execution_time_ms=execution_time,
             )
@@ -525,3 +585,115 @@ class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
                 error=str(e),
                 execution_time_ms=execution_time,
             )
+
+    # Helper methods for search (migrated from SearchAgent)
+
+    def _build_search_query(self, query: str, input_data: OrchestratorInput) -> str:
+        """
+        Build query string with GEO filters applied.
+
+        Adds organism and study_type filters to the base query using GEO query syntax.
+
+        Args:
+            query: Base query string
+            input_data: Orchestrator input with filters
+
+        Returns:
+            Query string with filters applied
+
+        Example:
+            >>> _build_search_query("diabetes", OrchestratorInput(organisms=["Homo sapiens"]))
+            'diabetes AND "Homo sapiens"[Organism]'
+        """
+        query_parts = [query]
+
+        # Add organism filter
+        if input_data.organisms and len(input_data.organisms) > 0:
+            organism = input_data.organisms[0]
+            query_parts.append(f'"{organism}"[Organism]')
+            logger.info(f"Added organism filter: {organism}")
+
+        # Add study type filter
+        if input_data.study_types and len(input_data.study_types) > 0:
+            study_type = input_data.study_types[0]
+            query_parts.append(f'"{study_type}"[DataSet Type]')
+            logger.info(f"Added study type filter: {study_type}")
+
+        # Combine with AND logic
+        final_query = " AND ".join(query_parts) if len(query_parts) > 1 else query_parts[0]
+
+        return final_query
+
+    def _filter_datasets_by_samples(
+        self, datasets: List[GEOSeriesMetadata], min_samples: int
+    ) -> List[GEOSeriesMetadata]:
+        """
+        Filter datasets by minimum sample count.
+
+        Args:
+            datasets: List of GEO datasets
+            min_samples: Minimum number of samples required
+
+        Returns:
+            Filtered list of datasets
+        """
+        return [d for d in datasets if d.sample_count and d.sample_count >= min_samples]
+
+    def _rank_datasets(
+        self, datasets: List[GEOSeriesMetadata], search_terms: List[str]
+    ) -> List[RankedDataset]:
+        """
+        Rank datasets by relevance to search terms using simple keyword matching.
+
+        Args:
+            datasets: List of GEO datasets to rank
+            search_terms: Search terms to match against
+
+        Returns:
+            List of ranked datasets with relevance scores
+        """
+        ranked = []
+        search_terms_lower = {term.lower() for term in search_terms}
+
+        for dataset in datasets:
+            score = 0.0
+            reasons = []
+
+            # Title matches (weight: 0.4)
+            title_lower = (dataset.title or "").lower()
+            title_matches = sum(1 for term in search_terms_lower if term in title_lower)
+            if title_matches > 0:
+                score += min(0.4, title_matches * 0.2)
+                reasons.append(f"Title matches {title_matches} term(s)")
+
+            # Summary matches (weight: 0.3)
+            summary_lower = (dataset.summary or "").lower()
+            summary_matches = sum(1 for term in search_terms_lower if term in summary_lower)
+            if summary_matches > 0:
+                score += min(0.3, summary_matches * 0.15)
+                reasons.append(f"Summary matches {summary_matches} term(s)")
+
+            # Sample count bonus (up to 0.15)
+            if dataset.sample_count:
+                if dataset.sample_count >= 100:
+                    score += 0.15
+                    reasons.append(f"Large sample size: {dataset.sample_count}")
+                elif dataset.sample_count >= 50:
+                    score += 0.10
+                    reasons.append(f"Good sample size: {dataset.sample_count}")
+                elif dataset.sample_count >= 10:
+                    score += 0.05
+                    reasons.append(f"Adequate sample size: {dataset.sample_count}")
+
+            # Ensure minimum score
+            if not reasons:
+                reasons.append("General database match")
+                score = 0.1
+
+            score = min(1.0, score)
+            ranked.append(RankedDataset(dataset=dataset, relevance_score=score, match_reasons=reasons))
+
+        # Sort by relevance (highest first)
+        ranked.sort(key=lambda d: d.relevance_score, reverse=True)
+
+        return ranked

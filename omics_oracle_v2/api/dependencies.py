@@ -2,6 +2,9 @@
 FastAPI Dependency Injection
 
 Provides dependencies for FastAPI endpoints.
+
+Note: get_search_agent() removed - /api/agents/search now uses OmicsSearchPipeline directly.
+      SearchAgent is kept only for Orchestrator compatibility.
 """
 
 import logging
@@ -9,7 +12,7 @@ from typing import Optional
 
 from fastapi import Depends, HTTPException, status
 
-from omics_oracle_v2.agents import DataAgent, Orchestrator, QueryAgent, ReportAgent, SearchAgent
+from omics_oracle_v2.agents import DataAgent, Orchestrator, QueryAgent, ReportAgent
 from omics_oracle_v2.api.config import APISettings
 from omics_oracle_v2.core import Settings
 
@@ -20,7 +23,6 @@ logger = logging.getLogger(__name__)
 _settings: Optional[Settings] = None
 _api_settings: Optional[APISettings] = None
 _query_agent: Optional[QueryAgent] = None
-_search_agent: Optional[SearchAgent] = None
 _data_agent: Optional[DataAgent] = None
 _report_agent: Optional[ReportAgent] = None
 _orchestrator: Optional[Orchestrator] = None
@@ -48,14 +50,6 @@ def get_query_agent(settings: Settings = Depends(get_settings)) -> QueryAgent:
     if _query_agent is None:
         _query_agent = QueryAgent(settings=settings)
     return _query_agent
-
-
-def get_search_agent(
-    settings: Settings = Depends(get_settings), enable_semantic: bool = False
-) -> SearchAgent:
-    """Get or create SearchAgent instance with optional semantic search."""
-    # Create new instance with semantic flag (don't cache to allow different modes)
-    return SearchAgent(settings=settings, enable_semantic=enable_semantic)
 
 
 def get_data_agent(settings: Settings = Depends(get_settings)) -> DataAgent:
