@@ -26,9 +26,9 @@ This implements the TIERED WATERFALL design from Phase 6 docs:
 - Stop only when download succeeds OR all sources exhausted
 """
 
-print("\n" + "="*70)
+print("\n" + "=" * 70)
 print("TIERED WATERFALL - IMPLEMENTATION SUMMARY")
-print("="*70)
+print("=" * 70)
 
 print("\n📋 What Changed:")
 print("   OLD: Single retry (try 2 sources max)")
@@ -66,6 +66,6 @@ print("      - 'STEP 3B: TIERED WATERFALL RETRY'")
 print("      - 'Attempt 1: Trying pmc'")
 print("      - 'SUCCESS via pmc!'")
 
-print("\n" + "="*70)
+print("\n" + "=" * 70)
 print("READY TO TEST")
-print("="*70 + "\n")
+print("=" * 70 + "\n")

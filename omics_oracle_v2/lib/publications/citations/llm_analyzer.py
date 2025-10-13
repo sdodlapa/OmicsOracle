@@ -7,11 +7,6 @@ Uses LLMs to deeply understand how datasets/papers are being used.
 import logging
 from typing import List, Optional
 
-from omics_oracle_v2.lib.llm.client import LLMClient
-from omics_oracle_v2.lib.llm.prompts import (
-    CITATION_CONTEXT_ANALYSIS,
-    DATASET_IMPACT_SYNTHESIS,
-)
 from omics_oracle_v2.lib.citations.models import (
     ApplicationDomain,
     Biomarker,
@@ -20,6 +15,8 @@ from omics_oracle_v2.lib.citations.models import (
     DatasetImpactReport,
     UsageAnalysis,
 )
+from omics_oracle_v2.lib.llm.client import LLMClient
+from omics_oracle_v2.lib.llm.prompts import CITATION_CONTEXT_ANALYSIS, DATASET_IMPACT_SYNTHESIS
 from omics_oracle_v2.lib.publications.models import Publication
 
 logger = logging.getLogger(__name__)

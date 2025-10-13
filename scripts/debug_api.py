@@ -18,10 +18,12 @@ print("=" * 60)
 try:
     print("\n[1/5] Importing modules...")
     from omics_oracle_v2.api.main import app
+
     print("✓ Imports successful")
 
     print("\n[2/5] Checking settings...")
     from omics_oracle_v2.core import Settings
+
     settings = Settings()
     print(f"✓ Settings loaded")
     print(f"  - Environment: {settings.environment}")
@@ -29,6 +31,7 @@ try:
 
     print("\n[3/5] Checking API config...")
     from omics_oracle_v2.api.config import APISettings
+
     api_settings = APISettings()
     print(f"✓ API Settings loaded")
     print(f"  - Host: {api_settings.host}")
@@ -40,16 +43,12 @@ try:
     print("\n[5/5] Starting server...")
     import uvicorn
 
-    uvicorn.run(
-        app,
-        host=api_settings.host,
-        port=api_settings.port,
-        log_level="debug"
-    )
+    uvicorn.run(app, host=api_settings.host, port=api_settings.port, log_level="debug")
 
 except Exception as e:
     print(f"\n❌ ERROR: {e}")
     print("\nFull traceback:")
     import traceback
+
     traceback.print_exc()
     sys.exit(1)

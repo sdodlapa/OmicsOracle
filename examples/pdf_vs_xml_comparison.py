@@ -7,6 +7,7 @@ and when you might need PDF extraction anyway.
 
 import xml.etree.ElementTree as ET
 from pathlib import Path
+
 import fitz  # PyMuPDF
 import pdfplumber
 
@@ -206,6 +207,7 @@ def main():
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()
 
 

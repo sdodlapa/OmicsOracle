@@ -494,9 +494,7 @@ class GEOClient:
             async with semaphore:
                 try:
                     # Week 3 Day 2: Add 30s timeout to prevent hanging
-                    metadata = await asyncio.wait_for(
-                        self.get_metadata(geo_id), timeout=30.0
-                    )
+                    metadata = await asyncio.wait_for(self.get_metadata(geo_id), timeout=30.0)
                     return geo_id, metadata
                 except asyncio.TimeoutError:
                     logger.warning(f"Timeout fetching {geo_id} after 30s")

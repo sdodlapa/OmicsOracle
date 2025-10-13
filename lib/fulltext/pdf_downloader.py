@@ -72,9 +72,7 @@ class PDFDownloader:
             f"timeout: {timeout}s, max_size: {max_pdf_size/1024/1024:.0f}MB)"
         )
 
-    def _get_cache_path(
-        self, source: SourceType, identifier: str
-    ) -> Tuple[Path, Path]:
+    def _get_cache_path(self, source: SourceType, identifier: str) -> Tuple[Path, Path]:
         """
         Get cache file paths for PDF and metadata.
 
@@ -164,9 +162,7 @@ class PDFDownloader:
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
                 timeout_config = aiohttp.ClientTimeout(total=self.timeout)
 
-                async with aiohttp.ClientSession(
-                    connector=connector, timeout=timeout_config
-                ) as session:
+                async with aiohttp.ClientSession(connector=connector, timeout=timeout_config) as session:
                     async with session.get(url) as response:
                         if response.status == 200:
                             content = await response.read()
@@ -174,9 +170,7 @@ class PDFDownloader:
                             # Validate PDF
                             is_valid, error = await self._validate_pdf(content)
                             if not is_valid:
-                                logger.warning(
-                                    f"{identifier}: Invalid PDF - {error}"
-                                )
+                                logger.warning(f"{identifier}: Invalid PDF - {error}")
                                 return False, None, f"Invalid PDF: {error}"
 
                             # Save PDF to cache
@@ -200,9 +194,7 @@ class PDFDownloader:
 
                             import json
 
-                            async with aiofiles.open(
-                                metadata_path, "w", encoding="utf-8"
-                            ) as f:
+                            async with aiofiles.open(metadata_path, "w", encoding="utf-8") as f:
                                 await f.write(json.dumps(metadata, indent=2))
 
                             logger.info(
@@ -223,9 +215,7 @@ class PDFDownloader:
 
                         elif response.status == 429:  # Rate limited
                             wait_time = 2**attempt
-                            logger.warning(
-                                f"{identifier}: Rate limited, waiting {wait_time}s"
-                            )
+                            logger.warning(f"{identifier}: Rate limited, waiting {wait_time}s")
                             await asyncio.sleep(wait_time)
                             continue
 
@@ -238,18 +228,14 @@ class PDFDownloader:
                             return False, None, error_msg
 
             except asyncio.TimeoutError:
-                logger.warning(
-                    f"{identifier}: Download timeout (attempt {attempt + 1})"
-                )
+                logger.warning(f"{identifier}: Download timeout (attempt {attempt + 1})")
                 if attempt < self.max_retries - 1:
                     await asyncio.sleep(2**attempt)
                     continue
                 return False, None, "Download timeout"
 
             except aiohttp.ClientError as e:
-                logger.warning(
-                    f"{identifier}: Network error (attempt {attempt + 1}): {e}"
-                )
+                logger.warning(f"{identifier}: Network error (attempt {attempt + 1}): {e}")
                 if attempt < self.max_retries - 1:
                     await asyncio.sleep(2**attempt)
                     continue
@@ -378,9 +364,7 @@ class PDFDownloader:
             metadata=metadata,
         )
 
-    async def get_cached_pdf(
-        self, source: SourceType, identifier: str
-    ) -> Optional[Path]:
+    async def get_cached_pdf(self, source: SourceType, identifier: str) -> Optional[Path]:
         """
         Get cached PDF path if it exists.
 
@@ -394,9 +378,7 @@ class PDFDownloader:
         pdf_path, _ = self._get_cache_path(source, identifier)
         return pdf_path if pdf_path.exists() else None
 
-    async def get_pdf_metadata(
-        self, source: SourceType, identifier: str
-    ) -> Optional[Dict]:
+    async def get_pdf_metadata(self, source: SourceType, identifier: str) -> Optional[Dict]:
         """
         Get metadata for cached PDF.
 

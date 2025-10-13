@@ -19,9 +19,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from omics_oracle_v2.lib.citations.models import CitationContext, UsageAnalysis
 from omics_oracle_v2.lib.llm.client import LLMClient
 from omics_oracle_v2.lib.publications.citations import LLMCitationAnalyzer
-from omics_oracle_v2.lib.citations.models import CitationContext, UsageAnalysis
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
 
 logging.basicConfig(level=logging.INFO)

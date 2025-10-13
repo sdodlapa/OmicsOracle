@@ -21,11 +21,9 @@ from typing import Optional
 
 from lib.fulltext.content_extractor import ContentExtractor
 from lib.fulltext.content_fetcher import ContentFetcher
-from lib.fulltext.models import (
-    ContentType,
-    FullTextResult as NewFullTextResult,
-    SourceType,
-)
+from lib.fulltext.models import ContentType
+from lib.fulltext.models import FullTextResult as NewFullTextResult
+from lib.fulltext.models import SourceType
 
 logger = logging.getLogger(__name__)
 

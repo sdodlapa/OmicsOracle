@@ -25,9 +25,7 @@ from lib.fulltext.models import SourceType
 from lib.fulltext.pdf_downloader import PDFDownloader
 
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -79,9 +77,7 @@ async def demo_cache_behavior():
     import time
 
     start = time.time()
-    success1, pdf_path1, error1 = await downloader.download_from_arxiv(
-        arxiv_id, use_cache=False
-    )
+    success1, pdf_path1, error1 = await downloader.download_from_arxiv(arxiv_id, use_cache=False)
     time1 = time.time() - start
 
     print(f"  Time: {time1:.2f}s")
@@ -89,9 +85,7 @@ async def demo_cache_behavior():
 
     print("\nSecond download (cached):")
     start = time.time()
-    success2, pdf_path2, error2 = await downloader.download_from_arxiv(
-        arxiv_id, use_cache=True
-    )
+    success2, pdf_path2, error2 = await downloader.download_from_arxiv(arxiv_id, use_cache=True)
     time2 = time.time() - start
 
     print(f"  Time: {time2:.2f}s (should be < 0.01s)")

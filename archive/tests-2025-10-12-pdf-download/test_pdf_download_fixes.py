@@ -34,7 +34,7 @@ async def test_session_fix():
         pmcid="PMC11851118",
         title="Test Paper",
         source="pubmed",
-        fulltext_url="https://academic.oup.com/nar/article-pdf/53/4/gkaf101/61998162/gkaf101.pdf"
+        fulltext_url="https://academic.oup.com/nar/article-pdf/53/4/gkaf101/61998162/gkaf101.pdf",
     )
 
     output_dir = Path("data/test_pdfs")
@@ -70,7 +70,7 @@ async def test_pmc_download():
         doi="10.1093/nar/gkaf101",
         title="Test Paper",
         source="pubmed",
-        fulltext_url="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11851118/pdf/"
+        fulltext_url="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11851118/pdf/",
     )
 
     output_dir = Path("data/test_pdfs")

@@ -11,10 +11,10 @@ Features:
 - Multi-variant generation (hyphen/space normalization)
 """
 
-import re
-from typing import Dict, List, Set, Optional
-from dataclasses import dataclass, field
 import logging
+import re
+from dataclasses import dataclass, field
+from typing import Dict, List, Optional, Set
 
 logger = logging.getLogger(__name__)
 
@@ -100,9 +100,9 @@ class SynonymExpander:
         # Convert to lowercase
         term = term.lower()
         # Replace hyphens with spaces
-        term = term.replace('-', ' ')
+        term = term.replace("-", " ")
         # Remove extra whitespace
-        term = ' '.join(term.split())
+        term = " ".join(term.split())
         return term
 
     def _build_gazetteer(self) -> None:
@@ -126,154 +126,173 @@ class SynonymExpander:
                 canonical_name="RNA sequencing",
                 canonical_id="OBI:0001271",
                 synonyms={
-                    "RNA-seq", "RNA seq", "RNAseq",
-                    "transcriptome sequencing", "whole transcriptome sequencing",
-                    "shotgun RNA sequencing"
+                    "RNA-seq",
+                    "RNA seq",
+                    "RNAseq",
+                    "transcriptome sequencing",
+                    "whole transcriptome sequencing",
+                    "shotgun RNA sequencing",
                 },
-                abbreviations={"RNA-seq", "RNAseq"}
+                abbreviations={"RNA-seq", "RNAseq"},
             ),
-
             "single-cell RNA-seq": TechniqueSynonyms(
                 canonical_name="single-cell RNA sequencing",
                 canonical_id="OBI:0002631",
                 synonyms={
-                    "scRNA-seq", "scRNAseq", "single cell RNA-seq",
-                    "single-cell transcriptomics", "scRNA sequencing"
+                    "scRNA-seq",
+                    "scRNAseq",
+                    "single cell RNA-seq",
+                    "single-cell transcriptomics",
+                    "scRNA sequencing",
                 },
-                abbreviations={"scRNA-seq", "scRNAseq"}
+                abbreviations={"scRNA-seq", "scRNAseq"},
             ),
-
             "ATAC-seq": TechniqueSynonyms(
                 canonical_name="assay for transposase-accessible chromatin using sequencing",
                 canonical_id="OBI:0002039",
                 synonyms={
-                    "ATAC-seq", "ATAC seq", "ATACseq",
+                    "ATAC-seq",
+                    "ATAC seq",
+                    "ATACseq",
                     "assay for transposase-accessible chromatin",
-                    "transposase-accessible chromatin sequencing"
+                    "transposase-accessible chromatin sequencing",
                 },
-                abbreviations={"ATAC-seq", "ATACseq"}
+                abbreviations={"ATAC-seq", "ATACseq"},
             ),
-
             "ChIP-seq": TechniqueSynonyms(
                 canonical_name="chromatin immunoprecipitation sequencing",
                 canonical_id="OBI:0000716",
                 synonyms={
-                    "ChIP-seq", "ChIP seq", "ChIPseq",
+                    "ChIP-seq",
+                    "ChIP seq",
+                    "ChIPseq",
                     "chromatin immunoprecipitation sequencing",
-                    "ChIP sequencing"
+                    "ChIP sequencing",
                 },
-                abbreviations={"ChIP-seq", "ChIPseq"}
+                abbreviations={"ChIP-seq", "ChIPseq"},
             ),
-
             "WGBS": TechniqueSynonyms(
                 canonical_name="whole genome bisulfite sequencing",
                 canonical_id="OBI:0002117",
                 synonyms={
-                    "WGBS", "whole-genome bisulfite sequencing",
-                    "bisulfite sequencing", "BS-seq", "BS seq"
+                    "WGBS",
+                    "whole-genome bisulfite sequencing",
+                    "bisulfite sequencing",
+                    "BS-seq",
+                    "BS seq",
                 },
-                abbreviations={"WGBS", "BS-seq"}
+                abbreviations={"WGBS", "BS-seq"},
             ),
-
             "RRBS": TechniqueSynonyms(
                 canonical_name="reduced representation bisulfite sequencing",
                 canonical_id="OBI:0001863",
                 synonyms={
-                    "RRBS", "reduced representation bisulfite sequencing",
-                    "reduced-representation bisulfite sequencing"
+                    "RRBS",
+                    "reduced representation bisulfite sequencing",
+                    "reduced-representation bisulfite sequencing",
                 },
-                abbreviations={"RRBS"}
+                abbreviations={"RRBS"},
             ),
-
             "Hi-C": TechniqueSynonyms(
                 canonical_name="Hi-C sequencing",
                 canonical_id="OBI:0002043",
                 synonyms={
-                    "Hi-C", "high-throughput chromosome conformation capture",
-                    "genome-wide chromosome conformation capture"
+                    "Hi-C",
+                    "high-throughput chromosome conformation capture",
+                    "genome-wide chromosome conformation capture",
                 },
-                abbreviations={"Hi-C"}
+                abbreviations={"Hi-C"},
             ),
-
             "DNase-seq": TechniqueSynonyms(
                 canonical_name="DNase I hypersensitive sites sequencing",
                 canonical_id="OBI:0001853",
                 synonyms={
-                    "DNase-seq", "DNase seq", "DNaseq",
+                    "DNase-seq",
+                    "DNase seq",
+                    "DNaseq",
                     "DNase I hypersensitive site sequencing",
-                    "DNase hypersensitivity sequencing"
+                    "DNase hypersensitivity sequencing",
                 },
-                abbreviations={"DNase-seq", "DNaseq"}
+                abbreviations={"DNase-seq", "DNaseq"},
             ),
-
             # Microarray technologies
             "microarray": TechniqueSynonyms(
                 canonical_name="DNA microarray",
                 canonical_id="OBI:0400148",
                 synonyms={
-                    "microarray", "gene chip", "DNA chip",
-                    "oligonucleotide array", "expression array",
-                    "gene expression microarray"
+                    "microarray",
+                    "gene chip",
+                    "DNA chip",
+                    "oligonucleotide array",
+                    "expression array",
+                    "gene expression microarray",
                 },
-                abbreviations={"microarray"}
+                abbreviations={"microarray"},
             ),
-
             "methylation array": TechniqueSynonyms(
                 canonical_name="DNA methylation array",
                 canonical_id="OBI:0002118",
                 synonyms={
-                    "methylation array", "methylation microarray",
-                    "DNA methylation array", "Illumina methylation array",
-                    "450K array", "EPIC array", "Infinium array"
+                    "methylation array",
+                    "methylation microarray",
+                    "DNA methylation array",
+                    "Illumina methylation array",
+                    "450K array",
+                    "EPIC array",
+                    "Infinium array",
                 },
-                abbreviations={"450K", "EPIC"}
+                abbreviations={"450K", "EPIC"},
             ),
-
             # Chromatin accessibility
             "FAIRE-seq": TechniqueSynonyms(
                 canonical_name="formaldehyde-assisted isolation of regulatory elements sequencing",
                 canonical_id="OBI:0002044",
                 synonyms={
-                    "FAIRE-seq", "FAIRE seq", "FAIREseq",
-                    "formaldehyde-assisted isolation of regulatory elements"
+                    "FAIRE-seq",
+                    "FAIRE seq",
+                    "FAIREseq",
+                    "formaldehyde-assisted isolation of regulatory elements",
                 },
-                abbreviations={"FAIRE-seq", "FAIREseq"}
+                abbreviations={"FAIRE-seq", "FAIREseq"},
             ),
-
             # Protein-RNA interactions
             "CLIP-seq": TechniqueSynonyms(
                 canonical_name="cross-linking immunoprecipitation sequencing",
                 canonical_id="OBI:0001923",
                 synonyms={
-                    "CLIP-seq", "CLIP seq", "CLIPseq",
+                    "CLIP-seq",
+                    "CLIP seq",
+                    "CLIPseq",
                     "cross-linking immunoprecipitation sequencing",
-                    "UV cross-linking immunoprecipitation"
+                    "UV cross-linking immunoprecipitation",
                 },
-                abbreviations={"CLIP-seq", "CLIPseq", "iCLIP", "eCLIP", "PAR-CLIP"}
+                abbreviations={"CLIP-seq", "CLIPseq", "iCLIP", "eCLIP", "PAR-CLIP"},
             ),
-
             # DNA methylation
             "DNA methylation": TechniqueSynonyms(
                 canonical_name="DNA methylation profiling",
                 canonical_id="OBI:0001332",
                 synonyms={
-                    "DNA methylation", "DNA methylation profiling",
-                    "methylation profiling", "CpG methylation",
-                    "5-methylcytosine profiling"
+                    "DNA methylation",
+                    "DNA methylation profiling",
+                    "methylation profiling",
+                    "CpG methylation",
+                    "5-methylcytosine profiling",
                 },
-                abbreviations={"5mC", "CpG"}
+                abbreviations={"5mC", "CpG"},
             ),
-
             # Gene expression
             "gene expression profiling": TechniqueSynonyms(
                 canonical_name="gene expression profiling",
                 canonical_id="OBI:0000424",
                 synonyms={
-                    "gene expression", "gene expression profiling",
-                    "transcriptome profiling", "expression profiling",
-                    "mRNA expression"
+                    "gene expression",
+                    "gene expression profiling",
+                    "transcriptome profiling",
+                    "expression profiling",
+                    "mRNA expression",
                 },
-                abbreviations=set()
+                abbreviations=set(),
             ),
         }
 
@@ -302,14 +321,14 @@ class SynonymExpander:
             if self.config.hyphen_variants:
                 for term in tech.all_terms():
                     # Add hyphen variant
-                    if ' ' in term and '-' not in term:
-                        variants.add(term.replace(' ', '-'))
+                    if " " in term and "-" not in term:
+                        variants.add(term.replace(" ", "-"))
                     # Add space variant
-                    if '-' in term and ' ' not in term:
-                        variants.add(term.replace('-', ' '))
+                    if "-" in term and " " not in term:
+                        variants.add(term.replace("-", " "))
                     # Add no-space variant
-                    if ' ' in term or '-' in term:
-                        variants.add(term.replace(' ', '').replace('-', ''))
+                    if " " in term or "-" in term:
+                        variants.add(term.replace(" ", "").replace("-", ""))
 
             # Generate case variants
             if self.config.case_variants:
@@ -356,9 +375,7 @@ class SynonymExpander:
             key = abbrev
             if key not in self._gazetteer:
                 self._gazetteer[key] = TechniqueSynonyms(
-                    canonical_name=expansions[0],
-                    abbreviations={abbrev},
-                    synonyms=set(expansions)
+                    canonical_name=expansions[0], abbreviations={abbrev}, synonyms=set(expansions)
                 )
 
                 # Update normalized lookup
@@ -399,9 +416,9 @@ class SynonymExpander:
             if len(all_terms) > max_syn:
                 # Prioritize: canonical > abbreviations > synonyms > variants
                 priority_terms = (
-                    [tech.canonical_name] +
-                    sorted(tech.abbreviations) +
-                    sorted(tech.synonyms)[:max_syn - len(tech.abbreviations) - 1]
+                    [tech.canonical_name]
+                    + sorted(tech.abbreviations)
+                    + sorted(tech.synonyms)[: max_syn - len(tech.abbreviations) - 1]
                 )
                 expanded.update(priority_terms[:max_syn])
             else:
@@ -430,21 +447,23 @@ class SynonymExpander:
             for term in tech.all_terms():
                 # Case-insensitive search with word boundaries for better matching
                 # Use \b for word boundaries to avoid matching inside words
-                pattern = re.compile(r'\b' + re.escape(term) + r'\b', re.IGNORECASE)
+                pattern = re.compile(r"\b" + re.escape(term) + r"\b", re.IGNORECASE)
                 for match in pattern.finditer(query):
-                    matches.append({
-                        'term': term,
-                        'tech': tech,
-                        'start': match.start(),
-                        'end': match.end(),
-                        'length': len(term)
-                    })
+                    matches.append(
+                        {
+                            "term": term,
+                            "tech": tech,
+                            "start": match.start(),
+                            "end": match.end(),
+                            "length": len(term),
+                        }
+                    )
 
         if not matches:
             return query  # No techniques found
 
         # Sort by start position and prefer longer matches (greedy matching)
-        matches.sort(key=lambda m: (m['start'], -m['length']))
+        matches.sort(key=lambda m: (m["start"], -m["length"]))
 
         # Remove overlapping matches (keep longer/first matches)
         non_overlapping = []
@@ -452,34 +471,34 @@ class SynonymExpander:
             # Check if this match overlaps with any already selected
             overlaps = False
             for selected in non_overlapping:
-                if not (match['end'] <= selected['start'] or match['start'] >= selected['end']):
+                if not (match["end"] <= selected["start"] or match["start"] >= selected["end"]):
                     overlaps = True
                     break
             if not overlaps:
                 non_overlapping.append(match)
 
         # Sort by position for replacement
-        non_overlapping.sort(key=lambda m: m['start'])
+        non_overlapping.sort(key=lambda m: m["start"])
 
         # Build expanded query by replacing matches from end to start
         # (to maintain position indices)
         base_query = query
         for match in reversed(non_overlapping):
-            tech = match['tech']
+            tech = match["tech"]
 
             # Get top synonyms
             synonyms = sorted(tech.synonyms)[:3]  # Top 3 synonyms (sorted for consistency)
             abbrevs = sorted(tech.abbreviations)[:2]  # Top 2 abbreviations
 
             # Build OR clause: (term OR syn1 OR syn2 OR abbrev1)
-            alternatives = [match['term']] + synonyms + abbrevs
+            alternatives = [match["term"]] + synonyms + abbrevs
             if len(alternatives) > 1:
                 expansion = f"({' OR '.join(alternatives)})"
             else:
-                expansion = match['term']
+                expansion = match["term"]
 
             # Replace this match
-            base_query = base_query[:match['start']] + expansion + base_query[match['end']:]
+            base_query = base_query[: match["start"]] + expansion + base_query[match["end"] :]
 
         return base_query
 
@@ -528,5 +547,5 @@ class SynonymExpander:
             "synonyms": total_synonyms,
             "abbreviations": total_abbrevs,
             "variants": total_variants,
-            "normalized_lookup": len(self._normalized_lookup)
+            "normalized_lookup": len(self._normalized_lookup),
         }

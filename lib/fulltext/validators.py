@@ -123,9 +123,7 @@ class XMLValidator:
         )
         return True, metadata, None
 
-    def _calculate_quality(
-        self, xml_content: str, found_elements: Dict, missing_elements: list
-    ) -> float:
+    def _calculate_quality(self, xml_content: str, found_elements: Dict, missing_elements: list) -> float:
         """
         Calculate XML quality score (0-1).
 
@@ -190,9 +188,7 @@ class PDFValidator:
         self.min_pdf_size = min_pdf_size
         self.max_pdf_size = max_pdf_size
 
-    def validate(
-        self, pdf_content: bytes, identifier: str
-    ) -> Tuple[bool, Dict, Optional[str]]:
+    def validate(self, pdf_content: bytes, identifier: str) -> Tuple[bool, Dict, Optional[str]]:
         """
         Validate PDF content.
 
@@ -273,13 +269,9 @@ class ContentValidator:
             max_pdf_size: Maximum PDF size in bytes
         """
         self.xml_validator = XMLValidator(min_xml_size=min_xml_size)
-        self.pdf_validator = PDFValidator(
-            min_pdf_size=min_pdf_size, max_pdf_size=max_pdf_size
-        )
+        self.pdf_validator = PDFValidator(min_pdf_size=min_pdf_size, max_pdf_size=max_pdf_size)
 
-    def validate_xml(
-        self, xml_content: str, identifier: str
-    ) -> Tuple[bool, Dict, Optional[str]]:
+    def validate_xml(self, xml_content: str, identifier: str) -> Tuple[bool, Dict, Optional[str]]:
         """
         Validate XML content.
 
@@ -292,9 +284,7 @@ class ContentValidator:
         """
         return self.xml_validator.validate(xml_content, identifier)
 
-    def validate_pdf(
-        self, pdf_content: bytes, identifier: str
-    ) -> Tuple[bool, Dict, Optional[str]]:
+    def validate_pdf(self, pdf_content: bytes, identifier: str) -> Tuple[bool, Dict, Optional[str]]:
         """
         Validate PDF content.
 
@@ -307,9 +297,7 @@ class ContentValidator:
         """
         return self.pdf_validator.validate(pdf_content, identifier)
 
-    def validate_and_report(
-        self, content: bytes, content_type: str, identifier: str
-    ) -> Tuple[bool, Dict]:
+    def validate_and_report(self, content: bytes, content_type: str, identifier: str) -> Tuple[bool, Dict]:
         """
         Validate content and return detailed report.
 

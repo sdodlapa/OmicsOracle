@@ -114,9 +114,7 @@ class PDFExtractor:
 
                 if camelot_tables and len(camelot_tables) > 0:
                     tables.extend(self._convert_camelot_tables(camelot_tables, "stream"))
-                    logger.info(
-                        f"Camelot stream: Found {len(camelot_tables)} tables in {pdf_path.name}"
-                    )
+                    logger.info(f"Camelot stream: Found {len(camelot_tables)} tables in {pdf_path.name}")
                     return tables  # Success, stop here
 
             except Exception as e:
@@ -132,9 +130,7 @@ class PDFExtractor:
 
                 if camelot_tables and len(camelot_tables) > 0:
                     tables.extend(self._convert_camelot_tables(camelot_tables, "lattice"))
-                    logger.info(
-                        f"Camelot lattice: Found {len(camelot_tables)} tables in {pdf_path.name}"
-                    )
+                    logger.info(f"Camelot lattice: Found {len(camelot_tables)} tables in {pdf_path.name}")
                     return tables
 
             except Exception as e:
@@ -288,9 +284,7 @@ class PDFExtractor:
             doc.close()
 
             full_text = "\n\n".join(text_parts)
-            logger.info(
-                f"Extracted {len(full_text)} chars from {len(text_parts)} pages in {pdf_path.name}"
-            )
+            logger.info(f"Extracted {len(full_text)} chars from {len(text_parts)} pages in {pdf_path.name}")
 
             return full_text
 
@@ -298,9 +292,7 @@ class PDFExtractor:
             logger.error(f"Text extraction failed: {e}")
             return ""
 
-    def extract_images(
-        self, pdf_path: Path, output_dir: Optional[Path] = None
-    ) -> List[Figure]:
+    def extract_images(self, pdf_path: Path, output_dir: Optional[Path] = None) -> List[Figure]:
         """
         Extract embedded images from PDF using PyMuPDF.
 
@@ -455,9 +447,7 @@ class PDFExtractor:
         # If no sections found, create single "Body" section
         if not sections:
             sections.append(
-                Section(
-                    id="sec1", title="Body", level=1, paragraphs=[text] if text.strip() else []
-                )
+                Section(id="sec1", title="Body", level=1, paragraphs=[text] if text.strip() else [])
             )
 
         logger.debug(f"Parsed {len(sections)} sections from text")
@@ -542,8 +532,7 @@ class PDFExtractor:
         }
 
         logger.info(
-            f"Extraction complete: {len(sections)} sections, "
-            f"{len(tables)} tables, {len(figures)} images"
+            f"Extraction complete: {len(sections)} sections, " f"{len(tables)} tables, {len(figures)} images"
         )
 
         return content

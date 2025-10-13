@@ -7,8 +7,8 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
 from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
+from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
 from omics_oracle_v2.lib.publications.models import Publication
 
 

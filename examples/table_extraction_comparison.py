@@ -9,15 +9,16 @@ Compares three approaches:
 Shows when to use each tool.
 """
 
+import json
 import sys
 from pathlib import Path
-import json
+
+import camelot
 
 # PDF extraction libraries
 import fitz  # PyMuPDF
-import pdfplumber
-import camelot
 import pandas as pd
+import pdfplumber
 
 
 def test_pymupdf_tables(pdf_path: Path):
@@ -44,10 +45,7 @@ def test_pymupdf_tables(pdf_path: Path):
         print(f"  Text blocks: {len(text_blocks)}")
 
         # Try to identify potential tables (heuristic: blocks with multiple lines)
-        potential_tables = [
-            b for b in text_blocks
-            if len(b.get("lines", [])) > 3
-        ]
+        potential_tables = [b for b in text_blocks if len(b.get("lines", [])) > 3]
         print(f"  Potential table blocks: {len(potential_tables)}")
 
         if potential_tables:
@@ -100,12 +98,14 @@ def test_pdfplumber_tables(pdf_path: Path):
                         for row_idx, row in enumerate(table[:3]):
                             print(f"    {row}")
 
-                        tables_found.append({
-                            'page': page_num + 1,
-                            'rows': rows,
-                            'cols': cols,
-                            'data': table[:5]  # First 5 rows
-                        })
+                        tables_found.append(
+                            {
+                                "page": page_num + 1,
+                                "rows": rows,
+                                "cols": cols,
+                                "data": table[:5],  # First 5 rows
+                            }
+                        )
 
     if tables_found:
         print(f"\n  ✅ Verdict: Found {len(tables_found)} table(s)")
@@ -132,20 +132,13 @@ def test_camelot_tables(pdf_path: Path):
     print("3. Camelot - Best for complex scientific tables")
     print("=" * 80)
 
-    results = {
-        'stream': [],
-        'lattice': []
-    }
+    results = {"stream": [], "lattice": []}
 
     # Try Stream method (text-based)
     print("\n📊 Method A: Stream (text-based detection)")
     try:
         tables = camelot.read_pdf(
-            str(pdf_path),
-            pages='1-5',  # First 5 pages
-            flavor='stream',
-            edge_tol=50,
-            row_tol=10
+            str(pdf_path), pages="1-5", flavor="stream", edge_tol=50, row_tol=10  # First 5 pages
         )
 
         print(f"   Found {len(tables)} table(s)")
@@ -158,13 +151,15 @@ def test_camelot_tables(pdf_path: Path):
             print(f"     First 3 rows:")
             print(table.df.head(3).to_string(index=False))
 
-            results['stream'].append({
-                'table_num': i + 1,
-                'page': table.page,
-                'shape': table.df.shape,
-                'accuracy': table.accuracy,
-                'dataframe': table.df
-            })
+            results["stream"].append(
+                {
+                    "table_num": i + 1,
+                    "page": table.page,
+                    "shape": table.df.shape,
+                    "accuracy": table.accuracy,
+                    "dataframe": table.df,
+                }
+            )
     except Exception as e:
         print(f"   ❌ Error: {e}")
 
@@ -172,10 +167,7 @@ def test_camelot_tables(pdf_path: Path):
     print("\n📊 Method B: Lattice (line-based detection)")
     try:
         tables = camelot.read_pdf(
-            str(pdf_path),
-            pages='1-5',  # First 5 pages
-            flavor='lattice',
-            line_scale=40
+            str(pdf_path), pages="1-5", flavor="lattice", line_scale=40  # First 5 pages
         )
 
         print(f"   Found {len(tables)} table(s)")
@@ -188,19 +180,21 @@ def test_camelot_tables(pdf_path: Path):
             print(f"     First 3 rows:")
             print(table.df.head(3).to_string(index=False))
 
-            results['lattice'].append({
-                'table_num': i + 1,
-                'page': table.page,
-                'shape': table.df.shape,
-                'accuracy': table.accuracy,
-                'dataframe': table.df
-            })
+            results["lattice"].append(
+                {
+                    "table_num": i + 1,
+                    "page": table.page,
+                    "shape": table.df.shape,
+                    "accuracy": table.accuracy,
+                    "dataframe": table.df,
+                }
+            )
     except Exception as e:
         print(f"   ❌ Error: {e}")
 
     # Summary
-    total_stream = len(results['stream'])
-    total_lattice = len(results['lattice'])
+    total_stream = len(results["stream"])
+    total_lattice = len(results["lattice"])
 
     print(f"\n  ✅ Verdict:")
     print(f"     Stream method: {total_stream} table(s)")
@@ -233,9 +227,9 @@ def export_camelot_tables(results: dict, output_dir: Path):
         print(f"\n{method.upper()} method tables:")
 
         for table_info in tables:
-            table_num = table_info['table_num']
-            page = table_info['page']
-            df = table_info['dataframe']
+            table_num = table_info["table_num"]
+            page = table_info["page"]
+            df = table_info["dataframe"]
 
             # Export to CSV
             csv_file = output_dir / f"table_{method}_p{page}_t{table_num}.csv"
@@ -249,7 +243,7 @@ def export_camelot_tables(results: dict, output_dir: Path):
 
             # Export to JSON
             json_file = output_dir / f"table_{method}_p{page}_t{table_num}.json"
-            df.to_json(json_file, orient='records', indent=2)
+            df.to_json(json_file, orient="records", indent=2)
             print(f"  ✅ {json_file.name}")
 
     print(f"\n  📁 Exported to: {output_dir}")
@@ -352,6 +346,7 @@ def main():
     except Exception as e:
         print(f"\n❌ Error: {e}")
         import traceback
+
         traceback.print_exc()
 
 

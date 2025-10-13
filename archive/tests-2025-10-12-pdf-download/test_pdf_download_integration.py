@@ -20,16 +20,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
-from omics_oracle_v2.lib.storage.pdf.download_manager import PDFDownloadManager
 from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient, PubMedConfig
+from omics_oracle_v2.lib.storage.pdf.download_manager import PDFDownloadManager
 
 
 async def test_pdf_download_flow():
     """Test the complete PDF download flow."""
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("  PDF Download Integration Test")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     # Test PMID 39997216 (the problematic case)
     test_pmid = "39997216"
@@ -98,9 +98,7 @@ async def test_pdf_download_flow():
     )
 
     download_report = await pdf_downloader.download_batch(
-        publications=[publication],
-        output_dir=pdf_dir,
-        url_field="fulltext_url"
+        publications=[publication], output_dir=pdf_dir, url_field="fulltext_url"
     )
 
     if download_report.successful == 0:
@@ -116,7 +114,7 @@ async def test_pdf_download_flow():
     # Step 4: Verify PDF file exists and is valid
     print("\nSTEP 4: Validating downloaded PDF...")
 
-    if not hasattr(publication, 'pdf_path') or not publication.pdf_path:
+    if not hasattr(publication, "pdf_path") or not publication.pdf_path:
         print(f"❌ FAIL: pdf_path not set on publication")
         return False
 
@@ -128,9 +126,9 @@ async def test_pdf_download_flow():
     print(f"✅ PASS: PDF file exists: {pdf_path.name}")
 
     # Validate PDF magic bytes
-    with open(pdf_path, 'rb') as f:
+    with open(pdf_path, "rb") as f:
         magic_bytes = f.read(4)
-        if magic_bytes != b'%PDF':
+        if magic_bytes != b"%PDF":
             print(f"❌ FAIL: Invalid PDF (magic bytes: {magic_bytes})")
             return False
 
@@ -150,15 +148,21 @@ async def test_pdf_download_flow():
     print("STEP 5: Checking for deprecated code usage...")
 
     import subprocess
+
     result = subprocess.run(
-        ["grep", "-r", "from omics_oracle_v2.lib.fulltext.download_utils import",
-         "omics_oracle_v2/", "--include=*.py"],
+        [
+            "grep",
+            "-r",
+            "from omics_oracle_v2.lib.fulltext.download_utils import",
+            "omics_oracle_v2/",
+            "--include=*.py",
+        ],
         capture_output=True,
-        text=True
+        text=True,
     )
 
     # Filter out archived files
-    matches = [line for line in result.stdout.split('\n') if line and 'archive' not in line]
+    matches = [line for line in result.stdout.split("\n") if line and "archive" not in line]
 
     if matches:
         print(f"❌ FAIL: Found imports of deprecated download_utils.py:")
@@ -169,9 +173,9 @@ async def test_pdf_download_flow():
     print(f"✅ PASS: No deprecated code usage found\n")
 
     # All tests passed!
-    print("="*70)
+    print("=" * 70)
     print("  ✅ ALL TESTS PASSED!")
-    print("="*70)
+    print("=" * 70)
     print("\nSummary:")
     print("  ✅ FullTextManager returns URLs only (no download)")
     print("  ✅ PDFDownloadManager handles all downloads")
@@ -186,9 +190,9 @@ async def test_pdf_download_flow():
 async def test_api_endpoint():
     """Test the API endpoint with the new flow."""
 
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("  API Endpoint Integration Test")
-    print("="*70 + "\n")
+    print("=" * 70 + "\n")
 
     import aiohttp
 
@@ -201,17 +205,17 @@ async def test_api_endpoint():
                 "geo_id": "GSE281238",
                 "title": "Joint profiling of DNA methylation and HiC data",
                 "description": "Test dataset",
-                "pubmed_ids": ["39997216"]
+                "pubmed_ids": ["39997216"],
             }
         ],
-        "max_papers": 1
+        "max_papers": 1,
     }
 
     async with aiohttp.ClientSession() as session:
         async with session.post(
             "http://localhost:8000/api/agents/enrich-fulltext",
             json=test_data,
-            headers={"Content-Type": "application/json"}
+            headers={"Content-Type": "application/json"},
         ) as response:
             if response.status != 200:
                 print(f"❌ FAIL: API returned status {response.status}")
@@ -227,11 +231,11 @@ async def test_api_endpoint():
 
             dataset = data[0]
 
-            if not dataset.get('fulltext') or len(dataset['fulltext']) == 0:
+            if not dataset.get("fulltext") or len(dataset["fulltext"]) == 0:
                 print(f"❌ FAIL: No fulltext data")
                 return False
 
-            fulltext = dataset['fulltext'][0]
+            fulltext = dataset["fulltext"][0]
 
             print(f"✅ PASS: API endpoint returned fulltext data")
             print(f"   PMID: {fulltext.get('pmid')}")
@@ -240,12 +244,12 @@ async def test_api_endpoint():
             print(f"   PDF Path: {fulltext.get('pdf_path')}")
 
             # Verify pdf_path is set
-            if not fulltext.get('pdf_path'):
+            if not fulltext.get("pdf_path"):
                 print(f"⚠️  WARNING: pdf_path is None (PDF not downloaded)")
                 return False
 
             # Verify PDF file exists
-            pdf_path = Path(fulltext['pdf_path'])
+            pdf_path = Path(fulltext["pdf_path"])
             if not pdf_path.exists():
                 print(f"❌ FAIL: PDF file doesn't exist: {pdf_path}")
                 return False
@@ -253,7 +257,7 @@ async def test_api_endpoint():
             print(f"✅ PASS: PDF downloaded and exists")
 
             # Check if parsed content is available
-            if fulltext.get('abstract'):
+            if fulltext.get("abstract"):
                 print(f"✅ PASS: Parsed content available (abstract: {len(fulltext['abstract'])} chars)")
             else:
                 print(f"⚠️  INFO: No parsed content (abstract empty)")
@@ -263,10 +267,10 @@ async def test_api_endpoint():
 
 
 if __name__ == "__main__":
-    print("\n" + "="*70)
+    print("\n" + "=" * 70)
     print("  COMPREHENSIVE PDF DOWNLOAD VALIDATION")
     print("  Testing PDFDownloadManager Integration")
-    print("="*70)
+    print("=" * 70)
 
     # Run tests
     success = True
@@ -286,9 +290,9 @@ if __name__ == "__main__":
             print("\n❌ API TESTS FAILED\n")
             sys.exit(1)
 
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("  🎉 ALL VALIDATION TESTS PASSED! 🎉")
-        print("="*70)
+        print("=" * 70)
         print("\nConclusion:")
         print("  ✅ download_utils.py successfully removed")
         print("  ✅ PDFDownloadManager is the ONLY download system")
@@ -300,5 +304,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n❌ TEST FAILED WITH EXCEPTION:\n")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

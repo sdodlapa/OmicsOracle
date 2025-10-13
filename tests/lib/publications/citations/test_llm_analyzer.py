@@ -7,9 +7,9 @@ from unittest.mock import MagicMock, Mock
 
 import pytest
 
+from omics_oracle_v2.lib.citations.models import CitationContext
 from omics_oracle_v2.lib.llm.client import LLMClient
 from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
-from omics_oracle_v2.lib.citations.models import CitationContext
 from omics_oracle_v2.lib.publications.models import Publication
 
 

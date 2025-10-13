@@ -56,9 +56,7 @@ async def test_download_arxiv_pdf():
     # Use a known arXiv paper
     arxiv_id = "2301.07041"  # "GPT-4 Technical Report" (exists and small)
 
-    success, pdf_path, error = await downloader.download_from_arxiv(
-        arxiv_id, use_cache=True
-    )
+    success, pdf_path, error = await downloader.download_from_arxiv(arxiv_id, use_cache=True)
 
     if success:
         assert pdf_path is not None
@@ -92,9 +90,7 @@ async def test_download_biorxiv_pdf():
     # Use a known bioRxiv paper
     doi = "10.1101/2024.01.15.575842"  # Recent bioRxiv paper
 
-    success, pdf_path, error = await downloader.download_from_biorxiv(
-        doi, use_cache=True
-    )
+    success, pdf_path, error = await downloader.download_from_biorxiv(doi, use_cache=True)
 
     if success:
         assert pdf_path is not None
@@ -176,9 +172,7 @@ async def test_download_from_doi_convenience():
     # Test with bioRxiv DOI (doesn't require external clients)
     doi = "10.1101/2024.01.15.575842"
 
-    success, pdf_path, error, source = await download_pdf_from_doi(
-        doi, cache_dir=Path("data/fulltext/pdf")
-    )
+    success, pdf_path, error, source = await download_pdf_from_doi(doi, cache_dir=Path("data/fulltext/pdf"))
 
     if success:
         assert pdf_path is not None

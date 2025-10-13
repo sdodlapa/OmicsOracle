@@ -13,8 +13,10 @@ __all__ = [
     "CitationFinder",
 ]
 
+
 def __getattr__(name):
     if name == "CitationFinder":
         from omics_oracle_v2.lib.citations.discovery.finder import CitationFinder
+
         return CitationFinder
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

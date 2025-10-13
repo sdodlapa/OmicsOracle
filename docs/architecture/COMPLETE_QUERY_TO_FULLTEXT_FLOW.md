@@ -1148,4 +1148,3 @@ def validate_parsed_content(content):
 ---
 
 **The complete query-to-fulltext pipeline is production-ready and revolutionary! 🎉**
-

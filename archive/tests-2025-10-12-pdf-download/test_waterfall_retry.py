@@ -8,11 +8,12 @@ the system automatically tries the next source (e.g., PMC).
 
 import sys
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent))
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("WATERFALL RETRY - IMPLEMENTATION SUMMARY")
-print("="*60)
+print("=" * 60)
 
 print("\n📋 What We Implemented:")
 print("   1. Added 'skip_sources' parameter to FullTextManager.get_fulltext()")
@@ -50,7 +51,7 @@ print("      - 🆕 Trying pmc (skipping institutional)")
 print("      - ✅ SUCCESS via pmc!")
 print("      - ✅ STEP 3 COMPLETE: Downloaded 1/1 PDFs")
 
-print("\n" + "="*60)
+print("\n" + "=" * 60)
 print("✅ IMPLEMENTATION COMPLETE")
-print("="*60)
+print("=" * 60)
 print("\nServer should auto-reload. Ready to test in UI!\n")

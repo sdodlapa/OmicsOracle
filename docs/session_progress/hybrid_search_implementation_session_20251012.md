@@ -319,4 +319,3 @@ Once fully validated, users will get:
 - 📚 Research context (papers explain the science)
 - 🎯 Complete answers (always something useful)
 - 🌟 Better experience (comprehensive results)
-

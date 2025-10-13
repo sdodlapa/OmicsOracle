@@ -6,8 +6,8 @@ Handles finding papers that cite a given publication.
 
 from omics_oracle_v2.lib.citations.discovery.finder import CitationFinder
 from omics_oracle_v2.lib.citations.discovery.geo_discovery import (
-    GEOCitationDiscovery,
     CitationDiscoveryResult,
+    GEOCitationDiscovery,
 )
 
 __all__ = [

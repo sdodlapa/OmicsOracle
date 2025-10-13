@@ -15,8 +15,10 @@ __all__ = [
     "FullTextManager",
 ]
 
+
 def __getattr__(name):
     if name == "FullTextManager":
         from omics_oracle_v2.lib.fulltext.manager import FullTextManager
+
         return FullTextManager
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

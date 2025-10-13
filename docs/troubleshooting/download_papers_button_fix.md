@@ -308,4 +308,3 @@ findSimilarOpenAccessPapers(failedPMID);
 - ✅ Maintained functionality (button works, just explains failures)
 
 **Key Insight**: The button WAS working - it just wasn't communicating effectively!
-

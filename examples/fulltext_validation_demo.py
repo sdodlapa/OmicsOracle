@@ -18,11 +18,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from lib.fulltext.validators import (
-    ContentValidator,
-    validate_xml_file,
-    validate_pdf_file,
-)
+from lib.fulltext.validators import ContentValidator, validate_pdf_file, validate_xml_file
 
 
 def validate_xml_files():
@@ -94,9 +90,7 @@ def validate_xml_files():
     print(f"Total files:     {len(results)}")
     print(f"Valid files:     {sum(1 for r in results if r['valid'])}")
     print(f"Invalid files:   {sum(1 for r in results if not r['valid'])}")
-    print(
-        f"Avg quality:     {sum(r['quality'] for r in results) / len(results):.2%}"
-    )
+    print(f"Avg quality:     {sum(r['quality'] for r in results) / len(results):.2%}")
 
 
 def validate_pdf_files():

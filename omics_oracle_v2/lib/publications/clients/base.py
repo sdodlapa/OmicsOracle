@@ -124,22 +124,17 @@ class PublicationClientError(Exception):
     """Base exception for publication client errors."""
 
 
-
 class SearchError(PublicationClientError):
     """Error during publication search."""
-
 
 
 class FetchError(PublicationClientError):
     """Error fetching publication by ID."""
 
 
-
 class RateLimitError(PublicationClientError):
     """Rate limit exceeded."""
 
 
-
 class APIError(PublicationClientError):
     """API error response."""
-

@@ -15,10 +15,10 @@ For LLM-based citation content analysis, see CitationContentAnalyzer (Phase 7).
 import logging
 from typing import List, Optional
 
-from omics_oracle_v2.lib.citations.models import CitationContext
 from omics_oracle_v2.lib.citations.clients.openalex import OpenAlexClient
 from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
 from omics_oracle_v2.lib.citations.clients.semantic_scholar import SemanticScholarClient
+from omics_oracle_v2.lib.citations.models import CitationContext
 from omics_oracle_v2.lib.publications.models import Publication
 
 logger = logging.getLogger(__name__)

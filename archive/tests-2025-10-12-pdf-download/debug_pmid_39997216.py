@@ -4,14 +4,14 @@ Debug script to test PMID 39997216 download step-by-step
 import asyncio
 import logging
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
 async def test_step_by_step():
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("DEBUGGING PMID 39997216 (PMC11851118)")
-    print("="*80)
+    print("=" * 80)
 
     # Step 1: Fetch metadata from PubMed
     print("\n[STEP 1] Fetching metadata from PubMed...")
@@ -51,7 +51,7 @@ async def test_step_by_step():
         enable_unpaywall=False,
         enable_core=False,
         enable_scihub=False,
-        timeout_per_source=30
+        timeout_per_source=30,
     )
 
     manager = FullTextManager(config)
@@ -76,7 +76,7 @@ async def test_step_by_step():
         enable_unpaywall=True,
         enable_core=True,
         enable_scihub=True,
-        timeout_per_source=30
+        timeout_per_source=30,
     )
 
     manager_full = FullTextManager(config_full)
@@ -93,8 +93,8 @@ async def test_step_by_step():
 
     # Step 5: Test the actual service endpoint
     print("\n[STEP 5] Testing FullTextService (what the API uses)...")
-    from omics_oracle_v2.services.fulltext_service import FullTextService
     from omics_oracle_v2.api.models.responses import DatasetResponse
+    from omics_oracle_v2.services.fulltext_service import FullTextService
 
     service = FullTextService()
 
@@ -104,7 +104,7 @@ async def test_step_by_step():
         summary="Test",
         organism="Homo sapiens",
         pubmed_ids=["39997216"],
-        relevance_score=1.0
+        relevance_score=1.0,
     )
 
     enriched = await service.enrich_dataset_with_fulltext(dataset, max_papers=1)

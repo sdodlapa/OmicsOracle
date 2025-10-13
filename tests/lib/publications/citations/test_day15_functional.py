@@ -91,8 +91,8 @@ def test_citation_analyzer_structure():
     """Test that CitationAnalyzer can be instantiated."""
     from unittest.mock import Mock
 
-    from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
     from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
+    from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
 
     # Create mock scholar client
     mock_scholar = Mock(spec=GoogleScholarClient)
@@ -114,10 +114,10 @@ def test_day_15_functionality_overview():
     """
     from unittest.mock import Mock
 
+    from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
     from omics_oracle_v2.lib.llm.client import LLMClient
     from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
     from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
-    from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
 
     # Create mocks
     mock_llm = Mock(spec=LLMClient)

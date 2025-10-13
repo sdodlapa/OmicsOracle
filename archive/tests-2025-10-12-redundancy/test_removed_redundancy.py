@@ -42,14 +42,8 @@ async def main():
     print("[STEP 2] Using FullTextManager directly (same as PublicationSearchPipeline)...")
     print()
 
-    from omics_oracle_v2.lib.fulltext.manager import (
-        FullTextManager,
-        FullTextManagerConfig,
-    )
-    from omics_oracle_v2.lib.publications.clients.pubmed import (
-        PubMedClient,
-        PubMedConfig,
-    )
+    from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
+    from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient, PubMedConfig
 
     # Initialize FullTextManager (same config as PublicationSearchPipeline)
     print("  Initializing FullTextManager with all sources...")
@@ -83,9 +77,7 @@ async def main():
     pmid = "39997216"
 
     # Fetch full metadata from PubMed
-    pubmed_client = PubMedClient(
-        PubMedConfig(email=os.getenv("NCBI_EMAIL", "research@omicsoracle.ai"))
-    )
+    pubmed_client = PubMedClient(PubMedConfig(email=os.getenv("NCBI_EMAIL", "research@omicsoracle.ai")))
 
     print(f"  Fetching metadata for PMID {pmid}...")
     pub = pubmed_client.fetch_by_id(pmid)

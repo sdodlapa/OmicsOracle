@@ -9,13 +9,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from omics_oracle_v2.lib.citations.models import UsageAnalysis
 from omics_oracle_v2.lib.publications.analysis import (
     BiomarkerKnowledgeGraph,
     DatasetImpactReportGenerator,
     DatasetQASystem,
     TemporalTrendAnalyzer,
 )
-from omics_oracle_v2.lib.citations.models import UsageAnalysis
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
 
 

@@ -4,7 +4,7 @@ Week 3 Day 4: Production readiness.
 """
 
 import time
-from typing import Dict, Any
+from typing import Any, Dict
 
 start_time = time.time()
 

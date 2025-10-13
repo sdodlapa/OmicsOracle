@@ -5,12 +5,8 @@ Provides citation discovery and LLM-powered analysis of citations and dataset us
 """
 
 from omics_oracle_v2.lib.citations.discovery.finder import CitationFinder
+from omics_oracle_v2.lib.citations.models import CitationContext, DatasetImpactReport, UsageAnalysis
 from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
-from omics_oracle_v2.lib.citations.models import (
-    CitationContext,
-    DatasetImpactReport,
-    UsageAnalysis,
-)
 
 __all__ = [
     "CitationFinder",

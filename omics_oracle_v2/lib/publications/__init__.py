@@ -37,10 +37,13 @@ __all__ = [
     "PublicationSearchPipeline",
 ]
 
+
 def __getattr__(name):
     if name == "PublicationSearchPipeline":
         from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
+
         return PublicationSearchPipeline
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 __version__ = "0.1.0"

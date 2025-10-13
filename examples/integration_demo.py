@@ -12,7 +12,7 @@ import asyncio
 import logging
 from pathlib import Path
 
-logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 # Suppress camelot warnings
@@ -23,9 +23,9 @@ async def demo_pdf_extraction():
     """Demonstrate standalone PDF extraction."""
     from lib.fulltext.pdf_extractor import PDFExtractor
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("DEMO 1: Standalone PDF Extraction")
-    print("="*80)
+    print("=" * 80)
 
     # Use the arXiv PDF we've been testing
     pdf_path = Path("data/fulltext/pdfs/056d82a155cf5a0b8ab7c0882f607d36.pdf")
@@ -45,11 +45,7 @@ async def demo_pdf_extraction():
 
     # Extract structured content
     print(f"\n🔍 Extracting structured content from: {pdf_path.name}")
-    content = extractor.extract_structured_content(
-        pdf_path,
-        extract_tables=True,
-        extract_images=False
-    )
+    content = extractor.extract_structured_content(pdf_path, extract_tables=True, extract_images=False)
 
     # Display results
     print(f"\n✅ Extraction Results:")
@@ -81,9 +77,9 @@ async def demo_integration_function():
     """Demonstrate integration helper function."""
     from lib.fulltext.manager_integration import try_pdf_extraction
 
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("DEMO 2: Integration Helper Function")
-    print("="*80)
+    print("=" * 80)
 
     pdf_path = Path("data/fulltext/pdfs/056d82a155cf5a0b8ab7c0882f607d36.pdf")
 
@@ -119,11 +115,12 @@ async def demo_fulltext_manager_integration():
 
     This shows how PDF parsing works in the production pipeline.
     """
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("DEMO 3: FullTextManager Integration (Conceptual)")
-    print("="*80)
+    print("=" * 80)
 
-    print("""
+    print(
+        """
     This is how the integration works in production:
 
     1. FullTextManager receives a publication
@@ -174,21 +171,24 @@ async def demo_fulltext_manager_integration():
     - PDF-only papers: 95-100% table accuracy (camelot)
     - Total coverage: ~90% of papers get structured extraction
     - Backwards compatible: existing code still works
-    """)
+    """
+    )
 
 
 async def main():
     """Run all demonstrations."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("PDF EXTRACTION INTEGRATION DEMONSTRATION")
-    print("="*80)
-    print("""
+    print("=" * 80)
+    print(
+        """
     This demo shows how PDF extraction is integrated into OmicsOracle:
 
     1. Standalone PDFExtractor (new component)
     2. Integration helper functions
     3. FullTextManager integration (production pipeline)
-    """)
+    """
+    )
 
     try:
         # Demo 1: Standalone extraction
@@ -200,10 +200,11 @@ async def main():
         # Demo 3: Full pipeline (conceptual)
         await demo_fulltext_manager_integration()
 
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("✅ ALL DEMONSTRATIONS COMPLETE")
-        print("="*80)
-        print("""
+        print("=" * 80)
+        print(
+            """
         Summary:
         ✅ PDFExtractor working (camelot + PyMuPDF)
         ✅ Integration helpers working (try_pdf_extraction)
@@ -219,7 +220,8 @@ async def main():
         - 56/56 existing tests passing ✅
         - 17/17 new PDF extraction tests ✅
         - Total: 73/73 tests passing ✅
-        """)
+        """
+        )
 
     except Exception as e:
         logger.error(f"Demo failed: {e}", exc_info=True)

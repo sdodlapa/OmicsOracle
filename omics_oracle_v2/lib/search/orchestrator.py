@@ -348,9 +348,7 @@ class SearchOrchestrator:
                 logger.info("[GEO] No datasets found")
                 return []
 
-            logger.info(
-                f"[GEO] Found {len(search_result.geo_ids)} dataset IDs, fetching metadata..."
-            )
+            logger.info(f"[GEO] Found {len(search_result.geo_ids)} dataset IDs, fetching metadata...")
 
             # Fetch metadata for each ID
             datasets = []

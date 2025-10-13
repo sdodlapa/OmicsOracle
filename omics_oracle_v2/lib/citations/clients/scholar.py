@@ -53,10 +53,9 @@ except ImportError:
     ProxyGenerator = None
 
 from omics_oracle_v2.core.exceptions import PublicationSearchError
-
+from omics_oracle_v2.lib.publications.clients.base import BasePublicationClient
 from omics_oracle_v2.lib.publications.config import GoogleScholarConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
-from omics_oracle_v2.lib.publications.clients.base import BasePublicationClient
 
 
 class GoogleScholarClient(BasePublicationClient):
