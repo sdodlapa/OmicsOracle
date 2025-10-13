@@ -105,7 +105,7 @@ class LLMClient:
 
             elif self.provider == "ollama":
                 # Local model - no API key needed
-                import requests
+                pass
 
                 self.client = None  # Will use requests directly
                 self.ollama_url = os.getenv("OLLAMA_URL", "http://localhost:11434")

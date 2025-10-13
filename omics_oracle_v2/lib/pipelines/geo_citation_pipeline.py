@@ -7,7 +7,6 @@ NO LLM ANALYSIS - Pure data collection phase.
 Phase 7 will add LLM analysis of collected papers.
 """
 
-import asyncio
 import json
 import logging
 import os
@@ -21,12 +20,11 @@ from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.geo.query_builder import GEOQueryBuilder
 from omics_oracle_v2.lib.nlp.synonym_expansion import SynonymExpander
 from omics_oracle_v2.lib.citations.discovery.geo_discovery import (
-    CitationDiscoveryResult,
     GEOCitationDiscovery,
 )
 from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.publications.models import Publication
-from omics_oracle_v2.lib.storage.pdf.download_manager import DownloadReport, PDFDownloadManager
+from omics_oracle_v2.lib.storage.pdf.download_manager import PDFDownloadManager
 
 logger = logging.getLogger(__name__)
 

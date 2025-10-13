@@ -25,10 +25,8 @@ except ImportError:
     logging.warning("Biopython not available. PubMed client will not function.")
 
 from omics_oracle_v2.lib.publications.clients.base import (
-    APIError,
     BasePublicationClient,
     FetchError,
-    RateLimitError,
     SearchError,
 )
 from omics_oracle_v2.lib.publications.config import PubMedConfig

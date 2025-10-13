@@ -30,7 +30,6 @@ class TemporalTrendAnalyzer:
 
     def __init__(self):
         """Initialize trend analyzer."""
-        pass
 
     def analyze_trends(
         self,

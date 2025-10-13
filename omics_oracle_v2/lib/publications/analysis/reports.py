@@ -34,7 +34,6 @@ class DatasetImpactReportGenerator:
 
     def __init__(self):
         """Initialize report generator."""
-        pass
 
     def generate_report(
         self,

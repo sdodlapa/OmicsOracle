@@ -9,10 +9,7 @@ from typing import List, Optional
 
 from omics_oracle_v2.lib.llm.client import LLMClient
 from omics_oracle_v2.lib.llm.prompts import (
-    BATCH_USAGE_CLASSIFICATION,
-    BIOMARKER_EXTRACTION,
     CITATION_CONTEXT_ANALYSIS,
-    CLINICAL_TRANSLATION_ANALYSIS,
     DATASET_IMPACT_SYNTHESIS,
 )
 from omics_oracle_v2.lib.citations.models import (

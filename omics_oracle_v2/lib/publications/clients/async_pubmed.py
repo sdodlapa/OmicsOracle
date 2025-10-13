@@ -14,7 +14,7 @@ from typing import Any, Dict, List, Optional
 import aiohttp
 from aiohttp import ClientTimeout, TCPConnector
 
-from omics_oracle_v2.lib.publications.clients.base import APIError, RateLimitError, SearchError
+from omics_oracle_v2.lib.publications.clients.base import APIError, SearchError
 from omics_oracle_v2.lib.publications.config import PubMedConfig
 from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
 

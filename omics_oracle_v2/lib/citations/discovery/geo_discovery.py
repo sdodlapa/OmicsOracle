@@ -17,7 +17,7 @@ from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.citations.discovery.finder import CitationFinder
 from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
 from omics_oracle_v2.lib.publications.config import PubMedConfig
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.publications.models import Publication
 
 logger = logging.getLogger(__name__)
 

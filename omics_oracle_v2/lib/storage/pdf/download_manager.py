@@ -10,7 +10,7 @@ import logging
 import ssl
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 import aiofiles
 import aiohttp

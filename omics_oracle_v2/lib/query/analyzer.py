@@ -12,7 +12,7 @@ Determines whether a query is:
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional
+from typing import List
 
 
 class SearchType(Enum):
@@ -105,7 +105,6 @@ class QueryAnalyzer:
 
     def __init__(self):
         """Initialize query analyzer."""
-        pass
 
     def analyze(self, query: str) -> QueryInfo:
         """

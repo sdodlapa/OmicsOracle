@@ -19,15 +19,13 @@ Goal: Maximize recall - find ALL relevant results.
 import logging
 import re
 from dataclasses import dataclass, field
-from enum import Enum
-from typing import Dict, List, Optional, Set
+from typing import Dict, List
 
 logger = logging.getLogger(__name__)
 
 # Import existing production tools
 try:
     from omics_oracle_v2.lib.nlp.biomedical_ner import BiomedicalNER
-    from omics_oracle_v2.lib.nlp.models import EntityType as NEREntityType
 
     HAS_BIOMEDICAL_NER = True
 except ImportError:

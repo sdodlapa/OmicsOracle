@@ -123,28 +123,23 @@ class BasePublicationClient(ABC):
 class PublicationClientError(Exception):
     """Base exception for publication client errors."""
 
-    pass
 
 
 class SearchError(PublicationClientError):
     """Error during publication search."""
 
-    pass
 
 
 class FetchError(PublicationClientError):
     """Error fetching publication by ID."""
 
-    pass
 
 
 class RateLimitError(PublicationClientError):
     """Rate limit exceeded."""
 
-    pass
 
 
 class APIError(PublicationClientError):
     """API error response."""
 
-    pass

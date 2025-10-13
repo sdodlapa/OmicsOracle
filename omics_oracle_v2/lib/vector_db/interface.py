@@ -35,7 +35,6 @@ class VectorDB(ABC):
         Raises:
             ValueError: If vectors shape is invalid or IDs are not unique
         """
-        pass
 
     @abstractmethod
     def search(self, query_vector: np.ndarray, k: int = 10) -> List[Tuple[str, float]]:
@@ -52,7 +51,6 @@ class VectorDB(ABC):
         Raises:
             ValueError: If query vector dimension doesn't match database
         """
-        pass
 
     @abstractmethod
     def search_batch(self, query_vectors: np.ndarray, k: int = 10) -> List[List[Tuple[str, float]]]:
@@ -66,7 +64,6 @@ class VectorDB(ABC):
         Returns:
             List of results for each query (list of (id, distance) tuples)
         """
-        pass
 
     @abstractmethod
     def get_metadata(self, id: str) -> Optional[Dict[str, Any]]:
@@ -79,7 +76,6 @@ class VectorDB(ABC):
         Returns:
             Metadata dict or None if ID not found
         """
-        pass
 
     @abstractmethod
     def remove(self, ids: List[str]) -> int:
@@ -92,12 +88,10 @@ class VectorDB(ABC):
         Returns:
             Number of vectors actually removed
         """
-        pass
 
     @abstractmethod
     def clear(self) -> None:
         """Remove all vectors from the database."""
-        pass
 
     @abstractmethod
     def save(self, path: str) -> None:
@@ -107,7 +101,6 @@ class VectorDB(ABC):
         Args:
             path: Directory path to save index and metadata
         """
-        pass
 
     @abstractmethod
     def load(self, path: str) -> None:
@@ -120,7 +113,6 @@ class VectorDB(ABC):
         Raises:
             FileNotFoundError: If index files don't exist
         """
-        pass
 
     @abstractmethod
     def size(self) -> int:
@@ -130,7 +122,6 @@ class VectorDB(ABC):
         Returns:
             Number of vectors
         """
-        pass
 
     @abstractmethod
     def dimension(self) -> int:
@@ -140,4 +131,3 @@ class VectorDB(ABC):
         Returns:
             Dimension of vectors in database
         """
-        pass

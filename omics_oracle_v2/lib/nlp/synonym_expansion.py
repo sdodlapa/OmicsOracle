@@ -12,9 +12,8 @@ Features:
 """
 
 import re
-from typing import Dict, List, Set, Tuple, Optional
+from typing import Dict, List, Set, Optional
 from dataclasses import dataclass, field
-from pathlib import Path
 import logging
 
 logger = logging.getLogger(__name__)

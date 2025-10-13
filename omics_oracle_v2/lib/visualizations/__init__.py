@@ -56,7 +56,6 @@ class BaseVisualization(ABC):
         Returns:
             Visualization figure object
         """
-        pass
 
     @abstractmethod
     def update(self, **kwargs) -> None:
@@ -65,7 +64,6 @@ class BaseVisualization(ABC):
         Args:
             **kwargs: Properties to update
         """
-        pass
 
     def export(self, options: Optional[ExportOptions] = None) -> Union[str, bytes]:
         """Export visualization to file or bytes.
@@ -93,12 +91,10 @@ class BaseVisualization(ABC):
     @abstractmethod
     def _export_html(self, options: ExportOptions) -> str:
         """Export as HTML."""
-        pass
 
     @abstractmethod
     def _export_image(self, options: ExportOptions) -> str:
         """Export as image (PNG, SVG, PDF)."""
-        pass
 
     def _export_json(self, options: ExportOptions) -> str:
         """Export data as JSON."""
@@ -118,7 +114,6 @@ class BaseVisualization(ABC):
     @abstractmethod
     def _serialize_data(self) -> Dict:
         """Serialize visualization data for JSON export."""
-        pass
 
     def show(self) -> None:
         """Display the visualization interactively."""
@@ -129,7 +124,6 @@ class BaseVisualization(ABC):
     @abstractmethod
     def _show_figure(self) -> None:
         """Show the figure (implementation-specific)."""
-        pass
 
 
 class ColorSchemes:

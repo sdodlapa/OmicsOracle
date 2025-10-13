@@ -20,14 +20,12 @@ LibGen mirrors change frequently. This client includes:
 """
 
 import asyncio
-import hashlib
 import logging
 import os
 import random
 import re
 import ssl
 from typing import Dict, List, Optional
-from urllib.parse import quote, urlencode
 
 import aiohttp
 from pydantic import BaseModel, Field

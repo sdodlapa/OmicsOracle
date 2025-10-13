@@ -13,7 +13,6 @@ Supports:
 """
 
 import logging
-import re
 from typing import Optional
 from urllib.parse import urljoin, urlparse
 
@@ -64,7 +63,6 @@ class LandingPageParser:
 
     def __init__(self):
         """Initialize the parser"""
-        pass
 
     def detect_publisher(self, url: str, html: str) -> str:
         """

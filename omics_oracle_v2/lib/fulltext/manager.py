@@ -926,7 +926,6 @@ class FullTextManager:
             >>>     print(f"Sections: {len(content['sections'])}")
         """
         import time
-        from datetime import datetime
 
         from omics_oracle_v2.lib.fulltext.parsed_cache import get_parsed_cache
 

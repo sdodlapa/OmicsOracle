@@ -7,7 +7,7 @@ for comprehensive dataset discovery.
 
 import logging
 import re
-from typing import List, Set
+from typing import List
 
 logger = logging.getLogger(__name__)
 
