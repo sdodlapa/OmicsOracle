@@ -37,8 +37,7 @@ from omics_oracle_v2.api.models.responses import (
 )
 from omics_oracle_v2.auth.dependencies import get_current_user
 from omics_oracle_v2.auth.models import User
-from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
-from omics_oracle_v2.lib.pipelines.unified_search_pipeline import OmicsSearchPipeline, UnifiedSearchConfig
+from omics_oracle_v2.lib.search import SearchOrchestrator, OrchestratorConfig
 
 logger = logging.getLogger(__name__)
 
@@ -218,7 +217,7 @@ async def execute_search(
     request: SearchRequest,
 ):
     """
-    Search for datasets and publications using the unified OmicsSearchPipeline.
+    Search for datasets and publications using the SearchOrchestrator.
 
     This endpoint searches across multiple sources:
     - NCBI GEO database for omics datasets
@@ -246,21 +245,23 @@ async def execute_search(
     search_logs = []
 
     try:
-        # Initialize unified pipeline
-        search_logs.append("📝 Using unified search pipeline with query optimization")
-        logger.info("Initializing OmicsSearchPipeline")
+        # Initialize search orchestrator
+        search_logs.append("📝 Using SearchOrchestrator with parallel execution")
+        logger.info("Initializing SearchOrchestrator")
 
         # Build search config
-        config = UnifiedSearchConfig(
-            enable_geo_search=True,
-            enable_publication_search=True,
+        config = OrchestratorConfig(
+            enable_geo=True,
+            enable_pubmed=True,
+            enable_openalex=True,
+            enable_scholar=False,
             max_geo_results=request.max_results,
             max_publication_results=50,
-            enable_caching=True,
-            enable_query_optimization=not request.enable_semantic,  # Use optimization unless semantic mode
+            enable_cache=True,
+            enable_query_optimization=False,  # Disable - GEOQueryBuilder handles GEO optimization
         )
 
-        pipeline = OmicsSearchPipeline(config)
+        pipeline = SearchOrchestrator(config)
 
         # Build query from search terms
         original_query = " ".join(request.search_terms)

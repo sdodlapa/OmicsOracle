@@ -17,11 +17,11 @@ from omics_oracle_v2.agents.models.orchestrator import (
     WorkflowType,
 )
 from omics_oracle_v2.agents.models.report import ReportFormat, ReportInput, ReportType
-from omics_oracle_v2.agents.models.search import RankedDataset, SearchInput, SearchOutput
+from omics_oracle_v2.agents.models.search import RankedDataset, SearchOutput
 from omics_oracle_v2.agents.query_agent import QueryAgent
 from omics_oracle_v2.agents.report_agent import ReportAgent
 from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
-from omics_oracle_v2.lib.pipelines.unified_search_pipeline import OmicsSearchPipeline, UnifiedSearchConfig
+from omics_oracle_v2.lib.search import OrchestratorConfig, SearchOrchestrator
 
 logger = logging.getLogger(__name__)
 
@@ -29,14 +29,14 @@ logger = logging.getLogger(__name__)
 class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
     """Orchestrator for multi-agent biomedical research workflows.
 
-    Coordinates QueryAgent, OmicsSearchPipeline, DataAgent, and ReportAgent to execute
+    Coordinates QueryAgent, SearchOrchestrator, DataAgent, and ReportAgent to execute
     complete research workflows from user query to final report.
 
-    Note: Previously used SearchAgent, now uses OmicsSearchPipeline directly for cleaner architecture.
+    Note: Uses SearchOrchestrator for flat, parallel search architecture.
     """
 
     def __init__(self, settings):
-        """Initialize Orchestrator with all sub-agents and search pipeline."""
+        """Initialize Orchestrator with all sub-agents and search orchestrator."""
         super().__init__(settings)
 
         # Initialize query, data, and report agents
@@ -44,17 +44,19 @@ class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
         self.data_agent = DataAgent(settings)
         self.report_agent = ReportAgent(settings)
 
-        # Initialize search pipeline (replaces SearchAgent)
-        search_config = UnifiedSearchConfig(
-            enable_geo_search=True,
-            enable_publication_search=True,
+        # Initialize search orchestrator (flat parallel architecture)
+        search_config = OrchestratorConfig(
+            enable_geo=True,
+            enable_pubmed=True,
+            enable_openalex=True,
+            enable_scholar=False,
             enable_query_optimization=True,
-            enable_caching=True,
+            enable_cache=True,
             max_geo_results=100,
             max_publication_results=50,
         )
-        self.search_pipeline = OmicsSearchPipeline(search_config)
-        logger.info("Orchestrator initialized with OmicsSearchPipeline")
+        self.search_pipeline = SearchOrchestrator(search_config)
+        logger.info("Orchestrator initialized with SearchOrchestrator")
 
     def cleanup(self) -> None:
         """Cleanup all sub-agents."""
@@ -410,7 +412,7 @@ class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
     def _execute_search_stage(
         self, input_data: OrchestratorInput, query_result: WorkflowResult
     ) -> WorkflowResult:
-        """Execute dataset search stage using OmicsSearchPipeline."""
+        """Execute dataset search stage using SearchOrchestrator."""
         start_time = time.time()
 
         try:
@@ -464,7 +466,7 @@ class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
             return WorkflowResult(
                 stage=WorkflowStage.DATASET_SEARCH,
                 success=True,
-                agent_name="OmicsSearchPipeline",
+                agent_name="SearchOrchestrator",
                 output=search_output,
                 error=None,
                 execution_time_ms=execution_time,
@@ -483,7 +485,7 @@ class Orchestrator(Agent[OrchestratorInput, OrchestratorOutput]):
             return WorkflowResult(
                 stage=WorkflowStage.DATASET_SEARCH,
                 success=False,
-                agent_name="OmicsSearchPipeline",
+                agent_name="SearchOrchestrator",
                 error=str(e),
                 execution_time_ms=execution_time,
             )
