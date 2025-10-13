@@ -1,7 +1,7 @@
 # Phase 2B: Flow-Based Reorganization Plan
 
-**Date:** October 13, 2025  
-**Status:** 🚧 In Progress  
+**Date:** October 13, 2025
+**Status:** 🚧 In Progress
 **Approach:** Incremental with validation at each step
 
 ---
@@ -66,8 +66,8 @@ lib/
 ## Step-by-Step Execution Plan
 
 ### STEP 1: Create New Directory Structure
-**Goal:** Set up empty directories for new organization  
-**Risk:** None (just creating dirs)  
+**Goal:** Set up empty directories for new organization
+**Risk:** None (just creating dirs)
 **Time:** 2 minutes
 
 ```bash
@@ -93,8 +93,8 @@ tree omics_oracle_v2/lib/ -L 2
 ---
 
 ### STEP 2: Move Query Processing (Stage 3)
-**Goal:** Consolidate NLP + query optimization  
-**Risk:** LOW - these are early in flow  
+**Goal:** Consolidate NLP + query optimization
+**Risk:** LOW - these are early in flow
 **Files:** 5 files, ~1,604 LOC
 
 ```bash
@@ -138,8 +138,8 @@ git commit -m "Step 2: Copy query processing to new structure (validation pendin
 ---
 
 ### STEP 3: Update Search Orchestrator to Use New Query Processing
-**Goal:** Point orchestrator to new query paths  
-**Risk:** MEDIUM - orchestrator is critical  
+**Goal:** Point orchestrator to new query paths
+**Risk:** MEDIUM - orchestrator is critical
 **Files:** lib/search/orchestrator.py
 
 ```bash
@@ -180,8 +180,8 @@ git commit -m "Step 3: Update orchestrator to use new query processing paths"
 ---
 
 ### STEP 4: Update API Routes to Use New Query Processing
-**Goal:** Point API to new query paths  
-**Risk:** HIGH - API is entry point  
+**Goal:** Point API to new query paths
+**Risk:** HIGH - API is entry point
 **Files:** api/routes/agents.py
 
 ```bash
@@ -218,7 +218,7 @@ git commit -m "Step 4: Update API to use new query processing paths"
 ---
 
 ### STEP 5: Remove Old Query/NLP Directories
-**Goal:** Clean up old locations  
+**Goal:** Clean up old locations
 **Risk:** LOW (already validated new paths work)
 
 ```bash
@@ -260,8 +260,8 @@ pkill -f "uvicorn.*omics_oracle"
 ---
 
 ### STEP 6: Move Search Orchestrator (Stage 4)
-**Goal:** Reorganize search module  
-**Risk:** MEDIUM  
+**Goal:** Reorganize search module
+**Risk:** MEDIUM
 **Files:** lib/search/* → lib/2_search/
 
 ```bash
@@ -297,8 +297,8 @@ git commit -m "Step 6b: Remove old search/ directory"
 ---
 
 ### STEP 7: Move GEO Search Engine (Stage 5a - CRITICAL)
-**Goal:** Recognize GEO as PRIMARY search engine  
-**Risk:** HIGH - GEO is core functionality  
+**Goal:** Recognize GEO as PRIMARY search engine
+**Risk:** HIGH - GEO is core functionality
 **Files:** lib/geo/* → lib/3_search_engines/geo/
 
 ```bash
@@ -360,8 +360,8 @@ git commit -m "Step 7b: Remove old geo/ directory"
 ---
 
 ### STEP 8: Move Citation Search Engines (Stage 5b)
-**Goal:** Consolidate all search engines  
-**Risk:** MEDIUM  
+**Goal:** Consolidate all search engines
+**Risk:** MEDIUM
 **Files:** lib/publications/clients/pubmed.py, lib/citations/clients/* → lib/3_search_engines/citations/
 
 ```bash
@@ -406,8 +406,8 @@ pkill -f "uvicorn.*omics_oracle"
 ---
 
 ### STEP 9: Move Full-text Enrichment (Stages 6-8)
-**Goal:** Consolidate full-text pipeline  
-**Risk:** HIGH - complex pipeline with many sources  
+**Goal:** Consolidate full-text pipeline
+**Risk:** HIGH - complex pipeline with many sources
 **Files:** lib/fulltext/* + lib/storage/pdf/* → lib/4_enrichment/fulltext/
 
 ```bash
@@ -444,8 +444,8 @@ pkill -f "uvicorn.*omics_oracle"
 ---
 
 ### STEP 10: Move AI Analysis (Stage 9)
-**Goal:** Move AI module to analysis  
-**Risk:** LOW - AI is final stage  
+**Goal:** Move AI module to analysis
+**Risk:** LOW - AI is final stage
 **Files:** lib/ai/* → lib/5_analysis/ai/
 
 ```bash
@@ -468,8 +468,8 @@ print('✓ AI client imports successfully')
 ---
 
 ### STEP 11: Move Infrastructure (Cache)
-**Goal:** Separate cross-cutting concerns  
-**Risk:** LOW  
+**Goal:** Separate cross-cutting concerns
+**Risk:** LOW
 **Files:** lib/cache/* → lib/infrastructure/cache/
 
 ```bash
@@ -482,7 +482,7 @@ cp -r omics_oracle_v2/lib/cache/* omics_oracle_v2/lib/infrastructure/cache/
 ---
 
 ### STEP 12: Final Cleanup
-**Goal:** Remove all old directories, verify everything works  
+**Goal:** Remove all old directories, verify everything works
 **Risk:** LOW (all already validated)
 
 ```bash
@@ -581,15 +581,15 @@ git reset --hard <commit-hash>
 
 ## Success Criteria
 
-✅ All imports work  
-✅ Server starts without errors  
-✅ Search flow works end-to-end  
-✅ GEO search returns results  
-✅ Citation search returns results  
-✅ PDF download works  
-✅ AI analysis works  
-✅ All tests pass  
-✅ Directory structure matches flow  
+✅ All imports work
+✅ Server starts without errors
+✅ Search flow works end-to-end
+✅ GEO search returns results
+✅ Citation search returns results
+✅ PDF download works
+✅ AI analysis works
+✅ All tests pass
+✅ Directory structure matches flow
 
 ---
 
