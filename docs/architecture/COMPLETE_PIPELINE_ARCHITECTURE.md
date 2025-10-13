@@ -1,6 +1,6 @@
 # Complete Pipeline Architecture: Frontend → Backend → Storage → Display
 
-**Created:** October 12, 2025  
+**Created:** October 12, 2025
 **Purpose:** Map the complete data flow from user query to GEO-specific fulltext/PDF display
 
 ---
@@ -708,10 +708,10 @@ for pub in publications:
     if pub.pdf_path:
         # Parse PDF
         content = parse_pdf(pub.pdf_path)
-        
+
         # Normalize format
         normalized = await cache.get_normalized(pub.pmid)
-        
+
         # Save to cache
         await cache.save(pub.pmid, normalized)
 ```
@@ -726,7 +726,7 @@ geo_dataset = {
     "organism": "Homo sapiens",
     "samples": 48,
     "platform": "GPL570",
-    
+
     # Original publication
     "publication": {
         "pmid": "12345",
@@ -735,7 +735,7 @@ geo_dataset = {
         "fulltext_path": "data/fulltext/parsed/PMID12345.json.gz",
         "fulltext_available": True
     },
-    
+
     # Citing papers
     "citations": [
         {
@@ -752,7 +752,7 @@ geo_dataset = {
             "fulltext_available": False
         }
     ],
-    
+
     # Collection path (all files together)
     "collection_path": "data/geo_citation_collections/GSE123456/"
 }
@@ -1128,12 +1128,12 @@ const collection = await response.json();
 1. **Implement File Serving Endpoints:**
    ```python
    # Add to omics_oracle_v2/api/routes/
-   
+
    @router.get("/files/pdf/{geo_id}/{pmid}")
    async def serve_pdf(geo_id: str, pmid: str):
        pdf_path = Path(f"data/pdfs/{geo_id}/PMID{pmid}.pdf")
        return FileResponse(pdf_path)
-   
+
    @router.get("/fulltext/{publication_id}")
    async def get_fulltext(publication_id: str):
        cache = ParsedCache()

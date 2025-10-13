@@ -1,5 +1,5 @@
 # PDF Download Redundancy Audit
-**Date**: October 12, 2025  
+**Date**: October 12, 2025
 **Issue**: Multiple overlapping implementations causing confusion and bugs
 
 ---
@@ -49,7 +49,7 @@ async def download_and_save_xml(url, publication, source, ...) -> Optional[Path]
 
 **Problems**:
 1. ❌ **Downloads whatever the URL returns** (HTML pages, error pages, etc.)
-2. ❌ **Validation is BROKEN**: 
+2. ❌ **Validation is BROKEN**:
    ```python
    if not content.startswith(b"%PDF"):
        logger.warning("doesn't appear to be a PDF")
@@ -92,7 +92,7 @@ class FullTextManagerConfig:
 - ❓ Should `FullTextManager` download PDFs?
 - ❓ Or should it just find URLs and let `PDFDownloadManager` handle downloads?
 
-**Answer**: FullTextManager should **ONLY find URLs**, NOT download!  
+**Answer**: FullTextManager should **ONLY find URLs**, NOT download!
 **Reason**: Separation of concerns, proper validation, retry logic
 
 ---
@@ -356,7 +356,7 @@ Deprecated: October 12, 2025
 
 ---
 
-**Status**: Phase 1 DONE ✅ | Phases 2-4 TODO ⚠️  
-**Priority**: HIGH 🔴 (Blocks PDF downloads and AI analysis)  
-**Owner**: OmicsOracle Team  
+**Status**: Phase 1 DONE ✅ | Phases 2-4 TODO ⚠️
+**Priority**: HIGH 🔴 (Blocks PDF downloads and AI analysis)
+**Owner**: OmicsOracle Team
 **Last Updated**: October 12, 2025

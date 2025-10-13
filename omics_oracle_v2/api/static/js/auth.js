@@ -46,7 +46,7 @@ function clearToken() {
 function isAuthenticated() {
     const token = getToken();
     if (!token) return false;
-    
+
     try {
         return !isTokenExpired(token);
     } catch (e) {
@@ -81,7 +81,7 @@ function decodeToken(token) {
 function isTokenExpired(token) {
     const decoded = decodeToken(token);
     if (!decoded || !decoded.exp) return true;
-    
+
     const now = Date.now() / 1000;
     return decoded.exp < now;
 }
@@ -112,7 +112,7 @@ function setUser(user) {
 function getUser() {
     const userStr = localStorage.getItem(AUTH_CONFIG.USER_KEY);
     if (!userStr) return null;
-    
+
     try {
         return JSON.parse(userStr);
     } catch (e) {
@@ -136,15 +136,15 @@ async function login(email, password) {
         },
         body: JSON.stringify({ email, password })
     });
-    
+
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.detail || 'Login failed');
     }
-    
+
     const data = await response.json();
     setToken(data.access_token);
-    
+
     // Load user data
     const user = await getCurrentUser();
     return { token: data.access_token, user };
@@ -161,12 +161,12 @@ async function register(name, email, password) {
         },
         body: JSON.stringify({ name, email, password })
     });
-    
+
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.detail || 'Registration failed');
     }
-    
+
     return await response.json();
 }
 
@@ -175,7 +175,7 @@ async function register(name, email, password) {
  */
 async function logout() {
     const token = getToken();
-    
+
     if (token) {
         try {
             await fetch(`${AUTH_CONFIG.API_BASE_URL}/api/auth/logout`, {
@@ -188,7 +188,7 @@ async function logout() {
             console.error('Logout error:', e);
         }
     }
-    
+
     clearToken();
     window.location.href = '/login';
 }
@@ -199,19 +199,19 @@ async function logout() {
 async function getCurrentUser() {
     const token = getToken();
     if (!token) return null;
-    
+
     try {
         const response = await fetch(`${AUTH_CONFIG.API_BASE_URL}/api/auth/me`, {
             headers: {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+
         if (!response.ok) {
             clearToken();
             return null;
         }
-        
+
         const user = await response.json();
         setUser(user);
         return user;
@@ -228,7 +228,7 @@ async function getCurrentUser() {
 async function refreshToken() {
     const token = getToken();
     if (!token) return null;
-    
+
     try {
         const response = await fetch(`${AUTH_CONFIG.API_BASE_URL}/api/auth/refresh`, {
             method: 'POST',
@@ -236,12 +236,12 @@ async function refreshToken() {
                 'Authorization': `Bearer ${token}`
             }
         });
-        
+
         if (!response.ok) {
             clearToken();
             return null;
         }
-        
+
         const data = await response.json();
         setToken(data.access_token);
         return data.access_token;
@@ -261,25 +261,25 @@ async function refreshToken() {
  */
 async function authenticatedFetch(url, options = {}) {
     const token = getToken();
-    
+
     if (!token) {
         throw new Error('Not authenticated');
     }
-    
+
     const headers = {
         ...options.headers,
         'Authorization': `Bearer ${token}`
     };
-    
+
     const response = await fetch(url, { ...options, headers });
-    
+
     // Handle 401 Unauthorized
     if (response.status === 401) {
         clearToken();
         window.location.href = '/login';
         throw new Error('Session expired. Please login again.');
     }
-    
+
     return response;
 }
 
@@ -323,12 +323,12 @@ function redirectIfAuthenticated() {
 function setupTokenRefresh() {
     const token = getToken();
     if (!token) return;
-    
+
     const expiresAt = getTokenExpiry(token);
     const now = Date.now();
     const timeUntilExpiry = expiresAt - now;
     const refreshAt = timeUntilExpiry - AUTH_CONFIG.TOKEN_REFRESH_BUFFER;
-    
+
     if (refreshAt > 0) {
         setTimeout(async () => {
             console.log('Auto-refreshing token...');
@@ -361,9 +361,9 @@ function setupTokenRefresh() {
 function displayUserProfile(elementId = 'user-profile') {
     const user = getUser();
     const element = document.getElementById(elementId);
-    
+
     if (!element) return;
-    
+
     if (user) {
         element.innerHTML = `
             <div class="user-info">
@@ -414,10 +414,10 @@ async function initAuth() {
         if (!getUser()) {
             await getCurrentUser();
         }
-        
+
         // Display user profile
         displayUserProfile();
-        
+
         // Setup auto token refresh
         setupTokenRefresh();
     }
@@ -443,11 +443,11 @@ window.OmicsAuth = {
     isAuthenticated,
     decodeToken,
     isTokenExpired,
-    
+
     // User management
     setUser,
     getUser,
-    
+
     // API calls
     login,
     register,
@@ -455,16 +455,16 @@ window.OmicsAuth = {
     getCurrentUser,
     refreshToken,
     authenticatedFetch,
-    
+
     // Route protection
     requireAuth,
     redirectIfAuthenticated,
-    
+
     // UI helpers
     displayUserProfile,
     showLoading,
     hideLoading,
-    
+
     // Initialization
     initAuth,
     setupTokenRefresh

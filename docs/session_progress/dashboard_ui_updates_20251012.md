@@ -3,7 +3,7 @@
 ## Changes Made
 
 ### 1. Removed Click-on-Card for AI Analysis
-**Before:** Clicking anywhere on the dataset card would trigger AI analysis  
+**Before:** Clicking anywhere on the dataset card would trigger AI analysis
 **After:** Cards are no longer clickable, AI analysis triggered only by button
 
 **Code Changes:**

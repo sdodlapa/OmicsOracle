@@ -1,7 +1,7 @@
 # BUG FIX: PDF Download Count Issue
 
-**Date**: October 12, 2025  
-**Fixed By**: Analysis with user validation  
+**Date**: October 12, 2025
+**Fixed By**: Analysis with user validation
 **Branch**: fulltext-implementation-20251011
 
 ---
@@ -39,11 +39,11 @@
 for pub in publications:
     if not pub.fulltext_url:
         continue
-    
+
     # Try to parse PDF if it exists
     if has_pdf:
         parsed_content = parse_pdf(pub)
-    
+
     # BUG: Always add to fulltext[], even if no PDF!
     fulltext_info = {
         "pmid": pub.pmid,
@@ -72,7 +72,7 @@ for pub in publications:
     if not pub.fulltext_url:
         skipped_no_url += 1
         continue
-    
+
     # Try to parse PDF if it exists
     if has_pdf:
         parsed_content = parse_pdf(pub)
@@ -80,7 +80,7 @@ for pub in publications:
         logger.warning(f"No PDF for {pub.pmid}")
         skipped_no_pdf += 1
         continue  # ← SKIP! Don't add without PDF
-    
+
     # Only add if we have parsed content
     if parsed_content:
         fulltext_info = {
@@ -157,16 +157,16 @@ UI Message: "Download Failed After Trying All Sources" ✅ ACCURATE
 ## 🎯 IMPACT
 
 ### What Was Fixed:
-✅ Accurate download count (only counts successful PDFs)  
-✅ Accurate status reporting (failed/partial/available)  
-✅ User sees correct message based on actual downloads  
-✅ AI receives only successfully downloaded content  
-✅ No more false "success" messages  
+✅ Accurate download count (only counts successful PDFs)
+✅ Accurate status reporting (failed/partial/available)
+✅ User sees correct message based on actual downloads
+✅ AI receives only successfully downloaded content
+✅ No more false "success" messages
 
 ### What Still Needs Work:
-⚠️ HTTP 403 errors from institutional sources (separate issue)  
-⚠️ Session closed errors (connection management issue)  
-⚠️ Need to implement fallback sources (PMC, Unpaywall, etc.)  
+⚠️ HTTP 403 errors from institutional sources (separate issue)
+⚠️ Session closed errors (connection management issue)
+⚠️ Need to implement fallback sources (PMC, Unpaywall, etc.)
 
 ---
 

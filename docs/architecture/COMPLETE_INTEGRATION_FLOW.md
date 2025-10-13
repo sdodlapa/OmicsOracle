@@ -1,5 +1,5 @@
 # Complete End-to-End Integration Flow
-**Date:** October 12, 2025  
+**Date:** October 12, 2025
 **Purpose:** Visual guide for connecting GEO search → PDFs/Fulltext → Frontend display
 
 ## Executive Summary
@@ -330,50 +330,50 @@ GEO Dataset (GSE123456)
 
 class GEODatasetCard:
     """Display card for a single GEO dataset with lazy-loaded content."""
-    
+
     def __init__(self, dataset: GEODatasetResult):
         self.dataset = dataset
         self.citations: Optional[List[Citation]] = None
         self.pdfs_downloaded: bool = False
         self.fulltext_available: bool = False
-    
+
     def render(self):
         """Render the dataset card with interactive buttons."""
-        
+
         # PHASE 1: Always visible - Basic metadata
         st.markdown(f"### [{self.dataset.geo_id}](https://ncbi.nlm.nih.gov/geo/query/acc.cgi?acc={self.dataset.geo_id})")
         st.markdown(f"**{self.dataset.title}**")
         st.caption(f"Organism: {self.dataset.organism} | Samples: {self.dataset.sample_count}")
-        
+
         with st.expander("Summary"):
             st.write(self.dataset.summary)
-        
+
         # PHASE 2: Lazy loaded - Citations
         if self.dataset.pubmed_ids:
             st.write(f"📚 Publications: {len(self.dataset.pubmed_ids)} linked")
-            
+
             if st.button("🔍 Get Citations", key=f"cite_{self.dataset.geo_id}"):
                 self._load_citations()
-        
+
         # PHASE 3: Show citations if loaded
         if self.citations:
             self._render_citations()
-        
+
         # PHASE 4: Download PDFs if citations available
         if self.citations and not self.pdfs_downloaded:
             if st.button("📥 Download PDFs", key=f"pdf_{self.dataset.geo_id}"):
                 self._download_pdfs()
-        
+
         # PHASE 5: View fulltext if PDFs downloaded
         if self.pdfs_downloaded:
             if st.button("📄 View Fulltext", key=f"fulltext_{self.dataset.geo_id}"):
                 self._show_fulltext()
-    
+
     def _load_citations(self):
         """STEP 1: Discover citations (no download yet)."""
         # Check cache first
         cache_path = f"data/geo_citation_collections/{self.dataset.geo_id}/citations.json"
-        
+
         if Path(cache_path).exists():
             # Load from cache
             with open(cache_path) as f:
@@ -383,25 +383,25 @@ class GEODatasetCard:
             # Fetch from PubMed
             with st.spinner("Discovering citations..."):
                 from omics_oracle_v2.lib.publications import PubMedClient
-                
+
                 client = PubMedClient()
                 self.citations = []
-                
+
                 for pmid in self.dataset.pubmed_ids:
                     citation = client.get_citation(pmid)
                     self.citations.append(citation)
-                
+
                 # Cache for future use
                 Path(cache_path).parent.mkdir(parents=True, exist_ok=True)
                 with open(cache_path, 'w') as f:
                     json.dump(self.citations, f, indent=2)
-                
+
                 st.success(f"✓ Found {len(self.citations)} citations")
-    
+
     def _render_citations(self):
         """STEP 2: Display citation metadata."""
         st.markdown("#### 📚 Citations")
-        
+
         for i, citation in enumerate(self.citations, 1):
             with st.expander(f"{i}. PMID:{citation.pmid} - {citation.title}"):
                 st.write(f"**Authors:** {citation.authors}")
@@ -409,12 +409,12 @@ class GEODatasetCard:
                 st.write(f"**Year:** {citation.year}")
                 if citation.doi:
                     st.write(f"**DOI:** [{citation.doi}](https://doi.org/{citation.doi})")
-    
+
     def _download_pdfs(self):
         """STEP 3: Download PDFs and parse to fulltext."""
         with st.spinner("Downloading PDFs and parsing fulltext..."):
             from omics_oracle_v2.lib.pipelines.geo_citation_pipeline import GEOCitationPipeline
-            
+
             # Use pipeline to download + parse
             pipeline = GEOCitationPipeline()
             result = asyncio.run(
@@ -423,48 +423,48 @@ class GEODatasetCard:
                     pmids=[c.pmid for c in self.citations]
                 )
             )
-            
+
             # Update state
             self.pdfs_downloaded = True
             self.fulltext_available = result.pdfs_downloaded > 0
-            
+
             st.success(f"✓ Downloaded {result.pdfs_downloaded} PDFs")
             st.info(f"✓ Parsed {result.pdfs_parsed} fulltexts")
-            
+
             # Show which PDFs were downloaded
             for pmid, status in result.download_status.items():
                 if status == "success":
                     st.write(f"✓ PMID:{pmid} - Downloaded")
                 else:
                     st.write(f"✗ PMID:{pmid} - {status}")
-    
+
     def _show_fulltext(self):
         """STEP 4: Display normalized fulltext."""
         from omics_oracle_v2.lib.fulltext.cache import ParsedCache
-        
+
         cache = ParsedCache()
-        
+
         st.markdown("#### 📄 Fulltext")
-        
+
         for citation in self.citations:
             pmid = citation.pmid
-            
+
             # Get normalized content
             content = cache.get_normalized(pmid)
-            
+
             if content:
                 with st.expander(f"PMID:{pmid} - {citation.title}"):
                     # Display sections
                     for section in content.sections:
                         st.markdown(f"##### {section.title}")
                         st.write(section.content)
-                    
+
                     # Display tables
                     if content.tables:
                         st.markdown("##### Tables")
                         for table in content.tables:
                             st.dataframe(table.data)
-                    
+
                     # Display figures
                     if content.figures:
                         st.markdown("##### Figures")
@@ -495,7 +495,7 @@ st.session_state = {
         },
         # ... more results
     ],
-    
+
     # Per-dataset state (keyed by GEO ID)
     "dataset_state": {
         "GSE123456": {
@@ -505,7 +505,7 @@ st.session_state = {
             "fulltext_displayed": False,
         },
     },
-    
+
     # File paths (for quick lookup)
     "file_map": {
         "GSE123456": {
@@ -527,10 +527,10 @@ st.session_state = {
 ```python
 def render_search_results(results):
     """Render results with progressive enhancement."""
-    
+
     for result in results:
         geo_id = result.geo_id
-        
+
         # Initialize state if needed
         if geo_id not in st.session_state.dataset_state:
             st.session_state.dataset_state[geo_id] = {
@@ -539,12 +539,12 @@ def render_search_results(results):
                 "pdfs_downloaded": False,
                 "fulltext_displayed": False,
             }
-        
+
         state = st.session_state.dataset_state[geo_id]
-        
+
         # Always show: Basic metadata
         render_basic_metadata(result)
-        
+
         # Show if available: Citations (lazy load)
         if not state["citations_loaded"]:
             if st.button(f"Get Citations", key=f"cite_{geo_id}"):
@@ -552,13 +552,13 @@ def render_search_results(results):
                 state["citations_loaded"] = True
         else:
             render_citations(state["citations"])
-        
+
         # Show if citations loaded: PDF download
         if state["citations_loaded"] and not state["pdfs_downloaded"]:
             if st.button(f"Download PDFs", key=f"pdf_{geo_id}"):
                 download_pdfs(geo_id, state["citations"])
                 state["pdfs_downloaded"] = True
-        
+
         # Show if PDFs downloaded: Fulltext viewer
         if state["pdfs_downloaded"]:
             if st.button(f"View Fulltext", key=f"fulltext_{geo_id}"):
@@ -622,10 +622,10 @@ class GEODatasetCard:
         st.markdown(f"### {dataset.geo_id}")
         st.markdown(f"**{dataset.title}**")
         st.caption(f"Organism: {dataset.organism} | Samples: {dataset.sample_count}")
-        
+
         with st.expander("Summary"):
             st.write(dataset.summary)
-        
+
         # Show linked publications
         if dataset.pubmed_ids:
             st.write(f"📚 {len(dataset.pubmed_ids)} publications linked")
@@ -651,18 +651,18 @@ class GEODatasetCard:
 def _get_citations(self, geo_id: str, pmids: List[str]):
     """Discover and display citation metadata."""
     from omics_oracle_v2.lib.publications import PubMedClient
-    
+
     client = PubMedClient()
     citations = []
-    
+
     for pmid in pmids:
         citation = client.get_citation(pmid)
         citations.append(citation)
-    
+
     # Store in session state
     st.session_state.dataset_state[geo_id]["citations"] = citations
     st.session_state.dataset_state[geo_id]["citations_loaded"] = True
-    
+
     return citations
 ```
 
@@ -685,9 +685,9 @@ def _get_citations(self, geo_id: str, pmids: List[str]):
 def _download_pdfs(self, geo_id: str, citations: List[Citation]):
     """Download PDFs and parse fulltext."""
     from omics_oracle_v2.lib.pipelines.geo_citation_pipeline import GEOCitationPipeline
-    
+
     pipeline = GEOCitationPipeline()
-    
+
     # Download + parse
     result = asyncio.run(
         pipeline.discover_and_download(
@@ -695,11 +695,11 @@ def _download_pdfs(self, geo_id: str, citations: List[Citation]):
             pmids=[c.pmid for c in citations]
         )
     )
-    
+
     # Update state
     st.session_state.dataset_state[geo_id]["pdfs_downloaded"] = True
     st.session_state.dataset_state[geo_id]["download_status"] = result.download_status
-    
+
     return result
 ```
 
@@ -724,16 +724,16 @@ def _download_pdfs(self, geo_id: str, citations: List[Citation]):
 def _show_fulltext(self, geo_id: str, pmid: str):
     """Display normalized fulltext."""
     from omics_oracle_v2.lib.fulltext.cache import ParsedCache
-    
+
     cache = ParsedCache()
     content = cache.get_normalized(pmid)
-    
+
     if content:
         # Display sections
         for section in content.sections:
             st.markdown(f"#### {section.title}")
             st.write(section.content)
-        
+
         # Display tables
         if content.tables:
             st.markdown("#### Tables")

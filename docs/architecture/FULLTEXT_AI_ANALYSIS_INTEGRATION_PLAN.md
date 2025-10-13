@@ -1,6 +1,6 @@
 # Full-Text AI Analysis Integration Plan
 
-**Date:** October 12, 2025  
+**Date:** October 12, 2025
 **Goal:** Make GPT-4 analyze normalized full-text PDFs instead of just GEO summaries
 
 ---
@@ -162,7 +162,7 @@ class FullTextContent(BaseModel):
     tables_captions: List[str] = []
     format: str  # "jats", "pdf", "latex"
     parse_date: str
-    
+
 class Dataset(BaseModel):
     geo_id: str
     title: str
@@ -172,7 +172,7 @@ class Dataset(BaseModel):
     sample_count: Optional[int]
     pubmed_ids: List[str] = []
     relevance_score: float = 0.0
-    
+
     # NEW: Full-text content
     fulltext: List[FullTextContent] = []
     fulltext_status: str = "not_downloaded"  # "downloading", "available", "failed", "partial"
@@ -203,44 +203,44 @@ logger = logging.getLogger(__name__)
 
 class FullTextService:
     """Service for managing full-text downloads and parsing."""
-    
+
     def __init__(self):
         self.citation_pipeline = GEOCitationPipeline()
         self.normalizer = ContentNormalizer()
         self.cache = ParsedCache()
-    
+
     async def enrich_dataset_with_fulltext(
-        self, 
+        self,
         dataset: Dataset,
         max_papers: int = 3
     ) -> Dataset:
         """
         Download and parse PDFs for a dataset's linked publications.
-        
+
         Args:
             dataset: Dataset with PMIDs
             max_papers: Maximum number of papers to download
-            
+
         Returns:
             Dataset with fulltext field populated
         """
         if not dataset.pubmed_ids:
             dataset.fulltext_status = "no_pmids"
             return dataset
-        
+
         dataset.fulltext_status = "downloading"
         fulltext_list = []
-        
+
         try:
             # Limit to max_papers
             pmids_to_fetch = dataset.pubmed_ids[:max_papers]
-            
+
             # Download PDFs using GEOCitationPipeline
             citations = await self.citation_pipeline.discover_and_download(
                 geo_id=dataset.geo_id,
                 pmids=pmids_to_fetch
             )
-            
+
             # Parse each PDF to normalized format
             for citation in citations:
                 if citation.pdf_path and Path(citation.pdf_path).exists():
@@ -250,7 +250,7 @@ class FullTextService:
                             file_path=citation.pdf_path,
                             normalizer=self.normalizer
                         )
-                        
+
                         if normalized:
                             fulltext_list.append(FullTextContent(
                                 pmid=citation.pmid,
@@ -270,23 +270,23 @@ class FullTextService:
                     except Exception as e:
                         logger.error(f"Failed to parse PDF for PMID {citation.pmid}: {e}")
                         continue
-            
+
             # Update dataset
             dataset.fulltext = fulltext_list
             dataset.fulltext_count = len(fulltext_list)
             dataset.fulltext_status = "available" if fulltext_list else "failed"
-            
+
             logger.info(
                 f"Enriched {dataset.geo_id} with {len(fulltext_list)} "
                 f"full-text papers out of {len(pmids_to_fetch)} PMIDs"
             )
-            
+
         except Exception as e:
             logger.error(f"Failed to enrich {dataset.geo_id}: {e}")
             dataset.fulltext_status = "failed"
-        
+
         return dataset
-    
+
     async def enrich_datasets_batch(
         self,
         datasets: List[Dataset],
@@ -294,11 +294,11 @@ class FullTextService:
     ) -> List[Dataset]:
         """
         Enrich multiple datasets with full-text in parallel.
-        
+
         Args:
             datasets: List of datasets
             max_papers_per_dataset: Max papers per dataset
-            
+
         Returns:
             List of enriched datasets
         """
@@ -306,7 +306,7 @@ class FullTextService:
             self.enrich_dataset_with_fulltext(ds, max_papers_per_dataset)
             for ds in datasets
         ]
-        
+
         return await asyncio.gather(*tasks, return_exceptions=True)
 ```
 
@@ -320,11 +320,11 @@ def _process_unified(self, input_data, context):
     # Existing search logic
     pipeline = UnifiedSearchPipeline(config=self._unified_pipeline_config)
     result = pipeline.search(...)
-    
+
     # NEW: Trigger background full-text enrichment
     if input_data.enable_fulltext_enrichment:
         self._trigger_fulltext_enrichment_async(result.datasets)
-    
+
     return SearchOutput(
         datasets=result.datasets,
         total_results=result.total_results,
@@ -338,11 +338,11 @@ def _trigger_fulltext_enrichment_async(self, datasets: List[Dataset]):
     """
     import asyncio
     from omics_oracle_v2.services.fulltext_service import FullTextService
-    
+
     async def enrich_in_background():
         service = FullTextService()
         await service.enrich_datasets_batch(datasets, max_papers_per_dataset=2)
-    
+
     # Run in background without blocking
     asyncio.create_task(enrich_in_background())
 ```
@@ -374,7 +374,7 @@ dataset_info = [
 # Add full-text content if available
 if ds.fulltext and len(ds.fulltext) > 0:
     dataset_info.append(f"\n   📄 Full-text content from {len(ds.fulltext)} linked publications:")
-    
+
     for j, ft in enumerate(ds.fulltext[:3], 1):  # Max 3 papers
         dataset_info.extend([
             f"\n   Paper {j}: {ft.title} (PMID: {ft.pmid})",
@@ -403,7 +403,7 @@ Analyze these datasets using the provided full-text papers (when available) and 
 1. **Overview**: Which datasets are most relevant based on their methods and findings?
 2. **Methodology Comparison**: How do these studies differ in experimental design and approach?
 3. **Key Scientific Findings**: What are the main discoveries from the full papers?
-4. **Recommendations**: 
+4. **Recommendations**:
    - For basic understanding of the topic
    - For advanced analysis and replication
    - For method development
@@ -517,7 +517,7 @@ ${dataset.fulltext_count > 0 ? `
 ## Risks & Mitigation
 
 ### Risk 1: Slow PDF Downloads
-**Mitigation:** 
+**Mitigation:**
 - Background downloads don't block search
 - Cache prevents duplicate downloads
 - Limit to 2-3 papers per dataset

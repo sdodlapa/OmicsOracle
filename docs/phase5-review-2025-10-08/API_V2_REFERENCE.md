@@ -1,9 +1,9 @@
 # OmicsOracle API v2 Reference
 
-**⚠️ DEPRECATED - DO NOT USE**  
-**Status:** 🗑️ SUPERSEDED BY API_REFERENCE.md v3.0  
-**Version:** 2.0 (Phase 3)  
-**Date:** October 4, 2025  
+**⚠️ DEPRECATED - DO NOT USE**
+**Status:** 🗑️ SUPERSEDED BY API_REFERENCE.md v3.0
+**Version:** 2.0 (Phase 3)
+**Date:** October 4, 2025
 **Deprecated:** October 8, 2025 (Phase 4)
 
 ---

@@ -26,13 +26,13 @@
 <div class="dataset-card" id="card-${index}">
     <!-- Header with AI button -->
     <div class="dataset-header">...</div>
-    
+
     <!-- Title -->
     <div class="dataset-title">...</div>
-    
+
     <!-- Summary -->
     <div class="dataset-summary">...</div>
-    
+
     <!-- NEW: Inline Analysis Container (Initially Hidden) -->
     <div class="inline-analysis" id="analysis-${index}" style="display: none;">
         <div class="analysis-divider"></div>
@@ -40,7 +40,7 @@
             <!-- Analysis inserted here dynamically -->
         </div>
     </div>
-    
+
     <!-- Metadata -->
     <div class="dataset-meta">...</div>
 </div>
@@ -176,12 +176,12 @@
 
 ## Benefits
 
-✅ **Better Context:** Analysis appears right next to the dataset  
-✅ **No Scrolling:** Results visible immediately  
-✅ **Independent:** Each card can be analyzed separately  
-✅ **Visual Feedback:** Clear button states show progress  
-✅ **Smooth UX:** Animations make expansion feel natural  
-✅ **Persistent:** Analysis stays visible while browsing other cards  
+✅ **Better Context:** Analysis appears right next to the dataset
+✅ **No Scrolling:** Results visible immediately
+✅ **Independent:** Each card can be analyzed separately
+✅ **Visual Feedback:** Clear button states show progress
+✅ **Smooth UX:** Animations make expansion feel natural
+✅ **Persistent:** Analysis stays visible while browsing other cards
 
 ---
 

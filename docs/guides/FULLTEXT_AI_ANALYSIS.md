@@ -1,6 +1,6 @@
 # Full-Text AI Analysis Feature
 
-**Status:** ✅ Live in Production  
+**Status:** ✅ Live in Production
 **Date:** October 12, 2025
 
 ## Overview
@@ -24,9 +24,9 @@ AI: "This dataset studies breast cancer using RNA-seq with 8 samples."
 ```
 User: Search "breast cancer RNA-seq"
 Dashboard: ✓ 2 PDFs available for AI analysis
-AI: "This study used Illumina HiSeq 4000 with 150bp paired-end reads 
-     and identified 523 DEGs (FDR < 0.05). The BRCA1 pathway showed 
-     significant enrichment (p = 0.001). Recommends for validation 
+AI: "This study used Illumina HiSeq 4000 with 150bp paired-end reads
+     and identified 523 DEGs (FDR < 0.05). The BRCA1 pathway showed
+     significant enrichment (p = 0.001). Recommends for validation
      due to rigorous QC (RIN > 8.0) and biological replicates (n=4)."
 ```
 

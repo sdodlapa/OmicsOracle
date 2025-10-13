@@ -180,18 +180,18 @@ class BiomedicalNER:
         Classify entity into biomedical category.
 
         Uses a combination of spaCy labels and domain-specific heuristics.
-        
+
         Priority order (Oct 9, 2025 - UPDATED):
         - Techniques checked EARLY to prevent misclassification
         - WGBS/RRBS/ATAC-seq now correctly identified as techniques, not genes/chemicals
         """
         # Priority order matters - check most specific first
-        
+
         # CHECK TECHNIQUES EARLY (before gene/chemical checks)
         # Fix: WGBS/RRBS were matching gene patterns, ATAC-seq matching chemical
         if self._is_experimental_technique(ent, text_lower):
             return EntityType.TECHNIQUE
-        
+
         # Then check biological entities
         if self._is_gene_entity(ent, text_lower):
             return EntityType.GENE
@@ -427,7 +427,7 @@ class BiomedicalNER:
     def _is_experimental_technique(self, ent, text_lower: str) -> bool:
         """
         Check if entity represents an experimental technique.
-        
+
         Enhanced Oct 9, 2025 with comprehensive genomic techniques:
         - Epigenetics: DNA methylation, WGBS, RRBS, bisulfite-seq
         - Chromatin accessibility: ATAC-seq, DNase-seq, FAIRE-seq
@@ -442,13 +442,13 @@ class BiomedicalNER:
             "scrna-seq", "scrnaseq", "single-cell rna-seq", "single cell rna-seq",
             "snrna-seq", "snrnaseq", "single-nucleus rna-seq",
             "bulk rna-seq", "total rna-seq",
-            
+
             # DNA methylation / Epigenetics
             "wgbs", "rrbs",
             "bisulfite-seq", "bisulfite seq", "bs-seq",
             "whole genome bisulfite", "reduced representation bisulfite",
             "dna methylation", "methylation profiling", "methylation",
-            
+
             # Chromatin accessibility
             "atac-seq", "atacseq", "atac seq", "atac",
             "dnase-seq", "dnaseseq", "dnase seq", "dnase",
@@ -456,52 +456,52 @@ class BiomedicalNER:
             "mnase-seq", "mnaseseq",
             "nome-seq", "nomeseq",
             "chromatin accessibility", "open chromatin",
-            
+
             # ChIP-based techniques
             "chip-seq", "chipseq", "chip seq",
             "cut&run", "cut&tag", "cutrun", "cuttag",
             "chip-exo", "chipexo",
             "chromatin immunoprecipitation",
-            
+
             # 3D genome structure
             "hi-c", "hic",
             "chia-pet", "chiapet",
             "plac-seq", "placseq",
             "3c", "4c", "5c",
             "chromatin conformation",
-            
+
             # RNA-protein interactions
             "clip-seq", "clipseq", "par-clip", "iclip", "eclip",
             "rip-seq", "ripseq",
             "rna immunoprecipitation",
-            
+
             # RNA modifications
             "m6a-seq", "m6aseq",
             "ribo-seq", "riboseq",
-            
+
             # Nascent RNA / Transcription
             "gro-seq", "groseq",
             "net-seq", "netseq",
             "cage-seq", "cageseq", "cage",
             "rampage", "rampage-seq",
-            
+
             # Microarray and classic techniques
             "microarray", "gene chip", "affymetrix",
-            
+
             # PCR-based
             "pcr", "qpcr", "rt-pcr", "rt-qpcr",
             "quantitative pcr", "real-time pcr",
-            
+
             # Proteomics
             "western blot", "immunoblot",
             "flow cytometry", "facs",
             "immunofluorescence", "if",
             "mass spectrometry", "proteomics",
-            
+
             # General
             "sequencing", "genomics", "transcriptomics",
         }
-        
+
         # Multi-word technique phrases (check for substring matches)
         technique_phrases = {
             "gene expression",
@@ -519,42 +519,42 @@ class BiomedicalNER:
             "targeted sequencing",
             "amplicon sequencing",
         }
-        
+
         # Check exact matches (case-insensitive)
         if text_lower in ngs_core:
             return True
-        
+
         # Check multi-word phrases (substring match)
         for phrase in technique_phrases:
             if phrase in text_lower:
                 return True
-        
+
         # Check -seq suffix (most NGS techniques)
         if text_lower.endswith("-seq") and len(text_lower) > 4:
             return True
-        
+
         # Check seq suffix (alternative spelling)
         if text_lower.endswith("seq") and len(text_lower) > 4:
             # Avoid false positives like "request"
             if not text_lower.endswith("quest"):
                 return True
-        
+
         # Check "sequencing" in name
         if "sequencing" in text_lower:
             return True
-        
+
         # Check chromatin-related (likely technique)
         if "chromatin" in text_lower and len(text_lower) > 9:
             return True
-        
+
         # Check methylation-related (epigenetics)
         if "methylation" in text_lower:
             return True
-        
+
         # Check bisulfite (methylation technique)
         if "bisulfite" in text_lower:
             return True
-        
+
         return False
 
     def get_model_info(self) -> ModelInfo:

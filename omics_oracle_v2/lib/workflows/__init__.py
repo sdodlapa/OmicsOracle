@@ -2,16 +2,10 @@
 Workflows package
 
 High-level workflows that orchestrate multiple components.
+All pipelines have been archived. See SearchOrchestrator for production search.
 """
 
-from omics_oracle_v2.lib.pipelines.geo_citation_pipeline import (
-    CollectionResult,
-    GEOCitationConfig,
-    GEOCitationPipeline,
-)
+# Archived: GEOCitationPipeline, GEOCitationConfig, CollectionResult
+# (moved to extras/pipelines/, unused in production)
 
-__all__ = [
-    "GEOCitationPipeline",
-    "GEOCitationConfig",
-    "CollectionResult",
-]
+__all__ = []

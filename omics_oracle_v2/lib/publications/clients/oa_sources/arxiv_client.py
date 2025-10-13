@@ -214,7 +214,7 @@ class ArXivClient(BasePublicationClient):
             if entry_id_elem is None or not entry_id_elem.text:
                 logger.debug("Missing entry ID in arXiv response")
                 return None
-                
+
             entry_id = entry_id_elem.text
             arxiv_id = entry_id.split("/abs/")[-1].replace("v1", "").replace("v2", "").replace("v3", "")
 

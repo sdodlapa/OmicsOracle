@@ -1,6 +1,6 @@
 # Manual Download - Button States Visual Guide
 
-**Date:** October 12, 2025  
+**Date:** October 12, 2025
 **Feature:** Manual PDF Download Button States
 
 ---
@@ -79,14 +79,14 @@ stateDiagram-v2
     [*] --> HasPMIDs: Search returns dataset
     HasPMIDs --> DownloadButton: PMIDs found, no full-text
     HasPMIDs --> NoPubs: No PMIDs found
-    
+
     DownloadButton --> Downloading: User clicks download
     Downloading --> Success: Download completes
     Downloading --> Failed: Download fails (paywall)
-    
+
     Success --> AIEnabled: Full-text available
     Failed --> DownloadButton: Try again
-    
+
     NoPubs --> [*]: AI disabled permanently
     AIEnabled --> [*]: User can analyze
 ```
@@ -207,7 +207,7 @@ if (dataset.pubmed_ids && dataset.pubmed_ids.length > 0) {
     if (dataset.fulltext_count > 0) {
         // STATE 3: PDFs downloaded - enable AI
         return `
-            <button class="btn-ai-analyze" 
+            <button class="btn-ai-analyze"
                     onclick="selectDataset(${index})">
                 🤖 AI Analysis
                 <span class="analysis-badge">
@@ -218,7 +218,7 @@ if (dataset.pubmed_ids && dataset.pubmed_ids.length > 0) {
     } else {
         // STATE 1: PMIDs exist - show download button
         return `
-            <button class="btn-download-papers" 
+            <button class="btn-download-papers"
                     onclick="downloadPapersForDataset(${index})">
                 📥 Download ${dataset.pubmed_ids.length} Paper${s}
             </button>
@@ -249,26 +249,26 @@ if (dataset.pubmed_ids && dataset.pubmed_ids.length > 0) {
 async function downloadPapersForDataset(index) {
     const dataset = currentResults[index];
     const downloadBtn = cardElement.querySelector('.btn-download-papers');
-    
+
     // STATE 2: Show downloading state
     downloadBtn.disabled = true;
     downloadBtn.innerHTML = '⏳ Downloading...';
-    
+
     try {
         // Call API
         const response = await fetch('/api/agents/enrich-fulltext?max_papers=3', {
             method: 'POST',
             body: JSON.stringify([dataset])
         });
-        
+
         const enriched = await response.json();
-        
+
         // Update dataset
         currentResults[index] = enriched[0];
-        
+
         // Re-render to STATE 3
         displayResults(currentResults);
-        
+
         // Show success
         if (enriched[0].fulltext_count > 0) {
             alert('✓ Successfully downloaded papers!');

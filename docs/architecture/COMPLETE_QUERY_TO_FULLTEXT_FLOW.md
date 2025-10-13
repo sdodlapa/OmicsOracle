@@ -1,7 +1,7 @@
 # Complete Query-to-FullText Pipeline Organization
 
-**Date:** October 11, 2025  
-**Status:** Complete System Documentation  
+**Date:** October 11, 2025
+**Status:** Complete System Documentation
 **Purpose:** Comprehensive review of the entire flow from user query to saved full-text
 
 ---
@@ -332,7 +332,7 @@ class FullTextManager:
     async def get_fulltext(publication_id, identifiers):
         """
         Main entry point - orchestrates entire flow.
-        
+
         Flow:
         1. Check smart cache (Phase 1)
         2. If not found, try waterfall download (Phase 2)
@@ -341,21 +341,21 @@ class FullTextManager:
         5. Update database (Phase 4)
         6. Return content
         """
-    
+
     async def get_parsed_content(publication_id):
         """
         Get parsed structured content.
-        
+
         Flow:
         1. Check parsed cache (Phase 3)
         2. If not cached, get fulltext and parse
         3. Return structured data (tables, figures, etc.)
         """
-    
+
     async def batch_download(publication_ids):
         """
         Parallel download for multiple papers.
-        
+
         Uses asyncio.gather for concurrent downloads.
         """
 ```
@@ -376,20 +376,20 @@ class SmartCache:
     async def find_fulltext(publication_id, identifiers):
         """
         Smart file discovery across all possible locations.
-        
+
         Search order:
         1. Source-specific directories (by DOI, PMID, PMC_ID)
         2. XML/NXML files (priority)
         3. PDF files (fallback)
         4. Hash-based lookup (last resort)
-        
+
         Returns: File path or None
         Time: <10ms
         """
-    
+
     def _check_source_dirs(publication_id):
         """Check source-specific directories."""
-    
+
     def _find_by_hash(file_hash):
         """Find file by content hash (deduplication)."""
 ```
@@ -409,21 +409,21 @@ class SmartCache:
 async def download_from_url(url, save_path, source):
     """
     Download file with retry logic.
-    
+
     Features:
     - Async aiohttp
     - Exponential backoff (3 retries)
     - Streaming for large files
     - Progress callbacks
     - Save to source directory
-    
+
     Returns: Path to saved file
     """
 
 async def batch_download(urls, save_dir):
     """
     Parallel downloads with concurrency limit.
-    
+
     Uses asyncio.Semaphore to limit concurrent downloads.
     """
 ```
@@ -444,34 +444,34 @@ class ParsedCache:
     async def get(publication_id):
         """
         Get cached parsed content.
-        
+
         Flow:
         1. Check if cache file exists
         2. Validate freshness (TTL, source update)
         3. Decompress and return
         4. Update last_accessed in database
-        
+
         Returns: Parsed content or None
         Time: ~10ms
         """
-    
+
     async def save(publication_id, content, quality_score):
         """
         Save parsed content to cache.
-        
+
         Flow:
         1. Compress with gzip
         2. Save to cache directory
         3. Extract metadata (tables, figures, etc.)
         4. Update database
-        
+
         Storage: 10 MB JSON -> 1 MB .json.gz (90% compression)
         """
-    
+
     def is_stale(cached_entry):
         """
         Check if cache is stale.
-        
+
         Checks:
         - TTL exceeded (default 90 days)
         - Source file modified
@@ -495,43 +495,43 @@ class FullTextCacheDB:
     def add_entry(publication_id, file_path, file_hash, ...):
         """
         Add/update cache entry metadata.
-        
+
         Tables updated:
         - cached_files (identifiers, paths, timestamps)
         - content_metadata (tables, figures, quality)
-        
+
         Features:
         - UPSERT (INSERT OR REPLACE)
         - Deduplication via UNIQUE(file_hash)
         """
-    
+
     def find_papers_with_tables(min_tables, min_quality):
         """
         Fast search for papers with specific characteristics.
-        
+
         Uses indexes for <1ms queries.
-        
+
         Example: Find papers with >5 tables and quality >0.9
         Time: ~1ms for 1000 papers
         """
-    
+
     def get_statistics_by_source():
         """
         Analytics aggregated by source.
-        
+
         Returns:
         {
           'pmc': {'count': 1000, 'avg_quality': 0.95, ...},
           'arxiv': {'count': 500, 'avg_quality': 0.85, ...}
         }
-        
+
         Time: <1ms
         """
-    
+
     def find_by_hash(file_hash):
         """
         Find existing file with same hash (deduplication).
-        
+
         Prevents duplicate downloads/storage.
         Time: <1ms
         """
@@ -660,7 +660,7 @@ content = await manager.get_parsed_content(
 )
 
 # INTERNAL FLOW:
-# 
+#
 # Phase 1: Smart Cache Check
 cache = SmartCache()
 file_path = await cache.find_fulltext('PMC_12345', identifiers)
@@ -670,7 +670,7 @@ file_path = await cache.find_fulltext('PMC_12345', identifiers)
 # Try PMC (best source for PMC_ID)
 pmc_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC_12345/"
 file_path = await download_from_url(
-    pmc_url, 
+    pmc_url,
     save_path='data/fulltext/pdfs/pmc/PMC_12345.xml',
     source='pmc'
 )
@@ -775,7 +775,7 @@ results = await manager.batch_download(paper_ids)
 # Phase 2: Parallel waterfall download
 # Using asyncio.gather with semaphore (max 10 concurrent)
 downloads = [
-    download_from_source(pid, identifiers) 
+    download_from_source(pid, identifiers)
     for pid in new_papers
 ]
 results = await asyncio.gather(*downloads)
@@ -783,7 +783,7 @@ results = await asyncio.gather(*downloads)
 #
 # Phase 3: Parse all new papers
 parsed_results = [
-    parse_and_cache(file_path) 
+    parse_and_cache(file_path)
     for file_path in downloads
 ]
 # Time: ~125 seconds (50 papers × 2.5s each, parallelized)
@@ -796,7 +796,7 @@ for result in parsed_results:
 # TOTAL TIME: ~156 seconds for 100 papers
 # - 50 from cache: instant
 # - 50 new: ~3 seconds each
-# 
+#
 # vs. 600 seconds if no cache (10x faster!)
 ```
 
@@ -834,7 +834,7 @@ papers = db.find_papers_with_tables(
 
 # Then load the full content for these papers
 contents = await asyncio.gather(*[
-    manager.get_parsed_content(p['publication_id']) 
+    manager.get_parsed_content(p['publication_id'])
     for p in papers
 ])
 
@@ -869,7 +869,7 @@ for paper in papers:
             'doi': paper.get('doi')
         }
     )
-    
+
     # Now have structured content with tables, figures, etc.
 ```
 
@@ -947,16 +947,16 @@ async def get_fulltext(publication_id: str):
 async def search_fulltext(min_tables: int = 1, min_quality: float = 0.8):
     """Search cached papers by content."""
     from omics_oracle_v2.lib.fulltext.cache_db import get_cache_db
-    
+
     db = get_cache_db()
     results = db.find_papers_with_tables(min_tables, min_quality)
-    
+
     # Load full content for results
     contents = await asyncio.gather(*[
         manager.get_parsed_content(r['publication_id'])
         for r in results
     ])
-    
+
     return contents
 ```
 
@@ -1086,31 +1086,31 @@ except DatabaseError:
 def validate_parsed_content(content):
     """Ensure parsed content meets minimum quality."""
     quality_score = 0.0
-    
+
     # Has text?
     if content.get('full_text'):
         quality_score += 0.3
-    
+
     # Has structure?
     if content.get('sections'):
         quality_score += 0.2
-    
+
     # Has tables?
     if content.get('tables'):
         quality_score += 0.2
-    
+
     # Has references?
     if content.get('references'):
         quality_score += 0.15
-    
+
     # Has figures?
     if content.get('figures'):
         quality_score += 0.15
-    
+
     if quality_score < 0.5:
         logger.warning(f"Low quality parse: {quality_score}")
         # Maybe try different parser or flag for review
-    
+
     return quality_score
 ```
 
@@ -1120,30 +1120,30 @@ def validate_parsed_content(content):
 
 ### System Capabilities
 
-✅ **Smart Discovery** - Find existing files across multiple locations  
-✅ **Intelligent Caching** - 4-phase caching for maximum efficiency  
-✅ **Waterfall Acquisition** - Try multiple sources in priority order  
-✅ **Quality Tracking** - Monitor and improve parse quality  
-✅ **Fast Search** - Sub-millisecond queries on cached content  
-✅ **Deduplication** - Avoid duplicate downloads and storage  
-✅ **Analytics** - Usage patterns and source effectiveness  
-✅ **Resilience** - Retry logic and graceful degradation  
+✅ **Smart Discovery** - Find existing files across multiple locations
+✅ **Intelligent Caching** - 4-phase caching for maximum efficiency
+✅ **Waterfall Acquisition** - Try multiple sources in priority order
+✅ **Quality Tracking** - Monitor and improve parse quality
+✅ **Fast Search** - Sub-millisecond queries on cached content
+✅ **Deduplication** - Avoid duplicate downloads and storage
+✅ **Analytics** - Usage patterns and source effectiveness
+✅ **Resilience** - Retry logic and graceful degradation
 
 ### Performance Achievements
 
-🚀 **800-1000x faster** for cached paper access  
-🚀 **10x faster** for batch downloads  
-🚀 **1000-5000x faster** for content search  
-🚀 **90% storage savings** via compression  
-🚀 **95% cache hit rate** in mature system  
+🚀 **800-1000x faster** for cached paper access
+🚀 **10x faster** for batch downloads
+🚀 **1000-5000x faster** for content search
+🚀 **90% storage savings** via compression
+🚀 **95% cache hit rate** in mature system
 
 ### Production Ready
 
-✅ **2000+ lines** of production code  
-✅ **97 comprehensive tests** (100% passing)  
-✅ **93% code coverage**  
-✅ **Comprehensive error handling**  
-✅ **13,500+ lines** of documentation  
+✅ **2000+ lines** of production code
+✅ **97 comprehensive tests** (100% passing)
+✅ **93% code coverage**
+✅ **Comprehensive error handling**
+✅ **13,500+ lines** of documentation
 
 ---
 

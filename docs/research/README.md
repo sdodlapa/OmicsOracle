@@ -1,7 +1,7 @@
 # Citation Scoring Research - Week 4
 
-**Date:** October 11, 2025  
-**Status:** Research Complete - Awaiting Decision  
+**Date:** October 11, 2025
+**Status:** Research Complete - Awaiting Decision
 **Purpose:** Evaluate citation scoring methods before implementation
 
 ---
@@ -400,9 +400,9 @@ Reading time: ~90 minutes (full read) or ~20 minutes (executive summaries only)
 
 ## 🤝 Authors & Contributors
 
-**Primary Researcher:** GitHub Copilot  
-**Research Duration:** 3 hours  
-**Methodologies:** Literature review, code analysis, comparative evaluation  
+**Primary Researcher:** GitHub Copilot
+**Research Duration:** 3 hours
+**Methodologies:** Literature review, code analysis, comparative evaluation
 **Sources:** Google Scholar, Semantic Scholar, PubMed documentation, industry blogs
 
 ---
@@ -426,7 +426,7 @@ Reading time: ~90 minutes (full read) or ~20 minutes (executive summaries only)
 
 ---
 
-**Status:** ✅ Research complete, awaiting team decision  
-**Last Updated:** October 11, 2025  
+**Status:** ✅ Research complete, awaiting team decision
+**Last Updated:** October 11, 2025
 **Next Review:** End of Week 4
 

@@ -1,7 +1,7 @@
 # Manual Download Implementation - Phase 6 Complete
 
-**Date:** October 12, 2025  
-**Feature:** On-Demand PDF Download for Full-Text AI Analysis  
+**Date:** October 12, 2025
+**Feature:** On-Demand PDF Download for Full-Text AI Analysis
 **Status:** ✅ Implemented and Ready for Testing
 
 ---
@@ -91,7 +91,7 @@ Implemented **manual download** approach for full-text papers to optimize resour
    └─────────────────────────────────────────┘
 
 3. Tooltip shows:
-   "AI analysis requires linked publications 
+   "AI analysis requires linked publications
     (none available for this dataset)"
 
 4. User can still read abstract/summary manually
@@ -123,17 +123,17 @@ Implemented **manual download** approach for full-text papers to optimize resour
 async function downloadPapersForDataset(index) {
     const dataset = currentResults[index];
     const downloadBtn = cardElement.querySelector('.btn-download-papers');
-    
+
     // Update button state
     downloadBtn.disabled = true;
     downloadBtn.innerHTML = '⏳ Downloading...';
-    
+
     // Call API
     const response = await fetch('/api/agents/enrich-fulltext?max_papers=3', {
         method: 'POST',
         body: JSON.stringify([dataset])
     });
-    
+
     // Update UI with results
     const enriched = await response.json();
     currentResults[index] = enriched[0];
@@ -146,11 +146,11 @@ async function downloadPapersForDataset(index) {
 // If PMIDs exist but no full-text
 if (dataset.pubmed_ids.length > 0 && dataset.fulltext_count === 0) {
     // Show download button (green)
-    `<button class="btn-download-papers" 
+    `<button class="btn-download-papers"
              onclick="downloadPapersForDataset(${index})">
         📥 Download ${dataset.pubmed_ids.length} Papers
     </button>`
-    
+
     // AI button disabled (gray)
     `<button class="btn-ai-analyze btn-ai-disabled" disabled>
         🤖 AI Analysis
@@ -161,7 +161,7 @@ if (dataset.pubmed_ids.length > 0 && dataset.fulltext_count === 0) {
 // If full-text downloaded
 else if (dataset.fulltext_count > 0) {
     // AI button enabled (purple)
-    `<button class="btn-ai-analyze" 
+    `<button class="btn-ai-analyze"
              onclick="selectDataset(${index})">
         🤖 AI Analysis
         <span class="analysis-badge">✓ ${dataset.fulltext_count} PDFs</span>

@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 STOP_WORDS = {
     # Articles
     "a", "an", "the",
-    # Conjunctions  
+    # Conjunctions
     "and", "or", "but", "nor",
     # Prepositions
     "of", "to", "in", "for", "on", "at", "from", "by", "with", "about",
@@ -167,26 +167,26 @@ class GEOQueryBuilder:
         - Field restrictions ([Title]) and explicit AND/OR operators REDUCE results
         - Quotes break search completely
         - Stopwords ("of", "and", "the") reduce recall significantly
-        
+
         OPTIMAL STRATEGY:
         - Remove stopwords
         - Keep important scientific terms
         - Use space-separated keywords (NCBI handles it as fuzzy AND)
         - NO field tags, NO quotes, NO boolean operators
-        
+
         Example Input: ['dna', 'methylation', 'hic']
         Example Output: 'dna methylation hic'
-        
+
         This gives optimal results: not too broad (OR), not too narrow (explicit AND),
         and matches how NCBI actually searches (fuzzy matching across all fields)
         """
         # Filter out very short or non-meaningful keywords
         meaningful_keywords = [k for k in keywords if len(k) >= 3]
-        
+
         if not meaningful_keywords:
             # Fallback to original keywords if filtering removes everything
             meaningful_keywords = keywords
-        
+
         # Simple space-separated format - NCBI does the rest!
         # This is the format that works best based on empirical testing
         return " ".join(meaningful_keywords)

@@ -1,13 +1,13 @@
 # SESSION HANDOFF - PDF Download Issue
-**Date**: October 12, 2025  
-**Time**: 12:15 PM PST  
+**Date**: October 12, 2025
+**Time**: 12:15 PM PST
 **Branch**: fulltext-implementation-20251011
 
 ---
 
 ## 🚨 CURRENT PROBLEM
 
-**User sees**: "Downloaded 1 of 1 paper(s)" ✅  
+**User sees**: "Downloaded 1 of 1 paper(s)" ✅
 **But AI says**: "full text unavailable" ❌
 
 **Root Cause**: HTTP 403 Forbidden when downloading PDF from institutional access
@@ -89,9 +89,9 @@ for result in fulltext_results:
 
 ## 🧪 TEST CASE
 
-**PMID**: 39997216  
-**DOI**: 10.1093/nar/gkaf101  
-**PMC ID**: PMC11851118  
+**PMID**: 39997216
+**DOI**: 10.1093/nar/gkaf101
+**PMC ID**: PMC11851118
 
 **Expected Flow**:
 1. Try institutional → 403 Forbidden

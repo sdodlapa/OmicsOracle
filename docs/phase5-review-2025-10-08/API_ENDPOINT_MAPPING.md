@@ -1,8 +1,8 @@
 # API Endpoint Mapping
 
-**Version:** 2.0  
-**Date:** October 8, 2025  
-**Status:** ✅ Phase 4 Complete (Authentication & Multi-Agent System)  
+**Version:** 2.0
+**Date:** October 8, 2025
+**Status:** ✅ Phase 4 Complete (Authentication & Multi-Agent System)
 **Purpose:** Map integration layer methods to actual backend API endpoints
 
 ---
@@ -336,7 +336,7 @@ RecommendationRequest(
        "email": "user@example.com",
        "password": "SecurePass123!"
    }
-   
+
    POST /api/auth/login
    {
        "email": "user@example.com",
@@ -359,7 +359,7 @@ RecommendationRequest(
        "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
        "Content-Type": "application/json"
    }
-   
+
    POST /api/agents/search
    Headers: Authorization: Bearer <token>
    Body: {...}
@@ -489,7 +489,7 @@ results = await client.search("CRISPR")
 
 ### Execute Workflow
 
-**Endpoint:** `POST /api/workflows/execute`  
+**Endpoint:** `POST /api/workflows/execute`
 **Auth Required:** 🔒 Yes (JWT)
 
 **Request:**
@@ -551,7 +551,7 @@ results = await client.search("CRISPR")
 
 ### Get Workflow Status
 
-**Endpoint:** `GET /api/workflows/{workflow_id}`  
+**Endpoint:** `GET /api/workflows/{workflow_id}`
 **Auth Required:** 🔒 Yes (JWT)
 
 **Response:**
@@ -578,7 +578,7 @@ results = await client.search("CRISPR")
 
 ### Submit Batch Job
 
-**Endpoint:** `POST /api/batch/submit`  
+**Endpoint:** `POST /api/batch/submit`
 **Auth Required:** 🔒 Yes (JWT)
 
 **Request:**
@@ -610,7 +610,7 @@ results = await client.search("CRISPR")
 
 ### Get Batch Job Status
 
-**Endpoint:** `GET /api/batch/status/{job_id}`  
+**Endpoint:** `GET /api/batch/status/{job_id}`
 **Auth Required:** 🔒 Yes (JWT)
 
 **Response:**
@@ -642,7 +642,7 @@ results = await client.search("CRISPR")
 
 ### Connect to WebSocket
 
-**Endpoint:** `WS /ws/agents`  
+**Endpoint:** `WS /ws/agents`
 **Auth:** Include JWT token as query parameter: `?token=<jwt_token>`
 
 **Example:**
@@ -657,12 +657,12 @@ async with websockets.connect(f"ws://localhost:8000/ws/agents?token={jwt_token}"
         "workflow_type": "full_analysis",
         "input": {"query": "CRISPR"}
     }))
-    
+
     # Receive progress updates
     async for message in ws:
         data = json.loads(message)
         print(f"Status: {data['status']}, Progress: {data['progress']}%")
-        
+
         if data['status'] == 'completed':
             print(f"Result: {data['result']}")
             break
@@ -747,13 +747,13 @@ result = await client.execute_workflow("full_analysis", {...})
 
 ### Key Improvements
 
-✅ **Authentication:** JWT-based auth on all endpoints  
-✅ **Multi-Agent System:** 4 specialized agents (Query, Search, Data, Report)  
-✅ **Workflow Orchestration:** Automatic multi-agent workflows  
-✅ **Batch Processing:** Process multiple items efficiently  
-✅ **Real-Time Updates:** WebSocket support for live progress  
-✅ **Quota Management:** Fair usage limits with quota tracking  
-✅ **Rate Limiting:** 60 req/hour free, 300 req/hour premium  
+✅ **Authentication:** JWT-based auth on all endpoints
+✅ **Multi-Agent System:** 4 specialized agents (Query, Search, Data, Report)
+✅ **Workflow Orchestration:** Automatic multi-agent workflows
+✅ **Batch Processing:** Process multiple items efficiently
+✅ **Real-Time Updates:** WebSocket support for live progress
+✅ **Quota Management:** Fair usage limits with quota tracking
+✅ **Rate Limiting:** 60 req/hour free, 300 req/hour premium
 ✅ **Cost Tracking:** Real-time cost calculation and limits
 
 ### Integration Layer Updates Needed
@@ -773,6 +773,6 @@ The integration layer needs updates to support Phase 4 features:
 
 ---
 
-**Last Updated:** October 8, 2025  
-**Version:** 2.0  
+**Last Updated:** October 8, 2025
+**Version:** 2.0
 **Status:** ✅ Phase 4 Complete - Ready for Phase 5 Frontend

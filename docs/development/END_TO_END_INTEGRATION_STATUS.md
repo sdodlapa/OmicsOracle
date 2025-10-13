@@ -1,14 +1,14 @@
 # End-to-End Integration Status Analysis
-**Date:** October 12, 2025  
-**Branch:** fulltext-implementation-20251011  
+**Date:** October 12, 2025
+**Branch:** fulltext-implementation-20251011
 **Author:** Analysis based on `start_omics_oracle.sh` and SearchAgent code review
 
 ## Executive Summary
 
-✅ **GOOD NEWS:** We HAVE already integrated the UnifiedSearchPipeline into the end-to-end workflow!  
-✅ **SearchAgent uses UnifiedSearchPipeline** by default (`_use_unified_pipeline = True`)  
-⚠️ **Dashboard uses PublicationSearchPipeline** - needs update to use SearchAgent or UnifiedSearchPipeline  
-✅ **API routes use SearchAgent** - which internally uses UnifiedSearchPipeline  
+✅ **GOOD NEWS:** We HAVE already integrated the UnifiedSearchPipeline into the end-to-end workflow!
+✅ **SearchAgent uses UnifiedSearchPipeline** by default (`_use_unified_pipeline = True`)
+⚠️ **Dashboard uses PublicationSearchPipeline** - needs update to use SearchAgent or UnifiedSearchPipeline
+✅ **API routes use SearchAgent** - which internally uses UnifiedSearchPipeline
 
 ## Current End-to-End Architecture
 
@@ -316,22 +316,22 @@ def _render_geo_dataset(self, dataset: GEODatasetResult):
     """Render a GEO dataset card."""
     with st.container():
         col1, col2 = st.columns([3, 1])
-        
+
         with col1:
             st.markdown(f"### [{dataset.geo_id}](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc={dataset.geo_id})")
             st.markdown(f"**{dataset.title}**")
             st.caption(f"Organism: {dataset.organism} | Samples: {dataset.sample_count}")
-            
+
             with st.expander("Summary"):
                 st.write(dataset.summary)
-        
+
         with col2:
             st.metric("Relevance", f"{int(dataset.relevance_score * 100)}%")
-            
+
             # ✅ NEW: Citation discovery button
             if st.button("Get Citations", key=f"cite_{dataset.geo_id}"):
                 self._get_citations(dataset.geo_id)
-            
+
             # ✅ NEW: View fulltext button
             if st.button("View Fulltext", key=f"fulltext_{dataset.geo_id}"):
                 self._show_fulltext(dataset.geo_id)
@@ -343,14 +343,14 @@ def _render_geo_dataset(self, dataset: GEODatasetResult):
 def _get_citations(self, geo_id: str):
     """Discover citations and download PDFs for a GEO dataset."""
     from omics_oracle_v2.lib.pipelines.geo_citation_pipeline import GEOCitationPipeline
-    
+
     with st.spinner(f"Discovering citations for {geo_id}..."):
         pipeline = GEOCitationPipeline(self.settings)
         result = asyncio.run(pipeline.discover_and_download(geo_id))
-        
+
         st.success(f"Found {len(result.citations)} citations")
         st.info(f"Downloaded {result.pdfs_downloaded} PDFs")
-        
+
         # Display citations
         for citation in result.citations:
             st.write(f"- {citation.title} (PMID: {citation.pmid})")
@@ -362,20 +362,20 @@ def _get_citations(self, geo_id: str):
 def _show_fulltext(self, geo_id: str):
     """Display normalized fulltext for a GEO dataset's publication."""
     from omics_oracle_v2.lib.fulltext.cache import ParsedCache
-    
+
     cache = ParsedCache()
-    
+
     # Try to get cached normalized content
     content = cache.get_normalized(geo_id)
-    
+
     if content:
         st.markdown("### Fulltext (Normalized)")
-        
+
         # Display sections
         for section in content.sections:
             st.markdown(f"#### {section.title}")
             st.write(section.content)
-        
+
         # Display tables
         if content.tables:
             st.markdown("#### Tables")
@@ -583,6 +583,6 @@ After Option 1 is complete, we can validate end-to-end integration and measure a
 
 ---
 
-**Status:** Ready to implement Dashboard integration  
-**Confidence:** High (API integration already working)  
+**Status:** Ready to implement Dashboard integration
+**Confidence:** High (API integration already working)
 **Risk:** Low (backward compatible, SearchAgent has fallback logic)

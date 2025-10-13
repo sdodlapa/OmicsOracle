@@ -75,39 +75,39 @@ if analysis.search_type == SearchType.GEO_ID and analysis.geo_ids:
 # HYBRID: Run both GEO and publication searches in parallel
 elif analysis.search_type == SearchType.HYBRID:
     logger.info("Hybrid search: Running GEO + Publication searches in parallel")
-    
+
     # Run both in parallel for speed
     geo_task = self._search_geo(optimized_query, max_results)
     pub_task = self._search_publications(optimized_query, max_results)
-    
+
     geo_direct, publications = await asyncio.gather(
-        geo_task, 
+        geo_task,
         pub_task,
         return_exceptions=True
     )
-    
+
     # Handle exceptions
     if isinstance(geo_direct, Exception):
         logger.error(f"GEO search failed: {geo_direct}")
         geo_datasets = []
     else:
         geo_datasets = geo_direct
-    
+
     if isinstance(publications, Exception):
         logger.error(f"Publication search failed: {publications}")
         publications = []
-    
+
     # Extract GEO IDs from publications
     if publications:
         geo_ids_from_pubs = await self._extract_geo_ids_from_publications(publications)
         if geo_ids_from_pubs:
             logger.info(f"Extracted {len(geo_ids_from_pubs)} GEO IDs from {len(publications)} publications")
             geo_from_publications = await self._fetch_geo_datasets_by_ids(geo_ids_from_pubs)
-    
+
     # Merge GEO results (direct + from publications)
     all_geo = self._merge_and_deduplicate_datasets(geo_datasets, geo_from_publications)
     geo_datasets = all_geo
-    
+
     logger.info(f"Hybrid results: {len(geo_datasets)} unique datasets ({len(geo_direct)} direct + {len(geo_from_publications)} from pubs)")
 
 # GEO search only
@@ -124,7 +124,7 @@ elif analysis.search_type == SearchType.GEO:
 elif analysis.search_type == SearchType.PUBLICATIONS:
     logger.info("Publication-driven search: Finding papers and extracting GEO IDs")
     publications = await self._search_publications(optimized_query, max_results)
-    
+
     # Extract GEO IDs from publications
     if publications:
         geo_ids_from_pubs = await self._extract_geo_ids_from_publications(publications)
@@ -141,52 +141,52 @@ elif analysis.search_type == SearchType.PUBLICATIONS:
 async def _extract_geo_ids_from_publications(self, publications: List[Publication]) -> List[str]:
     """
     Extract GEO accession numbers (GSE IDs) from publication metadata.
-    
+
     Args:
         publications: List of publication objects
-        
+
     Returns:
         List of unique GEO IDs found
     """
     import re
-    
+
     geo_pattern = re.compile(r'\bGSE\d{5,}\b')  # Match GSE12345 (5+ digits)
     geo_ids = set()
-    
+
     for pub in publications:
         # Search in abstract
         if pub.abstract:
             matches = geo_pattern.findall(pub.abstract)
             geo_ids.update(matches)
-        
+
         # Search in full text (if available)
         if hasattr(pub, 'full_text') and pub.full_text:
             matches = geo_pattern.findall(pub.full_text)
             geo_ids.update(matches)
-        
+
         # Search in title (less common but possible)
         if pub.title:
             matches = geo_pattern.findall(pub.title)
             geo_ids.update(matches)
-    
+
     logger.info(f"Extracted {len(geo_ids)} unique GEO IDs from {len(publications)} publications")
     return list(geo_ids)
 
 async def _fetch_geo_datasets_by_ids(self, geo_ids: List[str]) -> List[Any]:
     """
     Fetch GEO datasets by their accession IDs.
-    
+
     Args:
         geo_ids: List of GEO accession IDs (e.g., ['GSE12345', 'GSE67890'])
-        
+
     Returns:
         List of GEO dataset objects
     """
     if not geo_ids:
         return []
-    
+
     datasets = []
-    
+
     # Use batch fetch for efficiency
     try:
         # Assuming your GEO client has batch fetch capability
@@ -195,7 +195,7 @@ async def _fetch_geo_datasets_by_ids(self, geo_ids: List[str]) -> List[Any]:
         logger.info(f"Fetched {len(datasets)}/{len(geo_ids)} datasets via batch fetch")
     except Exception as e:
         logger.error(f"Batch fetch failed: {e}, falling back to individual fetches")
-        
+
         # Fallback: Fetch individually
         for geo_id in geo_ids:
             try:
@@ -204,29 +204,29 @@ async def _fetch_geo_datasets_by_ids(self, geo_ids: List[str]) -> List[Any]:
                     datasets.extend(dataset)  # _search_geo_by_id returns list
             except Exception as e:
                 logger.warning(f"Failed to fetch {geo_id}: {e}")
-    
+
     return datasets
 
 def _merge_and_deduplicate_datasets(self, list1: List[Any], list2: List[Any]) -> List[Any]:
     """
     Merge two lists of datasets and remove duplicates by GEO ID.
-    
+
     Args:
         list1: First list of datasets
         list2: Second list of datasets
-        
+
     Returns:
         Merged list with no duplicate GEO IDs
     """
     seen_ids = set()
     merged = []
-    
+
     for dataset in list1 + list2:
         geo_id = getattr(dataset, 'geo_id', None) or getattr(dataset, 'accession', None)
         if geo_id and geo_id not in seen_ids:
             seen_ids.add(geo_id)
             merged.append(dataset)
-    
+
     return merged
 ```
 
@@ -253,14 +253,14 @@ async def _get_publication_fulltext(self, pub: Publication) -> str:
         fulltext = await self.pmc_client.fetch_fulltext(pub.pmc_id)
         if fulltext:
             return fulltext
-    
+
     # Try downloaded PDFs
     pdf_path = self._get_pdf_path(pub)
     if pdf_path and os.path.exists(pdf_path):
         fulltext = self._extract_text_from_pdf(pdf_path)
         if fulltext:
             return fulltext
-    
+
     # Fallback to abstract
     return pub.abstract or ""
 ```
@@ -276,10 +276,10 @@ def _extract_geo_ids_smart(self, text: str) -> List[str]:
     """
     # Pattern: GSE followed by 5+ digits
     pattern = r'\b(GSE\d{5,})\b'
-    
+
     # Find all matches
     matches = re.findall(pattern, text, re.IGNORECASE)
-    
+
     # Filter out false positives
     # (e.g., mentions in citations of other papers)
     valid_ids = []
@@ -287,16 +287,16 @@ def _extract_geo_ids_smart(self, text: str) -> List[str]:
         # Check context - should be near data availability keywords
         context_pattern = rf'.{{0,200}}{re.escape(geo_id)}.{{0,200}}'
         context = re.search(context_pattern, text, re.IGNORECASE | re.DOTALL)
-        
+
         if context:
             context_text = context.group().lower()
             # Data availability indicators
             if any(keyword in context_text for keyword in [
-                'data availab', 'deposited', 'accession', 
+                'data availab', 'deposited', 'accession',
                 'geo', 'ncbi', 'sra', 'raw data'
             ]):
                 valid_ids.append(geo_id.upper())
-    
+
     return valid_ids
 ```
 
@@ -330,16 +330,16 @@ async def _fetch_multiple_publications_fulltext(self, pubs: List[Publication]) -
 ```python
 async def test_hybrid_search_user_example():
     query = "single cell DNA methylation and 3D genome architecture"
-    
+
     result = await pipeline.search(query, max_results=20)
-    
+
     # Should find these datasets
     expected = ["GSE215353", "GSE124391"]
     found_ids = [ds.geo_id for ds in result.datasets]
-    
+
     for expected_id in expected:
         assert expected_id in found_ids, f"Missing {expected_id}!"
-    
+
     print(f"✅ Found all expected datasets: {expected}")
 ```
 
@@ -347,11 +347,11 @@ async def test_hybrid_search_user_example():
 ```python
 async def test_hybrid_search_performance():
     query = "methylation chromatin"
-    
+
     start = time.time()
     result = await pipeline.search(query)
     duration = time.time() - start
-    
+
     assert duration < 3.0, f"Too slow: {duration}s"
     print(f"✅ Hybrid search completed in {duration:.2f}s")
 ```
@@ -360,10 +360,10 @@ async def test_hybrid_search_performance():
 ```python
 async def test_no_duplicates():
     query = "methylation"
-    
+
     result = await pipeline.search(query)
     geo_ids = [ds.geo_id for ds in result.datasets]
-    
+
     assert len(geo_ids) == len(set(geo_ids)), "Duplicate datasets found!"
     print(f"✅ No duplicates in {len(geo_ids)} results")
 ```

@@ -1,7 +1,7 @@
 # OmicsOracle - Backend-Frontend Integration Contract
-**Version:** 2.0  
-**Date:** October 8, 2025  
-**Status:** FRAMEWORK AGNOSTIC SPECIFICATION - Phase 4 Complete  
+**Version:** 2.0
+**Date:** October 8, 2025
+**Status:** FRAMEWORK AGNOSTIC SPECIFICATION - Phase 4 Complete
 **Purpose:** Define clear contract between backend and ANY frontend framework
 
 ---
@@ -520,7 +520,7 @@ if (expiresAt - Date.now() < 5 * 60 * 1000) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ refresh_token })
   });
-  
+
   const data = await response.json();
   localStorage.setItem('access_token', data.access_token);
 }
@@ -834,8 +834,8 @@ interface Biomarker {
 
 **Endpoint:** `POST /api/v1/agents/analyze` or `POST /api/v1/analysis/llm`
 
-**🔐 Auth Required:** Yes (`Authorization: Bearer <access_token>`)  
-**💰 Cost:** ~$0.04 per analysis (~2000 GPT-4 tokens)  
+**🔐 Auth Required:** Yes (`Authorization: Bearer <access_token>`)
+**💰 Cost:** ~$0.04 per analysis (~2000 GPT-4 tokens)
 **⏱️ Performance:** 13-15 seconds
 
 **Request Schema:**
@@ -911,8 +911,8 @@ console.log(`Quota remaining: $${data.cost_info.quota_remaining.toFixed(2)}`);
 
 **Endpoint:** `POST /api/v1/agents/qa` or `POST /api/v1/analysis/qa`
 
-**🔐 Auth Required:** Yes (`Authorization: Bearer <access_token>`)  
-**💰 Cost:** ~$0.01 per question (~1000 GPT-4 tokens)  
+**🔐 Auth Required:** Yes (`Authorization: Bearer <access_token>`)
+**💰 Cost:** ~$0.01 per question (~1000 GPT-4 tokens)
 **⏱️ Performance:** 8-12 seconds
 
 **Request Schema:**
@@ -974,8 +974,8 @@ if (data.cost_info.quota_remaining < 1.0) {
 
 **Endpoint:** `GET /api/v1/analysis/cost-summary`
 
-**🔐 Auth Required:** Yes (`Authorization: Bearer <access_token>`)  
-**💰 Cost:** FREE  
+**🔐 Auth Required:** Yes (`Authorization: Bearer <access_token>`)
+**💰 Cost:** FREE
 **⏱️ Performance:** <1 second
 
 **Response Schema:**
@@ -1681,19 +1681,19 @@ Major Additions:
 ---
 
 **This contract ensures:**
-✅ Backend remains stable regardless of frontend changes  
-✅ Multiple frontends can coexist (Streamlit + React admin panel)  
-✅ Easy to add new features (just extend API + update contract)  
-✅ Clear testing boundaries (test API separately from UI)  
-✅ Framework migrations are straightforward (same data flow)  
-✅ **Authentication works consistently across all frontends** 🆕  
-✅ **Cost tracking is transparent to users** 🆕  
+✅ Backend remains stable regardless of frontend changes
+✅ Multiple frontends can coexist (Streamlit + React admin panel)
+✅ Easy to add new features (just extend API + update contract)
+✅ Clear testing boundaries (test API separately from UI)
+✅ Framework migrations are straightforward (same data flow)
+✅ **Authentication works consistently across all frontends** 🆕
+✅ **Cost tracking is transparent to users** 🆕
 ✅ **GPT-4 quotas prevent unexpected bills** 🆕
 
 **Ready to build any frontend on top of OmicsOracle! 🚀**
 
 ---
 
-**Document Version:** 2.0  
-**Last Updated:** October 8, 2025  
+**Document Version:** 2.0
+**Last Updated:** October 8, 2025
 **Phase:** 4 Complete - Production Ready with Authentication & Cost Management

@@ -1,5 +1,5 @@
 # GEO-to-Fulltext Mapping & AI Analysis Strategy
-**Date:** October 12, 2025  
+**Date:** October 12, 2025
 **Purpose:** Mapping strategy for GEO datasets → Citations → Fulltext/PDFs + AI analysis integration
 
 ## Executive Summary
@@ -184,40 +184,40 @@ data/geo_mappings.db          # SQLite database with all mappings
 class EnhancedGEODatasetCard:
     """
     Enhanced GEO dataset card with context awareness and AI analysis.
-    
+
     Displays:
     1. GEO metadata (from NCBI - previous pipeline signature)
     2. Citation context (how many papers downloaded/parsed)
     3. Paper details (status, stats, files)
     4. AI analysis buttons
     """
-    
+
     def __init__(self, geo_id: str):
         self.geo_id = geo_id
         self.mapping = self._load_mapping()  # Load from mapping.json
-    
+
     def render(self):
         """Render enhanced dataset card."""
-        
+
         # SECTION 1: GEO Metadata (from previous pipeline)
         self._render_geo_metadata()
-        
+
         # SECTION 2: Citation Context (new - shows what's available)
         self._render_citation_context()
-        
+
         # SECTION 3: Paper Details (new - interactive)
         self._render_paper_details()
-        
+
         # SECTION 4: AI Analysis (new - GPT-4 powered)
         self._render_ai_analysis()
-    
+
     def _render_geo_metadata(self):
         """Display GEO metadata from NCBI (previous pipeline signature)."""
         metadata = self.mapping["geo_metadata"]
-        
+
         st.markdown(f"### 📊 Dataset: {self.geo_id}")
         st.markdown(f"**{metadata['title']}**")
-        
+
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric("Organism", metadata['organism'])
@@ -225,39 +225,39 @@ class EnhancedGEODatasetCard:
             st.metric("Samples", metadata['sample_count'])
         with col3:
             st.metric("Platform", metadata['platform'][:20])
-        
+
         with st.expander("📄 GEO Abstract (from NCBI)"):
             st.write(metadata['summary'])  # ← Original GEO abstract
-    
+
     def _render_citation_context(self):
         """Display citation context (what's downloaded/available)."""
         context = self.mapping["citation_context"]
-        
+
         st.markdown("#### 📚 Citation Context")
-        
+
         col1, col2, col3, col4 = st.columns(4)
-        
+
         with col1:
             st.metric(
                 "Papers Linked",
                 context['total_citations'],
                 help="Total papers that cite this dataset"
             )
-        
+
         with col2:
             st.metric(
                 "PDFs Downloaded",
                 f"{context['pdfs_downloaded']}/{context['total_citations']}",
                 delta="Ready" if context['pdfs_downloaded'] > 0 else None
             )
-        
+
         with col3:
             st.metric(
                 "Total Content",
                 f"{context['total_pages']} pages",
                 help=f"~{context['total_words']:,} words"
             )
-        
+
         with col4:
             ai_ready = context['pdfs_downloaded'] > 0
             st.metric(
@@ -265,11 +265,11 @@ class EnhancedGEODatasetCard:
                 "Ready" if ai_ready else "N/A",
                 delta="⚡" if ai_ready else None
             )
-    
+
     def _render_paper_details(self):
         """Display individual paper details with status."""
         st.markdown("#### 📄 Downloaded Papers")
-        
+
         for paper in self.mapping["papers"]:
             with st.expander(
                 f"PMID:{paper['pmid']} - {paper['citation']['title'][:60]}...",
@@ -280,7 +280,7 @@ class EnhancedGEODatasetCard:
                 st.write(f"**Journal:** {paper['citation']['journal']} ({paper['citation']['year']})")
                 if paper['citation']['doi']:
                     st.write(f"**DOI:** [{paper['citation']['doi']}](https://doi.org/{paper['citation']['doi']})")
-                
+
                 # Status badges
                 col1, col2, col3 = st.columns(3)
                 with col1:
@@ -291,7 +291,7 @@ class EnhancedGEODatasetCard:
                     st.write(f"{status} Fulltext Parsed")
                 with col3:
                     st.write(f"📊 {paper['content_stats']['sections']} sections")
-                
+
                 # Content stats
                 st.caption(
                     f"Pages: {paper['content_stats']['pages']} | "
@@ -299,7 +299,7 @@ class EnhancedGEODatasetCard:
                     f"Tables: {paper['content_stats']['tables']} | "
                     f"Figures: {paper['content_stats']['figures']}"
                 )
-                
+
                 # View fulltext button
                 if paper['files']['fulltext_exists']:
                     if st.button(
@@ -307,38 +307,38 @@ class EnhancedGEODatasetCard:
                         key=f"view_{paper['pmid']}"
                     ):
                         self._show_fulltext(paper['pmid'])
-    
+
     def _render_ai_analysis(self):
         """Render AI analysis section with GPT-4 integration."""
         st.markdown("#### 🤖 AI-Powered Analysis")
-        
+
         if not self.mapping["ai_analysis"]["available"]:
             st.warning("Download PDFs first to enable AI analysis")
             return
-        
+
         # Check if analysis exists
         has_cached_analysis = (
             self.mapping["ai_analysis"]["summary"] is not None
         )
-        
+
         if has_cached_analysis:
             # Show cached analysis
             st.success("Analysis available (cached)")
-            
+
             with st.expander("📊 AI Summary", expanded=True):
                 st.markdown(self.mapping["ai_analysis"]["summary"])
-            
+
             with st.expander("💡 Key Insights"):
                 for insight in self.mapping["ai_analysis"]["insights"]:
                     st.write(f"• {insight}")
-            
+
             # Regenerate button
             if st.button("🔄 Regenerate Analysis", key=f"regen_{self.geo_id}"):
                 self._run_ai_analysis(force=True)
         else:
             # No analysis yet - show buttons
             col1, col2, col3 = st.columns(3)
-            
+
             with col1:
                 if st.button(
                     "🤖 Analyze Dataset",
@@ -346,7 +346,7 @@ class EnhancedGEODatasetCard:
                     help="Generate comprehensive AI analysis of all papers"
                 ):
                     self._run_ai_analysis(mode="comprehensive")
-            
+
             with col2:
                 if st.button(
                     "📝 Quick Summary",
@@ -354,7 +354,7 @@ class EnhancedGEODatasetCard:
                     help="Generate quick summary (faster)"
                 ):
                     self._run_ai_analysis(mode="summary")
-            
+
             with col3:
                 if st.button(
                     "🔬 Compare Methods",
@@ -362,7 +362,7 @@ class EnhancedGEODatasetCard:
                     help="Compare methodologies across papers"
                 ):
                     self._run_ai_analysis(mode="methods")
-    
+
     def _run_ai_analysis(
         self,
         mode: str = "comprehensive",
@@ -370,21 +370,21 @@ class EnhancedGEODatasetCard:
     ):
         """
         Run AI analysis on collected fulltext for this GEO dataset.
-        
+
         Args:
             mode: "comprehensive", "summary", or "methods"
             force: Force regenerate even if cached
         """
         from omics_oracle_v2.lib.ai.client import SummarizationClient
         from omics_oracle_v2.lib.fulltext.cache import ParsedCache
-        
+
         cache = ParsedCache()
         ai_client = SummarizationClient()
-        
+
         with st.spinner(f"Running AI analysis ({mode})..."):
             # Load fulltext for all papers
             fulltext_contents = []
-            
+
             for paper in self.mapping["papers"]:
                 if paper['files']['fulltext_exists']:
                     content = cache.get_normalized(paper['pmid'])
@@ -394,11 +394,11 @@ class EnhancedGEODatasetCard:
                             "title": paper['citation']['title'],
                             "content": content
                         })
-            
+
             if not fulltext_contents:
                 st.error("No fulltext available for analysis")
                 return
-            
+
             # Build analysis prompt based on mode
             if mode == "comprehensive":
                 prompt = self._build_comprehensive_prompt(fulltext_contents)
@@ -406,7 +406,7 @@ class EnhancedGEODatasetCard:
                 prompt = self._build_summary_prompt(fulltext_contents)
             elif mode == "methods":
                 prompt = self._build_methods_prompt(fulltext_contents)
-            
+
             # Call GPT-4
             analysis = ai_client._call_llm(
                 prompt=prompt,
@@ -416,39 +416,39 @@ class EnhancedGEODatasetCard:
                 ),
                 max_tokens=1500
             )
-            
+
             # Parse insights
             insights = self._extract_insights(analysis)
-            
+
             # Cache results
             self.mapping["ai_analysis"]["summary"] = analysis
             self.mapping["ai_analysis"]["insights"] = insights
             self.mapping["ai_analysis"]["last_run"] = datetime.now().isoformat()
-            
+
             # Save mapping
             self._save_mapping()
-            
+
             # Display results
             st.success("Analysis complete!")
-            
+
             with st.expander("📊 AI Analysis", expanded=True):
                 st.markdown(analysis)
-            
+
             with st.expander("💡 Key Insights"):
                 for insight in insights:
                     st.write(f"• {insight}")
-    
+
     def _build_comprehensive_prompt(self, fulltext_contents):
         """Build comprehensive analysis prompt."""
         # Extract key content from all papers
         paper_summaries = []
-        
+
         for paper in fulltext_contents:
             # Get abstract and key sections
             abstract = ""
             methods = ""
             results = ""
-            
+
             for section in paper['content'].sections:
                 if "abstract" in section.title.lower():
                     abstract = section.content[:500]
@@ -456,7 +456,7 @@ class EnhancedGEODatasetCard:
                     methods = section.content[:500]
                 elif "result" in section.title.lower():
                     results = section.content[:500]
-            
+
             paper_summaries.append(
                 f"**Paper: PMID:{paper['pmid']}**\n"
                 f"Title: {paper['title']}\n\n"
@@ -464,7 +464,7 @@ class EnhancedGEODatasetCard:
                 f"Methods (excerpt): {methods}\n\n"
                 f"Results (excerpt): {results}\n"
             )
-        
+
         prompt = f"""
 Analyze the following {len(fulltext_contents)} scientific papers that cite GEO dataset {self.geo_id}:
 
@@ -482,7 +482,7 @@ Provide a comprehensive analysis covering:
 
 5. **Impact**: What is the scientific significance of this dataset?
 
-6. **Recommendations**: 
+6. **Recommendations**:
    - Who should use this dataset?
    - What additional analyses could be done?
    - Any limitations to be aware of?
@@ -490,11 +490,11 @@ Provide a comprehensive analysis covering:
 Write for a researcher evaluating whether to use this dataset for their work.
 """
         return prompt
-    
+
     def _build_summary_prompt(self, fulltext_contents):
         """Build quick summary prompt."""
         titles = [f"- PMID:{p['pmid']}: {p['title']}" for p in fulltext_contents]
-        
+
         prompt = f"""
 Provide a concise 3-paragraph summary of GEO dataset {self.geo_id} based on these papers:
 
@@ -508,23 +508,23 @@ Include:
 Keep it brief and actionable (max 200 words).
 """
         return prompt
-    
+
     def _build_methods_prompt(self, fulltext_contents):
         """Build methods comparison prompt."""
         methods_sections = []
-        
+
         for paper in fulltext_contents:
             methods = ""
             for section in paper['content'].sections:
                 if "method" in section.title.lower():
                     methods = section.content[:800]
                     break
-            
+
             if methods:
                 methods_sections.append(
                     f"**PMID:{paper['pmid']}**\n{methods}\n"
                 )
-        
+
         prompt = f"""
 Compare the methodologies used across papers analyzing GEO dataset {self.geo_id}:
 
@@ -540,12 +540,12 @@ Analyze:
 Focus on technical details useful for researchers planning similar analyses.
 """
         return prompt
-    
+
     def _extract_insights(self, analysis: str) -> List[str]:
         """Extract bullet points from AI analysis."""
         insights = []
         lines = analysis.split('\n')
-        
+
         for line in lines:
             line = line.strip()
             # Look for bullet points or numbered items
@@ -555,33 +555,33 @@ Focus on technical details useful for researchers planning similar analyses.
                 insight = line.lstrip('•-0123456789. ')
                 if len(insight) > 10:  # Skip very short lines
                     insights.append(insight)
-        
+
         return insights[:10]  # Return top 10 insights
-    
+
     def _load_mapping(self) -> dict:
         """Load GEO-to-fulltext mapping from disk."""
         mapping_path = (
             f"data/geo_citation_collections/{self.geo_id}/mapping.json"
         )
-        
+
         if Path(mapping_path).exists():
             with open(mapping_path) as f:
                 return json.load(f)
         else:
             # Initialize empty mapping
             return self._create_empty_mapping()
-    
+
     def _save_mapping(self):
         """Save mapping to disk."""
         mapping_path = (
             f"data/geo_citation_collections/{self.geo_id}/mapping.json"
         )
-        
+
         Path(mapping_path).parent.mkdir(parents=True, exist_ok=True)
-        
+
         with open(mapping_path, 'w') as f:
             json.dump(self.mapping, f, indent=2)
-    
+
     def _create_empty_mapping(self) -> dict:
         """Create empty mapping structure."""
         return {
@@ -777,7 +777,7 @@ Compare methodologies across papers for {geo_id}:
   "version": "1.0",
   "created_at": "2025-10-12T10:00:00Z",
   "updated_at": "2025-10-12T12:30:00Z",
-  
+
   "geo_metadata": {
     "title": "Diabetes RNA-seq in pancreatic islets",
     "summary": "This study investigates...",
@@ -787,7 +787,7 @@ Compare methodologies across papers for {geo_id}:
     "submission_date": "2023-01-15",
     "pubmed_ids": ["12345678", "87654321"]
   },
-  
+
   "citation_context": {
     "total_citations": 2,
     "pdfs_downloaded": 2,
@@ -797,7 +797,7 @@ Compare methodologies across papers for {geo_id}:
     "total_words": 23450,
     "last_updated": "2025-10-12T12:30:00Z"
   },
-  
+
   "papers": [
     {
       "pmid": "12345678",
@@ -838,7 +838,7 @@ Compare methodologies across papers for {geo_id}:
       "normalized_status": "success"
     }
   ],
-  
+
   "ai_analysis": {
     "available": true,
     "last_run": "2025-10-12T12:30:00Z",

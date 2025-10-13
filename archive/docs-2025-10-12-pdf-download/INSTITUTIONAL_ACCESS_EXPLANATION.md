@@ -1,6 +1,6 @@
 # Institutional Access - How It Works
 
-**Date**: October 12, 2025  
+**Date**: October 12, 2025
 **Status**: ✅ Working as Designed
 
 ---
@@ -141,7 +141,7 @@ print(f"Institutional URL: {url}")
 python test_tiered_waterfall_live.py
 ```
 
-**✅ Pass if**: 
+**✅ Pass if**:
 - Attempt 1: institutional → HTTP 403
 - Attempt 2: PMC → Success
 

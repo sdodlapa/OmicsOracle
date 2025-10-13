@@ -24,7 +24,7 @@ print("\n🔄 Expected Flow:")
 print("   1. Try institutional → Get URL")
 print("   2. Download fails (HTTP 403)")
 print("   3. Retry waterfall, skip 'institutional'")
-print("   4. Try PMC → Get PMC PDF URL")  
+print("   4. Try PMC → Get PMC PDF URL")
 print("   5. Download succeeds!")
 print("   6. Count: 1 successful (only counts actual PDF)")
 

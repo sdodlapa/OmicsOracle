@@ -1,6 +1,6 @@
 # Smart Full-Text Extraction: Implementation Summary
 
-**Date:** October 11, 2025  
+**Date:** October 11, 2025
 **Status:** Phase 1 Complete ✅ | Phase 2 Ready 📋
 
 ---
@@ -23,7 +23,7 @@
 Current:  Check data/fulltext/pdf/{hash}.pdf ❌
           Try institutional (5s timeout) ❌
           Try APIs (10+ seconds)
-          
+
 Result:   Papers already downloaded get re-fetched! ❌
 ```
 
@@ -151,7 +151,7 @@ API calls: 0 (100% reduction!)
 ```python
 class SmartCache:
     """Multi-level cache manager."""
-    
+
     def find_local_file(publication):
         """
         Check in priority order:
@@ -159,7 +159,7 @@ class SmartCache:
         2. PDF files (all source subdirs)
         3. Hash-based cache (legacy)
         """
-        
+
     def save_file(content, publication, source):
         """
         Save to source-specific directory:
@@ -174,18 +174,18 @@ class SmartCache:
 ```python
 async def get_fulltext(publication):
     """Enhanced waterfall with smart caching."""
-    
+
     # PHASE 1: Check local cache (NEW)
     cached = await _check_cache(publication)  # Uses SmartCache!
     if cached.success:
         return cached  # <10ms, no API calls!
-    
+
     # PHASE 2: Free permanent sources
     pmc_result = await _try_pmc_xml(publication)
     if pmc_result.success:
         save_to_cache(pmc_result, source='pmc')  # Save for next time
         return pmc_result
-    
+
     # ... continue waterfall ...
     # Each source now SAVES files on success!
 ```
@@ -215,11 +215,11 @@ data/fulltext/
 
 ### Why Source-Based?
 
-**✅ Provenance:** Know exactly where each file came from  
-**✅ Legal Compliance:** Easy to remove Sci-Hub files if needed  
-**✅ Debugging:** "Show me all institutional downloads" is trivial  
-**✅ Quality Tracking:** Monitor success rates by source  
-**✅ Source-Specific Parsing:** Different strategies per source  
+**✅ Provenance:** Know exactly where each file came from
+**✅ Legal Compliance:** Easy to remove Sci-Hub files if needed
+**✅ Debugging:** "Show me all institutional downloads" is trivial
+**✅ Quality Tracking:** Monitor success rates by source
+**✅ Source-Specific Parsing:** Different strategies per source
 
 ### Alternatives Considered (See STORAGE_STRUCTURE_EVALUATION.md)
 
@@ -259,7 +259,7 @@ async def _try_arxiv(self, publication):
     if pdf_url:
         # Download PDF
         pdf_content = await download_file(pdf_url)
-        
+
         # NEW: Save to arxiv directory
         from lib.fulltext.smart_cache import SmartCache
         cache = SmartCache()
@@ -269,7 +269,7 @@ async def _try_arxiv(self, publication):
             source='arxiv',
             file_type='pdf'
         )
-        
+
         return FullTextResult(
             success=True,
             pdf_path=saved_path,  # Return saved path
@@ -295,26 +295,26 @@ class SmartCache:
     async def get_parsed_content(self, publication):
         """Get cached parsed content."""
         cache_file = self.parsed_dir / f"{publication.id}.json"
-        
+
         if cache_file.exists():
             data = json.loads(cache_file.read_text())
-            
+
             # Check if stale (90 days)
             if not is_stale(data):
                 return data
-        
+
         return None
-    
+
     async def save_parsed_content(self, publication, parsed_data):
         """Save parsed content to cache."""
         cache_file = self.parsed_dir / f"{publication.id}.json"
-        
+
         data = {
             'publication_id': publication.id,
             'cached_at': datetime.now().isoformat(),
             'content': parsed_data
         }
-        
+
         cache_file.write_text(json.dumps(data, indent=2))
 ```
 
@@ -408,7 +408,7 @@ CREATE TABLE fulltext_cache (
 - ✅ Future-proof (new features? re-parse with new code)
 - ✅ Flexibility (upgrade extractors anytime)
 
-**Cost:** $30/month for 1M papers vs $1/month text-only  
+**Cost:** $30/month for 1M papers vs $1/month text-only
 **Value:** Unlimited flexibility vs permanent data loss
 
 ### 2. Smart Waterfall: Check Cache First! ✅
@@ -459,7 +459,7 @@ CREATE TABLE fulltext_cache (
    # Add metrics
    cache_hits = 0
    api_calls = 0
-   
+
    # Track improvement
    print(f"Cache hit rate: {cache_hits / (cache_hits + api_calls) * 100}%")
    ```
@@ -533,29 +533,29 @@ System: "Here's the parsed content with tables and figures"
 
 ### 1. Cache Everything, Check Everything
 
-**Old Approach:** Try APIs, maybe cache result  
-**New Approach:** Check cache FIRST, save EVERYTHING  
+**Old Approach:** Try APIs, maybe cache result
+**New Approach:** Check cache FIRST, save EVERYTHING
 
 **Impact:** 10-100x performance improvement
 
 ### 2. Provenance > Simplicity (for Research)
 
-**Tempting:** Flat structure, simple code  
-**Better:** Source-based, clear provenance  
+**Tempting:** Flat structure, simple code
+**Better:** Source-based, clear provenance
 
 **Reason:** Research integrity requires source tracking
 
 ### 3. Hybrid Strategies Win
 
-**Not:** Text-only OR PDF-only  
-**Best:** PDFs (source) + Parsed JSON (cache)  
+**Not:** Text-only OR PDF-only
+**Best:** PDFs (source) + Parsed JSON (cache)
 
 **Why:** Flexibility + Performance
 
 ### 4. Database for Scale
 
-**Small Scale:** Filesystem is fine  
-**Large Scale:** Database metadata essential  
+**Small Scale:** Filesystem is fine
+**Large Scale:** Database metadata essential
 
 **Threshold:** ~10k papers → add database
 
@@ -619,11 +619,11 @@ All documentation available in `docs/analysis/`:
 
 ### Your System is Now
 
-**✅ Production-Ready:** SmartCache deployed and tested  
-**✅ Performant:** 10-100x faster for cached content  
-**✅ Scalable:** Designed for 1M+ papers  
-**✅ Flexible:** Can adapt to new requirements  
-**✅ Well-Documented:** Comprehensive guides and examples  
+**✅ Production-Ready:** SmartCache deployed and tested
+**✅ Performant:** 10-100x faster for cached content
+**✅ Scalable:** Designed for 1M+ papers
+**✅ Flexible:** Can adapt to new requirements
+**✅ Well-Documented:** Comprehensive guides and examples
 
 ### Ready to Deploy? 🚀
 

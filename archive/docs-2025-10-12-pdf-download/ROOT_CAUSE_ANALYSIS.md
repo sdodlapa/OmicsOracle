@@ -1,7 +1,7 @@
 # ROOT CAUSE ANALYSIS: Why PDF Downloads Don't Work
 
-**Date**: October 12, 2025  
-**Issue**: AI says "I don't have access to papers" even though we "downloaded" them  
+**Date**: October 12, 2025
+**Issue**: AI says "I don't have access to papers" even though we "downloaded" them
 **Severity**: CRITICAL - Core functionality broken
 
 ---
@@ -35,7 +35,7 @@ async def download_file(url: str, timeout: int = 30) -> Optional[bytes]:
 ```python
 class PDFDownloader:
     """Downloads PDFs from various open access sources"""
-    
+
     Features:
     - Multi-source support (Unpaywall, CORE, arXiv, bioRxiv)
     - PDF validation (signature check, size check)
@@ -59,17 +59,17 @@ class PDFDownloader:
 ## How We Got Here (Timeline)
 
 ### October 10, 2025 - The Fatal Decision
-**Commit**: Created `omics_oracle_v2/` structure  
-**Action**: Moved from `lib/` to `omics_oracle_v2/lib/`  
+**Commit**: Created `omics_oracle_v2/` structure
+**Action**: Moved from `lib/` to `omics_oracle_v2/lib/`
 **Mistake**: Didn't copy `pdf_downloader.py`, created simple `download_utils.py` instead
 
 ### October 11, 2025 - Compounding the Error
-**Commit**: Implemented FullTextManager  
-**Action**: Used new `download_utils.py` for downloads  
+**Commit**: Implemented FullTextManager
+**Action**: Used new `download_utils.py` for downloads
 **Result**: Downloads "succeeded" but returned URLs, not PDFs
 
 ### October 12, 2025 - Discovery
-**Issue**: User reports AI says "I don't have access to papers"  
+**Issue**: User reports AI says "I don't have access to papers"
 **Root Cause Found**: `pdf_path=None` because downloads return HTML, not PDFs
 
 ---
@@ -98,7 +98,7 @@ class PDFDownloader:
 
 ### Log Evidence:
 ```
-Expected `FullTextContent` but got `dict` with value 
+Expected `FullTextContent` but got `dict` with value
 {'pmid': '39997216', 'title': '...', 'pdf_path': None}
 ```
 
@@ -148,7 +148,7 @@ The institutional access DID work (found the DOI), but we never actually downloa
 class PublicationSearchPipeline:
     def __init__(self):
         self.pdf_downloader = PDFDownloader()  # Sophisticated
-        
+
     def _download_pdfs(self, results):
         download_report = await self.pdf_downloader.download_batch(
             publications, output_dir="data/pdfs"
@@ -185,7 +185,7 @@ Full-text content: 1 paper(s)
 
 But AI says:
 ```
-"Unfortunately, the full text details about the methods, 
+"Unfortunately, the full text details about the methods,
 results, and discussion are not available for this dataset"
 ```
 
@@ -259,7 +259,7 @@ results, and discussion are not available for this dataset"
 
 The old code handled:
 - Publisher redirects
-- PDF validation  
+- PDF validation
 - Retry logic
 - Source detection
 - Cache management

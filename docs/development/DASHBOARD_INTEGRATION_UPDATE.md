@@ -1,7 +1,7 @@
 # Dashboard Integration Update - Connect to Unified Search Pipeline
 
-**Date:** October 12, 2025  
-**Status:** NEEDS UPDATE  
+**Date:** October 12, 2025
+**Status:** NEEDS UPDATE
 **Priority:** HIGH
 
 ---
@@ -227,12 +227,12 @@ databases = st.multiselect(
 ```python
 def render(self, results: Dict[str, Any]) -> None:
     """Render search results with GEO datasets and publications."""
-    
+
     # Display GEO datasets first (if any)
     geo_datasets = results.get("geo_datasets", [])
     if geo_datasets:
         st.subheader(f"🧬 GEO Datasets ({len(geo_datasets)})")
-        
+
         for idx, dataset in enumerate(geo_datasets):
             with st.expander(
                 f"**{dataset['geo_id']}**: {dataset['title'][:100]}...",
@@ -248,22 +248,22 @@ def render(self, results: Dict[str, Any]) -> None:
                     st.metric("Platform", dataset.get("platform", "N/A")[:20])
                 with col4:
                     st.metric("Type", dataset.get("type", "N/A"))
-                
+
                 # Summary
                 st.markdown("**Summary:**")
                 st.write(dataset.get("summary", "No summary available")[:500])
-                
+
                 # PubMed IDs (links to publications)
                 pmids = dataset.get("pubmed_ids", [])
                 if pmids:
                     st.markdown("**Related Publications:**")
                     for pmid in pmids[:5]:  # Show first 5
                         st.markdown(f"- [PMID: {pmid}](https://pubmed.ncbi.nlm.nih.gov/{pmid}/)")
-                
+
                 # Download info
                 if dataset.get("has_raw_data"):
                     st.info(f"📊 {dataset.get('download_summary', 'Raw data available')}")
-                
+
                 # Action buttons
                 col1, col2, col3 = st.columns(3)
                 with col1:
@@ -287,9 +287,9 @@ def render(self, results: Dict[str, Any]) -> None:
                         key=f"pdfs_{dataset['geo_id']}",
                         help="Download full-text PDFs for related publications",
                     )
-        
+
         st.divider()
-    
+
     # Display publications (existing code)
     publications = results.get("publications", [])
     if publications:
@@ -304,7 +304,7 @@ def render(self, results: Dict[str, Any]) -> None:
 ```python
 def _get_geo_citations_and_pdfs(self, geo_id: str) -> None:
     """Get citations and download PDFs for a GEO dataset.
-    
+
     Args:
         geo_id: GEO series ID (e.g., "GSE123456")
     """
@@ -315,7 +315,7 @@ def _get_geo_citations_and_pdfs(self, geo_id: str) -> None:
                 GEOCitationConfig,
             )
             from pathlib import Path
-            
+
             # Configure pipeline
             config = GEOCitationConfig(
                 geo_max_results=1,  # Just this one dataset
@@ -326,33 +326,33 @@ def _get_geo_citations_and_pdfs(self, geo_id: str) -> None:
                 enable_unpaywall=True,
                 download_pdfs=True,  # Download PDFs!
             )
-            
+
             # Create pipeline
             pipeline = GEOCitationPipeline(config)
-            
+
             # Run collection (ASYNC!)
             import asyncio
             result = asyncio.run(pipeline.collect_for_geo_ids([geo_id]))
-            
+
             # Display results
             if result.collections:
                 collection = result.collections[0]
-                
+
                 st.success(
                     f"✅ Found {len(collection.publications)} publications "
                     f"({collection.pdfs_downloaded} PDFs downloaded)"
                 )
-                
+
                 # Show collection path
                 st.info(f"📁 Collection saved to: `{collection.storage_path}`")
-                
+
                 # Display publications with PDF download links
                 st.subheader("Publications & PDFs")
                 for pub in collection.publications:
                     with st.expander(f"{pub.title[:80]}..."):
                         st.write(f"**PMID:** {pub.pmid}")
                         st.write(f"**DOI:** {pub.doi}")
-                        
+
                         if pub.pdf_path:
                             pdf_path = Path(pub.pdf_path)
                             if pdf_path.exists():
@@ -364,11 +364,11 @@ def _get_geo_citations_and_pdfs(self, geo_id: str) -> None:
                                         file_name=pdf_path.name,
                                         mime="application/pdf",
                                     )
-                        
+
                         # View fulltext (if cached)
                         if st.button(f"View Fulltext", key=f"fulltext_{pub.pmid}"):
                             self._show_fulltext(pub.pmid)
-            
+
         except Exception as e:
             st.error(f"Failed to get citations/PDFs: {e}")
             import traceback
@@ -382,38 +382,38 @@ def _get_geo_citations_and_pdfs(self, geo_id: str) -> None:
 ```python
 def _show_fulltext(self, publication_id: str) -> None:
     """Display normalized fulltext for a publication.
-    
+
     Args:
         publication_id: Publication ID (PMID or PMC ID)
     """
     try:
         from omics_oracle_v2.lib.fulltext.parsed_cache import ParsedCache
         import asyncio
-        
+
         cache = ParsedCache()
-        
+
         # Get normalized content (Phase 5!)
         content = asyncio.run(cache.get_normalized(publication_id))
-        
+
         if content:
             st.subheader(f"📖 Fulltext: {publication_id}")
-            
+
             # Metadata
             metadata = content.get("metadata", {})
             st.caption(f"Format: {metadata.get('source_format', 'unknown')}")
             st.caption(f"Normalized: {metadata.get('normalized_at', 'N/A')}")
-            
+
             # Text content
             text = content.get("text", {})
-            
+
             # Title
             st.markdown(f"## {text.get('title', 'No title')}")
-            
+
             # Abstract
             if text.get("abstract"):
                 st.markdown("### Abstract")
                 st.write(text["abstract"])
-            
+
             # Sections
             sections = text.get("sections", {})
             if sections:
@@ -422,7 +422,7 @@ def _show_fulltext(self, publication_id: str) -> None:
                 for i, (section_name, section_text) in enumerate(sections.items()):
                     with tabs[i]:
                         st.write(section_text)
-            
+
             # Tables
             tables = content.get("tables", [])
             if tables:
@@ -430,7 +430,7 @@ def _show_fulltext(self, publication_id: str) -> None:
                 for i, table in enumerate(tables):
                     with st.expander(f"Table {i+1}: {table.get('caption', 'No caption')}"):
                         st.text(table.get("text", "No content"))
-            
+
             # Figures
             figures = content.get("figures", [])
             if figures:
@@ -439,7 +439,7 @@ def _show_fulltext(self, publication_id: str) -> None:
                     st.write(f"**Figure {i+1}:** {figure.get('caption', 'No caption')}")
         else:
             st.warning(f"No cached fulltext found for {publication_id}")
-            
+
     except Exception as e:
         st.error(f"Failed to load fulltext: {e}")
 ```
@@ -460,7 +460,7 @@ Dashboard SearchPanel
 GEO Search            Publication Search
 (UnifiedSearchPipeline) (PublicationSearchPipeline)
 │                     │                     │
-↓                     ↓                     
+↓                     ↓
 GEO Datasets          Publications
     ↓
 Click "Get Citations"
@@ -601,7 +601,7 @@ Display Normalized Content (Phase 5!)
 7. Click "Download PDF" to save PDF locally
 8. All data saved to `data/geo_citation_collections/GSE123456/`
 
-**Time saved:** 
+**Time saved:**
 - Manual search: ~30 minutes
 - With dashboard: ~2 minutes
 

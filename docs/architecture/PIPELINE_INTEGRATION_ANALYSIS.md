@@ -1,6 +1,6 @@
 # Pipeline Integration Analysis & Implementation Plan
 
-**Date:** October 12, 2025  
+**Date:** October 12, 2025
 **Purpose:** Trace current pipeline flow and identify integration points for automatic PDF download → parse → normalize → AI analysis
 
 ---
@@ -65,10 +65,10 @@ orchestrator.execute(orchestrator_input)
 ```
 1. QueryAgent (query preprocessing)
    ↓ Outputs: optimized_query, extracted_entities
-   
+
 2. SearchAgent (GEO search)
    ↓ Outputs: datasets (GEO metadata)
-   
+
 3. ReportAgent (generate summary)
    ↓ Outputs: GPT-4 analysis report
 ```
@@ -166,8 +166,8 @@ ReportAgent calls GPT-4 with GEO metadata + fulltext
 
 ### Integration Point 1: SearchAgent Output Enhancement
 
-**File:** `omics_oracle_v2/agents/search_agent.py`  
-**Location:** After `_process_unified()` returns results  
+**File:** `omics_oracle_v2/agents/search_agent.py`
+**Location:** After `_process_unified()` returns results
 **Action:** Add PDF download + parsing step
 
 **Current Code (Line 150-160):**
@@ -175,7 +175,7 @@ ReportAgent calls GPT-4 with GEO metadata + fulltext
 def _process_unified(self, input_data, context):
     pipeline = UnifiedSearchPipeline(config=self._unified_pipeline_config)
     result = pipeline.search(...)
-    
+
     return SearchOutput(
         datasets=result.datasets,
         total_results=result.total_results,
@@ -188,10 +188,10 @@ def _process_unified(self, input_data, context):
 def _process_unified(self, input_data, context):
     pipeline = UnifiedSearchPipeline(config=self._unified_pipeline_config)
     result = pipeline.search(...)
-    
+
     # NEW: Auto-download and parse PDFs for each dataset
     enriched_datasets = await self._enrich_with_fulltext(result.datasets)
-    
+
     return SearchOutput(
         datasets=enriched_datasets,  # Now includes fulltext!
         total_results=result.total_results,
@@ -201,7 +201,7 @@ def _process_unified(self, input_data, context):
 async def _enrich_with_fulltext(self, datasets: List[Dataset]) -> List[Dataset]:
     """
     Download and parse PDFs for each dataset's linked publications.
-    
+
     For each dataset:
     1. Get PMIDs from dataset.pubmed_ids
     2. Download PDFs using GEOCitationPipeline
@@ -210,10 +210,10 @@ async def _enrich_with_fulltext(self, datasets: List[Dataset]) -> List[Dataset]:
     5. Attach fulltext to dataset
     """
     from omics_oracle_v2.lib.pipelines.geo_citation_pipeline import GEOCitationPipeline
-    
+
     geo_pipeline = GEOCitationPipeline()
     enriched = []
-    
+
     for dataset in datasets:
         if dataset.pubmed_ids:
             # Download and parse PDFs
@@ -221,26 +221,26 @@ async def _enrich_with_fulltext(self, datasets: List[Dataset]) -> List[Dataset]:
                 geo_id=dataset.geo_id,
                 pmids=dataset.pubmed_ids
             )
-            
+
             # Get normalized fulltext
             fulltext_data = []
             for citation in citations:
                 if citation.pdf_path:
                     normalized = self._get_normalized_content(citation.pdf_path)
                     fulltext_data.append(normalized)
-            
+
             # Attach to dataset
             dataset.fulltext = fulltext_data  # NEW field!
-        
+
         enriched.append(dataset)
-    
+
     return enriched
 ```
 
 ### Integration Point 2: Dataset Model Enhancement
 
-**File:** `omics_oracle_v2/agents/models/search.py`  
-**Location:** Dataset class definition  
+**File:** `omics_oracle_v2/agents/models/search.py`
+**Location:** Dataset class definition
 **Action:** Add fulltext field
 
 **Current Model:**
@@ -282,7 +282,7 @@ class Dataset(BaseModel):
     samples: int
     pubmed_ids: List[str] = []
     relevance_score: float = 0.0
-    
+
     # NEW: Fulltext data from linked publications
     fulltext: List[FulltextData] = []
     fulltext_status: str = "not_downloaded"  # "downloading", "downloaded", "failed"
@@ -291,8 +291,8 @@ class Dataset(BaseModel):
 
 ### Integration Point 3: ReportAgent Enhancement
 
-**File:** `omics_oracle_v2/agents/report_agent.py`  
-**Location:** GPT-4 prompt construction  
+**File:** `omics_oracle_v2/agents/report_agent.py`
+**Location:** GPT-4 prompt construction
 **Action:** Include fulltext in analysis
 
 **Current Code:**
@@ -300,10 +300,10 @@ class Dataset(BaseModel):
 def _generate_report(self, datasets: List[Dataset]) -> str:
     prompt = f"""
     Analyze these GEO datasets:
-    
+
     {self._format_datasets_for_prompt(datasets)}
     """
-    
+
     # Only includes: GEO ID, title, summary, organism, platform, samples
 ```
 
@@ -312,14 +312,14 @@ def _generate_report(self, datasets: List[Dataset]) -> str:
 def _generate_report(self, datasets: List[Dataset]) -> str:
     prompt = f"""
     Analyze these GEO datasets with full-text paper content:
-    
+
     {self._format_datasets_with_fulltext(datasets)}
     """
 
 def _format_datasets_with_fulltext(self, datasets: List[Dataset]) -> str:
     """Format datasets including fulltext for GPT-4 analysis."""
     formatted = []
-    
+
     for dataset in datasets:
         sections = [
             f"## Dataset: {dataset.geo_id}",
@@ -330,7 +330,7 @@ def _format_datasets_with_fulltext(self, datasets: List[Dataset]) -> str:
             f"\n### GEO Summary:",
             dataset.summary,
         ]
-        
+
         # NEW: Include fulltext if available
         if dataset.fulltext:
             sections.append(f"\n### Linked Publications ({len(dataset.fulltext)} papers):")
@@ -344,16 +344,16 @@ def _format_datasets_with_fulltext(self, datasets: List[Dataset]) -> str:
                 ])
         else:
             sections.append("\n*No full-text available for this dataset*")
-        
+
         formatted.append("\n".join(sections))
-    
+
     return "\n\n---\n\n".join(formatted)
 ```
 
 ### Integration Point 4: Frontend Display Enhancement
 
-**File:** `omics_oracle_v2/api/static/dashboard.html`  
-**Location:** Results display section  
+**File:** `omics_oracle_v2/api/static/dashboard.html`
+**Location:** Results display section
 **Action:** Show fulltext download status
 
 **Current Display:**
@@ -377,7 +377,7 @@ def _format_datasets_with_fulltext(self, datasets: List[Dataset]) -> str:
     <p>🧬 Unknown organism</p>
     <p>🔬 GPL34281</p>
     <p>📊 8 samples</p>
-    
+
     <!-- NEW: Fulltext status indicator -->
     <div class="fulltext-status">
         <span class="status-icon">✓</span>
@@ -390,12 +390,12 @@ def _format_datasets_with_fulltext(self, datasets: List[Dataset]) -> str:
 ```javascript
 function displayResults(data) {
     const datasets = data.datasets || [];
-    
+
     const html = datasets.map(dataset => `
         <div class="dataset-card">
             <h3>${dataset.geo_id}</h3>
             <!-- ... existing fields ... -->
-            
+
             ${dataset.fulltext_count > 0 ? `
                 <div class="fulltext-status success">
                     ✓ ${dataset.fulltext_count} PDF(s) downloaded & parsed
@@ -407,7 +407,7 @@ function displayResults(data) {
             `}
         </div>
     `).join('');
-    
+
     document.getElementById('results').innerHTML = html;
 }
 ```

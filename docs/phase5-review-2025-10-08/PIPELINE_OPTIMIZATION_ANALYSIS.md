@@ -1,7 +1,7 @@
 # Pipeline Exploration and Optimization Analysis
 
-**Date:** October 8, 2025  
-**Focus:** End-to-end search pipeline performance analysis  
+**Date:** October 8, 2025
+**Focus:** End-to-end search pipeline performance analysis
 **Goal:** Identify optimization opportunities and enhancement areas
 
 ---
@@ -96,7 +96,7 @@ class QueryAgent(Agent[QueryInput, QueryOutput]):
 class BiomedicalNER:
     _instance = None
     _model = None
-    
+
     def __new__(cls):
         if cls._instance is None:
             cls._instance = super().__new__(cls)
@@ -112,11 +112,11 @@ class BiomedicalNER:
 
 def extract_entities(self, query, include_entity_linking=False):
     entities = self._extract_basic_entities(query)
-    
+
     if include_entity_linking:
         # Only fetch KB IDs when explicitly requested
         entities = self._link_to_knowledge_base(entities)
-    
+
     return entities
 ```
 **Impact:** Reduce latency when synonyms not needed
@@ -198,11 +198,11 @@ import asyncio
 # Batch fetch with concurrency limit
 async def fetch_metadata_batch(self, geo_ids, batch_size=10):
     semaphore = asyncio.Semaphore(batch_size)
-    
+
     async def fetch_one(geo_id):
         async with semaphore:
             return await self._geo_client.get_metadata(geo_id)
-    
+
     tasks = [fetch_one(geo_id) for geo_id in geo_ids]
     return await asyncio.gather(*tasks, return_exceptions=True)
 
@@ -221,23 +221,23 @@ class GEOClient:
     def __init__(self, settings):
         self.cache = AsyncRedisCache()
         self.cache_ttl = 7 * 24 * 3600  # 7 days (metadata rarely changes)
-    
+
     async def get_metadata(self, geo_id):
         # Try cache first
         cache_key = f"geo_metadata:{geo_id}"
         cached = await self.cache.get(cache_key)
         if cached:
             return cached
-        
+
         # Fetch from API
         metadata = await self._fetch_from_ncbi(geo_id)
-        
+
         # Cache for 7 days
         await self.cache.set(cache_key, metadata, ttl=self.cache_ttl)
         return metadata
 ```
 
-**Impact:** 
+**Impact:**
 - First search: 20-30s (cache miss)
 - Subsequent searches: <1s (cache hit)
 - Shared across users!
@@ -272,7 +272,7 @@ else:
     results = await self._keyword_search(query, input_data)
 ```
 
-**Impact:** 
+**Impact:**
 - 5-10s vs 20-30s (50-66% faster)
 - Better relevance
 - Requires vector index pre-built
@@ -284,7 +284,7 @@ def _optimize_query(self, search_terms):
     # Remove redundant terms
     # Use NCBI search syntax optimally
     # Limit results intelligently
-    
+
     # Example: Use MeSH terms when available
     if has_mesh_term(term):
         return f"{term}[MeSH]"  # More precise, faster
@@ -331,23 +331,23 @@ class DataAgent:
     def __init__(self, settings):
         self._scorer = QualityScorer(settings.quality)
         self._quality_cache = {}  # Simple in-memory cache
-    
+
     def _process_dataset(self, ranked_dataset, context):
         geo_id = ranked_dataset.dataset.geo_id
-        
+
         # Check cache
         if geo_id in self._quality_cache:
             return self._quality_cache[geo_id]
-        
+
         # Calculate quality
         processed = self._calculate_quality(ranked_dataset)
-        
+
         # Cache result
         self._quality_cache[geo_id] = processed
         return processed
 ```
 
-**Impact:** 
+**Impact:**
 - Same dataset in multiple searches: Instant
 - Batch searches: Faster
 
@@ -361,7 +361,7 @@ def calculate_quality_batch(self, datasets):
     # Vectorize calculations where possible
     sample_counts = np.array([d.sample_count for d in datasets])
     ages = np.array([d.get_age_days() for d in datasets])
-    
+
     # Batch score calculation
     scores = self._vectorized_score(sample_counts, ages, ...)
     return scores
@@ -410,15 +410,15 @@ class ReportAgent:
         # Generate cache key from datasets
         dataset_hash = hash(tuple(d.geo_id for d in datasets[:5]))
         cache_key = f"summary:{dataset_hash}:{input_data.report_type}"
-        
+
         # Try cache
         cached = await self.cache.get(cache_key)
         if cached:
             return cached  # <100ms vs 13-15s!
-        
+
         # Generate with GPT-4
         summary = await self._ai_client.summarize(...)
-        
+
         # Cache for 24h
         await self.cache.set(cache_key, summary, ttl=86400)
         return summary
@@ -435,12 +435,12 @@ class ReportAgent:
 async def _generate_summary_batch(self, datasets):
     # Current: 5 datasets × 3s each = 15s + 5× cost
     # Optimized: 1 call with all 5 = 3s + 1× cost
-    
+
     combined_text = "\n\n".join([
         f"Dataset {d.geo_id}: {d.title}\n{d.summary[:200]}"
         for d in datasets[:5]
     ])
-    
+
     summary = await self._ai_client.summarize(combined_text)
     return summary
 ```
@@ -454,16 +454,16 @@ async def _generate_summary_batch(self, datasets):
 ```python
 def should_use_gpt4(self, datasets, user_tier):
     # Only use GPT-4 when it adds value
-    
+
     if user_tier == "free":
         return False  # Use fallback for free users
-    
+
     if len(datasets) < 3:
         return False  # Not enough to summarize
-    
+
     if all(d.quality_score < 0.5 for d in datasets):
         return False  # Low quality, not worth cost
-    
+
     return True  # Premium user + good data = use GPT-4
 ```
 
@@ -668,22 +668,22 @@ from typing import List
 
 class GEOClient:
     async def fetch_metadata_batch(
-        self, 
-        geo_ids: List[str], 
+        self,
+        geo_ids: List[str],
         max_concurrent: int = 10
     ) -> List[GEOSeriesMetadata]:
         """
         Fetch metadata for multiple GEO IDs in parallel.
-        
+
         Args:
             geo_ids: List of GEO accession IDs
             max_concurrent: Maximum concurrent requests
-            
+
         Returns:
             List of metadata objects (None for failed requests)
         """
         semaphore = asyncio.Semaphore(max_concurrent)
-        
+
         async def fetch_one(geo_id: str):
             async with semaphore:
                 try:
@@ -691,10 +691,10 @@ class GEOClient:
                 except Exception as e:
                     logger.warning(f"Failed to fetch {geo_id}: {e}")
                     return None
-        
+
         tasks = [fetch_one(geo_id) for geo_id in geo_ids]
         results = await asyncio.gather(*tasks)
-        
+
         # Filter out None (failed requests)
         return [r for r in results if r is not None]
 ```
@@ -708,7 +708,7 @@ class GEOClient:
 
 # With:
 geo_datasets = await self._geo_client.fetch_metadata_batch(
-    top_ids, 
+    top_ids,
     max_concurrent=10
 )
 ```
@@ -728,28 +728,28 @@ class GEOClient:
             'metadata': 7 * 24 * 3600,      # 7 days
             'search_results': 3600,          # 1 hour
         }
-    
+
     async def get_metadata(self, geo_id: str) -> GEOSeriesMetadata:
         """Get metadata with Redis caching."""
         cache_key = f"geo:metadata:{geo_id}"
-        
+
         # Try cache first
         cached = await self.cache.get(cache_key)
         if cached:
             logger.debug(f"Cache hit for {geo_id}")
             return GEOSeriesMetadata(**cached)
-        
+
         # Fetch from NCBI
         logger.debug(f"Cache miss for {geo_id}, fetching from NCBI")
         metadata = await self._fetch_from_ncbi(geo_id)
-        
+
         # Cache for 7 days
         await self.cache.set(
-            cache_key, 
-            metadata.dict(), 
+            cache_key,
+            metadata.dict(),
             ttl=self.cache_ttl['metadata']
         )
-        
+
         return metadata
 ```
 
@@ -766,42 +766,42 @@ class SearchAgent:
         key_str = f"{search_query}:{max_results}"
         hash_key = hashlib.md5(key_str.encode()).hexdigest()
         return f"search:results:{hash_key}"
-    
+
     async def _cached_search(
-        self, 
-        search_query: str, 
+        self,
+        search_query: str,
         max_results: int
     ) -> Optional[SearchOutput]:
         """Try to get search results from cache."""
         cache_key = self._generate_search_cache_key(search_query, max_results)
         cached = await self.cache.get(cache_key)
-        
+
         if cached:
             logger.info(f"Search cache hit: {search_query[:50]}...")
             return SearchOutput(**cached)
-        
+
         return None
-    
+
     async def _process(self, input_data: SearchInput, context: AgentContext):
         # Try cache first
         search_query = self._build_search_query(input_data)
         cached_result = await self._cached_search(search_query, input_data.max_results)
-        
+
         if cached_result:
             context.set_metric("cache_hit", True)
             return cached_result
-        
+
         # Execute search
         result = await self._execute_search(input_data, context)
-        
+
         # Cache result
         cache_key = self._generate_search_cache_key(search_query, input_data.max_results)
         await self.cache.set(
-            cache_key, 
-            result.dict(), 
+            cache_key,
+            result.dict(),
             ttl=3600  # 1 hour
         )
-        
+
         return result
 ```
 
@@ -888,9 +888,9 @@ Track over time:
 
 ---
 
-**Status:** Ready for implementation  
-**Priority:** High (major performance gains available)  
-**Estimated Timeline:** 3 weeks (3 sprints)  
+**Status:** Ready for implementation
+**Priority:** High (major performance gains available)
+**Estimated Timeline:** 3 weeks (3 sprints)
 **Expected ROI:** Very High (70-80% time reduction, 75% cost reduction)
 
 **Ready to start with Sprint 1?**

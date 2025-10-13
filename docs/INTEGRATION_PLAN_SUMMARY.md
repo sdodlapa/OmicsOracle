@@ -1,5 +1,5 @@
 # Integration Plan - Executive Summary
-**Date:** October 12, 2025  
+**Date:** October 12, 2025
 **Audience:** Quick reference for implementation team
 
 ## My Understanding (Plain English)
@@ -181,16 +181,16 @@ For each PMID:
      └─ No → Try PMC API → PDF URL?
          ├─ Yes → Download PDF bytes
          └─ No → Mark as "not available"
-  
+
   2. Save PDF:
      data/pdfs/GSE123456/PMID_12345678.pdf
-  
+
   3. Parse PDF to text:
      PDFParser → raw text
-  
+
   4. Normalize format:
      ContentNormalizer → structured JSON
-  
+
   5. Cache:
      data/fulltext/parsed/PMID_12345678.json
      data/fulltext/parsed/PMID_12345678_normalized.json
@@ -416,7 +416,7 @@ data/
 **A:** NO - Only when user clicks "Download PDFs" for a specific result (lazy loading)
 
 ### Q: Where do we store files?
-**A:** 
+**A:**
 - PDFs: `data/pdfs/{geo_id}/PMID_*.pdf` (by GEO ID)
 - Fulltext: `data/fulltext/parsed/PMID_*.json` (by PMID)
 - Mapping: `data/geo_citation_collections/{geo_id}/citations.json`
@@ -425,7 +425,7 @@ data/
 **A:** Through **PMIDs** in GEO metadata → Citation metadata → PDF files → Fulltext
 
 ### Q: How do we avoid re-downloading?
-**A:** 
+**A:**
 - Check cache before fetching citations
 - Check disk before downloading PDFs
 - Use ParsedCache for normalized content

@@ -1,7 +1,7 @@
 # Citation Scoring & Ranking Methods: Comprehensive Analysis
 
-**Date:** October 11, 2025  
-**Purpose:** Evaluate state-of-the-art methods for scoring publications by citations and recency  
+**Date:** October 11, 2025
+**Purpose:** Evaluate state-of-the-art methods for scoring publications by citations and recency
 **Status:** Research & Critical Evaluation
 
 ---
@@ -34,7 +34,7 @@ Total Score = 0.40 * title_match + 0.30 * abstract_match + 0.20 * recency + 0.10
 if citations <= 100:
     score = (citations / 100) * 0.6
 
-# Square root: 100-1000 citations → 0.6-0.8 score  
+# Square root: 100-1000 citations → 0.6-0.8 score
 elif citations <= 1000:
     normalized = (citations - 100) / 900
     score = 0.6 + (sqrt(normalized) * 0.2)
@@ -461,9 +461,9 @@ else:
    max_component_contribution = 0.40  # No factor can contribute >40% to total score
    ```
 
-**Pros:** Minimal code change, addresses recency concern, low risk  
-**Cons:** Still simplistic, doesn't use citation quality  
-**Effort:** 2-4 hours implementation + testing  
+**Pros:** Minimal code change, addresses recency concern, low risk
+**Cons:** Still simplistic, doesn't use citation quality
+**Effort:** 2-4 hours implementation + testing
 
 #### Tier 2: Medium-Term (Month 2, 1-2 weeks)
 
@@ -473,7 +473,7 @@ else:
    paper_data = semantic_scholar.get_paper(doi)
    influential_citations = paper_data['influentialCitationCount']
    citation_velocity = paper_data['citationVelocity']
-   
+
    quality_score = influential_citations / max(total_citations, 1)
    combined_score = (quality_score * 0.5) + (velocity * 0.5)
    ```
@@ -483,7 +483,7 @@ else:
    # Get field-average citation count
    field = detect_field(paper.mesh_terms)  # "genomics", "immunology", etc
    field_avg = FIELD_CITATION_AVERAGES[field]  # Pre-computed from corpus
-   
+
    normalized_citations = citations / field_avg
    # Now 1.0 = average for field, 2.0 = 2x above average
    ```
@@ -495,9 +495,9 @@ else:
    author_boost = log(1 + mean(author_scores))  # Diminishing returns
    ```
 
-**Pros:** Leverages expert systems, higher quality signals  
-**Cons:** API dependencies, rate limits, data coverage gaps  
-**Effort:** 1-2 weeks implementation + validation  
+**Pros:** Leverages expert systems, higher quality signals
+**Cons:** API dependencies, rate limits, data coverage gaps
+**Effort:** 1-2 weeks implementation + validation
 
 #### Tier 3: Long-Term (Month 6+, 1-2 months)
 
@@ -516,9 +516,9 @@ else:
    - Freshness: Always include 1-2 recent papers in top 10
    - Coverage: Represent different subtopics
 
-**Pros:** Industry-grade quality, adaptive learning  
-**Cons:** Significant infrastructure, data collection, maintenance  
-**Effort:** 1-2 months + ongoing ML operations  
+**Pros:** Industry-grade quality, adaptive learning
+**Cons:** Significant infrastructure, data collection, maintenance
+**Effort:** 1-2 months + ongoing ML operations
 
 ---
 
@@ -643,11 +643,11 @@ else:
 1. **Research citation velocity calculation**
    - How to get "citations in last 3 years" efficiently?
    - OpenAlex API? Semantic Scholar API? Calculate ourselves?
-   
+
 2. **Prototype query intent detection**
    - Simple keyword rules first
    - Test with real queries from logs
-   
+
 3. **User survey**
    - Ask researchers: "What do you want to see first?"
    - Show example rankings, get feedback
@@ -657,11 +657,11 @@ else:
 1. **API integration evaluation**
    - Semantic Scholar: Free tier limits? Data coverage?
    - OpenAlex: Rate limits? Field quality?
-   
+
 2. **Benchmark against baselines**
    - Compare our rankings to PubMed, Google Scholar
    - Identify where we're better/worse
-   
+
 3. **User testing**
    - Real users, real queries
    - Measure: relevance, diversity, recency balance
@@ -688,7 +688,7 @@ We should implement **small, measurable improvements** and **validate with real 
 
 ---
 
-**Document Status:** DRAFT for review  
-**Next Action:** Review with team, decide on Week 4 scope  
+**Document Status:** DRAFT for review
+**Next Action:** Review with team, decide on Week 4 scope
 **Estimated Review Time:** 30-45 minutes
 

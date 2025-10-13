@@ -1,6 +1,6 @@
 # Hybrid Search Strategy: Why We Need Both GEO + Publication Search
 
-**Date**: October 12, 2025  
+**Date**: October 12, 2025
 **Issue**: Missing relevant datasets due to GEO-only search limitation
 
 ---
@@ -121,10 +121,10 @@ async def hybrid_search(query):
         search_geo_direct(query),
         search_via_publications(query)
     )
-    
+
     # Merge and deduplicate
     all_datasets = merge_and_deduplicate(geo_results, pub_results)
-    
+
     # Rank by relevance
     return rank_by_relevance(all_datasets, query)
 ```
@@ -154,7 +154,7 @@ if analysis.search_type == SearchType.PUBLICATIONS:
 async def extract_geo_accessions_from_publications(publications: List[Publication]) -> List[str]:
     """
     Extract GEO accessions (GSE IDs) from publication metadata.
-    
+
     Search in:
     1. Abstract text
     2. Full text (if available)
@@ -163,16 +163,16 @@ async def extract_geo_accessions_from_publications(publications: List[Publicatio
     """
     geo_ids = []
     pattern = re.compile(r'\bGSE\d{5,}\b')
-    
+
     for pub in publications:
         # Search abstract
         if pub.abstract:
             geo_ids.extend(pattern.findall(pub.abstract))
-        
+
         # Search full text
         if pub.full_text:
             geo_ids.extend(pattern.findall(pub.full_text))
-    
+
     return list(set(geo_ids))  # Deduplicate
 ```
 
@@ -182,29 +182,29 @@ async def search(self, query: str, max_results: int = 10) -> AgentResult:
     """
     Hybrid search: GEO direct + Publication-driven
     """
-    
+
     # Strategy 1: Direct GEO search
     geo_direct_task = self._search_geo_direct(query, max_results)
-    
+
     # Strategy 2: Publication-driven GEO search
     pub_driven_task = self._search_geo_via_publications(query, max_results)
-    
+
     # Run in parallel
     geo_direct, geo_via_pubs = await asyncio.gather(
         geo_direct_task,
         pub_driven_task,
         return_exceptions=True
     )
-    
+
     # Merge results
     all_datasets = self._merge_datasets(geo_direct, geo_via_pubs)
-    
+
     # Deduplicate by GEO ID
     unique_datasets = self._deduplicate_by_geo_id(all_datasets)
-    
+
     # Rank by relevance
     ranked = self._rank_datasets(unique_datasets, query)
-    
+
     return AgentResult(
         datasets=ranked[:max_results],
         metadata={
@@ -220,20 +220,20 @@ async def _search_geo_via_publications(self, query: str, max_results: int) -> Li
     """
     # 1. Search PubMed for relevant papers
     publications = await self._search_publications(query, max_results=50)
-    
+
     # 2. Extract GEO accessions from papers
     geo_ids = await self._extract_geo_accessions(publications)
-    
+
     # 3. Fetch those datasets
     datasets = await self._fetch_geo_datasets(geo_ids)
-    
+
     # 4. Attach publication context
     for dataset in datasets:
         dataset.linked_publications = [
-            pub for pub in publications 
+            pub for pub in publications
             if dataset.geo_id in (pub.abstract or "") + (pub.full_text or "")
         ]
-    
+
     return datasets
 ```
 
@@ -274,7 +274,7 @@ Publication-Driven Search:
   → Extract GSE215353 from paper
   → Fetch GSE215353 dataset
   → Find other papers with GSE124391, GSE130711
-  
+
 Combined Results: 12 datasets (9 + 3 new)
 Including: GSE215353, GSE124391, GSE130711 ✅
 ```

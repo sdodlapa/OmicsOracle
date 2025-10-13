@@ -130,11 +130,11 @@ When would you NEED PDF extraction?
    - arXiv papers (only have PDFs)
    - Publisher PDFs (Elsevier, Springer, etc.)
    - Older papers not in PMC
-   
+
 2. ✅ When you need embedded images/figures
    - PMC XML gives references ("figure1.jpg") but not the actual images
    - PDFs have embedded images you can extract
-   
+
 3. ✅ For scanned/older papers
    - Like PMC 2228570 (1979 paper with PDF-only body)
    - Would need OCR (pdf2image + pytesseract)
@@ -153,7 +153,7 @@ Based on your research use case (biomedical papers):
 INSTALL IMMEDIATELY: ⭐
 - camelot-py[cv] - For extracting complex scientific tables from PDFs
   pip install "camelot-py[cv]"
-  
+
 INSTALL IF NEEDED: ⚠️
 - pdf2image - For OCR on scanned papers (10-20% of older papers)
   pip install pdf2image

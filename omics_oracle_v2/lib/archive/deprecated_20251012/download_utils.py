@@ -22,7 +22,7 @@ Instead of:
 
 Use:
     from omics_oracle_v2.lib.storage.pdf.download_manager import PDFDownloadManager
-    
+
     pdf_downloader = PDFDownloadManager(validate_pdf=True)
     download_report = await pdf_downloader.download_batch(
         publications=[publication],
@@ -88,7 +88,7 @@ async def download_file(url: str, timeout: int = 30) -> Optional[bytes]:
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
             logger.debug("SSL verification disabled for download")
-        
+
         connector = aiohttp.TCPConnector(ssl=ssl_context) if ssl_context else None
         async with aiohttp.ClientSession(connector=connector) as session:
             async with session.get(url, timeout=aiohttp.ClientTimeout(total=timeout)) as response:

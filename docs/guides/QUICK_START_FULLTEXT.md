@@ -38,14 +38,14 @@ Click the **🤖 AI Analysis** button on any dataset card
 > "This dataset studies breast cancer using RNA-seq methodology with 8 samples from Homo sapiens."
 
 **After (With Full-Text):**
-> "This study employed Illumina HiSeq 4000 sequencing with 150bp paired-end reads, achieving an average depth of 50M reads per sample. The analysis identified 523 differentially expressed genes (FDR < 0.05), with significant enrichment in the BRCA1 DNA repair pathway (p = 0.001). 
-> 
+> "This study employed Illumina HiSeq 4000 sequencing with 150bp paired-end reads, achieving an average depth of 50M reads per sample. The analysis identified 523 differentially expressed genes (FDR < 0.05), with significant enrichment in the BRCA1 DNA repair pathway (p = 0.001).
+>
 > **Key Experimental Details:**
 > - Sample prep: RIN values >8.0 (high quality)
 > - Library: TruSeq stranded mRNA kit
 > - Replicates: n=4 biological replicates
 > - Analysis: DESeq2 with standard normalization
-> 
+>
 > **Recommendation:** Excellent choice for validation studies due to rigorous QC, appropriate statistical power, and detailed methodology that enables reproducibility."
 
 ---
@@ -139,8 +139,8 @@ Returns rich, specific insights
 - Badge will eventually show "⚠️ No full-text available"
 
 ### AI Analysis seems slow
-**Check:** 
-1. Do you see "✓ PDFs available"? 
+**Check:**
+1. Do you see "✓ PDFs available"?
    - Yes → Analysis should be fast (5-10s)
    - No → Wait for PDFs to download first
 
@@ -163,7 +163,7 @@ Returns rich, specific insights
 After searching, **wait 15-20 seconds** before clicking AI Analysis for best results
 
 ### 2. Use Specific Queries
-Better: "breast cancer RNA-seq BRCA1"  
+Better: "breast cancer RNA-seq BRCA1"
 Not: "cancer"
 
 More specific = better PMIDs = richer full-text
@@ -188,12 +188,12 @@ Click AI Analysis on 2-3 related datasets to compare methodologies
 9:01 AM - See "✓ 3 PDFs available" on top 5 datasets
 9:01 AM - Click AI Analysis on most relevant dataset
 9:01 AM - Get detailed methodology comparison:
-          "Dataset A used paired-end 150bp reads with 6 
-          biological replicates, while Dataset B used 
-          single-end 50bp with 3 replicates. Dataset A 
-          has higher statistical power (80% vs 60%) and 
-          better depth (50M vs 20M reads). Recommend 
-          Dataset A for validation due to superior QC 
+          "Dataset A used paired-end 150bp reads with 6
+          biological replicates, while Dataset B used
+          single-end 50bp with 3 replicates. Dataset A
+          has higher statistical power (80% vs 60%) and
+          better depth (50M vs 20M reads). Recommend
+          Dataset A for validation due to superior QC
           metrics (RIN 8.5±0.3 vs 7.2±0.8)."
 9:02 AM - Make informed decision, proceed with Dataset A
 ```

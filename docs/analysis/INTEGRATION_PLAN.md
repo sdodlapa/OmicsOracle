@@ -1,6 +1,6 @@
 # Complete Integration Plan: PDF Extraction → FullTextManager
 
-**Date:** October 11, 2025  
+**Date:** October 11, 2025
 **Status:** 📋 PLANNED → 🚀 READY TO EXECUTE
 
 ---
@@ -72,13 +72,13 @@ PDFExtractor (NEW)     → Parse PDFs with camelot/PyMuPDF
 class PDFExtractor:
     def extract_tables(pdf_path) -> List[Table]:
         """Use camelot stream + lattice methods"""
-        
+
     def extract_text(pdf_path) -> str:
         """Use PyMuPDF for fast extraction"""
-        
+
     def extract_images(pdf_path) -> List[Image]:
         """Extract embedded images with PyMuPDF"""
-        
+
     def extract_structured_content(pdf_path) -> FullTextContent:
         """Combine all methods into unified structure"""
 ```
@@ -104,10 +104,10 @@ async def get_fulltext_with_extraction(publication):
         result = await _try_pmc_xml(publication)
         if result.success:
             return result  # Has structured_content
-    
+
     # Priority 1-8: Get PDF URL (existing waterfall)
     pdf_result = await original_get_fulltext(publication)
-    
+
     # Priority 9: Parse PDF if we got one (NEW)
     if pdf_result.success and pdf_result.pdf_path:
         parsed = await _try_pdf_extraction(pdf_result.pdf_path)
@@ -116,7 +116,7 @@ async def get_fulltext_with_extraction(publication):
             pdf_result.metadata['structured_content'] = parsed.structured_content
             pdf_result.metadata['quality_score'] = parsed.quality_score
             return pdf_result
-    
+
     return pdf_result  # Return URL-only result
 ```
 
@@ -151,18 +151,18 @@ test_integration_with_manager()
 class PDFExtractor:
     """
     Extract structured content from PDF files.
-    
+
     Uses multiple libraries for best results:
     - camelot-py: Table extraction (99-100% accuracy)
     - PyMuPDF (fitz): Text/image extraction (fast)
     - pdfplumber: Fallback for simple tables
     """
-    
+
     def __init__(self):
         self.camelot_available = True
         self.pymupdf_available = True
         self.pdfplumber_available = True
-    
+
     def extract_tables(
         self,
         pdf_path: Path,
@@ -170,14 +170,14 @@ class PDFExtractor:
     ) -> List[Table]:
         """
         Extract tables from PDF.
-        
+
         Priority:
         1. camelot stream (borderless tables)
         2. camelot lattice (bordered tables)
         3. pdfplumber (simple fallback)
         """
         tables = []
-        
+
         if method in ["auto", "stream"]:
             # Try camelot stream first
             try:
@@ -189,7 +189,7 @@ class PDFExtractor:
                 tables.extend(self._convert_camelot_tables(camelot_tables))
             except Exception as e:
                 logger.debug(f"Camelot stream failed: {e}")
-        
+
         if not tables and method in ["auto", "lattice"]:
             # Try camelot lattice
             try:
@@ -201,26 +201,26 @@ class PDFExtractor:
                 tables.extend(self._convert_camelot_tables(camelot_tables))
             except Exception as e:
                 logger.debug(f"Camelot lattice failed: {e}")
-        
+
         if not tables and method in ["auto", "pdfplumber"]:
             # Fallback to pdfplumber
             tables.extend(self._extract_tables_pdfplumber(pdf_path))
-        
+
         return tables
-    
+
     def extract_text(self, pdf_path: Path) -> str:
         """Extract all text using PyMuPDF."""
         import fitz
-        
+
         text_parts = []
         doc = fitz.open(str(pdf_path))
-        
+
         for page in doc:
             text_parts.append(page.get_text())
-        
+
         doc.close()
         return "\n\n".join(text_parts)
-    
+
     def extract_images(
         self,
         pdf_path: Path,
@@ -228,33 +228,33 @@ class PDFExtractor:
     ) -> List[Figure]:
         """Extract embedded images."""
         import fitz
-        
+
         figures = []
         doc = fitz.open(str(pdf_path))
-        
+
         for page_num, page in enumerate(doc):
             images = page.get_images()
-            
+
             for img_idx, img in enumerate(images):
                 xref = img[0]
                 base_image = doc.extract_image(xref)
-                
+
                 # Save if output_dir provided
                 if output_dir:
                     img_path = output_dir / f"page{page_num+1}_img{img_idx+1}.{base_image['ext']}"
                     with open(img_path, 'wb') as f:
                         f.write(base_image['image'])
-                    
+
                     figures.append(Figure(
                         id=f"fig_p{page_num+1}_{img_idx+1}",
                         label=f"Figure {len(figures)+1}",
                         caption="",  # PDFs don't have structured captions
                         graphic_ref=str(img_path)
                     ))
-        
+
         doc.close()
         return figures
-    
+
     def extract_structured_content(
         self,
         pdf_path: Path,
@@ -263,26 +263,26 @@ class PDFExtractor:
     ) -> FullTextContent:
         """
         Extract all content into unified structure.
-        
+
         This mirrors ContentExtractor.extract_structured_content()
         for XML, but works with PDFs.
         """
         # Extract text
         full_text = self.extract_text(pdf_path)
-        
+
         # Split into sections (basic heuristic)
         sections = self._parse_sections_from_text(full_text)
-        
+
         # Extract tables
         tables = []
         if extract_tables:
             tables = self.extract_tables(pdf_path)
-        
+
         # Extract images
         figures = []
         if extract_images:
             figures = self.extract_images(pdf_path)
-        
+
         # Create FullTextContent
         content = FullTextContent(
             title="",  # PDFs don't have structured metadata
@@ -299,7 +299,7 @@ class PDFExtractor:
             pmid="",
             pmc=""
         )
-        
+
         return content
 ```
 
@@ -315,21 +315,21 @@ async def try_pdf_extraction(
 ) -> NewFullTextResult:
     """
     Extract structured content from PDF.
-    
+
     This is the PDF equivalent of try_pmc_xml_extraction().
     """
     from lib.fulltext.pdf_extractor import PDFExtractor
-    
+
     try:
         extractor = PDFExtractor()
-        
+
         # Extract structured content
         structured = extractor.extract_structured_content(
             pdf_path,
             extract_tables=extract_tables,
             extract_images=extract_images
         )
-        
+
         # Calculate quality
         full_text = structured.get_full_text()
         quality_indicators = {
@@ -339,7 +339,7 @@ async def try_pdf_extraction(
             'has_figures': len(structured.figures) > 0,
             'word_count': len(full_text.split())
         }
-        
+
         # Create result
         result = NewFullTextResult(
             success=True,
@@ -354,17 +354,17 @@ async def try_pdf_extraction(
             has_figures=quality_indicators['has_figures'],
             word_count=quality_indicators['word_count']
         )
-        
+
         result.quality_score = result.calculate_quality_score()
-        
+
         logger.info(
             f"PDF extraction: {len(structured.tables)} tables, "
             f"{len(structured.figures)} images, "
             f"quality={result.quality_score:.2f}"
         )
-        
+
         return result
-        
+
     except Exception as e:
         logger.error(f"PDF extraction failed: {e}")
         return NewFullTextResult(
@@ -376,22 +376,22 @@ async def try_pdf_extraction(
 def add_pdf_extraction_support(manager, cache_dir: Path = Path("data/fulltext")):
     """
     Add PDF parsing support to FullTextManager.
-    
+
     This extends the manager to parse PDFs when URLs are found,
     not just return the URL.
     """
-    
+
     async def _try_pdf_parse(self, pdf_path: Path):
         """Parse PDF content."""
         from omics_oracle_v2.lib.fulltext.manager import FullTextResult
-        
+
         # Use standalone PDF extraction
         new_result = await try_pdf_extraction(
             pdf_path,
             extract_tables=True,
             extract_images=True
         )
-        
+
         if new_result.success:
             metadata = {
                 'quality_score': new_result.quality_score,
@@ -402,7 +402,7 @@ def add_pdf_extraction_support(manager, cache_dir: Path = Path("data/fulltext"))
                 'word_count': new_result.word_count,
                 'structured_content': new_result.structured_content
             }
-            
+
             return FullTextResult(
                 success=True,
                 source="pdf_parsed",
@@ -415,28 +415,28 @@ def add_pdf_extraction_support(manager, cache_dir: Path = Path("data/fulltext"))
                 success=False,
                 error=new_result.error_message
             )
-    
+
     # Add method to manager
     manager._try_pdf_parse = _try_pdf_parse.__get__(manager, type(manager))
-    
+
     # Wrap original get_fulltext
     original_get_fulltext = manager.get_fulltext
-    
+
     async def get_fulltext_enhanced(self, publication):
         """Enhanced get_fulltext with PDF parsing."""
         if not self.initialized:
             await self.initialize()
-        
+
         # Try PMC XML first (if available)
         pmc_id = getattr(publication, 'pmc_id', None)
         if pmc_id and hasattr(self, '_try_pmc_xml'):
             result = await self._try_pmc_xml(publication)
             if result.success:
                 return result
-        
+
         # Try original waterfall (gets PDF URL/path)
         result = await original_get_fulltext(publication)
-        
+
         # If we got a PDF, try to parse it
         if result.success and result.pdf_path:
             parsed = await self._try_pdf_parse(result.pdf_path)
@@ -446,11 +446,11 @@ def add_pdf_extraction_support(manager, cache_dir: Path = Path("data/fulltext"))
                 result.metadata.update(parsed.metadata)
                 result.content = parsed.content
                 logger.info(f"✓ Enhanced with PDF parsing: {parsed.metadata.get('table_count', 0)} tables")
-        
+
         return result
-    
+
     manager.get_fulltext = get_fulltext_enhanced.__get__(manager, type(manager))
-    
+
     logger.info("PDF extraction support added to FullTextManager")
 ```
 

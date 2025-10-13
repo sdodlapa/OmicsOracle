@@ -24,9 +24,9 @@ async def test_session_fix():
     print("\n" + "=" * 60)
     print("TEST 1: Session Management Fix")
     print("=" * 60)
-    
+
     downloader = PDFDownloadManager(max_retries=2, validate_pdf=True)
-    
+
     # Test with a URL that might return HTML landing page
     test_pub = Publication(
         pmid="39997216",
@@ -36,12 +36,12 @@ async def test_session_fix():
         source="pubmed",
         fulltext_url="https://academic.oup.com/nar/article-pdf/53/4/gkaf101/61998162/gkaf101.pdf"
     )
-    
+
     output_dir = Path("data/test_pdfs")
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     result = await downloader._download_single(test_pub, test_pub.fulltext_url, output_dir)
-    
+
     if "Session is closed" in str(result.error):
         print("❌ FAILED: Session close error still occurs")
         print(f"   Error: {result.error}")
@@ -60,9 +60,9 @@ async def test_pmc_download():
     print("\n" + "=" * 60)
     print("TEST 2: PMC PDF Download")
     print("=" * 60)
-    
+
     downloader = PDFDownloadManager(max_retries=2, validate_pdf=True)
-    
+
     # PMC PDF URL
     pmc_pub = Publication(
         pmid="39997216",
@@ -72,12 +72,12 @@ async def test_pmc_download():
         source="pubmed",
         fulltext_url="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC11851118/pdf/"
     )
-    
+
     output_dir = Path("data/test_pdfs")
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     result = await downloader._download_single(pmc_pub, pmc_pub.fulltext_url, output_dir)
-    
+
     if result.success and result.pdf_path and result.pdf_path.exists():
         print("✅ PASSED: PMC PDF downloaded successfully")
         print(f"   Path: {result.pdf_path}")
@@ -94,11 +94,11 @@ def test_counting_logic():
     print("\n" + "=" * 60)
     print("TEST 3: Counting Logic (Code Review)")
     print("=" * 60)
-    
+
     # Read the agents.py file and check for the fix
     agents_file = Path(__file__).parent / "omics_oracle_v2/api/routes/agents.py"
     content = agents_file.read_text()
-    
+
     # Check if we skip entries without PDFs
     if "# CRITICAL FIX: Skip this publication" in content:
         print("✅ PASSED: Code has skip logic for missing PDFs")
@@ -113,9 +113,9 @@ async def main():
     print("\n" + "=" * 60)
     print("PDF DOWNLOAD FIXES VALIDATION")
     print("=" * 60)
-    
+
     results = []
-    
+
     # Test 1: Session fix
     try:
         result = await test_session_fix()
@@ -123,7 +123,7 @@ async def main():
     except Exception as e:
         print(f"❌ Test 1 ERROR: {e}")
         results.append(("Session Management", False))
-    
+
     # Test 2: PMC download
     try:
         result = await test_pmc_download()
@@ -131,7 +131,7 @@ async def main():
     except Exception as e:
         print(f"❌ Test 2 ERROR: {e}")
         results.append(("PMC Download", False))
-    
+
     # Test 3: Counting logic
     try:
         result = test_counting_logic()
@@ -139,26 +139,26 @@ async def main():
     except Exception as e:
         print(f"❌ Test 3 ERROR: {e}")
         results.append(("Counting Logic", False))
-    
+
     # Summary
     print("\n" + "=" * 60)
     print("SUMMARY")
     print("=" * 60)
-    
+
     for test_name, passed in results:
         status = "✅ PASSED" if passed else "❌ FAILED"
         print(f"{status}: {test_name}")
-    
+
     passed_count = sum(1 for _, passed in results if passed)
     total_count = len(results)
-    
+
     print(f"\nTotal: {passed_count}/{total_count} tests passed")
-    
+
     if passed_count == total_count:
         print("\n🎉 All tests passed! Ready to test in UI.")
     else:
         print(f"\n⚠️  {total_count - passed_count} test(s) failed. Review needed.")
-    
+
     return passed_count == total_count
 
 

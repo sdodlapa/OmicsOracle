@@ -386,7 +386,7 @@ mapping = {
 
 ### Q: "Are we mapping fulltext/PDFs to GEO IDs for context analysis?"
 
-**A: YES!** 
+**A: YES!**
 
 **Mapping structure:**
 ```
@@ -498,13 +498,13 @@ Display in expandable section
 
 **Implement enhanced architecture** because:
 
-✅ **Preserves previous work:** GEO metadata display unchanged  
-✅ **Adds major value:** AI analysis transforms dashboard into research tool  
-✅ **Context-aware:** Shows what's available for analysis  
-✅ **User-friendly:** Progressive disclosure (show when ready)  
-✅ **Future-proof:** Mapping enables advanced features later  
+✅ **Preserves previous work:** GEO metadata display unchanged
+✅ **Adds major value:** AI analysis transforms dashboard into research tool
+✅ **Context-aware:** Shows what's available for analysis
+✅ **User-friendly:** Progressive disclosure (show when ready)
+✅ **Future-proof:** Mapping enables advanced features later
 
-**Implementation time:** 8-10 hours total  
-**Value added:** Transforms search tool → research analysis platform  
+**Implementation time:** 8-10 hours total
+**Value added:** Transforms search tool → research analysis platform
 
 **Ready to implement?** 🚀

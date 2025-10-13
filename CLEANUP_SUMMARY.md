@@ -25,7 +25,7 @@ Consolidate and archive completed work on PDF download bug fixes to maintain cle
 ### Documentation (15 files)
 **PDF Download Session** → `archive/docs-2025-10-12-pdf-download/`
 - BUG_FIX_PDF_DOWNLOAD_COUNT.md
-- INSTITUTIONAL_ACCESS_EXPLANATION.md  
+- INSTITUTIONAL_ACCESS_EXPLANATION.md
 - PDF_DOWNLOAD_CLEANUP_SUMMARY.md
 - ROOT_CAUSE_ANALYSIS.md
 - SESSION_HANDOFF_PDF_DOWNLOAD.md

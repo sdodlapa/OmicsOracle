@@ -1,6 +1,6 @@
 # Tiered Waterfall Implementation - Complete
 
-**Date**: October 12, 2025  
+**Date**: October 12, 2025
 **Status**: ✅ Production Ready
 
 ---
@@ -28,7 +28,7 @@ tried_sources = []
 while not download_succeeded and attempt < max_attempts:
     # Get next URL, skipping ALL tried sources
     retry_result = await fulltext_manager.get_fulltext(pub, skip_sources=tried_sources)
-    
+
     # Try download
     if succeeds:
         break ✅
@@ -37,7 +37,7 @@ while not download_succeeded and attempt < max_attempts:
         # Loop continues → tries next source
 ```
 
-**Impact**: 
+**Impact**:
 - OLD: Stopped after 2 sources (~50% success rate)
 - NEW: Tries all 10+ sources until success or exhausted (~80-90% success rate)
 - **+30-40% coverage improvement**
@@ -160,11 +160,11 @@ The system tries sources in this order:
    ├─ Get URL ✓
    └─ Download PDF → HTTP 403 ❌
 
-2. RETRY: Try Source B (pmc) 
+2. RETRY: Try Source B (pmc)
    │  skip_sources = ['institutional']
    ├─ Get PMC OA URL via API ✓
    └─ Download PDF → Success! ✅
-   
+
 3. DONE: Mark as successful
 ```
 
@@ -178,10 +178,10 @@ tried_sources = ['institutional']
 while not download_succeeded:
     # Get next source, skipping tried ones
     result = await fulltext_manager.get_fulltext(
-        publication, 
+        publication,
         skip_sources=tried_sources
     )
-    
+
     # Try download
     if download_result.success:
         download_succeeded = True  # BREAK

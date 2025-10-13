@@ -1,6 +1,6 @@
 # Critical Evaluation: PDF Storage & Parsing Strategy
 
-**Date:** October 11, 2025  
+**Date:** October 11, 2025
 **Question:** Should we parse PDFs and save extracted text, or save PDFs locally then parse?
 
 ---
@@ -122,7 +122,7 @@ Download PDF → Save to disk → Parse when needed
    if table_extraction_failed:
        # Try different method
        tables = extract_with_pdfplumber(pdf)
-   
+
    if parser_bug_found:
        # Re-parse all affected papers
        for pdf in affected_pdfs:
@@ -183,29 +183,29 @@ class FullTextStorage:
         self.pdf_dir = Path("data/pdfs")           # Permanent
         self.cache_dir = Path("data/parsed")       # Cache
         self.db = Database()                       # Metadata only
-    
+
     async def get_fulltext(self, paper_id: str):
         """Get full-text with smart caching."""
-        
+
         # 1. Check cache first (fast path)
         cached = await self._check_cache(paper_id)
         if cached and not self._is_stale(cached):
             logger.info(f"✓ Cache hit: {paper_id}")
             return cached
-        
+
         # 2. Check if PDF exists
         pdf_path = self.pdf_dir / f"{paper_id}.pdf"
         if not pdf_path.exists():
             # Download PDF
             pdf_path = await self._download_pdf(paper_id)
-        
+
         # 3. Parse PDF (first time or cache stale)
         logger.info(f"Parsing PDF: {paper_id}")
         content = await self._parse_pdf(pdf_path)
-        
+
         # 4. Cache results
         await self._cache_content(paper_id, content)
-        
+
         # 5. Store metadata in DB (for search)
         await self.db.store_metadata(
             paper_id,
@@ -215,13 +215,13 @@ class FullTextStorage:
             pdf_path=str(pdf_path),
             parsed_at=datetime.now()
         )
-        
+
         return content
-    
+
     async def _cache_content(self, paper_id: str, content):
         """Cache parsed content."""
         cache_file = self.cache_dir / f"{paper_id}.json"
-        
+
         # Store structured content as JSON
         with open(cache_file, 'w') as f:
             json.dump({
@@ -233,7 +233,7 @@ class FullTextStorage:
                     'table_count': len(content.tables),
                 }
             }, f)
-    
+
     def _is_stale(self, cached) -> bool:
         """Check if cache needs refresh."""
         # Refresh if:
@@ -268,25 +268,25 @@ data/
 class CacheManager:
     def should_reparse(self, paper_id: str) -> bool:
         """Decide if PDF needs re-parsing."""
-        
+
         cached = self.get_cached(paper_id)
-        
+
         # No cache → parse
         if not cached:
             return True
-        
+
         # Parser upgraded → re-parse
         if cached['parser_version'] < CURRENT_PARSER_VERSION:
             return True
-        
+
         # Cache too old → re-parse (optional)
         if (datetime.now() - cached['cached_at']).days > 90:
             return True
-        
+
         # User requested fresh parse → re-parse
         if self.manual_invalidation_flag(paper_id):
             return True
-        
+
         return False
 ```
 
@@ -463,7 +463,7 @@ Alternative (local disk):
    Level 2: + Tables → 100KB
    Level 3: + Full text → 500KB
    Level 4: + Images → 5MB
-   
+
    # Most queries only need Level 1-2
    ```
 
@@ -491,16 +491,16 @@ class FullTextManager:
         cached = self._load_cache(publication.id)
         if cached:
             return cached
-        
+
         # Get PDF (download or from disk)
         pdf_path = await self._get_pdf(publication)
-        
+
         # Parse PDF
         content = await self._parse_pdf(pdf_path)
-        
+
         # Save to cache
         self._save_cache(publication.id, content)
-        
+
         return content
 ```
 
@@ -537,7 +537,7 @@ class BackgroundParser:
             'priority': 'low',
             'scheduled_at': datetime.now()
         })
-    
+
     async def worker(self):
         while True:
             task = await self.queue.get()
@@ -619,13 +619,13 @@ from datetime import datetime, timedelta
 class FullTextStorageManager:
     """
     Manages full-text storage with hybrid approach.
-    
+
     Strategy:
     1. Save PDFs permanently (source of truth)
     2. Cache parsed content (performance)
     3. Re-parse when needed (flexibility)
     """
-    
+
     def __init__(
         self,
         pdf_dir: Path = Path("data/fulltext/pdf"),
@@ -635,11 +635,11 @@ class FullTextStorageManager:
         self.pdf_dir = pdf_dir
         self.cache_dir = cache_dir
         self.cache_ttl = timedelta(days=cache_ttl_days)
-        
+
         # Ensure directories exist
         self.pdf_dir.mkdir(parents=True, exist_ok=True)
         self.cache_dir.mkdir(parents=True, exist_ok=True)
-    
+
     async def get_fulltext(
         self,
         paper_id: str,
@@ -647,7 +647,7 @@ class FullTextStorageManager:
     ) -> FullTextContent:
         """
         Get full-text content with smart caching.
-        
+
         Flow:
         1. Check cache (fast path)
         2. Check PDF exists
@@ -655,77 +655,77 @@ class FullTextStorageManager:
         4. Update cache
         5. Return content
         """
-        
+
         # Step 1: Check cache (unless force_reparse)
         if not force_reparse:
             cached = await self._load_from_cache(paper_id)
             if cached and not self._is_cache_stale(cached):
                 logger.debug(f"✓ Cache hit: {paper_id}")
                 return cached
-        
+
         # Step 2: Get PDF path
         pdf_path = await self._get_pdf_path(paper_id)
         if not pdf_path.exists():
             raise FileNotFoundError(f"PDF not found: {paper_id}")
-        
+
         # Step 3: Parse PDF
         logger.info(f"Parsing PDF: {paper_id}")
         from lib.fulltext.pdf_extractor import PDFExtractor
-        
+
         extractor = PDFExtractor()
         content = extractor.extract_structured_content(
             pdf_path,
             extract_tables=True,
             extract_images=False  # Optional, saves disk
         )
-        
+
         # Step 4: Cache results
         await self._save_to_cache(paper_id, content)
-        
+
         return content
-    
+
     async def _load_from_cache(self, paper_id: str) -> Optional[FullTextContent]:
         """Load parsed content from cache."""
         cache_file = self.cache_dir / f"{paper_id}.json"
-        
+
         if not cache_file.exists():
             return None
-        
+
         try:
             with open(cache_file, 'r') as f:
                 data = json.load(f)
-            
+
             # Reconstruct FullTextContent
             content = FullTextContent.from_dict(data['content'])
             content.metadata = data['metadata']
-            
+
             return content
-            
+
         except Exception as e:
             logger.warning(f"Cache load failed: {e}")
             return None
-    
+
     def _is_cache_stale(self, content: FullTextContent) -> bool:
         """Check if cached content needs refresh."""
         cached_at = datetime.fromisoformat(
             content.metadata.get('cached_at', '2000-01-01')
         )
-        
+
         age = datetime.now() - cached_at
-        
+
         # Refresh if older than TTL
         if age > self.cache_ttl:
             logger.info("Cache stale (age)")
             return True
-        
+
         # Refresh if parser version changed
         cached_version = content.metadata.get('parser_version', '0.0')
         if cached_version < CURRENT_PARSER_VERSION:
             logger.info("Cache stale (parser upgraded)")
             return True
-        
+
         return False
-    
+
     async def _save_to_cache(
         self,
         paper_id: str,
@@ -733,7 +733,7 @@ class FullTextStorageManager:
     ):
         """Save parsed content to cache."""
         cache_file = self.cache_dir / f"{paper_id}.json"
-        
+
         data = {
             'content': content.to_dict(),
             'metadata': {
@@ -743,12 +743,12 @@ class FullTextStorageManager:
                 'section_count': len(content.sections),
             }
         }
-        
+
         with open(cache_file, 'w') as f:
             json.dump(data, f, indent=2)
-        
+
         logger.debug(f"Cached: {paper_id} ({cache_file.stat().st_size} bytes)")
-    
+
     async def _get_pdf_path(self, paper_id: str) -> Path:
         """Get path to PDF file."""
         # Check multiple possible locations
@@ -758,26 +758,26 @@ class FullTextStorageManager:
             self.pdf_dir / "publisher" / f"{paper_id}.pdf",
             self.pdf_dir / f"{paper_id}.pdf",
         ]
-        
+
         for path in possible_paths:
             if path.exists():
                 return path
-        
+
         raise FileNotFoundError(f"PDF not found for {paper_id}")
-    
+
     async def invalidate_cache(self, paper_id: str):
         """Manually invalidate cache for a paper."""
         cache_file = self.cache_dir / f"{paper_id}.json"
         if cache_file.exists():
             cache_file.unlink()
             logger.info(f"Cache invalidated: {paper_id}")
-    
+
     def get_cache_stats(self) -> Dict[str, Any]:
         """Get cache statistics."""
         cache_files = list(self.cache_dir.glob("*.json"))
-        
+
         total_size = sum(f.stat().st_size for f in cache_files)
-        
+
         return {
             'cached_papers': len(cache_files),
             'total_size_mb': total_size / (1024 * 1024),

@@ -1,6 +1,6 @@
 # Citation Scoring: Implementation Comparisons
 
-**Companion Document to:** `citation_scoring_analysis.md`  
+**Companion Document to:** `citation_scoring_analysis.md`
 **Focus:** Concrete code examples and implementation details
 
 ---
@@ -27,17 +27,17 @@
 def _calculate_citation_score(self, citations: int) -> float:
     """
     3-tier dampening to prevent highly-cited papers from dominating.
-    
+
     Tier 1 (0-100): Linear growth
     - 0 citations → 0.0
-    - 50 citations → 0.3  
+    - 50 citations → 0.3
     - 100 citations → 0.6
-    
+
     Tier 2 (100-1000): Square root growth (slower)
     - 100 citations → 0.6
     - 500 citations → 0.73
     - 1000 citations → 0.8
-    
+
     Tier 3 (1000+): Logarithmic growth (slowest)
     - 1000 citations → 0.8
     - 10,000 citations → 0.9
@@ -46,13 +46,13 @@ def _calculate_citation_score(self, citations: int) -> float:
     if citations <= 100:
         # Linear: 0-100 citations map to 0.0-0.6
         return (citations / 100) * 0.6
-    
+
     elif citations <= 1000:
         # Square root: 100-1000 citations map to 0.6-0.8
         normalized = (citations - 100) / 900  # 0.0-1.0 range
         sqrt_scaled = sqrt(normalized)       # Slower growth
         return 0.6 + (sqrt_scaled * 0.2)     # 0.6-0.8 range
-    
+
     else:
         # Logarithmic: 1000+ citations map to 0.8-1.0
         log_score = log10(citations)         # log10(1000)=3.0, log10(100000)=5.0
@@ -81,7 +81,7 @@ Citations vs Score (Current Method)
 
 Legend:
   Linear region (0-100): Steep slope
-  Square root region (100-1000): Moderate slope  
+  Square root region (100-1000): Moderate slope
   Logarithmic region (1000+): Gentle slope
 ```
 
@@ -153,23 +153,23 @@ score_2020 = _calculate_citation_score(100)  # ~0.60
 
 ```python
 def _calculate_citation_velocity_score(
-    self, 
-    citations: int, 
+    self,
+    citations: int,
     publication_date: str
 ) -> float:
     """
     Score based on citation rate, not absolute count.
-    
+
     Hypothesis: 100 citations in 2 years > 500 citations in 20 years
     """
     age_years = self._get_age_years(publication_date)
-    
+
     # Avoid division by zero
     if age_years < 0.1:
         age_years = 0.1  # Treat <1 month as 0.1 years
-    
+
     citations_per_year = citations / age_years
-    
+
     # Tiered scoring based on velocity
     if citations_per_year >= 100:
         return 1.0  # Blockbuster (100+ cites/year)
@@ -190,10 +190,10 @@ def _calculate_citation_velocity_score(
 **Examples:**
 ```python
 # Recent high-velocity paper
-velocity_score(citations=100, age=2) 
+velocity_score(citations=100, age=2)
 # → 50 cites/year → 0.9 ✅ EXCELLENT
 
-# Old slow paper  
+# Old slow paper
 velocity_score(citations=500, age=20)
 # → 25 cites/year → 0.75 ✅ GOOD
 
@@ -221,16 +221,16 @@ def _calculate_citation_velocity_score(
 ) -> float:
     """
     Score based on RECENT citation activity.
-    
+
     Requires: Citations in last 3 years (from Semantic Scholar or OpenAlex)
     """
     recent_per_year = citations_last_3_years / 3
-    
+
     # Acceleration bonus: If recent rate > historical average
     if total_citations > 0:
         historical_rate = total_citations / max(self._get_age_years(...), 1)
         acceleration = recent_per_year / historical_rate
-        
+
         if acceleration > 2.0:
             bonus = 1.3  # Citations accelerating!
         elif acceleration > 1.5:
@@ -239,7 +239,7 @@ def _calculate_citation_velocity_score(
             bonus = 1.0
     else:
         bonus = 1.0
-    
+
     # Score with acceleration bonus
     raw_score = self._citations_per_year_to_score(recent_per_year)
     return min(raw_score * bonus, 1.0)
@@ -253,7 +253,7 @@ historical_rate = 100 / 5 = 20 cites/year historically
 acceleration = 20 / 20 = 1.0  # Steady
 score = _citations_per_year_to_score(20) = 0.75  # No bonus
 
-# Hot paper: 90 recent citations, 100 total, 5 years old  
+# Hot paper: 90 recent citations, 100 total, 5 years old
 recent_rate = 90 / 3 = 30 cites/year recently
 historical_rate = 100 / 5 = 20 cites/year historically
 acceleration = 30 / 20 = 1.5  # Accelerating!
@@ -261,7 +261,7 @@ score = _citations_per_year_to_score(30) * 1.15 = 0.8 * 1.15 = 0.92  ✅
 
 # Declining classic: 10 recent citations, 1000 total, 20 years old
 recent_rate = 10 / 3 = 3.3 cites/year recently
-historical_rate = 1000 / 20 = 50 cites/year historically  
+historical_rate = 1000 / 20 = 50 cites/year historically
 acceleration = 3.3 / 50 = 0.066  # Declining!
 # No acceleration bonus, just use recent rate
 score = _citations_per_year_to_score(3.3) = 0.4  ✅ Correctly penalized
@@ -313,25 +313,25 @@ import asyncio
 class SemanticScholarClient:
     """
     Semantic Scholar API client for enhanced citation metrics.
-    
+
     Rate Limits (Free Tier):
     - 100 requests per 5 minutes
     - 1 request per second
-    
+
     Cost: FREE (no API key required for basic access)
     """
-    
+
     BASE_URL = "https://api.semanticscholar.org/graph/v1"
-    
+
     def __init__(self, api_key: Optional[str] = None):
         self.api_key = api_key  # Optional, increases rate limits
         self.client = httpx.AsyncClient(timeout=10.0)
         self._last_request_time = 0
-        
+
     async def get_paper_metrics(self, doi: str) -> dict:
         """
         Get enhanced metrics for a paper by DOI.
-        
+
         Returns:
             {
                 'citation_count': 58000,
@@ -345,7 +345,7 @@ class SemanticScholarClient:
         now = time.time()
         if now - self._last_request_time < 1.0:
             await asyncio.sleep(1.0 - (now - self._last_request_time))
-        
+
         url = f"{self.BASE_URL}/paper/DOI:{doi}"
         params = {
             'fields': 'citationCount,influentialCitationCount,citationStats,authors,fieldsOfStudy'
@@ -353,14 +353,14 @@ class SemanticScholarClient:
         headers = {}
         if self.api_key:
             headers['x-api-key'] = self.api_key
-        
+
         response = await self.client.get(url, params=params, headers=headers)
         self._last_request_time = time.time()
-        
+
         if response.status_code == 404:
             return None  # Paper not found
         response.raise_for_status()
-        
+
         data = response.json()
         return {
             'citation_count': data.get('citationCount', 0),
@@ -386,7 +386,7 @@ def _calculate_enhanced_citation_score(
 ) -> Tuple[float, dict]:
     """
     Multi-dimensional citation scoring using Semantic Scholar data.
-    
+
     Components:
     1. Citation velocity (recent activity)
     2. Citation quality (influential citations)
@@ -395,24 +395,24 @@ def _calculate_enhanced_citation_score(
     # Component 1: Velocity (40% weight)
     recent_per_year = citations_last_3_years / 3
     velocity_score = min(recent_per_year / 50, 1.0)  # 50 cites/year = max
-    
+
     # Component 2: Quality (40% weight)
     if total_citations > 0:
         quality_ratio = influential_citations / total_citations
     else:
         quality_ratio = 0
     quality_score = quality_ratio  # Already 0-1 range
-    
+
     # Component 3: Total citations (20% weight)
     total_score = self._calculate_citation_score(total_citations)  # Our existing method
-    
+
     # Weighted combination
     combined = (
         velocity_score * 0.40 +
         quality_score * 0.40 +
         total_score * 0.20
     )
-    
+
     breakdown = {
         'velocity': velocity_score,
         'quality': quality_score,
@@ -421,7 +421,7 @@ def _calculate_enhanced_citation_score(
         'recent_per_year': recent_per_year,
         'influential_ratio': quality_ratio
     }
-    
+
     return combined, breakdown
 ```
 
@@ -437,7 +437,7 @@ combined = 0.93 * 0.4 + 0.80 * 0.4 + 0.65 * 0.2 = 0.822  ✅ EXCELLENT
 
 # Paper B: Old highly-cited but low quality
 # 2005 publication, 5000 total citations, 500 influential, 100 in last 3 years
-velocity = 100 / 3 / 50 = 0.67  # 33 cites/year  
+velocity = 100 / 3 / 50 = 0.67  # 33 cites/year
 quality = 500 / 5000 = 0.10     # Only 10% influential
 total = 0.88                     # From 3-tier dampening
 combined = 0.67 * 0.4 + 0.10 * 0.4 + 0.88 * 0.2 = 0.484  ✅ MODERATE
@@ -492,20 +492,20 @@ FIELD_CITATION_STATS = {
 def get_field_percentile(citations: int, field: str) -> float:
     """
     Convert citations to percentile within field.
-    
+
     Returns 0-1 score based on field distribution.
     """
     if field not in FIELD_CITATION_STATS:
         # Unknown field: Use absolute citation score
         return _calculate_citation_score(citations)
-    
+
     median, p75, p95 = FIELD_CITATION_STATS[field]
-    
+
     if citations < median:
         # Below median: 0-0.5 range
         return (citations / median) * 0.5
     elif citations < p75:
-        # Median to 75th: 0.5-0.75 range  
+        # Median to 75th: 0.5-0.75 range
         normalized = (citations - median) / (p75 - median)
         return 0.5 + (normalized * 0.25)
     elif citations < p95:
@@ -556,11 +556,11 @@ def detect_field_from_mesh(mesh_terms: List[str]) -> str:
         'Diabetes Mellitus': 'endocrinology',
         # ... hundreds more mappings
     }
-    
+
     for term in mesh_terms:
         if term in MESH_TO_FIELD:
             return MESH_TO_FIELD[term]
-    
+
     return 'general_biology'  # Default
 ```
 
@@ -601,27 +601,27 @@ field = max(
 def detect_query_intent(query: str) -> str:
     """
     Classify user query into intent categories.
-    
+
     Returns: 'review', 'recent', 'method', 'dataset', 'balanced'
     """
     query_lower = query.lower()
-    
+
     # Review intent: User wants overview/summary
     if any(kw in query_lower for kw in ['review', 'overview', 'survey', 'meta-analysis']):
         return 'review'
-    
+
     # Recent intent: User wants latest research
     if any(kw in query_lower for kw in ['recent', 'latest', 'new', '2024', '2025']):
         return 'recent'
-    
+
     # Method intent: User wants protocols/techniques
     if any(kw in query_lower for kw in ['method', 'protocol', 'technique', 'how to', 'analysis']):
         return 'method'
-    
+
     # Dataset intent: User wants data, not papers
     if any(kw in query_lower for kw in ['dataset', 'data', 'GSE', 'GEO']):
         return 'dataset'
-    
+
     # Default: Balanced
     return 'balanced'
 
@@ -661,7 +661,7 @@ def get_intent_weights(intent: str) -> dict:
             'recency': 0.15,    # Moderate recency weight
         }
     }
-    
+
     return INTENT_WEIGHTS.get(intent, INTENT_WEIGHTS['balanced'])
 ```
 
@@ -679,14 +679,14 @@ async def rank_publications(
     # Detect user intent from query
     intent = detect_query_intent(query)
     weights = get_intent_weights(intent)
-    
+
     # Update ranker weights
     self.weights = weights
-    
+
     # Score publications
     for pub in publications:
         pub.score = self._score_publication(pub, query)
-    
+
     # Sort by score
     return sorted(publications, key=lambda p: p.score, reverse=True)
 ```
@@ -699,7 +699,7 @@ intent = 'review'
 weights = {'title': 0.30, 'abstract': 0.20, 'citations': 0.40, 'recency': 0.10}
 # → Highly-cited review papers rank highest
 
-# Query 2: "recent Alzheimer's breakthroughs 2024"  
+# Query 2: "recent Alzheimer's breakthroughs 2024"
 intent = 'recent'
 weights = {'title': 0.35, 'abstract': 0.25, 'citations': 0.05, 'recency': 0.35}
 # → Papers from 2024 rank highest regardless of citations
@@ -736,28 +736,28 @@ def _calculate_citation_component(
 ) -> Tuple[float, dict]:
     """
     Enhanced citation scoring with velocity.
-    
+
     Combines:
     - Absolute citation count (dampened)
     - Citations per year (velocity)
     """
     # Existing method: absolute citations
     absolute_score = self._calculate_citation_score(citations)
-    
+
     # New: citations per year
     citations_per_year = citations / max(age_years, 0.1)
     velocity_score = min(citations_per_year / 50, 1.0)  # 50/year = max
-    
+
     # Weighted combination: 60% absolute, 40% velocity
     combined = absolute_score * 0.6 + velocity_score * 0.4
-    
+
     breakdown = {
         'absolute': absolute_score,
         'velocity': velocity_score,
         'citations_per_year': citations_per_year,
         'combined': combined
     }
-    
+
     return combined, breakdown
 
 # Then use intent-aware weights
@@ -773,8 +773,8 @@ score = (
 )
 ```
 
-**Effort:** 4-6 hours  
-**Risk:** Low (all calculations local, no API dependencies)  
+**Effort:** 4-6 hours
+**Risk:** Low (all calculations local, no API dependencies)
 **Impact:** Medium (improves recency handling, query-specific optimization)
 
 ### Tier 2: API Integration (Month 2, 1 week)
@@ -789,7 +789,7 @@ async def enrich_with_metrics(self, publications: List[Publication]):
     Enhance publications with Semantic Scholar metrics.
     """
     ss_client = SemanticScholarClient()
-    
+
     for pub in publications:
         if pub.doi:
             metrics = await ss_client.get_paper_metrics(pub.doi)
@@ -808,8 +808,8 @@ def _calculate_enhanced_citation_score(self, pub: Publication):
         return self._calculate_citation_score(pub.citations)
 ```
 
-**Effort:** 1 week  
-**Risk:** Medium (API rate limits, data coverage)  
+**Effort:** 1 week
+**Risk:** Medium (API rate limits, data coverage)
 **Impact:** High (significant quality improvement)
 
 ### Tier 3: NOT RECOMMENDED (Yet)
@@ -840,22 +840,22 @@ def test_recent_paper_beats_old_paper_with_same_velocity():
     old paper (20 years, 1000 cites) - both have 50 cites/year
     """
     ranker = PublicationRanker()
-    
+
     recent = Publication(
         title="Recent breakthrough",
         citations=100,
         publication_date="2023-01-01"
     )
-    
+
     old = Publication(
         title="Old classic",
         citations=1000,
         publication_date="2005-01-01"
     )
-    
+
     recent_score = ranker._calculate_citation_component(100, 2.0)
     old_score = ranker._calculate_citation_component(1000, 20.0)
-    
+
     # Velocity is same (50 cites/year), scores should be close
     assert abs(recent_score - old_score) < 0.1
 
@@ -871,17 +871,17 @@ def test_accelerating_paper_beats_declining_paper():
         citations_last_3_years=150,  # 50/year recently
         publication_date="2020-01-01"  # 5 years old
     )
-    
+
     declining = Publication(
         title="Fading classic",
         citations=2000,
         citations_last_3_years=100,  # 33/year recently (was 400/year historically)
         publication_date="2020-01-01"  # Same age
     )
-    
+
     acc_score = ranker._calculate_enhanced_citation_score(accelerating)
     dec_score = ranker._calculate_enhanced_citation_score(declining)
-    
+
     assert acc_score > dec_score
 
 
@@ -893,11 +893,11 @@ def test_query_intent_changes_ranking():
         Publication(title="Review of cancer genomics", citations=5000, date="2010-01-01"),
         Publication(title="Novel cancer mutation discovery", citations=50, date="2024-01-01")
     ]
-    
+
     # Intent: review → old highly-cited paper wins
     review_ranked = ranker.rank_publications(papers, query="review of cancer")
     assert review_ranked[0].title == "Review of cancer genomics"
-    
+
     # Intent: recent → new paper wins
     recent_ranked = ranker.rank_publications(papers, query="recent cancer discoveries 2024")
     assert recent_ranked[0].title == "Novel cancer mutation discovery"
@@ -934,13 +934,13 @@ def test_ranking_matches_expert_judgment():
     for test_case in GROUND_TRUTH_QUERIES:
         results = search_publications(test_case['query'])
         top_10_titles = [r.title for r in results[:10]]
-        
+
         # At least 2 of the expected papers should be in top 10
         matches = sum(
             1 for expected in test_case['expected_top_papers']
             if any(expected.lower() in title.lower() for title in top_10_titles)
         )
-        
+
         assert matches >= 2, f"Only {matches} expected papers in top 10 for: {test_case['query']}"
 ```
 

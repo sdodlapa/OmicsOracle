@@ -202,7 +202,7 @@
             .auth-container {
                 padding: 30px 20px;
             }
-            
+
             .logo h1 {
                 font-size: 28px;
             }
@@ -222,12 +222,12 @@
         <form id="login-form">
             <div class="form-group">
                 <label for="email">Email Address</label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    name="email" 
-                    placeholder="Enter your email" 
-                    required 
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="Enter your email"
+                    required
                     autocomplete="email"
                     autofocus
                 >
@@ -235,12 +235,12 @@
 
             <div class="form-group">
                 <label for="password">Password</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
-                    placeholder="Enter your password" 
-                    required 
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    placeholder="Enter your password"
+                    required
                     autocomplete="current-password"
                 >
             </div>
@@ -308,15 +308,15 @@
         // Login form handler
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const loginBtn = document.getElementById('login-btn');
-            
+
             // Disable button and show loading
             loginBtn.disabled = true;
             loginBtn.innerHTML = '<span class="loading"></span>';
-            
+
             try {
                 const response = await fetch('http://localhost:8000/api/auth/login', {
                     method: 'POST',
@@ -328,22 +328,22 @@
                         password: password
                     })
                 });
-                
+
                 const data = await response.json();
-                
+
                 if (!response.ok) {
                     throw new Error(data.detail || 'Login failed');
                 }
-                
+
                 // Store token
                 setToken(data.access_token);
-                
+
                 // Show success and redirect
                 showSuccess('Login successful! Redirecting...');
                 setTimeout(() => {
                     window.location.href = '/dashboard';
                 }, 500);
-                
+
             } catch (error) {
                 showError(error.message);
                 loginBtn.disabled = false;

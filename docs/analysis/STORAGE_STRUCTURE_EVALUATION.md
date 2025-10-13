@@ -1,6 +1,6 @@
 # Storage Structure Evaluation: Source-Based vs Alternatives
 
-**Date:** October 11, 2025  
+**Date:** October 11, 2025
 **Question:** Is source-based directory structure the best approach for our use case?
 
 ---
@@ -272,19 +272,19 @@ CREATE TABLE fulltext_cache (
     doi TEXT,
     pmid TEXT,
     pmc_id TEXT,
-    
+
     -- File info
     file_path TEXT NOT NULL,
     file_type TEXT NOT NULL,      -- 'pdf', 'xml', 'nxml'
     file_source TEXT NOT NULL,    -- 'arxiv', 'pmc', 'institutional', etc.
     file_hash TEXT,               -- SHA256 for integrity
     file_size_bytes INTEGER,
-    
+
     -- Timestamps
     downloaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     parsed_at TIMESTAMP,
     last_accessed TIMESTAMP,
-    
+
     -- Content metadata
     has_fulltext BOOLEAN DEFAULT TRUE,
     has_tables BOOLEAN DEFAULT FALSE,
@@ -292,7 +292,7 @@ CREATE TABLE fulltext_cache (
     figure_count INTEGER DEFAULT 0,
     word_count INTEGER,
     quality_score REAL,
-    
+
     -- Indexing
     INDEX idx_doi (doi),
     INDEX idx_pmc_id (pmc_id),
@@ -314,10 +314,10 @@ CREATE TABLE file_duplicates (
 ```python
 class SmartCacheWithDB:
     """Enhanced SmartCache with database metadata."""
-    
+
     def find_local_file(self, publication):
         """Check DB first, then filesystem."""
-        
+
         # FAST PATH: Check database
         cached = self.db.get_cached_file(publication.id)
         if cached and Path(cached['file_path']).exists():
@@ -330,10 +330,10 @@ class SmartCacheWithDB:
                 source=cached['file_source'],
                 size_bytes=cached['file_size_bytes']
             )
-        
+
         # SLOW PATH: Scan filesystem
         result = self._scan_filesystem(publication)
-        
+
         if result.found:
             # Cache in DB for next time
             self.db.add_cached_file(
@@ -344,15 +344,15 @@ class SmartCacheWithDB:
                 file_hash=self._compute_hash(result.file_path),
                 file_size_bytes=result.size_bytes
             )
-        
+
         return result
-    
+
     def save_file(self, content, publication, source, file_type='pdf'):
         """Save file and record in database."""
-        
+
         # Compute hash for deduplication
         file_hash = hashlib.sha256(content).hexdigest()
-        
+
         # Check if already exists
         existing = self.db.get_by_hash(file_hash)
         if existing:
@@ -360,11 +360,11 @@ class SmartCacheWithDB:
             # Add reference to existing file
             self.db.add_duplicate_reference(file_hash, publication.id)
             return Path(existing['file_path'])
-        
+
         # Save new file
         file_path = self._get_save_path(publication, source, file_type)
         file_path.write_bytes(content)
-        
+
         # Record in database
         self.db.add_cached_file(
             publication_id=publication.id,
@@ -374,7 +374,7 @@ class SmartCacheWithDB:
             file_hash=file_hash,
             file_size_bytes=len(content)
         )
-        
+
         return file_path
 ```
 
@@ -585,11 +585,11 @@ data/fulltext/
 
 ### Implementation Timeline
 
-**Week 1 (Current):** ✅ Source-based storage + SmartCache  
-**Week 2:** 📋 Add SQLite database for metadata  
-**Week 3:** 🚀 Add deduplication detection (via DB)  
-**Week 4:** 📊 Add analytics dashboard  
-**Month 2:** ⚡ Optimize based on real-world usage patterns  
+**Week 1 (Current):** ✅ Source-based storage + SmartCache
+**Week 2:** 📋 Add SQLite database for metadata
+**Week 3:** 🚀 Add deduplication detection (via DB)
+**Week 4:** 📊 Add analytics dashboard
+**Month 2:** ⚡ Optimize based on real-world usage patterns
 
 ---
 

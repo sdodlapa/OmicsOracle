@@ -1,6 +1,6 @@
 # Implementation Roadmap: Smart Full-Text Cache System
 
-**Date:** October 11, 2025  
+**Date:** October 11, 2025
 **Goal:** Implement multi-level caching with local file checking before API calls
 
 ---
@@ -30,7 +30,7 @@ sources = [
 async def _check_cache(self, publication: Publication) -> FullTextResult:
     """Check if full-text is already cached."""
     cache_path = self._get_cache_path(publication)
-    
+
     if cache_path.exists() and cache_path.stat().st_size > 0:
         logger.info(f"Found cached PDF for {publication.title[:50]}...")
         return FullTextResult(
@@ -39,7 +39,7 @@ async def _check_cache(self, publication: Publication) -> FullTextResult:
             pdf_path=cache_path,
             metadata={"cached": True, "size": cache_path.stat().st_size},
         )
-    
+
     return FullTextResult(success=False, error="Not in cache")
 ```
 
@@ -124,81 +124,81 @@ class LocalFileResult:
 class SmartCache:
     """
     Multi-level cache manager for full-text content.
-    
+
     Checks:
     1. Parsed JSON cache (fastest)
     2. Local XML files (high quality)
     3. Local PDF files (multiple locations)
     """
-    
+
     def __init__(self, base_dir: Path = None):
         if base_dir is None:
             base_dir = Path("data/fulltext")
-        
+
         self.base_dir = base_dir
         self.pdf_dir = base_dir / "pdf"
         self.xml_dir = base_dir / "xml"
         self.parsed_dir = base_dir / "parsed"
-        
+
         # Ensure directories exist
         self.pdf_dir.mkdir(parents=True, exist_ok=True)
         self.xml_dir.mkdir(parents=True, exist_ok=True)
         self.parsed_dir.mkdir(parents=True, exist_ok=True)
-    
+
     def find_local_file(self, publication) -> LocalFileResult:
         """
         Search for any locally stored file for this publication.
-        
+
         Priority:
         1. XML files (best quality for parsing)
         2. PDF files (multiple possible locations)
-        
+
         Returns:
             LocalFileResult with file info if found
         """
-        
+
         # Extract identifiers
         doi = publication.doi
         pmid = publication.pmid
         pmc_id = publication.pmc_id
         title = publication.title
-        
+
         # Generate possible IDs
         ids_to_check = []
-        
+
         if pmc_id:
             ids_to_check.append(('pmc', pmc_id))
             ids_to_check.append(('pmc', f'PMC{pmc_id}'))
-        
+
         if pmid:
             ids_to_check.append(('pmid', pmid))
-        
+
         if doi:
             # DOI might be used as filename (sanitized)
             sanitized_doi = doi.replace('/', '_').replace('.', '_')
             ids_to_check.append(('doi', sanitized_doi))
-            
+
             # Check if arXiv
             if 'arxiv' in doi.lower():
                 arxiv_id = doi.split('/')[-1]
                 ids_to_check.append(('arxiv', arxiv_id))
-        
+
         # 1. CHECK XML FILES FIRST (best quality)
         xml_result = self._check_xml_files(ids_to_check)
         if xml_result.found:
             return xml_result
-        
+
         # 2. CHECK PDF FILES (multiple locations)
         pdf_result = self._check_pdf_files(ids_to_check, publication)
         if pdf_result.found:
             return pdf_result
-        
+
         # Not found
         return LocalFileResult(found=False)
-    
+
     def _check_xml_files(self, ids_to_check: List[tuple]) -> LocalFileResult:
         """Check for XML files."""
-        
+
         # PMC XML files
         pmc_xml_dir = self.xml_dir / "pmc"
         if pmc_xml_dir.exists():
@@ -210,7 +210,7 @@ class SmartCache:
                         f"{id_value}.xml",
                         f"PMC{id_value}.nxml",
                     ]
-                    
+
                     for pattern in patterns:
                         xml_path = pmc_xml_dir / pattern
                         if xml_path.exists() and xml_path.stat().st_size > 0:
@@ -222,13 +222,13 @@ class SmartCache:
                                 source='pmc_xml',
                                 size_bytes=xml_path.stat().st_size
                             )
-        
+
         return LocalFileResult(found=False)
-    
+
     def _check_pdf_files(self, ids_to_check: List[tuple], publication) -> LocalFileResult:
         """
         Check for PDF files in multiple possible locations.
-        
+
         Locations:
         - data/fulltext/pdf/arxiv/
         - data/fulltext/pdf/pmc/
@@ -237,7 +237,7 @@ class SmartCache:
         - data/fulltext/pdf/scihub/
         - data/fulltext/pdf/{hash}.pdf (current cache)
         """
-        
+
         # Define search locations
         pdf_locations = [
             ('arxiv', self.pdf_dir / 'arxiv'),
@@ -248,12 +248,12 @@ class SmartCache:
             ('biorxiv', self.pdf_dir / 'biorxiv'),
             ('cache', self.pdf_dir),  # Root cache directory
         ]
-        
+
         # Check each location
         for source, location in pdf_locations:
             if not location.exists():
                 continue
-            
+
             # Try each identifier
             for id_type, id_value in ids_to_check:
                 # Skip irrelevant combinations
@@ -261,7 +261,7 @@ class SmartCache:
                     continue
                 if source == 'pmc' and id_type not in ['pmc', 'pmid']:
                     continue
-                
+
                 # Try file
                 pdf_path = location / f"{id_value}.pdf"
                 if pdf_path.exists() and pdf_path.stat().st_size > 0:
@@ -273,7 +273,7 @@ class SmartCache:
                         source=source,
                         size_bytes=pdf_path.stat().st_size
                     )
-        
+
         # Check hash-based cache (current system)
         hash_path = self._get_hash_cache_path(publication)
         if hash_path and hash_path.exists() and hash_path.stat().st_size > 0:
@@ -285,14 +285,14 @@ class SmartCache:
                 source='cache',
                 size_bytes=hash_path.stat().st_size
             )
-        
+
         return LocalFileResult(found=False)
-    
+
     def _get_hash_cache_path(self, publication) -> Optional[Path]:
         """Get hash-based cache path (current system)."""
         try:
             import hashlib
-            
+
             # Generate hash from DOI or title
             if publication.doi:
                 hash_input = publication.doi
@@ -300,12 +300,12 @@ class SmartCache:
                 hash_input = publication.title
             else:
                 return None
-            
+
             file_hash = hashlib.md5(hash_input.encode()).hexdigest()
             return self.pdf_dir / f"{file_hash}.pdf"
         except:
             return None
-    
+
     def save_file(
         self,
         content: bytes,
@@ -315,25 +315,25 @@ class SmartCache:
     ) -> Path:
         """
         Save downloaded file to appropriate location.
-        
+
         Args:
             content: File content as bytes
             publication: Publication object
             source: Source name ('arxiv', 'pmc', 'institutional', etc.)
             file_type: File type ('pdf', 'xml', 'nxml')
-        
+
         Returns:
             Path where file was saved
         """
-        
+
         # Determine save location
         if file_type in ['xml', 'nxml']:
             base_dir = self.xml_dir / source
         else:
             base_dir = self.pdf_dir / source
-        
+
         base_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Determine filename
         if publication.pmc_id and source == 'pmc':
             filename = f"{publication.pmc_id}.{file_type}"
@@ -348,13 +348,13 @@ class SmartCache:
             import hashlib
             hash_val = hashlib.md5(publication.title.encode()).hexdigest()
             filename = f"{hash_val}.{file_type}"
-        
+
         # Save file
         file_path = base_dir / filename
         file_path.write_bytes(content)
-        
+
         logger.info(f"💾 Saved {file_type} to: {file_path} ({len(content)} bytes)")
-        
+
         return file_path
 ```
 
@@ -366,24 +366,24 @@ class SmartCache:
 async def _check_cache(self, publication: Publication) -> FullTextResult:
     """
     Check if full-text is already available locally.
-    
+
     ENHANCED (Oct 11, 2025):
     - Checks ALL possible local file locations
     - Prioritizes XML over PDF (better quality)
     - Checks multiple naming patterns
     """
     from omics_oracle_v2.lib.fulltext.smart_cache import SmartCache
-    
+
     cache = SmartCache()
     result = cache.find_local_file(publication)
-    
+
     if result.found:
         logger.info(
             f"✓ Found local {result.file_type.upper()}: "
             f"{result.file_path.name} "
             f"({result.size_bytes // 1024} KB, source: {result.source})"
         )
-        
+
         return FullTextResult(
             success=True,
             source=FullTextSource.CACHE,
@@ -396,7 +396,7 @@ async def _check_cache(self, publication: Publication) -> FullTextResult:
                 'path': str(result.file_path)
             },
         )
-    
+
     logger.debug("No local files found, will try remote sources")
     return FullTextResult(success=False, error="Not in cache")
 ```
@@ -414,14 +414,14 @@ async def _try_arxiv(self, publication: Publication) -> FullTextResult:
     """Try to get full-text from arXiv."""
     if not self.config.enable_arxiv or not self.arxiv_client:
         return FullTextResult(success=False, error="arXiv disabled")
-    
+
     try:
         # ... existing code to get PDF URL ...
-        
+
         if pdf_url:
             # Download PDF
             pdf_content = await download_file(pdf_url)
-            
+
             # Save to arxiv-specific directory
             from omics_oracle_v2.lib.fulltext.smart_cache import SmartCache
             cache = SmartCache()
@@ -431,7 +431,7 @@ async def _try_arxiv(self, publication: Publication) -> FullTextResult:
                 source='arxiv',
                 file_type='pdf'
             )
-            
+
             return FullTextResult(
                 success=True,
                 source=FullTextSource.ARXIV,
@@ -439,7 +439,7 @@ async def _try_arxiv(self, publication: Publication) -> FullTextResult:
                 pdf_path=saved_path,  # ← Return saved path
                 metadata={'arxiv_id': arxiv_id, 'saved_to': str(saved_path)}
             )
-    
+
     except Exception as e:
         logger.warning(f"arXiv error: {e}")
         return FullTextResult(success=False, error=str(e))
@@ -460,36 +460,36 @@ async def _try_arxiv(self, publication: Publication) -> FullTextResult:
 
 async def get_parsed_content(self, publication) -> Optional[Dict]:
     """Get cached parsed content."""
-    
+
     # Determine cache filename
     cache_file = self.parsed_dir / f"{publication.id}.json"
-    
+
     if cache_file.exists():
         import json
         data = json.loads(cache_file.read_text())
-        
+
         # Check if stale (90 days)
         from datetime import datetime, timedelta
         cached_at = datetime.fromisoformat(data.get('cached_at', '2000-01-01'))
         if datetime.now() - cached_at < timedelta(days=90):
             logger.info(f"✓ Parsed cache hit: {cache_file.name}")
             return data
-    
+
     return None
 
 async def save_parsed_content(self, publication, parsed_data: Dict):
     """Save parsed content to cache."""
     import json
     from datetime import datetime
-    
+
     cache_file = self.parsed_dir / f"{publication.id}.json"
-    
+
     data_with_metadata = {
         'publication_id': publication.id,
         'cached_at': datetime.now().isoformat(),
         'parsed_data': parsed_data
     }
-    
+
     cache_file.write_text(json.dumps(data_with_metadata, indent=2))
     logger.info(f"💾 Saved parsed content: {cache_file}")
 ```

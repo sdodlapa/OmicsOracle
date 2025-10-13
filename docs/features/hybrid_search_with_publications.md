@@ -1,6 +1,6 @@
 # Hybrid Search with Publications Feature
 
-**Date**: October 12, 2025  
+**Date**: October 12, 2025
 **Feature**: Always return related publications, even if no datasets found
 
 ---
@@ -20,7 +20,7 @@ Before (datasets only):
 - User gets nothing
 
 After (hybrid with publications):
-- 0 datasets found ⚠️  
+- 0 datasets found ⚠️
 - 12 relevant papers found ✅
 - User can read papers to understand the field
 ```
@@ -39,7 +39,7 @@ Hybrid results:
 ### 3. **Research Discovery**
 Publications provide:
 - Methodology descriptions
-- Related work references  
+- Related work references
 - Future research directions
 - Author contact information
 - Links to additional resources
@@ -210,11 +210,11 @@ class SearchOutput(BaseModel):
     total_found: int = Field(...)
     search_terms_used: List[str] = Field(...)
     filters_applied: Dict[str, str] = Field(...)
-    
+
     # NEW FIELDS:
-    publications: List = Field(default_factory=list, 
+    publications: List = Field(default_factory=list,
         description="Related publications (even if no datasets found)")
-    publications_count: int = Field(default=0, 
+    publications_count: int = Field(default=0,
         description="Number of related publications found")
 ```
 
@@ -225,19 +225,19 @@ class SearchOutput(BaseModel):
 ```python
 def _process_unified(self, input_data: SearchInput, context: AgentContext):
     """Execute search using unified pipeline."""
-    
+
     # ... existing code ...
-    
+
     # Extract GEO datasets
     geo_datasets = search_result.geo_datasets
-    
+
     # ALWAYS extract publications (NEW!)
     publications = search_result.publications
     context.set_metric("publications_count", len(publications))
     logger.info(f"Found {len(publications)} related publications")
-    
+
     # ... ranking logic ...
-    
+
     return SearchOutput(
         datasets=ranked_datasets,
         total_found=search_result.total_results,
@@ -254,16 +254,16 @@ def _process_unified(self, input_data: SearchInput, context: AgentContext):
 ```python
 async def execute_search_agent(request: SearchRequest):
     """Execute search and return datasets + publications."""
-    
+
     # ... existing search logic ...
-    
+
     # Convert publications to response format (NEW!)
     publications = []
     if output.publications:
         for pub in output.publications:
             # Extract GEO IDs mentioned in the paper
             geo_ids = extract_geo_ids(pub.abstract, pub.full_text)
-            
+
             publications.append(PublicationResponse(
                 pmid=pub.pmid,
                 title=pub.title,
@@ -272,7 +272,7 @@ async def execute_search_agent(request: SearchRequest):
                 fulltext_available=bool(pub.full_text),
                 ...
             ))
-    
+
     return SearchResponse(
         datasets=datasets,
         publications=publications,  # Include publications!
@@ -416,7 +416,7 @@ Expected:
 
 **Key Achievement**: Users ALWAYS get value, even if no datasets exist yet!
 
-**Impact**: 
+**Impact**:
 - 🎯 100% query satisfaction (always something useful)
 - 📚 Richer research context (papers explain biology)
 - 🔗 More datasets found (via publication extraction)

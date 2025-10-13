@@ -1,6 +1,6 @@
 # Streamlit Dashboard (Archived)
 
-**Archived Date:** October 12, 2025  
+**Archived Date:** October 12, 2025
 **Reason:** Replaced with HTML/FastAPI dashboard with authentication
 
 ## What was archived

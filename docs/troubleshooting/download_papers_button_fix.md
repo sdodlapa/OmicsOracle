@@ -1,6 +1,6 @@
 # Download Papers Button - Investigation & Fix
 
-**Date**: October 12, 2025  
+**Date**: October 12, 2025
 **Issue**: Download Papers button not providing feedback to users
 **Status**: ✅ **FIXED** - Enhanced error handling and user feedback
 
@@ -131,11 +131,11 @@ User clicks "Download Papers"
 → Attempt download from PMC/Unpaywall
 → Detailed message:
    "⚠️ Download Failed
-   
+
    Reason: Papers may be behind paywall
-   
+
    PubMed IDs tried: 37824674
-   
+
    AI Analysis will use GEO metadata only."
 → ✅ User understands what happened
 ```
@@ -161,7 +161,7 @@ Dataset: [Dataset with PMC paper]
 PubMed ID: [PMC available]
 
 Result:
-Status: available  
+Status: available
 fulltext_count: 1
 Message: "✅ Success! Downloaded 1 of 1 paper(s)"
 User Action: AI Analysis button enabled

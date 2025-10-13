@@ -2,8 +2,8 @@
 
 ## Status: ✅ ALL FIXES DEPLOYED
 
-**Date**: October 12, 2025  
-**Server**: Running on http://localhost:8000  
+**Date**: October 12, 2025
+**Server**: Running on http://localhost:8000
 **Status**: Code updated, server auto-reloaded
 
 ---
@@ -11,15 +11,15 @@
 ## What Was Fixed
 
 ### 🐛 Bug #1: Missing PMC Download Method
-**Problem**: PMC was configured but `_try_pmc()` was never implemented  
+**Problem**: PMC was configured but `_try_pmc()` was never implemented
 **Fix**: ✅ Implemented complete PMC download with:
 - PMID → PMC ID conversion
 - Direct PMC ID support
 - SSL bypass for institutional networks
 - Fallback to web URL if PDF blocked
 
-### 🐛 Bug #2: Missing Publication Metadata  
-**Problem**: Created Publication objects with ONLY pmid, no DOI/PMC ID  
+### 🐛 Bug #2: Missing Publication Metadata
+**Problem**: Created Publication objects with ONLY pmid, no DOI/PMC ID
 **Fix**: ✅ Now fetches FULL metadata from PubMed before download:
 - DOI (for institutional access)
 - PMC ID (for PMC download)
@@ -27,7 +27,7 @@
 - All metadata needed by download sources
 
 ### 🐛 Bug #3: SSL Certificate Errors
-**Problem**: Institutional network has self-signed certificates  
+**Problem**: Institutional network has self-signed certificates
 **Fix**: ✅ SSL bypass in all HTTP clients:
 - PubMed client
 - aiohttp downloads
@@ -74,9 +74,9 @@ Using PMC ID from publication.pmcid: PMC11851118
 
 ## Test Case: PMID 39997216
 
-**Paper**: "Generalization of the sci-L3 method..."  
-**PMC ID**: PMC11851118  
-**DOI**: 10.1093/nar/gkaf101  
+**Paper**: "Generalization of the sci-L3 method..."
+**PMC ID**: PMC11851118
+**DOI**: 10.1093/nar/gkaf101
 **Status**: Openly available in PMC
 
 **Expected Workflow**:
@@ -132,16 +132,16 @@ fulltext_config = FullTextManagerConfig(
 ## Known Limitations
 
 ### PMC PDF Download (HTTP 403)
-**Issue**: PMC blocks direct PDF downloads without authentication  
-**Workaround**: Returns web URL instead  
+**Issue**: PMC blocks direct PDF downloads without authentication
+**Workaround**: Returns web URL instead
 **Impact**: Users can still access paper via browser, parser may use HTML
 
 ### CORE API Rate Limits
-**Issue**: Free tier has rate limits  
+**Issue**: Free tier has rate limits
 **Mitigation**: Used as middle-priority source (after PMC/Unpaywall)
 
 ### Sci-Hub Legality
-**Issue**: Gray area legally  
+**Issue**: Gray area legally
 **Mitigation**: Used only as last resort after all legal sources fail
 
 ---
@@ -185,13 +185,13 @@ fulltext_config = FullTextManagerConfig(
 
 ### Common Issues:
 
-**Error**: `No PMC ID found`  
+**Error**: `No PMC ID found`
 **Solution**: Some papers aren't in PMC - fallback sources will be tried
 
-**Error**: `HTTP 403` on PMC PDF  
+**Error**: `HTTP 403` on PMC PDF
 **Solution**: Expected - returns web URL instead
 
-**Error**: `SSL: CERTIFICATE_VERIFY_FAILED`  
+**Error**: `SSL: CERTIFICATE_VERIFY_FAILED`
 **Solution**: Restart server with `./start_omics_oracle.sh` (sets `PYTHONHTTPSVERIFY=0`)
 
 ---
@@ -238,6 +238,6 @@ If issues persist:
 
 ---
 
-**Status**: ✅ READY FOR TESTING  
-**Server**: Running with all fixes active  
+**Status**: ✅ READY FOR TESTING
+**Server**: Running with all fixes active
 **Expected**: 75-85% download success rate (up from 25%)

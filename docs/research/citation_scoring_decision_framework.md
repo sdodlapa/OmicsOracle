@@ -1,7 +1,7 @@
 # Citation Scoring Decision Framework
 
-**Purpose:** Help decide which citation scoring approach to implement  
-**Audience:** Product/Engineering team  
+**Purpose:** Help decide which citation scoring approach to implement
+**Audience:** Product/Engineering team
 **Decision Required By:** End of Week 4
 
 ---
@@ -402,7 +402,7 @@ Before implementing, confirm:
 
 ---
 
-**Document Status:** FINAL - Ready for team review  
-**Estimated Review Time:** 20-30 minutes  
+**Document Status:** FINAL - Ready for team review
+**Estimated Review Time:** 20-30 minutes
 **Decision Required:** Go/No-Go on Tier 1 implementation
 

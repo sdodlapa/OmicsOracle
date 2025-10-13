@@ -3,13 +3,13 @@
 ## Issues Identified
 
 ### 1. ❌ PMC Download Method Missing
-**Problem**: PMC was enabled in config but the `_try_pmc()` method was never implemented  
-**Impact**: 6M+ free PMC articles were completely inaccessible  
+**Problem**: PMC was enabled in config but the `_try_pmc()` method was never implemented
+**Impact**: 6M+ free PMC articles were completely inaccessible
 **Example**: PMID 39997216 (PMC11851118) failed despite being openly available
 
-### 2. ❌ Missing Publication Metadata  
-**Problem**: Creating minimal `Publication` objects with only PMID, no DOI/PMC ID  
-**Impact**: Institutional access and other sources require DOI to work  
+### 2. ❌ Missing Publication Metadata
+**Problem**: Creating minimal `Publication` objects with only PMID, no DOI/PMC ID
+**Impact**: Institutional access and other sources require DOI to work
 **Code Location**: `omics_oracle_v2/services/fulltext_service.py` line 100-105
 
 ```python
@@ -25,7 +25,7 @@ publications = [
 ```
 
 ### 3. ⚠️ Hybrid Search Not Returning Publications
-**Problem**: Publications fetched but not visible in frontend  
+**Problem**: Publications fetched but not visible in frontend
 **Status**: Under investigation (pipeline code looks correct)
 
 ---
@@ -41,10 +41,10 @@ publications = [
 async def _try_pmc(self, publication: Publication) -> FullTextResult:
     """
     Try to get full-text from PubMed Central (PMC).
-    
+
     PMC is the #1 legal source with 6M+ free full-text articles.
     Supports both XML (JATS format) and PDF downloads.
-    
+
     URL patterns:
     - https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmcid}/
     - https://pmc.ncbi.nlm.nih.gov/articles/PMC{pmcid}/
@@ -52,22 +52,22 @@ async def _try_pmc(self, publication: Publication) -> FullTextResult:
     """
     if not self.config.enable_pmc:
         return FullTextResult(success=False, error="PMC disabled")
-    
+
     try:
         # Method 1: Direct PMC ID
         if hasattr(publication, 'pmc_id') and publication.pmc_id:
             pmc_id = publication.pmc_id.replace('PMC', '')
-        
+
         # Method 2: From metadata
         elif publication.metadata and publication.metadata.get('pmc_id'):
             pmc_id = publication.metadata['pmc_id'].replace('PMC', '')
-        
+
         # Method 3: Convert PMID → PMCID using E-utilities API
         elif hasattr(publication, 'pmid') and publication.pmid:
             import aiohttp
             pmid = publication.pmid
             url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={pmid}&format=json"
-            
+
             async with aiohttp.ClientSession() as session:
                 async with session.get(url, timeout=10) as response:
                     if response.status == 200:
@@ -76,13 +76,13 @@ async def _try_pmc(self, publication: Publication) -> FullTextResult:
                         if records and len(records) > 0:
                             pmc_id = records[0].get('pmcid', '').replace('PMC', '')
                             logger.info(f"Converted PMID {pmid} → PMC{pmc_id}")
-        
+
         if not pmc_id:
             return FullTextResult(success=False, error="No PMC ID found")
-        
+
         # Build URLs
         pdf_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/pdf/"
-        
+
         # Download PDF
         from omics_oracle_v2.lib.fulltext.download_utils import download_and_save_pdf
         saved_path = await download_and_save_pdf(
@@ -91,7 +91,7 @@ async def _try_pmc(self, publication: Publication) -> FullTextResult:
             source='pmc',
             timeout=self.config.timeout_per_source
         )
-        
+
         if saved_path:
             logger.info(f"✅ Downloaded PMC{pmc_id} PDF successfully")
             return FullTextResult(success=True, source=FullTextSource.PMC, pdf_path=saved_path)
@@ -125,7 +125,7 @@ for pmid in pmids_to_fetch:
     try:
         # Fetch COMPLETE metadata from PubMed (DOI, PMC ID, journal, authors, etc.)
         pub = pubmed_client.fetch_by_id(pmid)
-        
+
         if pub:
             publications.append(pub)
             logger.info(
@@ -263,7 +263,7 @@ fulltext_config = FullTextManagerConfig(
 ## UI Improvements
 
 ### Copyable Error Modal
-**Problem**: Users couldn't copy error messages from alert()  
+**Problem**: Users couldn't copy error messages from alert()
 **Fix**: Replaced alert() with custom modal dialog
 
 **Features**:
@@ -364,6 +364,6 @@ print(manager.stats)
 ---
 
 ## Author
-OmicsOracle Development Team  
-Date: October 12, 2025  
+OmicsOracle Development Team
+Date: October 12, 2025
 Status: **FIXES DEPLOYED - READY FOR TESTING**
