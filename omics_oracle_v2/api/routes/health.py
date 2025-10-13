@@ -106,7 +106,6 @@ async def detailed_health_check(
 
     Checks:
     - Redis cache availability
-    - ML models loaded (if MLService initialized)
     - Database connectivity (if used)
     - External API availability
 
@@ -133,18 +132,7 @@ async def detailed_health_check(
         logger.warning(f"Redis health check failed: {e}")
         components["redis"] = "unhealthy"
 
-    # Check ML Service (if initialized)
-    try:
-        from omics_oracle_v2.lib.services import MLService
-
-        ml_service = MLService()
-        if ml_service and ml_service.citation_predictor:
-            components["ml_service"] = "healthy"
-        else:
-            components["ml_service"] = "not_initialized"
-    except Exception as e:
-        logger.warning(f"ML Service health check failed: {e}")
-        components["ml_service"] = "unhealthy"
+    # Note: ML Service removed - archived to extras/ml-viz-features/
 
     # Overall status
     overall_status = "healthy"
