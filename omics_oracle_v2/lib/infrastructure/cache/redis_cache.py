@@ -412,6 +412,111 @@ class RedisCache:
             logger.error(f"Error caching GEO metadata: {e}")
             return False
 
+    async def get_geo_datasets_batch(self, geo_ids: list[str]) -> Dict[str, Optional[Dict[str, Any]]]:
+        """
+        Get multiple cached GEO datasets (batch operation for efficiency).
+
+        This is a key optimization - uses Redis MGET for atomic batch fetch.
+
+        Args:
+            geo_ids: List of GEO accessions to fetch
+
+        Returns:
+            Dict mapping GSE ID -> dataset (None if not cached)
+        """
+        if not self.enabled or not self.client or not geo_ids:
+            return {geo_id: None for geo_id in geo_ids}
+
+        try:
+            # Build keys
+            normalized_ids = [geo_id.upper() for geo_id in geo_ids]
+            keys = [self._make_key("geo", geo_id) for geo_id in normalized_ids]
+
+            # Batch fetch (Redis MGET - very efficient, single round trip)
+            results = self.client.mget(keys)
+
+            # Map back to GSE IDs
+            cached_datasets = {}
+            hits = 0
+            for geo_id, result in zip(geo_ids, results):
+                if result:
+                    self.metrics.record_hit()
+                    cached_datasets[geo_id] = json.loads(result)
+                    hits += 1
+                else:
+                    self.metrics.record_miss()
+                    cached_datasets[geo_id] = None
+
+            hit_rate = (hits / len(geo_ids) * 100) if geo_ids else 0
+            logger.debug(f"Batch fetch: {hits}/{len(geo_ids)} GEO datasets cached ({hit_rate:.1f}% hit rate)")
+
+            return cached_datasets
+        except Exception as e:
+            self.metrics.record_error()
+            logger.error(f"Error batch fetching GEO datasets: {e}")
+            return {geo_id: None for geo_id in geo_ids}
+
+    async def set_geo_datasets_batch(
+        self,
+        datasets: Dict[str, Any],
+        ttl: Optional[int] = None,
+    ) -> int:
+        """
+        Cache multiple GEO datasets (batch operation).
+
+        Args:
+            datasets: Dict mapping GSE ID -> dataset dict
+            ttl: Time to live in seconds
+
+        Returns:
+            Number of datasets successfully cached
+        """
+        if not self.enabled or not self.client or not datasets:
+            return 0
+
+        try:
+            ttl = ttl or self.TTL_GEO_METADATA
+            cached_count = 0
+
+            # Use pipeline for efficiency (batches commands)
+            pipe = self.client.pipeline()
+
+            for geo_id, dataset in datasets.items():
+                try:
+                    key = self._make_key("geo", geo_id.upper())
+
+                    # Convert to JSON
+                    if hasattr(dataset, "model_dump"):
+                        dataset_dict = dataset.model_dump()
+                    elif hasattr(dataset, "to_dict"):
+                        dataset_dict = dataset.to_dict()
+                    elif hasattr(dataset, "dict"):
+                        dataset_dict = dataset.dict()
+                    elif hasattr(dataset, "__dict__"):
+                        dataset_dict = dataset.__dict__
+                    else:
+                        dataset_dict = dataset
+
+                    dataset_json = json.dumps(dataset_dict)
+
+                    # Add to pipeline
+                    pipe.setex(key, ttl, dataset_json)
+                    self.metrics.record_set()
+                    cached_count += 1
+                except Exception as e:
+                    logger.warning(f"Failed to serialize dataset {geo_id}: {e}")
+                    continue
+
+            # Execute pipeline (single round trip to Redis)
+            pipe.execute()
+
+            logger.debug(f"Batch cached {cached_count} GEO datasets (TTL={ttl}s)")
+            return cached_count
+        except Exception as e:
+            self.metrics.record_error()
+            logger.error(f"Error batch caching GEO datasets: {e}")
+            return 0
+
     async def get_optimized_query(self, query: str) -> Optional[Dict[str, Any]]:
         """
         Get cached query optimization result.
