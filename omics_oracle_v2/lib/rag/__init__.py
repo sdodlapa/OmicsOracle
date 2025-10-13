@@ -3,14 +3,9 @@ RAG (Retrieval-Augmented Generation) module for OmicsOracle.
 
 This module provides components for combining semantic search with
 large language model generation to produce natural language answers.
+
+Note: RAGPipeline has been archived to extras/pipelines/scattered/
+as it was built but never exposed via API endpoints.
 """
 
-from omics_oracle_v2.lib.rag.pipeline import Citation, LLMProvider, RAGConfig, RAGPipeline, RAGResponse
-
-__all__ = [
-    "RAGPipeline",
-    "RAGConfig",
-    "RAGResponse",
-    "Citation",
-    "LLMProvider",
-]
+__all__ = []
