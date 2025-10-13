@@ -5,15 +5,12 @@ This module provides comprehensive publication search and analysis capabilities,
 including PubMed, PubMed Central, and Google Scholar integration.
 
 Key Components:
-- PublicationSearchPipeline: Main pipeline following the golden pattern
 - PubMedClient: PubMed/Entrez API integration
-- GoogleScholarClient: Google Scholar scraping (Week 3)
-- PDFDownloader: Full-text PDF retrieval (Week 4)
-- PublicationRanker: Relevance-based ranking
+- GoogleScholarClient: Google Scholar scraping
+- PDFDownloader: Full-text PDF retrieval
 
-Week 1-2 Focus: PubMed integration with basic ranking
-Week 3: Enhanced publications (Scholar, citations)
-Week 4: PDF processing and full-text extraction
+All pipeline orchestrators have been archived (see extras/pipelines/).
+Production uses SearchOrchestrator for direct client coordination.
 """
 
 from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
@@ -33,17 +30,6 @@ __all__ = [
     # Configuration
     "PubMedConfig",
     "PublicationSearchConfig",
-    # Pipeline (lazy import to avoid circular dependency)
-    "PublicationSearchPipeline",
 ]
-
-
-def __getattr__(name):
-    if name == "PublicationSearchPipeline":
-        from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
-
-        return PublicationSearchPipeline
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
-
 
 __version__ = "0.1.0"
