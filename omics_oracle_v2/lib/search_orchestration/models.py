@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 
 @dataclass

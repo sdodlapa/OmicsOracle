@@ -16,7 +16,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
-from omics_oracle_v2.lib.publications.config import GoogleScholarConfig
+from omics_oracle_v2.lib.search_engines.citations.config import GoogleScholarConfig
 
 
 def test_scholar_search():
@@ -121,7 +121,7 @@ def test_scholar_citations():
     try:
         from datetime import datetime
 
-        from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+        from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
         config = GoogleScholarConfig(enable=True)
         client = GoogleScholarClient(config)

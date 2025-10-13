@@ -16,13 +16,13 @@ from omics_oracle_v2.lib.llm.client import LLMClient
 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
 from omics_oracle_v2.lib.publications.citations.analyzer import CitationAnalyzer
 from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
-from omics_oracle_v2.lib.publications.config import (
+from omics_oracle_v2.lib.search_engines.citations.config import (
     GoogleScholarConfig,
     LLMConfig,
     PublicationSearchConfig,
     PubMedConfig,
 )
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 
 class TestLLMCitationIntegration:
@@ -31,7 +31,7 @@ class TestLLMCitationIntegration:
     @pytest.fixture
     def sample_publication(self):
         """Create sample publication."""
-        from omics_oracle_v2.lib.publications.models import PublicationSource
+        from omics_oracle_v2.lib.search_engines.citations.models import PublicationSource
 
         return Publication(
             title="The Cancer Genome Atlas (TCGA): A comprehensive resource",
@@ -47,7 +47,7 @@ class TestLLMCitationIntegration:
     @pytest.fixture
     def sample_citing_paper(self):
         """Create sample citing paper."""
-        from omics_oracle_v2.lib.publications.models import PublicationSource
+        from omics_oracle_v2.lib.search_engines.citations.models import PublicationSource
 
         pub = Publication(
             title="Novel biomarkers identified using TCGA data",
@@ -219,7 +219,7 @@ class TestLLMCitationIntegration:
 
     def test_citation_enrichment_handles_errors(self, sample_publication):
         """Test citation enrichment gracefully handles errors."""
-        from omics_oracle_v2.lib.publications.models import PublicationSource
+        from omics_oracle_v2.lib.search_engines.citations.models import PublicationSource
 
         # Create pipeline with citations enabled
         config = PublicationSearchConfig(
@@ -239,7 +239,7 @@ class TestLLMCitationIntegration:
                 pipeline.citation_analyzer.get_citing_papers.side_effect = Exception("Test error")
 
             # Create mock results
-            from omics_oracle_v2.lib.publications.models import PublicationSearchResult
+            from omics_oracle_v2.lib.search_engines.citations.models import PublicationSearchResult
 
             results = [PublicationSearchResult(publication=sample_publication, relevance_score=0.9)]
 
@@ -368,7 +368,7 @@ class TestCitationAnalyzerIntegration:
     @pytest.fixture
     def sample_publication(self):
         """Create sample publication."""
-        from omics_oracle_v2.lib.publications.models import PublicationSource
+        from omics_oracle_v2.lib.search_engines.citations.models import PublicationSource
 
         return Publication(
             title="TCGA: A comprehensive resource",
@@ -397,7 +397,7 @@ class TestCitationAnalyzerIntegration:
         mock_scholar_class.return_value = mock_scholar
 
         # Mock citations
-        from omics_oracle_v2.lib.publications.models import PublicationSource
+        from omics_oracle_v2.lib.search_engines.citations.models import PublicationSource
 
         citing_paper = Publication(
             title="Paper citing TCGA",
@@ -423,7 +423,7 @@ class TestCitationAnalyzerIntegration:
         mock_scholar = Mock()
         analyzer = CitationAnalyzer(mock_scholar)
 
-        from omics_oracle_v2.lib.publications.models import PublicationSource
+        from omics_oracle_v2.lib.search_engines.citations.models import PublicationSource
 
         citing_paper = Publication(
             title="Paper citing TCGA",

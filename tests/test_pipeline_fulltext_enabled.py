@@ -25,7 +25,7 @@ logger = logging.getLogger(__name__)
 async def test_pipeline_fulltext_enabled():
     """Test that pipeline initializes with Unpaywall and Sci-Hub enabled."""
     from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
-    from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
+    from omics_oracle_v2.lib.search_engines.citations.config import PublicationSearchConfig
 
     print("=" * 80)
     print("TESTING: Pipeline FullText Configuration")
@@ -98,7 +98,7 @@ async def test_pipeline_fulltext_enabled():
     print("4. Testing with a real paper...")
     print("   Testing DOI: 10.1038/nature12373 (Nature, paywalled)")
 
-    from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+    from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
     test_pub = Publication(
         title="A programmable dual-RNA-guided DNA endonuclease",

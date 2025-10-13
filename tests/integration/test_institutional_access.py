@@ -10,11 +10,11 @@ sys.path.insert(0, str(project_root))
 
 from datetime import datetime
 
-from omics_oracle_v2.lib.publications.clients.institutional_access import (
+from omics_oracle_v2.lib.search_engines.citations.institutional_access import (
     InstitutionalAccessManager,
     InstitutionType,
 )
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 print("\n" + "=" * 80)
 print(" INSTITUTIONAL ACCESS TEST")

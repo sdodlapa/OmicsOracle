@@ -31,8 +31,8 @@ from urllib.parse import quote
 
 import aiohttp
 
-from omics_oracle_v2.lib.publications.clients.base import BasePublicationClient
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 logger = logging.getLogger(__name__)
 

@@ -13,7 +13,7 @@ from datetime import datetime
 
 from omics_oracle_v2.lib.ml.citation_predictor import CitationPredictor
 from omics_oracle_v2.lib.ml.trend_forecaster import TrendForecaster
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 
 def create_sample_publications(n: int = 100) -> list:

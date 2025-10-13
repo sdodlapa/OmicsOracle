@@ -10,8 +10,8 @@ from unittest.mock import MagicMock, Mock, patch
 import pytest
 
 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
-from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
-from omics_oracle_v2.lib.publications.models import (
+from omics_oracle_v2.lib.search_engines.citations.config import PublicationSearchConfig, PubMedConfig
+from omics_oracle_v2.lib.search_engines.citations.models import (
     Publication,
     PublicationResult,
     PublicationSearchResult,

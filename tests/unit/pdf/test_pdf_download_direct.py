@@ -15,11 +15,11 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import pytest
 
-from omics_oracle_v2.lib.publications.clients.institutional_access import (
+from omics_oracle_v2.lib.search_engines.citations.institutional_access import (
     InstitutionalAccessManager,
     InstitutionType,
 )
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 from omics_oracle_v2.lib.publications.pdf_downloader import PDFDownloader
 from omics_oracle_v2.lib.publications.pdf_text_extractor import PDFTextExtractor
 

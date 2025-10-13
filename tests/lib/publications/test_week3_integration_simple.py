@@ -18,8 +18,8 @@ from omics_oracle_v2.lib.publications.analysis import (
     DatasetQASystem,
     TemporalTrendAnalyzer,
 )
-from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.config import PublicationSearchConfig
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 
 class TestWeek3Integration:

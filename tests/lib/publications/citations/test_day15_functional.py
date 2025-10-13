@@ -8,7 +8,7 @@ external APIs or complex mocks.
 import datetime
 
 from omics_oracle_v2.lib.citations.models import CitationContext, UsageAnalysis
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 
 def test_citation_models():

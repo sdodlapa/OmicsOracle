@@ -17,7 +17,7 @@ from omics_oracle_v2.lib.citations.models import (
 )
 from omics_oracle_v2.lib.llm.client import LLMClient
 from omics_oracle_v2.lib.llm.prompts import CITATION_CONTEXT_ANALYSIS, DATASET_IMPACT_SYNTHESIS
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 logger = logging.getLogger(__name__)
 

@@ -18,7 +18,7 @@ from enum import Enum
 from typing import Dict, List, Optional
 from urllib.parse import quote, urlencode
 
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 logger = logging.getLogger(__name__)
 

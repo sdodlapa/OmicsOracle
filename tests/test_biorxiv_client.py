@@ -4,7 +4,7 @@ import asyncio
 import os
 from pathlib import Path
 
-from omics_oracle_v2.lib.publications.clients.oa_sources.biorxiv_client import BioRxivClient
+from omics_oracle_v2.lib.search_engines.citations.oa_sources.biorxiv_client import BioRxivClient
 
 
 async def main():

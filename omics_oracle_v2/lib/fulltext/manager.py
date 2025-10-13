@@ -47,7 +47,7 @@ from omics_oracle_v2.lib.publications.clients.oa_sources.unpaywall_client import
     UnpaywallClient,
     UnpaywallConfig,
 )
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 logger = logging.getLogger(__name__)
 

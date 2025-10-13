@@ -15,7 +15,7 @@ import logging
 import time
 
 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
-from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig, RedisConfig
+from omics_oracle_v2.lib.search_engines.citations.config import PublicationSearchConfig, PubMedConfig, RedisConfig
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

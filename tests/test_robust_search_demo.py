@@ -34,7 +34,7 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
-from omics_oracle_v2.lib.publications.config import PublicationSearchConfig
+from omics_oracle_v2.lib.search_engines.citations.config import PublicationSearchConfig
 
 # Real-world biomedical research queries
 RESEARCH_QUERIES = [

@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.publications.clients.oa_sources.unpaywall_client import (
+from omics_oracle_v2.lib.search_engines.citations.oa_sources.unpaywall_client import (
     UnpaywallClient,
     UnpaywallConfig,
 )

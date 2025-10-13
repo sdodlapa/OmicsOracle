@@ -9,7 +9,7 @@ Rate Limits: 100 requests per 5 minutes (free tier)
 
 Example:
     >>> from omics_oracle_v2.lib.citations.clients.semantic_scholar import SemanticScholarClient
-    >>> from omics_oracle_v2.lib.publications.config import SemanticScholarConfig
+    >>> from omics_oracle_v2.lib.search_engines.citations.config import SemanticScholarConfig
     >>>
     >>> config = SemanticScholarConfig()
     >>> client = SemanticScholarClient(config)
@@ -26,8 +26,8 @@ from typing import Dict, List, Optional
 
 import requests
 
-from omics_oracle_v2.lib.publications.clients.base import BasePublicationClient
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 logger = logging.getLogger(__name__)
 
@@ -317,7 +317,7 @@ class SemanticScholarClient(BasePublicationClient):
             return None
 
         # Create minimal Publication object from Semantic Scholar data
-        from omics_oracle_v2.lib.publications.models import PublicationSource
+        from omics_oracle_v2.lib.search_engines.citations.models import PublicationSource
 
         pub = Publication(
             title=paper_data.get("title", ""),

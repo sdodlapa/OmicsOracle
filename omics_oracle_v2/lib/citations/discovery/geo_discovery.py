@@ -15,9 +15,9 @@ from typing import List, Optional, Set
 
 from omics_oracle_v2.lib.citations.discovery.finder import CitationFinder
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
-from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
-from omics_oracle_v2.lib.publications.config import PubMedConfig
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
+from omics_oracle_v2.lib.search_engines.citations.config import PubMedConfig
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 logger = logging.getLogger(__name__)
 
@@ -123,7 +123,7 @@ class GEOCitationDiscovery:
             # Use existing citation finder (OpenAlex, Semantic Scholar)
             # Note: find_citing_papers needs a Publication object
             # For now, create minimal Publication with PMID
-            from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+            from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
             temp_pub = Publication(
                 pmid=pmid,

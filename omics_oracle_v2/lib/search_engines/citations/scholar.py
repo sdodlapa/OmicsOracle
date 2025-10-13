@@ -17,7 +17,7 @@ Features:
 
 Example:
     >>> from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
-    >>> from omics_oracle_v2.lib.publications.config import GoogleScholarConfig
+    >>> from omics_oracle_v2.lib.search_engines.citations.config import GoogleScholarConfig
     >>>
     >>> config = GoogleScholarConfig(enable=True, rate_limit_seconds=5.0)
     >>> client = GoogleScholarClient(config)
@@ -53,9 +53,9 @@ except ImportError:
     ProxyGenerator = None
 
 from omics_oracle_v2.core.exceptions import PublicationSearchError
-from omics_oracle_v2.lib.publications.clients.base import BasePublicationClient
-from omics_oracle_v2.lib.publications.config import GoogleScholarConfig
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient
+from omics_oracle_v2.lib.search_engines.citations.config import GoogleScholarConfig
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 
 class GoogleScholarClient(BasePublicationClient):

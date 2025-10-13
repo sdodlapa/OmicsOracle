@@ -24,9 +24,9 @@ except ImportError:
     BIOPYTHON_AVAILABLE = False
     logging.warning("Biopython not available. PubMed client will not function.")
 
-from omics_oracle_v2.lib.publications.clients.base import BasePublicationClient, FetchError, SearchError
-from omics_oracle_v2.lib.publications.config import PubMedConfig
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient, FetchError, SearchError
+from omics_oracle_v2.lib.search_engines.citations.config import PubMedConfig
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 logger = logging.getLogger(__name__)
 

@@ -7,7 +7,7 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.publications.clients.oa_sources.arxiv_client import ArXivClient
+from omics_oracle_v2.lib.search_engines.citations.oa_sources.arxiv_client import ArXivClient
 
 
 async def test_arxiv_client():

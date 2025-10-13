@@ -17,13 +17,13 @@ import time
 from typing import List, Optional
 
 from omics_oracle_v2.lib.cache.redis_cache import RedisCache
-from omics_oracle_v2.lib.citations.clients.openalex import OpenAlexClient, OpenAlexConfig
-from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient, GoogleScholarConfig
+from omics_oracle_v2.lib.search_engines.citations.openalex import OpenAlexClient, OpenAlexConfig
+from omics_oracle_v2.lib.search_engines.citations.scholar import GoogleScholarClient, GoogleScholarConfig
 from omics_oracle_v2.lib.search_engines.geo import GEOClient
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.search_engines.geo.query_builder import GEOQueryBuilder
-from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
-from omics_oracle_v2.lib.publications.models import Publication, PublicationResult
+from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationResult
 from omics_oracle_v2.lib.query_processing.optimization.analyzer import QueryAnalyzer, SearchType
 from omics_oracle_v2.lib.query_processing.optimization.optimizer import QueryOptimizer
 from omics_oracle_v2.lib.search_orchestration.config import SearchConfig

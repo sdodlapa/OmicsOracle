@@ -385,7 +385,7 @@ class RankingConfig:
 Quick-start configuration presets for different use cases.
 
 Usage:
-    from omics_oracle_v2.lib.publications.config import PRESET_CONFIGS
+    from omics_oracle_v2.lib.search_engines.citations.config import PRESET_CONFIGS
 
     # For fast, free searches:
     config = PRESET_CONFIGS["minimal"]

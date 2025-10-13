@@ -10,7 +10,7 @@ from datetime import datetime
 import pytest
 
 from omics_oracle_v2.api.models.ml_schemas import CitationPredictionResponse, RecommendationResponse
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 from omics_oracle_v2.lib.services import MLService
 
 

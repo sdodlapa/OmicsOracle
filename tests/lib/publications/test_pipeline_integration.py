@@ -10,8 +10,8 @@ from datetime import datetime
 from unittest.mock import patch
 
 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
-from omics_oracle_v2.lib.publications.config import GoogleScholarConfig, PublicationSearchConfig, PubMedConfig
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.config import GoogleScholarConfig, PublicationSearchConfig, PubMedConfig
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 
 class TestPipelineIntegration(unittest.TestCase):
@@ -472,7 +472,7 @@ class TestPipelineLifecycle(unittest.TestCase):
 
     def test_fuzzy_deduplication_disabled(self):
         """Test pipeline with fuzzy deduplication disabled."""
-        from omics_oracle_v2.lib.publications.config import FuzzyDeduplicationConfig
+        from omics_oracle_v2.lib.search_engines.citations.config import FuzzyDeduplicationConfig
 
         # Create publications with title variations
         pubs_with_variations = [

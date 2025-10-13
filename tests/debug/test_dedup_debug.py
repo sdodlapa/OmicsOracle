@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 # Create two pubs with same DOI
 pub1 = Publication(

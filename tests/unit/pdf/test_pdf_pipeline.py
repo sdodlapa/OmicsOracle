@@ -18,7 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
-from omics_oracle_v2.lib.publications.config import PublicationSearchConfig, PubMedConfig
+from omics_oracle_v2.lib.search_engines.citations.config import PublicationSearchConfig, PubMedConfig
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -199,11 +199,11 @@ def test_institutional_access():
     print("Institutional Access Test")
     print("=" * 80)
 
-    from omics_oracle_v2.lib.publications.clients.institutional_access import (
+    from omics_oracle_v2.lib.search_engines.citations.institutional_access import (
         InstitutionalAccessManager,
         InstitutionType,
     )
-    from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+    from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
     # Test publication
     pub = Publication(

@@ -12,8 +12,8 @@ import pytest
 
 from omics_oracle_v2.core.exceptions import PublicationSearchError
 from omics_oracle_v2.lib.citations.clients.scholar import GoogleScholarClient
-from omics_oracle_v2.lib.publications.config import GoogleScholarConfig
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.config import GoogleScholarConfig
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 
 @pytest.fixture

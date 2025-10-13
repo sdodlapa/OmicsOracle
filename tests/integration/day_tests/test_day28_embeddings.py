@@ -16,7 +16,7 @@ import numpy as np
 
 from omics_oracle_v2.lib.ml.embeddings import BiomarkerEmbedder, SimilaritySearch
 from omics_oracle_v2.lib.ml.recommender import BiomarkerRecommender, RecommendationScorer
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 
 def create_sample_biomarker_data():

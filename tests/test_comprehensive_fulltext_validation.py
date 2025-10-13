@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 import importlib.util
 
 from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
-from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 spec = importlib.util.spec_from_file_location(
     "diverse_papers", Path(__file__).parent / "test_datasets" / "100_diverse_papers.py"

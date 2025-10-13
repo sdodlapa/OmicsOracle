@@ -8,7 +8,7 @@ to ensure consistent interface and error handling.
 from abc import ABC, abstractmethod
 from typing import List, Optional
 
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 
 class BasePublicationClient(ABC):

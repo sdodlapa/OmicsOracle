@@ -8,7 +8,7 @@ NO LLM analysis - pure data filtering.
 from datetime import datetime
 from typing import List, Optional
 
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 
 def filter_by_year_range(

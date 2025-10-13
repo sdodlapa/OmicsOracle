@@ -9,7 +9,7 @@ Tests:
 """
 
 from omics_oracle_v2.lib.ml.features import FeatureExtractor
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 
 class TestFeatureExtractor:

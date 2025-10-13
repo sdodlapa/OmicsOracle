@@ -9,9 +9,9 @@ from unittest.mock import MagicMock, Mock, patch
 
 import pytest
 
-from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
-from omics_oracle_v2.lib.publications.config import PubMedConfig
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
+from omics_oracle_v2.lib.search_engines.citations.config import PubMedConfig
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 
 @pytest.fixture

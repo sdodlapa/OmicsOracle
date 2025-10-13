@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from omics_oracle_v2.lib.publications.clients.oa_sources.core_client import COREClient, COREConfig
+from omics_oracle_v2.lib.search_engines.citations.oa_sources.core_client import COREClient, COREConfig
 
 
 @pytest.fixture

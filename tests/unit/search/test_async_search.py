@@ -14,9 +14,9 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from omics_oracle_v2.lib.publications.clients.async_pubmed import AsyncPubMedClient
-from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
-from omics_oracle_v2.lib.publications.config import PubMedConfig
+from omics_oracle_v2.lib.search_engines.citations.async_pubmed import AsyncPubMedClient
+from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
+from omics_oracle_v2.lib.search_engines.citations.config import PubMedConfig
 
 
 async def test_async_pubmed_search():

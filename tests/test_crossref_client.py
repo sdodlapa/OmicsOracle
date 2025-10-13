@@ -6,7 +6,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.publications.clients.oa_sources.crossref_client import CrossrefClient
+from omics_oracle_v2.lib.search_engines.citations.oa_sources.crossref_client import CrossrefClient
 
 
 async def test_crossref_client():

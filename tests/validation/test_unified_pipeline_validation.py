@@ -50,7 +50,7 @@ from omics_oracle_v2.lib.citations.filters import (
 )
 from omics_oracle_v2.lib.fulltext.manager import FullTextManager
 from omics_oracle_v2.lib.geo.client import GEOClient
-from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
+from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
 
 
 def print_section(title: str):
@@ -200,7 +200,7 @@ async def test_fulltext_retrieval(papers):
         for paper in papers[:5]:
             try:
                 # Create a Publication object with required fields
-                from omics_oracle_v2.lib.publications.models import Publication
+                from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
                 pub = Publication(
                     pmid=paper.pmid,

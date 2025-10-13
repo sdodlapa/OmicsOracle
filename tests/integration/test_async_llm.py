@@ -16,7 +16,7 @@ sys.path.insert(0, str(project_root))
 
 from omics_oracle_v2.lib.llm.async_client import AsyncLLMClient, score_publications_batch_async
 from omics_oracle_v2.lib.llm.client import LLMClient
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 
 def create_test_publications(count: int = 20) -> list[Publication]:

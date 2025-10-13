@@ -31,7 +31,7 @@ try:
         filter_recent_publications,
         rank_by_citations_and_recency,
     )
-    from omics_oracle_v2.lib.publications.models import Publication, PublicationSource
+    from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
     # Create test publications
     pubs = [
