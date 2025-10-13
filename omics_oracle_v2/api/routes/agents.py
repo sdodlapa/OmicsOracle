@@ -1,7 +1,13 @@
 """
 Agent Execution Routes
 
-REST endpoints for executing individual agents.
+REST endpoints for executing search and analysis operations.
+
+Note: Individual agent endpoints (query, validate, report) have been removed.
+      All agents archived to extras/agents/. Main functionality:
+      - /search: SearchOrchestrator for dataset/publication search
+      - /enrich-fulltext: FullTextManager for PDF download
+      - /analyze: SummarizationClient for AI analysis
 """
 
 import logging
@@ -9,207 +15,20 @@ import time
 from datetime import datetime, timezone
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 
-from omics_oracle_v2.agents import DataAgent, QueryAgent, ReportAgent
-from omics_oracle_v2.agents.models import QueryInput
-from omics_oracle_v2.agents.models.data import DataInput
-from omics_oracle_v2.agents.models.report import ReportInput
-from omics_oracle_v2.agents.models.search import RankedDataset  # Keep for response building
-from omics_oracle_v2.api.dependencies import get_data_agent, get_query_agent, get_report_agent
-from omics_oracle_v2.api.models.requests import (
-    DataValidationRequest,
-    QueryRequest,
-    ReportRequest,
-    SearchRequest,
-)
-from omics_oracle_v2.api.models.responses import (
-    DatasetResponse,
-    DataValidationResponse,
-    EntityResponse,
-    PublicationResponse,
-    QualityMetricsResponse,
-    QueryResponse,
-    ReportResponse,
-    SearchResponse,
-    ValidatedDatasetResponse,
-)
-from omics_oracle_v2.auth.dependencies import get_current_user
-from omics_oracle_v2.auth.models import User
-from omics_oracle_v2.lib.search import SearchOrchestrator, OrchestratorConfig
+from omics_oracle_v2.agents.models.search import RankedDataset
+from omics_oracle_v2.api.models.requests import SearchRequest
+from omics_oracle_v2.api.models.responses import DatasetResponse, PublicationResponse, SearchResponse
+from omics_oracle_v2.lib.search import OrchestratorConfig, SearchOrchestrator
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Agents"])
 
 
-# Agent Information Schemas
-
-
-class AgentInfo(BaseModel):
-    """Information about an available agent."""
-
-    id: str = Field(..., description="Agent identifier")
-    name: str = Field(..., description="Human-readable agent name")
-    description: str = Field(..., description="Agent description")
-    category: str = Field(..., description="Agent category")
-    capabilities: List[str] = Field(..., description="List of agent capabilities")
-    input_types: List[str] = Field(..., description="Accepted input types")
-    output_types: List[str] = Field(..., description="Produced output types")
-    endpoint: str = Field(..., description="API endpoint path")
-
-
-# Agent Listing
-
-
-@router.get("/", response_model=List[AgentInfo], summary="List Available Agents")
-async def list_agents(current_user: User = Depends(get_current_user)):
-    """
-    List all available agents with their metadata.
-
-    Requires authentication.
-
-    Returns comprehensive information about each agent including
-    capabilities, input/output types, and API endpoints.
-
-    Returns:
-        List of agent information objects
-    """
-    return [
-        AgentInfo(
-            id="query",
-            name="Query Agent",
-            description="Extract biomedical entities and intent from natural language queries",
-            category="NLP",
-            capabilities=[
-                "Named Entity Recognition (NER)",
-                "Intent Detection",
-                "Entity Extraction (genes, diseases, chemicals, etc.)",
-                "Search Term Generation",
-            ],
-            input_types=["text/plain"],
-            output_types=["application/json"],
-            endpoint="/api/v1/agents/query",
-        ),
-        AgentInfo(
-            id="search",
-            name="Search Agent",
-            description="Search and rank GEO datasets based on relevance",
-            category="Data Discovery",
-            capabilities=[
-                "GEO Database Search",
-                "Relevance Ranking",
-                "Dataset Filtering",
-                "Metadata Extraction",
-            ],
-            input_types=["application/json"],
-            output_types=["application/json"],
-            endpoint="/api/v1/agents/search",
-        ),
-        AgentInfo(
-            id="data",
-            name="Data Agent",
-            description="Validate, integrate, and process biomedical datasets",
-            category="Data Processing",
-            capabilities=[
-                "Data Validation",
-                "Quality Assessment",
-                "Data Integration",
-                "Format Conversion",
-            ],
-            input_types=["application/json", "text/csv"],
-            output_types=["application/json"],
-            endpoint="/api/v1/agents/data",
-        ),
-        AgentInfo(
-            id="report",
-            name="Report Agent",
-            description="Generate comprehensive analysis reports",
-            category="Reporting",
-            capabilities=[
-                "Report Generation",
-                "Data Summarization",
-                "Visualization",
-                "Export to Multiple Formats",
-            ],
-            input_types=["application/json"],
-            output_types=["application/json", "text/html", "application/pdf"],
-            endpoint="/api/v1/agents/report",
-        ),
-    ]
-
-
 # Agent Execution Endpoints
-
-
-@router.post("/query", response_model=QueryResponse, summary="Execute Query Agent")
-async def execute_query_agent(
-    request: QueryRequest,
-    current_user: User = Depends(get_current_user),
-    agent: QueryAgent = Depends(get_query_agent),
-):
-    """
-    Execute the Query Agent to extract entities and generate search terms.
-
-    This endpoint processes a natural language query to:
-    - Extract biomedical entities (genes, diseases, chemicals, etc.)
-    - Detect research intent
-    - Generate optimized search terms
-
-    Args:
-        request: Query request containing the natural language query
-
-    Returns:
-        QueryResponse: Extracted entities, intent, and search terms
-    """
-    start_time = time.time()
-
-    try:
-        # Execute agent
-        query_input = QueryInput(query=request.query)
-        result = agent.execute(query_input)
-
-        if not result.success:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Query processing failed: {result.error}",
-            )
-
-        output = result.output
-
-        # Convert entities to response format
-        entities = [
-            EntityResponse(
-                text=entity.text,
-                entity_type=entity.entity_type.value,
-                confidence=entity.confidence,
-            )
-            for entity in output.entities
-        ]
-
-        execution_time_ms = (time.time() - start_time) * 1000
-
-        return QueryResponse(
-            success=True,
-            execution_time_ms=execution_time_ms,
-            timestamp=datetime.now(timezone.utc),
-            original_query=output.original_query,
-            intent=output.intent,
-            confidence=output.confidence,
-            entities=entities,
-            search_terms=output.search_terms,
-            entity_counts=output.entity_counts,
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Query agent execution failed: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Query processing error: {str(e)}",
-        )
 
 
 @router.post("/search", response_model=SearchResponse, summary="Search Datasets and Publications")
@@ -246,7 +65,7 @@ async def execute_search(
 
     try:
         # Initialize search orchestrator
-        search_logs.append("📝 Using SearchOrchestrator with parallel execution")
+        search_logs.append("[INFO] Using SearchOrchestrator with parallel execution")
         logger.info("Initializing SearchOrchestrator")
 
         # Build search config
@@ -265,7 +84,7 @@ async def execute_search(
 
         # Build query from search terms
         original_query = " ".join(request.search_terms)
-        search_logs.append(f"🔍 Original query: '{original_query}'")
+        search_logs.append(f"[SEARCH] Original query: '{original_query}'")
         logger.info(f"Search request: '{original_query}' (semantic={request.enable_semantic})")
 
         # Apply GEO filters to query (organism, study_type)
@@ -288,7 +107,7 @@ async def execute_search(
         query = " AND ".join(query_parts) if len(query_parts) > 1 else query_parts[0]
 
         if query != original_query:
-            search_logs.append(f"🎯 Query with filters: '{query}'")
+            search_logs.append(f"[FILTER] Query with filters: '{query}'")
 
         # Execute unified search
         logger.info(f"Executing unified search: '{query}'")
@@ -309,25 +128,25 @@ async def execute_search(
         # Add query optimization logs
         query_type = search_result.query_type
         if query_type == "hybrid":
-            search_logs.append("🔄 Query type: HYBRID (GEO + Publications)")
+            search_logs.append("[PROCESS] Query type: HYBRID (GEO + Publications)")
         else:
-            search_logs.append(f"📊 Query type: {query_type}")
+            search_logs.append(f"[DATA] Query type: {query_type}")
 
         if search_result.optimized_query and search_result.optimized_query != original_query:
-            search_logs.append(f"🔧 Optimized query: '{search_result.optimized_query}'")
+            search_logs.append(f"[CONFIG] Optimized query: '{search_result.optimized_query}'")
         else:
-            search_logs.append("ℹ️ Query used as-is (no optimization needed)")
+            search_logs.append("[INFO] Query used as-is (no optimization needed)")
 
         if search_result.cache_hit:
-            search_logs.append("⚡ Cache hit - results returned from cache")
+            search_logs.append("[FAST] Cache hit - results returned from cache")
         else:
-            search_logs.append("🔄 Fresh search - results fetched from sources")
+            search_logs.append("[PROCESS] Fresh search - results fetched from sources")
 
-        search_logs.append(f"⏱️ Pipeline search time: {search_result.search_time_ms:.2f}ms")
+        search_logs.append(f"[TIME] Pipeline search time: {search_result.search_time_ms:.2f}ms")
 
         # Extract GEO datasets
         geo_datasets = search_result.geo_datasets
-        search_logs.append(f"📦 Raw GEO datasets fetched: {len(geo_datasets)}")
+        search_logs.append(f"[CACHE] Raw GEO datasets fetched: {len(geo_datasets)}")
 
         # Apply min_samples filter if specified
         min_samples = request.filters.get("min_samples") if request.filters else None
@@ -335,7 +154,7 @@ async def execute_search(
             min_samples_int = int(min_samples)
             geo_datasets = [d for d in geo_datasets if d.sample_count and d.sample_count >= min_samples_int]
             filters_applied["min_samples"] = str(min_samples_int)
-            search_logs.append(f"� After min_samples={min_samples_int} filter: {len(geo_datasets)}")
+            search_logs.append(f" After min_samples={min_samples_int} filter: {len(geo_datasets)}")
             logger.info(f"Filtered by min_samples={min_samples_int}: {len(geo_datasets)} remain")
 
         # Simple ranking by keyword relevance
@@ -384,11 +203,11 @@ async def execute_search(
 
         # Sort by relevance (highest first)
         ranked_datasets.sort(key=lambda d: d.relevance_score, reverse=True)
-        search_logs.append(f"📊 After ranking: {len(ranked_datasets)} datasets")
+        search_logs.append(f"[DATA] After ranking: {len(ranked_datasets)} datasets")
 
         # Extract publications
         publications = search_result.publications
-        search_logs.append(f"📄 Found {len(publications)} related publications")
+        search_logs.append(f"[DOC] Found {len(publications)} related publications")
 
         # Add search mode to filters
         filters_applied["search_mode"] = search_result.query_type
@@ -397,7 +216,7 @@ async def execute_search(
 
         # Add result counts
         search_logs.append(
-            f"✅ Total results: {len(ranked_datasets)} datasets, {len(publications)} publications"
+            f"[OK] Total results: {len(ranked_datasets)} datasets, {len(publications)} publications"
         )
 
         # Convert datasets to response format
@@ -460,7 +279,7 @@ async def execute_search(
                 )
 
         execution_time_ms = (time.time() - start_time) * 1000
-        search_logs.append(f"⏰ Total execution time: {execution_time_ms:.2f}ms")
+        search_logs.append(f"[TIME] Total execution time: {execution_time_ms:.2f}ms")
 
         return SearchResponse(
             success=True,
@@ -546,7 +365,7 @@ async def enrich_fulltext(
             enable_crossref=True,
             enable_scihub=True,  # User requested
             enable_libgen=True,  # User requested
-            download_pdfs=False,  # ⚠️ CRITICAL: DO NOT download here, we use PDFDownloadManager instead
+            download_pdfs=False,  # [WARNING] CRITICAL: DO NOT download here, we use PDFDownloadManager instead
             unpaywall_email=os.getenv("UNPAYWALL_EMAIL", "research@omicsoracle.ai"),
             core_api_key=os.getenv("CORE_API_KEY"),
         )
@@ -583,7 +402,7 @@ async def enrich_fulltext(
                     pub = pubmed_client.fetch_by_id(pmid)
                     if pub:
                         publications.append(pub)
-                        logger.info(f"✅ Fetched metadata for PMID {pmid}: DOI={pub.doi}, PMC={pub.pmcid}")
+                        logger.info(f"[OK] Fetched metadata for PMID {pmid}: DOI={pub.doi}, PMC={pub.pmcid}")
                 except Exception as e:
                     logger.error(f"Error fetching metadata for PMID {pmid}: {e}")
 
@@ -593,40 +412,42 @@ async def enrich_fulltext(
                 continue
 
             # STEP 1: Get URLs from all sources (same as pipeline)
-            logger.info(f"� Finding full-text URLs for {len(publications)} publications from all sources...")
+            logger.info(f" Finding full-text URLs for {len(publications)} publications from all sources...")
             fulltext_results = await fulltext_manager.get_fulltext_batch(publications)
 
             # DEBUG: Log all fulltext results
-            logger.warning(f"📊 FULLTEXT RESULTS: Received {len(fulltext_results)} results")
+            logger.warning(f"[DATA] FULLTEXT RESULTS: Received {len(fulltext_results)} results")
             for idx, (pub, result) in enumerate(zip(publications, fulltext_results)):
                 logger.warning(
                     f"   [{idx+1}] PMID {pub.pmid}: success={result.success}, source={result.source.value if result.success else 'NONE'}, has_url={bool(result.url)}"
                 )
 
             # STEP 2: Set fulltext_url on publications for PDFDownloadManager
-            logger.warning(f"🔗 STEP 2: Setting fulltext URLs on publication objects...")
+            logger.warning("[LINK] STEP 2: Setting fulltext URLs on publication objects...")
             urls_set = 0
             for pub, result in zip(publications, fulltext_results):
                 if result.success and result.url:
                     pub.fulltext_url = result.url
                     pub.fulltext_source = result.source.value
                     urls_set += 1
-                    logger.warning(f"   ✅ PMID {pub.pmid}: URL set from {result.source.value}")
+                    logger.warning(f"   [OK] PMID {pub.pmid}: URL set from {result.source.value}")
                 else:
                     logger.warning(
-                        f"   ❌ PMID {pub.pmid}: NO URL (success={result.success}, url={bool(result.url)})"
+                        f"   [ERROR] PMID {pub.pmid}: NO URL (success={result.success}, url={bool(result.url)})"
                     )
-            logger.warning(f"📊 STEP 2 COMPLETE: Set URLs on {urls_set}/{len(publications)} publications")
+            logger.warning(f"[DATA] STEP 2 COMPLETE: Set URLs on {urls_set}/{len(publications)} publications")
 
             # STEP 3: Download PDFs with waterfall retry on failure
-            logger.info(f"🔍 STEP 3: Preparing to download PDFs with waterfall fallback...")
+            logger.info("[SEARCH] STEP 3: Preparing to download PDFs with waterfall fallback...")
             publications_with_urls = [
                 p for p in publications if hasattr(p, "fulltext_url") and p.fulltext_url
             ]
             logger.info(f"   Found {len(publications_with_urls)} publications with URLs")
 
             if publications_with_urls:
-                logger.info(f"⬇️  Downloading {len(publications_with_urls)} PDFs using PDFDownloadManager...")
+                logger.info(
+                    f"[DOWNLOAD]  Downloading {len(publications_with_urls)} PDFs using PDFDownloadManager..."
+                )
                 pdf_dir = Path("data/fulltext/pdfs")
                 pdf_dir.mkdir(parents=True, exist_ok=True)
 
@@ -635,7 +456,7 @@ async def enrich_fulltext(
                     publications=publications_with_urls, output_dir=pdf_dir, url_field="fulltext_url"
                 )
                 logger.warning(
-                    f"📊 STEP 3A: First attempt - Downloaded {download_report.successful}/{download_report.total} PDFs"
+                    f"[DATA] STEP 3A: First attempt - Downloaded {download_report.successful}/{download_report.total} PDFs"
                 )
 
                 # STEP 3B: WATERFALL RETRY - For failed downloads, try next sources
@@ -644,21 +465,21 @@ async def enrich_fulltext(
                     if not result.success:
                         failed_pubs.append(result.publication)
                         logger.warning(
-                            f"   � PMID {result.publication.pmid}: Will retry with next source (failed: {result.error})"
+                            f"    PMID {result.publication.pmid}: Will retry with next source (failed: {result.error})"
                         )
 
                 if failed_pubs:
                     logger.warning(
-                        f"🔄 STEP 3B: TIERED WATERFALL RETRY for {len(failed_pubs)} failed downloads..."
+                        f"[PROCESS] STEP 3B: TIERED WATERFALL RETRY for {len(failed_pubs)} failed downloads..."
                     )
-                    logger.warning(f"   Strategy: Keep trying ALL remaining sources until success")
+                    logger.warning("   Strategy: Keep trying ALL remaining sources until success")
 
                     # For each failed publication, try ALL remaining sources in waterfall
                     retry_successes = 0
                     for pub in failed_pubs:
                         tried_sources = [pub.fulltext_source] if hasattr(pub, "fulltext_source") else []
                         logger.warning(
-                            f"   🔄 PMID {pub.pmid}: Starting waterfall retry (already tried: {', '.join(tried_sources)})"
+                            f"   [PROCESS] PMID {pub.pmid}: Starting waterfall retry (already tried: {', '.join(tried_sources)})"
                         )
 
                         # Keep trying until we get a successful download or run out of sources
@@ -676,7 +497,7 @@ async def enrich_fulltext(
 
                             if not retry_result.success or not retry_result.url:
                                 logger.warning(
-                                    f"      ❌ Attempt {attempt}: No more sources available in waterfall"
+                                    f"      [ERROR] Attempt {attempt}: No more sources available in waterfall"
                                 )
                                 break
 
@@ -685,7 +506,7 @@ async def enrich_fulltext(
                             tried_sources.append(current_source)
                             pub.fulltext_url = retry_result.url
                             pub.fulltext_source = current_source
-                            logger.warning(f"      🆕 Attempt {attempt}: Trying {current_source}")
+                            logger.warning(f"      [NEW] Attempt {attempt}: Trying {current_source}")
 
                             # Try to download this single PDF
                             single_result = await pdf_downloader._download_single(
@@ -697,53 +518,53 @@ async def enrich_fulltext(
                                 retry_successes += 1
                                 download_succeeded = True
                                 logger.warning(
-                                    f"      ✅ SUCCESS via {current_source}! Size: {single_result.file_size / 1024:.1f} KB"
+                                    f"      [OK] SUCCESS via {current_source}! Size: {single_result.file_size / 1024:.1f} KB"
                                 )
                                 # Add to results
                                 download_report.results.append(single_result)
                             else:
                                 logger.warning(
-                                    f"      ⚠️  {current_source} failed: {single_result.error} - trying next source..."
+                                    f"      [WARNING]  {current_source} failed: {single_result.error} - trying next source..."
                                 )
 
                         if not download_succeeded:
                             logger.warning(
-                                f"      ❌ EXHAUSTED: Tried {len(tried_sources)} sources, none succeeded"
+                                f"      [ERROR] EXHAUSTED: Tried {len(tried_sources)} sources, none succeeded"
                             )
 
                     if retry_successes > 0:
                         download_report.successful += retry_successes
                         download_report.failed -= retry_successes
                         logger.warning(
-                            f"📊 RETRY COMPLETE: {retry_successes} additional PDFs downloaded from alternative sources"
+                            f"[DATA] RETRY COMPLETE: {retry_successes} additional PDFs downloaded from alternative sources"
                         )
 
                 logger.warning(
-                    f"✅ STEP 3 COMPLETE: Downloaded {download_report.successful}/{download_report.total} PDFs (including retries)"
+                    f"[OK] STEP 3 COMPLETE: Downloaded {download_report.successful}/{download_report.total} PDFs (including retries)"
                 )
 
                 # STEP 3C: Set pdf_path on publications from all download results
-                logger.warning(f"🔍 STEP 3C: Setting pdf_path on publications from download results...")
+                logger.warning("[SEARCH] STEP 3C: Setting pdf_path on publications from download results...")
                 paths_set = 0
                 for result in download_report.results:
                     if result.success and result.pdf_path:
                         result.publication.pdf_path = str(result.pdf_path)
                         paths_set += 1
                         logger.warning(
-                            f"   ✅ PMID {result.publication.pmid}: pdf_path={result.pdf_path.name}, size={result.pdf_path.stat().st_size} bytes"
+                            f"   [OK] PMID {result.publication.pmid}: pdf_path={result.pdf_path.name}, size={result.pdf_path.stat().st_size} bytes"
                         )
                     else:
                         logger.warning(
-                            f"   ❌ PMID {result.publication.pmid}: Download FAILED after retry - {result.error}"
+                            f"   [ERROR] PMID {result.publication.pmid}: Download FAILED after retry - {result.error}"
                         )
                 logger.warning(
-                    f"📊 STEP 3C COMPLETE: Set pdf_path on {paths_set}/{len(publications_with_urls)} publications"
+                    f"[DATA] STEP 3C COMPLETE: Set pdf_path on {paths_set}/{len(publications_with_urls)} publications"
                 )
             else:
-                logger.warning("❌ STEP 3 SKIPPED: No publications with URLs found")
+                logger.warning("[ERROR] STEP 3 SKIPPED: No publications with URLs found")
 
             # STEP 4: Parse PDFs and attach to dataset
-            logger.info(f"🔍 STEP 4: Parsing PDFs and building fulltext data...")
+            logger.info("[SEARCH] STEP 4: Parsing PDFs and building fulltext data...")
             dataset.fulltext = []
             added_count = 0
             skipped_no_url = 0
@@ -761,24 +582,24 @@ async def enrich_fulltext(
                 has_pdf = hasattr(pub, "pdf_path") and pub.pdf_path and Path(pub.pdf_path).exists()
 
                 if has_pdf:
-                    logger.info(f"📄 Parsing PDF for PMID {pub.pmid} from {pub.pdf_path}...")
+                    logger.info(f"[DOC] Parsing PDF for PMID {pub.pmid} from {pub.pdf_path}...")
                     try:
                         parsed_content = await fulltext_manager.get_parsed_content(pub)
                         logger.info(
-                            f"   ✅ Parsed {Path(pub.pdf_path).stat().st_size // 1024} KB PDF: "
+                            f"   [OK] Parsed {Path(pub.pdf_path).stat().st_size // 1024} KB PDF: "
                             f"abstract={len(parsed_content.get('abstract', ''))} chars, "
                             f"methods={len(parsed_content.get('methods', ''))} chars"
                         )
                     except Exception as e:
-                        logger.error(f"   ❌ Failed to parse PDF for {pub.pmid}: {e}")
+                        logger.error(f"   [ERROR] Failed to parse PDF for {pub.pmid}: {e}")
                 else:
                     logger.warning(
-                        f"⚠️  PMID {pub.pmid}: No PDF file (pdf_path={getattr(pub, 'pdf_path', 'NOT SET')})"
+                        f"[WARNING]  PMID {pub.pmid}: No PDF file (pdf_path={getattr(pub, 'pdf_path', 'NOT SET')})"
                     )
                     skipped_no_pdf += 1
                     # CRITICAL FIX: Skip this publication - don't add URL-only entries!
                     logger.warning(
-                        f"   ❌ SKIPPING PMID {pub.pmid}: No PDF downloaded, not counting as success"
+                        f"   [ERROR] SKIPPING PMID {pub.pmid}: No PDF downloaded, not counting as success"
                     )
                     continue
 
@@ -804,17 +625,17 @@ async def enrich_fulltext(
                         }
                     )
                     logger.warning(
-                        f"   ✅ Added PMID {pub.pmid} with {len(parsed_content.get('abstract', ''))} char abstract"
+                        f"   [OK] Added PMID {pub.pmid} with {len(parsed_content.get('abstract', ''))} char abstract"
                     )
                     dataset.fulltext.append(fulltext_info)
                     added_count += 1
                 else:
                     logger.warning(
-                        f"   ❌ SKIPPING PMID {pub.pmid}: PDF parsing failed, not adding to fulltext"
+                        f"   [ERROR] SKIPPING PMID {pub.pmid}: PDF parsing failed, not adding to fulltext"
                     )
 
             logger.warning(
-                f"📊 STEP 4 COMPLETE: Added {added_count} entries to fulltext (skipped {skipped_no_url} without URL, {skipped_no_pdf} without PDF)"
+                f"[DATA] STEP 4 COMPLETE: Added {added_count} entries to fulltext (skipped {skipped_no_url} without URL, {skipped_no_pdf} without PDF)"
             )
             dataset.fulltext_count = len(dataset.fulltext)
 
@@ -827,7 +648,7 @@ async def enrich_fulltext(
                 dataset.fulltext_status = "available"
 
             logger.warning(
-                f"📊 FINAL STATUS: fulltext_count={dataset.fulltext_count}/{len(publications)}, fulltext_status={dataset.fulltext_status}"
+                f"[DATA] FINAL STATUS: fulltext_count={dataset.fulltext_count}/{len(publications)}, fulltext_status={dataset.fulltext_status}"
             )
             enriched_datasets.append(dataset)
 
@@ -845,219 +666,6 @@ async def enrich_fulltext(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Enrichment error: {str(e)}",
-        )
-
-
-@router.post(
-    "/validate",
-    response_model=DataValidationResponse,
-    summary="Execute Data Agent",
-)
-async def execute_data_agent(
-    request: DataValidationRequest,
-    current_user: User = Depends(get_current_user),
-    agent: DataAgent = Depends(get_data_agent),
-):
-    """
-    Execute the Data Agent to validate dataset quality.
-
-    This endpoint validates GEO datasets by checking:
-    - Data quality metrics
-    - Publication availability
-    - SRA data presence
-    - Dataset age
-
-    Args:
-        request: Validation request with dataset IDs
-
-    Returns:
-        DataValidationResponse: Validated datasets with quality scores
-    """
-    start_time = time.time()
-
-    try:
-        # First need to fetch the datasets
-        # For now, create minimal RankedDataset objects with just IDs
-        # In production, you'd fetch full metadata first
-        from omics_oracle_v2.agents.models.search import GEOSeriesMetadata
-
-        ranked_datasets = []
-        for geo_id in request.dataset_ids:
-            metadata = GEOSeriesMetadata(
-                geo_id=geo_id,
-                title=f"Dataset {geo_id}",
-                summary="",
-                organism="",
-                sample_count=0,
-                submission_date="",
-                pubmed_ids=[],
-            )
-            ranked_datasets.append(
-                RankedDataset(
-                    dataset=metadata,
-                    relevance_score=1.0,
-                    match_reasons=["Direct ID match"],
-                )
-            )
-
-        # Execute agent
-        data_input = DataInput(datasets=ranked_datasets)
-        result = agent.execute(data_input)
-
-        if not result.success:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Data validation failed: {result.error}",
-            )
-
-        output = result.output
-
-        # Convert to response format
-        validated = []
-        for processed in output.processed_datasets:
-            # Convert age_days to age_years
-            age_years = processed.age_days / 365.25 if processed.age_days else 0.0
-
-            quality_metrics = QualityMetricsResponse(
-                quality_score=processed.quality_score,
-                quality_level=processed.quality_level,
-                has_publication=processed.has_publication,
-                has_sra_data=processed.has_sra_data,
-                age_years=age_years,
-            )
-
-            validated.append(
-                ValidatedDatasetResponse(
-                    geo_id=processed.geo_id,
-                    title=processed.title,
-                    summary=processed.summary,
-                    organism=processed.organism,
-                    sample_count=processed.sample_count,
-                    platform="",  # ProcessedDataset doesn't have platform field
-                    relevance_score=processed.relevance_score,
-                    match_reasons=[],  # Not available in ProcessedDataset
-                    quality_metrics=quality_metrics,
-                )
-            )
-
-        execution_time_ms = (time.time() - start_time) * 1000
-
-        # Create quality stats dict from DataOutput fields
-        quality_stats = {
-            "total_processed": output.total_processed,
-            "total_passed_quality": output.total_passed_quality,
-            "average_quality_score": output.average_quality_score,
-            "quality_distribution": output.quality_distribution,
-        }
-
-        return DataValidationResponse(
-            success=True,
-            execution_time_ms=execution_time_ms,
-            timestamp=datetime.now(timezone.utc),
-            total_processed=output.total_processed,
-            validated_datasets=validated,
-            quality_stats=quality_stats,
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Data agent execution failed: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Data validation error: {str(e)}",
-        )
-
-
-@router.post("/report", response_model=ReportResponse, summary="Execute Report Agent")
-async def execute_report_agent(
-    request: ReportRequest,
-    current_user: User = Depends(get_current_user),
-    agent: ReportAgent = Depends(get_report_agent),
-):
-    """
-    Execute the Report Agent to generate analysis reports.
-
-    This endpoint generates AI-powered reports analyzing datasets,
-    including key findings and recommendations.
-
-    Args:
-        request: Report request with dataset IDs and preferences
-
-    Returns:
-        ReportResponse: Generated report with findings and recommendations
-    """
-    start_time = time.time()
-
-    try:
-        # Create minimal dataset objects for report generation
-        from omics_oracle_v2.agents.models.data import ProcessedDataset
-
-        processed_datasets = []
-        for geo_id in request.dataset_ids:
-            # Create minimal ProcessedDataset for report generation
-            processed_datasets.append(
-                ProcessedDataset(
-                    geo_id=geo_id,
-                    title=f"Dataset {geo_id}",
-                    summary="",
-                    organism="",
-                    sample_count=0,
-                    platform_count=1,
-                    submission_date="",
-                    publication_date="",
-                    age_days=730,  # ~2 years
-                    pubmed_ids=[],
-                    has_publication=True,
-                    has_sra_data=True,
-                    sra_run_count=0,
-                    quality_score=0.8,
-                    quality_level="good",
-                    quality_issues=[],
-                    quality_strengths=[],
-                    relevance_score=1.0,
-                    metadata_completeness=0.7,
-                )
-            )
-
-        # Execute agent
-        report_input = ReportInput(
-            datasets=processed_datasets,
-            report_type=request.report_type,
-            output_format=request.report_format,
-            include_recommendations=request.include_recommendations,
-        )
-        result = agent.execute(report_input)
-
-        if not result.success:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Report generation failed: {result.error}",
-            )
-
-        output = result.output
-
-        execution_time_ms = (time.time() - start_time) * 1000
-
-        return ReportResponse(
-            success=True,
-            execution_time_ms=execution_time_ms,
-            timestamp=datetime.now(timezone.utc),
-            report_type=output.report_type.value,
-            report_format=output.report_format.value,
-            full_report=output.full_report,
-            key_findings=[insight.insight for insight in output.key_insights],
-            recommendations=output.recommendations if request.include_recommendations else None,
-            datasets_analyzed=output.total_datasets_analyzed,
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Report agent execution failed: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Report generation error: {str(e)}",
         )
 
 
@@ -1133,11 +741,13 @@ async def analyze_datasets(
 
         # DEBUG: Log what we received
         for ds in datasets_to_analyze:
-            logger.info(f"🔍 Dataset {ds.geo_id}: has {len(ds.fulltext) if ds.fulltext else 0} fulltext items")
+            logger.info(
+                f"[SEARCH] Dataset {ds.geo_id}: has {len(ds.fulltext) if ds.fulltext else 0} fulltext items"
+            )
             if ds.fulltext and len(ds.fulltext) > 0:
                 for ft in ds.fulltext:
                     logger.info(
-                        f"   📄 PMID {ft.pmid}: pdf_path={ft.pdf_path}, "
+                        f"   [DOC] PMID {ft.pmid}: pdf_path={ft.pdf_path}, "
                         f"abstract_len={len(ft.abstract) if ft.abstract else 0}, "
                         f"methods_len={len(ft.methods) if ft.methods else 0}"
                     )
@@ -1158,7 +768,7 @@ async def analyze_datasets(
             # Add full-text content if available
             if ds.fulltext and len(ds.fulltext) > 0:
                 dataset_info.append(
-                    f"\n   📄 Full-text content from {len(ds.fulltext)} linked publication(s):"
+                    f"\n   [DOC] Full-text content from {len(ds.fulltext)} linked publication(s):"
                 )
                 total_fulltext_papers += len(ds.fulltext)
 
@@ -1173,15 +783,15 @@ async def analyze_datasets(
                         ]
                     )
             else:
-                dataset_info.append("   ⚠️ No full-text available (analyzing GEO summary only)")
+                dataset_info.append("   [WARNING] No full-text available (analyzing GEO summary only)")
 
             dataset_summaries.append("\n".join(dataset_info))
 
         # Build analysis prompt with full-text context
         fulltext_note = (
             f"\n\nIMPORTANT: You have access to full-text content from {total_fulltext_papers} scientific papers "
-            f"(Methods, Results, Discussion sections). Use these to provide detailed, specific insights "
-            f"about experimental design, methodologies, and key findings."
+            "(Methods, Results, Discussion sections). Use these to provide detailed, specific insights "
+            "about experimental design, methodologies, and key findings."
             if total_fulltext_papers > 0
             else "\n\nNote: Analysis based on GEO metadata only (no full-text papers available)."
         )
@@ -1196,13 +806,13 @@ Found {len(datasets_to_analyze)} relevant datasets:
 Analyze these datasets and provide:
 
 1. **Overview**: Which datasets are most relevant to the user's query and why?
-   {f"Reference specific findings from the Methods and Results sections." if total_fulltext_papers > 0 else ""}
+   {"Reference specific findings from the Methods and Results sections." if total_fulltext_papers > 0 else ""}
 
 2. **Comparison**: How do these datasets differ in methodology and scope?
-   {f"Compare experimental approaches described in the Methods sections." if total_fulltext_papers > 0 else ""}
+   {"Compare experimental approaches described in the Methods sections." if total_fulltext_papers > 0 else ""}
 
 3. **Key Insights**: What are the main scientific findings or approaches?
-   {f"Cite specific results and conclusions from the papers." if total_fulltext_papers > 0 else ""}
+   {"Cite specific results and conclusions from the papers." if total_fulltext_papers > 0 else ""}
 
 4. **Recommendations**: Which dataset(s) would you recommend for:
    - Basic understanding of the topic
@@ -1210,8 +820,8 @@ Analyze these datasets and provide:
    - Method development
 
 Write for a researcher who wants expert guidance on which datasets to use.
-Be specific and cite dataset IDs (GSE numbers){f" and PMIDs" if total_fulltext_papers > 0 else ""}.
-{f"Ground your analysis in the actual experimental details from the papers." if total_fulltext_papers > 0 else ""}
+Be specific and cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_papers > 0 else ""}.
+{"Ground your analysis in the actual experimental details from the papers." if total_fulltext_papers > 0 else ""}
 """
 
         # Call LLM
