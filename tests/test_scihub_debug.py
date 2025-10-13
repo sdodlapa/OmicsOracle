@@ -7,7 +7,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
+from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 # Enable detailed logging

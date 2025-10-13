@@ -17,11 +17,11 @@ REASON FOR DEPRECATION:
 MIGRATION:
 ---------
 Instead of:
-    from omics_oracle_v2.lib.fulltext.download_utils import download_and_save_pdf
+    from omics_oracle_v2.lib.enrichment.fulltext.download_utils import download_and_save_pdf
     saved_path = await download_and_save_pdf(url, publication, source)
 
 Use:
-    from omics_oracle_v2.lib.storage.pdf.download_manager import PDFDownloadManager
+    from omics_oracle_v2.lib.enrichment.fulltext.download_manager import PDFDownloadManager
 
     pdf_downloader = PDFDownloadManager(validate_pdf=True)
     download_report = await pdf_downloader.download_batch(
@@ -59,7 +59,7 @@ from typing import Optional
 
 import aiohttp
 
-from omics_oracle_v2.lib.fulltext.smart_cache import SmartCache
+from omics_oracle_v2.lib.enrichment.fulltext.smart_cache import SmartCache
 
 logger = logging.getLogger(__name__)
 

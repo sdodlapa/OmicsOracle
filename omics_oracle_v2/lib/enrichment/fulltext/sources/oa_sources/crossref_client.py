@@ -12,7 +12,7 @@ Full-Text Access: Publisher-provided links (varies by publisher/agreement)
 API Documentation: https://github.com/CrossRef/rest-api-doc
 
 Example:
-    >>> from omics_oracle_v2.lib.publications.clients.oa_sources.crossref_client import CrossrefClient
+    >>> from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources.crossref_client import CrossrefClient
     >>>
     >>> async with CrossrefClient(email="researcher@university.edu") as client:
     >>>     # Get metadata by DOI

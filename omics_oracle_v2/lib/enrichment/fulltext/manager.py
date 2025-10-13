@@ -11,7 +11,7 @@ Sources are tried in order of:
 4. Coverage (broad sources first)
 
 Example:
-    >>> from omics_oracle_v2.lib.fulltext.manager import FullTextManager
+    >>> from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager
     >>>
     >>> manager = FullTextManager()
     >>> await manager.initialize()
@@ -31,19 +31,19 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from omics_oracle_v2.lib.fulltext.sources.libgen_client import LibGenClient, LibGenConfig
-from omics_oracle_v2.lib.fulltext.sources.scihub_client import SciHubClient, SciHubConfig
-from omics_oracle_v2.lib.publications.clients.institutional_access import (
+from omics_oracle_v2.lib.enrichment.fulltext.sources.libgen_client import LibGenClient, LibGenConfig
+from omics_oracle_v2.lib.enrichment.fulltext.sources.scihub_client import SciHubClient, SciHubConfig
+from omics_oracle_v2.lib.enrichment.fulltext.sources.institutional_access import (
     InstitutionalAccessManager,
     InstitutionType,
 )
-from omics_oracle_v2.lib.publications.clients.oa_sources import (
+from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources import (
     ArXivClient,
     BioRxivClient,
     COREClient,
     CrossrefClient,
 )
-from omics_oracle_v2.lib.publications.clients.oa_sources.unpaywall_client import (
+from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources.unpaywall_client import (
     UnpaywallClient,
     UnpaywallConfig,
 )
@@ -211,7 +211,7 @@ class FullTextManager:
 
         # Initialize CORE client
         if self.config.enable_core:
-            from omics_oracle_v2.lib.publications.clients.oa_sources.core_client import COREConfig
+            from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources.core_client import COREConfig
 
             core_config = COREConfig(api_key=self.config.core_api_key)
             self.core_client = COREClient(config=core_config)
@@ -335,7 +335,7 @@ class FullTextManager:
         Returns:
             FullTextResult with local file info if found
         """
-        from omics_oracle_v2.lib.fulltext.smart_cache import SmartCache
+        from omics_oracle_v2.lib.enrichment.fulltext.smart_cache import SmartCache
 
         cache = SmartCache()
         result = cache.find_local_file(publication)
@@ -927,7 +927,7 @@ class FullTextManager:
         """
         import time
 
-        from omics_oracle_v2.lib.fulltext.parsed_cache import get_parsed_cache
+        from omics_oracle_v2.lib.enrichment.fulltext.parsed_cache import get_parsed_cache
 
         cache = get_parsed_cache()
 
@@ -955,7 +955,7 @@ class FullTextManager:
         # STEP 3: Parse the content
         # Import parser here to avoid circular imports
         try:
-            from omics_oracle_v2.lib.fulltext.pdf_parser import PDFExtractor
+            from omics_oracle_v2.lib.enrichment.fulltext.pdf_parser import PDFExtractor
 
             parser = PDFExtractor()
 

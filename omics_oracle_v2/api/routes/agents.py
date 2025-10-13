@@ -345,9 +345,9 @@ async def enrich_fulltext(
     import os
     from pathlib import Path
 
-    from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
+    from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig
     from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient, PubMedConfig
-    from omics_oracle_v2.lib.storage.pdf.download_manager import PDFDownloadManager
+    from omics_oracle_v2.lib.enrichment.fulltext.download_manager import PDFDownloadManager
 
     start_time = time.time()
 

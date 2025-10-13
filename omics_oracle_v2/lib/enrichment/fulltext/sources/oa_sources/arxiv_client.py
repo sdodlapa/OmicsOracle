@@ -12,7 +12,7 @@ PDF Access: Direct PDF URLs available for all papers
 API Documentation: https://info.arxiv.org/help/api/index.html
 
 Example:
-    >>> from omics_oracle_v2.lib.publications.clients.oa_sources.arxiv_client import ArXivClient
+    >>> from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources.arxiv_client import ArXivClient
     >>>
     >>> async with ArXivClient() as client:
     >>>     # Search by arXiv ID
