@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 from omics_oracle_v2.agents.models.search import RankedDataset
 from omics_oracle_v2.api.models.requests import SearchRequest
 from omics_oracle_v2.api.models.responses import DatasetResponse, PublicationResponse, SearchResponse
-from omics_oracle_v2.lib.search import OrchestratorConfig, SearchOrchestrator
+from omics_oracle_v2.lib.search_orchestration import OrchestratorConfig, SearchOrchestrator
 
 logger = logging.getLogger(__name__)
 

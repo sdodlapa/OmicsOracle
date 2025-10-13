@@ -26,8 +26,8 @@ from omics_oracle_v2.lib.publications.clients.pubmed import PubMedClient
 from omics_oracle_v2.lib.publications.models import Publication, PublicationResult
 from omics_oracle_v2.lib.query_processing.optimization.analyzer import QueryAnalyzer, SearchType
 from omics_oracle_v2.lib.query_processing.optimization.optimizer import QueryOptimizer
-from omics_oracle_v2.lib.search.config import SearchConfig
-from omics_oracle_v2.lib.search.models import SearchResult
+from omics_oracle_v2.lib.search_orchestration.config import SearchConfig
+from omics_oracle_v2.lib.search_orchestration.models import SearchResult
 
 logger = logging.getLogger(__name__)
 
