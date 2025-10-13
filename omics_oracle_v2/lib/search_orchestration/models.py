@@ -7,7 +7,7 @@ Re-exports models from pipelines for backward compatibility.
 from dataclasses import dataclass, field
 from typing import Any, Dict, List
 
-from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
+from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.publications.models import Publication
 
 

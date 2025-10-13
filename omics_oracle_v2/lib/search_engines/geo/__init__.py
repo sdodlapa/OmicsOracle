@@ -11,7 +11,7 @@ Key Components:
     - Rate limiting: NCBI-compliant request throttling
 
 Example:
-    >>> from omics_oracle_v2.lib.geo import GEOClient
+    >>> from omics_oracle_v2.lib.search_engines.geo import GEOClient
     >>> import asyncio
     >>>
     >>> async def example():

@@ -14,15 +14,15 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import aiohttp
 
-from ...core.config import GEOSettings
-from ...core.exceptions import GEOError
+from omics_oracle_v2.core.config import GEOSettings
+from omics_oracle_v2.core.exceptions import GEOError
 
 if TYPE_CHECKING:
-    from ...core.config import Settings
+    from omics_oracle_v2.core.config import Settings
 
-from .cache import SimpleCache
-from .models import ClientInfo, GEOSeriesMetadata, SearchResult, SRAInfo
-from .utils import RateLimiter, retry_with_backoff
+from omics_oracle_v2.lib.search_engines.geo.cache import SimpleCache
+from omics_oracle_v2.lib.search_engines.geo.models import ClientInfo, GEOSeriesMetadata, SearchResult, SRAInfo
+from omics_oracle_v2.lib.search_engines.geo.utils import RateLimiter, retry_with_backoff
 
 logger = logging.getLogger(__name__)
 

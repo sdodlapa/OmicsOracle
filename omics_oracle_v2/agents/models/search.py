@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
-from ...lib.geo.models import GEOSeriesMetadata
+from ...lib.search_engines.geo.models import GEOSeriesMetadata
 
 
 class SearchInput(BaseModel):
