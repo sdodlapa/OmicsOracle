@@ -249,32 +249,51 @@ result = pipeline.search("What is ATAC-seq used for?", return_answer=True)
 
 ## 🏗️ Architecture
 
+**Flow-Based Organization** (October 2025 - Phase 2B Complete)
+
+OmicsOracle follows a **production execution flow** matching real-world query processing:
+
 ```
 OmicsOracle/
-├── omics_oracle_v2/        # Main package
-│   ├── agents/             # Agent framework (Search, Data, Query, Report)
-│   ├── api/                # FastAPI application
-│   │   ├── routes/         # API endpoints
-│   │   ├── static/         # Web UI
-│   │   └── models/         # Request/response schemas
-│   ├── lib/                # Core libraries (7,643 LOC)
-│   │   ├── ai/             # LLM integration
-│   │   ├── embeddings/     # Text embeddings
-│   │   ├── geo/            # GEO database client
-│   │   ├── nlp/            # NLP utilities
-│   │   ├── ranking/        # Quality scoring
-│   │   ├── rag/            # RAG pipeline
-│   │   ├── search/         # Hybrid search
-│   │   └── vector_db/      # FAISS vector database
-│   ├── auth/               # Authentication
-│   ├── cache/              # Caching layer
-│   └── database/           # Data persistence
-├── tests/                  # 220+ tests
-├── docs/                   # Documentation
-└── scripts/                # Utility scripts
+├── omics_oracle_v2/              # Main package
+│   ├── api/                      # FastAPI application
+│   │   ├── routes/               # API endpoints
+│   │   ├── static/               # Web UI
+│   │   └── models/               # Request/response schemas
+│   ├── lib/                      # Core libraries (Flow-Based)
+│   │   ├── query_processing/     # Stage 3: Query optimization
+│   │   │   ├── nlp/              # Biomedical NER, synonyms, expansion
+│   │   │   └── optimization/     # Query analyzer & optimizer
+│   │   ├── search_orchestration/ # Stage 4: Parallel coordinator
+│   │   ├── search_engines/       # Stage 5: Search implementations
+│   │   │   ├── geo/              # 5a: PRIMARY - GEO datasets
+│   │   │   └── citations/        # 5b: PubMed, OpenAlex, Scholar
+│   │   ├── enrichment/           # Stages 6-8: Full-text enrichment
+│   │   │   └── fulltext/         # 11 sources (SciHub, LibGen, OA)
+│   │   ├── analysis/             # Stage 9: AI & Analytics
+│   │   │   ├── ai/               # GPT-4 analysis & summarization
+│   │   │   └── publications/     # Knowledge graphs, QA, trends
+│   │   └── infrastructure/       # Cross-cutting concerns
+│   │       └── cache/            # Redis caching layer
+│   ├── agents/                   # Agent framework
+│   ├── auth/                     # Authentication & authorization
+│   └── database/                 # Data persistence
+├── tests/                        # 220+ tests (143/145 passing in lib/)
+├── docs/                         # Comprehensive documentation
+└── scripts/                      # Utility scripts
 ```
 
-**Learn more:** [docs/SYSTEM_ARCHITECTURE.md](docs/SYSTEM_ARCHITECTURE.md)
+**Key Architectural Decisions:**
+- ✅ **GEO as PRIMARY Search Engine** - Not just a client, the core search capability
+- ✅ **Flow-Based Organization** - Structure mirrors production execution flow
+- ✅ **Absolute Imports** - All imports use full paths for clarity
+- ✅ **Git History Preserved** - All moves used `git mv`
+- ✅ **Test Validated** - 143/145 tests passing after reorganization
+
+**Learn more:**
+- [System Architecture](docs/SYSTEM_ARCHITECTURE.md) - Detailed component docs
+- [Phase 2B Complete](PHASE2B_COMPLETE.md) - Reorganization summary (50+ files, 100+ imports)
+- [Test Validation](PHASE3_TEST_VALIDATION_REPORT.md) - Validation results
 
 ---
 
