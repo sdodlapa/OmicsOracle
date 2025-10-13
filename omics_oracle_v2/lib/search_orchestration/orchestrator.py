@@ -16,7 +16,7 @@ import logging
 import time
 from typing import List, Optional
 
-from omics_oracle_v2.lib.cache.redis_cache import RedisCache
+from omics_oracle_v2.lib.infrastructure.cache.redis_cache import RedisCache
 from omics_oracle_v2.lib.search_engines.citations.openalex import OpenAlexClient, OpenAlexConfig
 from omics_oracle_v2.lib.search_engines.citations.scholar import GoogleScholarClient, GoogleScholarConfig
 from omics_oracle_v2.lib.search_engines.geo import GEOClient

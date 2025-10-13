@@ -40,7 +40,7 @@ import time
 from pathlib import Path
 
 from omics_oracle_v2.core.config import get_settings
-from omics_oracle_v2.lib.cache.redis_cache import RedisCache
+from omics_oracle_v2.lib.infrastructure.cache.redis_cache import RedisCache
 from omics_oracle_v2.lib.geo import GEOClient
 from omics_oracle_v2.lib.pipelines.unified_search_pipeline import OmicsSearchPipeline, UnifiedSearchConfig
 from omics_oracle_v2.lib.query.optimizer import QueryOptimizer

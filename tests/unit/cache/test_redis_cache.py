@@ -13,7 +13,7 @@ import asyncio
 import logging
 import time
 
-from omics_oracle_v2.lib.cache.redis_client import AsyncRedisCache, CacheDecorator
+from omics_oracle_v2.lib.infrastructure.cache.redis_client import AsyncRedisCache, CacheDecorator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
