@@ -395,3 +395,67 @@ class PubMedClient(BasePublicationClient):
         logger.info(f"Filtered query: {filtered_query}")
 
         return self.search(filtered_query, max_results, **kwargs)
+
+    def get_citing_papers(self, pmid: str, max_results: int = 100) -> List[Publication]:
+        """
+        Find papers that cite a given PMID using PubMed's elink utility.
+
+        This uses the pubmed_pubmed_citedin link type to find papers that
+        reference the given PMID in their citations.
+
+        Args:
+            pmid: PubMed ID of the paper to find citations for
+            max_results: Maximum number of citing papers to return
+
+        Returns:
+            List of Publication objects citing the given PMID
+
+        Example:
+            >>> client = PubMedClient(config)
+            >>> citing_papers = client.get_citing_papers("26046694")
+            >>> print(f"Found {len(citing_papers)} papers")
+        """
+        try:
+            self._rate_limit()
+
+            # Use elink to find papers citing this PMID
+            # pubmed_pubmed_citedin: papers in PubMed that cite this paper
+            handle = Entrez.elink(dbfrom="pubmed", db="pubmed", id=pmid, linkname="pubmed_pubmed_citedin")
+
+            result = Entrez.read(handle)
+            handle.close()
+
+            # Extract citing PMIDs from the result
+            citing_pmids = []
+            if result and result[0].get("LinkSetDb"):
+                linksetdb = result[0]["LinkSetDb"]
+                if linksetdb:
+                    citing_pmids = [link["Id"] for link in linksetdb[0]["Link"]]
+                    logger.info(f"Found {len(citing_pmids)} papers citing PMID {pmid}")
+
+            if not citing_pmids:
+                logger.info(f"No papers found citing PMID {pmid}")
+                return []
+
+            # Limit to max_results
+            citing_pmids = citing_pmids[:max_results]
+
+            # Fetch full details for citing papers
+            records = self._fetch_details(citing_pmids)
+
+            # Parse to Publication objects
+            publications = []
+            for record in records:
+                try:
+                    pub = self._parse_medline_record(record)
+                    publications.append(pub)
+                except Exception as e:
+                    logger.warning(f"Failed to parse citing paper {record.get('PMID', 'unknown')}: {e}")
+                    continue
+
+            logger.info(f"Successfully parsed {len(publications)} citing papers")
+            return publications
+
+        except Exception as e:
+            logger.error(f"Failed to get citing papers for PMID {pmid}: {e}")
+            return []

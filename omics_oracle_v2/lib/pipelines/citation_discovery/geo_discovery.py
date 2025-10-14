@@ -15,27 +15,14 @@ from typing import List, Optional, Set
 
 from omics_oracle_v2.lib.pipelines.citation_discovery.cache import DiscoveryCache
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import (
-    CrossrefConfig,
     EuropePMCConfig,
     OpenCitationsConfig,
     PubMedConfig,
 )
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.crossref import (
-    CrossrefClient,
-)
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.europepmc import (
-    EuropePMCClient,
-)
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.opencitations import (
-    OpenCitationsClient,
-)
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.openalex import (
-    OpenAlexClient,
-    OpenAlexConfig,
-)
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.pubmed import (
-    PubMedClient,
-)
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.europepmc import EuropePMCClient
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.openalex import OpenAlexClient, OpenAlexConfig
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.opencitations import OpenCitationsClient
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.pubmed import PubMedClient
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.semantic_scholar import (
     SemanticScholarClient,
     SemanticScholarConfig,
@@ -44,13 +31,12 @@ from omics_oracle_v2.lib.pipelines.citation_discovery.deduplication import (
     DeduplicationConfig,
     SmartDeduplicator,
 )
-from omics_oracle_v2.lib.pipelines.citation_discovery.error_handling import (
-    FallbackChain,
-    retry_with_backoff,
-)
-from omics_oracle_v2.lib.pipelines.citation_discovery.relevance_scoring import (
-    RelevanceScorer,
-    ScoringWeights,
+from omics_oracle_v2.lib.pipelines.citation_discovery.error_handling import retry_with_backoff
+from omics_oracle_v2.lib.pipelines.citation_discovery.relevance_scoring import RelevanceScorer, ScoringWeights
+from omics_oracle_v2.lib.pipelines.citation_discovery.source_metrics import (
+    SourceManager,
+    SourceManagerConfig,
+    SourcePriority,
 )
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
@@ -66,6 +52,7 @@ class CitationDiscoveryResult:
     original_pmid: Optional[str]
     citing_papers: List[Publication]
     strategy_breakdown: dict  # Which papers came from which strategy
+    source_metrics: Optional[dict] = None  # Performance metrics per source
 
 
 class GEOCitationDiscovery:
@@ -94,9 +81,7 @@ class GEOCitationDiscovery:
     ):
         # Initialize OpenAlex client if not provided
         if openalex_client is None:
-            openalex_config = OpenAlexConfig(
-                email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"), enable=True
-            )
+            openalex_config = OpenAlexConfig(email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"), enable=True)
             self.openalex = OpenAlexClient(config=openalex_config)
             logger.info("Initialized OpenAlex client for citation discovery")
         else:
@@ -104,9 +89,7 @@ class GEOCitationDiscovery:
 
         # Initialize Semantic Scholar client if not provided
         if semantic_scholar_client is None:
-            s2_config = SemanticScholarConfig(
-                api_key=os.getenv("SEMANTIC_SCHOLAR_API_KEY")  # Optional
-            )
+            s2_config = SemanticScholarConfig(api_key=os.getenv("SEMANTIC_SCHOLAR_API_KEY"))  # Optional
             self.semantic_scholar = SemanticScholarClient(config=s2_config)
             logger.info("Initialized Semantic Scholar client for citation discovery")
         else:
@@ -167,12 +150,65 @@ class GEOCitationDiscovery:
         # Initialize relevance scorer with simplified 4-factor model
         scoring_weights = ScoringWeights(
             content_similarity=0.40,  # 40% - PRIMARY: what the paper discusses
-            keyword_match=0.30,      # 30% - SECONDARY: direct keyword matches
-            recency=0.20,            # 20% - TEMPORAL: recent papers (5yr cutoff)
-            citation_count=0.10,     # 10% - IMPACT: citation count
+            keyword_match=0.30,  # 30% - SECONDARY: direct keyword matches
+            recency=0.20,  # 20% - TEMPORAL: recent papers (5yr cutoff)
+            citation_count=0.10,  # 10% - IMPACT: citation count
         )
         self.scorer = RelevanceScorer(scoring_weights)
         logger.info("Initialized relevance scorer: content=40%, keywords=30%, recency=20%, citations=10%")
+
+        # Initialize source manager for metrics and prioritization
+        source_config = SourceManagerConfig(
+            max_total_time=120.0,  # 2 minutes max for all sources
+            per_source_timeout=60.0,  # 1 minute per source
+            enable_adaptive_priority=True,
+            enable_early_termination=False,  # Get all sources for comprehensive results
+            save_metrics=True,
+        )
+        self.source_manager = SourceManager(source_config)
+
+        # Register all sources with priorities and capabilities
+        self.source_manager.register_source(
+            "OpenAlex",
+            priority=SourcePriority.CRITICAL,  # Fast, comprehensive, reliable
+            rate_limit=10.0,  # 10 req/s with polite pool
+            supports_batch=False,
+            max_batch_size=1,
+        )
+
+        self.source_manager.register_source(
+            "Semantic Scholar",
+            priority=SourcePriority.HIGH,  # Good coverage, reliable
+            rate_limit=10.0,  # 10 req/s (100 req/s with API key)
+            supports_batch=False,
+            max_batch_size=1,
+        )
+
+        self.source_manager.register_source(
+            "Europe PMC",
+            priority=SourcePriority.HIGH,  # Specialized biomedical focus
+            rate_limit=3.0,  # 3 req/s
+            supports_batch=False,
+            max_batch_size=1,
+        )
+
+        self.source_manager.register_source(
+            "OpenCitations",
+            priority=SourcePriority.MEDIUM,  # Good data but slower
+            rate_limit=1.0,  # 1 req/s
+            supports_batch=True,  # Batch metadata fetching!
+            max_batch_size=10,  # 10 DOIs per batch
+        )
+
+        self.source_manager.register_source(
+            "PubMed",
+            priority=SourcePriority.HIGH,  # Now supports citations via elink!
+            rate_limit=3.0,  # 3 req/s (10 with API key)
+            supports_batch=True,  # Batch fetching of details
+            max_batch_size=100,  # Can fetch 100 papers at once
+        )
+
+        logger.info("✓ Initialized source manager with 5 sources")
 
         self.use_strategy_a = use_strategy_a
         self.use_strategy_b = use_strategy_b
@@ -197,17 +233,17 @@ class GEOCitationDiscovery:
             cached_result = self.cache.get(geo_metadata.geo_id, strategy_key="all")
             if cached_result:
                 logger.info(f"✓ Cache HIT for {geo_metadata.geo_id} ({len(cached_result)} papers)")
-                
+
                 # ALWAYS re-score cached papers (scores may have changed with weight updates)
                 scored_papers = self.scorer.score_publications(cached_result, geo_metadata)
                 scored_papers.sort(key=lambda x: x.total, reverse=True)
-                
+
                 # Attach scores to publications
                 for score in scored_papers:
                     score.publication._relevance_score = score
-                
+
                 ranked_papers = [score.publication for score in scored_papers]
-                
+
                 # Reconstruct result from cached papers
                 original_pmid = geo_metadata.pubmed_ids[0] if geo_metadata.pubmed_ids else None
                 return CitationDiscoveryResult(
@@ -246,48 +282,52 @@ class GEOCitationDiscovery:
         all_papers_list = list(all_papers)
         unique_papers = self.deduplicator.deduplicate(all_papers_list)
         dedup_stats = self.deduplicator.get_stats()
-        
+
         logger.info(
             f"Final deduplication: {len(all_papers_list)} → {len(unique_papers)} unique papers "
             f"({dedup_stats.duplicates_removed} duplicates removed)"
         )
-        
+
         # Reset deduplicator
         self.deduplicator.reset()
 
         # Score papers by relevance
         scored_papers = self.scorer.score_publications(unique_papers, geo_metadata)
-        
+
         # Sort by relevance score (highest first)
         scored_papers.sort(key=lambda x: x.total, reverse=True)
-        
+
         # Attach scores to publications for transparency
         for score in scored_papers:
             score.publication._relevance_score = score
-        
+
         # Extract just the publications in ranked order
         ranked_papers = [score.publication for score in scored_papers]
-        
+
         # Log top scores
         if scored_papers:
             top_5 = scored_papers[:5]
             logger.info("Top 5 papers by relevance:")
             for i, score in enumerate(top_5, 1):
-                logger.info(
-                    f"  {i}. Score={score.total:.3f}: "
-                    f"{score.publication.title[:60]}..."
-                )
+                logger.info(f"  {i}. Score={score.total:.3f}: " f"{score.publication.title[:60]}...")
 
         # Cache the result (ranked papers)
         if self.enable_cache and self.cache:
             self.cache.set(geo_metadata.geo_id, ranked_papers, strategy_key="all")
             logger.debug(f"Cached {len(ranked_papers)} ranked papers for {geo_metadata.geo_id}")
 
+        # Get source metrics summary
+        metrics_summary = self.source_manager.get_summary()
+
+        # Print metrics summary
+        self.source_manager.print_summary()
+
         return CitationDiscoveryResult(
             geo_id=geo_metadata.geo_id,
             original_pmid=original_pmid,
             citing_papers=ranked_papers[:max_results],  # Return top N by relevance
             strategy_breakdown=strategy_breakdown,
+            source_metrics=metrics_summary,
         )
 
     def _find_via_citation(self, pmid: str, max_results: int) -> List[Publication]:
@@ -295,10 +335,13 @@ class GEOCitationDiscovery:
         Strategy A: Find papers citing the original publication
 
         Uses OpenAlex, Semantic Scholar, Europe PMC, and OpenCitations with:
+        - PARALLEL execution (all sources queried simultaneously!)
         - Retry logic for transient failures
         - Fallback if one source fails
         - Graceful degradation
         """
+        import concurrent.futures
+
         all_citing_papers = []
 
         try:
@@ -319,59 +362,173 @@ class GEOCitationDiscovery:
                 f"DOI: {original_pub.doi}, PMID: {pmid}"
             )
 
-            # Source 1: OpenAlex (DOI-based) with retry
-            if self.openalex and self.openalex.config.enable and original_pub.doi:
-                @retry_with_backoff(max_retries=2, base_delay=1.0)
-                def fetch_openalex():
-                    return self.openalex.get_citing_papers(
-                        doi=original_pub.doi, max_results=max_results
-                    )
+            # PARALLEL EXECUTION: Define all fetch functions with metrics tracking
+            def fetch_openalex():
+                import time
 
-                try:
-                    openalex_citations = fetch_openalex()
-                    all_citing_papers.extend(openalex_citations)
-                    logger.info(f"  ✓ OpenAlex: {len(openalex_citations)} citing papers")
-                except Exception as e:
-                    logger.warning(f"  ✗ OpenAlex failed: {e}")
+                source_name = "OpenAlex"
+                metrics = self.source_manager.get_source(source_name)
 
-            # Source 2: Semantic Scholar (PMID-based) with retry
-            if self.semantic_scholar:
-                @retry_with_backoff(max_retries=2, base_delay=1.0)
-                def fetch_semantic_scholar():
-                    return self.semantic_scholar.get_citing_papers(pmid=pmid, limit=max_results)
+                if not self.source_manager.should_execute_source(source_name, len(all_citing_papers)):
+                    return (source_name, [])
 
-                try:
-                    s2_citations = fetch_semantic_scholar()
-                    all_citing_papers.extend(s2_citations)
-                    logger.info(f"  ✓ Semantic Scholar: {len(s2_citations)} total papers")
-                except Exception as e:
-                    logger.warning(f"  ✗ Semantic Scholar failed: {e}")
+                if self.openalex and self.openalex.config.enable and original_pub.doi:
+                    start_time = time.time()
+                    try:
 
-            # Source 3: Europe PMC (PMID-based) with retry
-            if self.europepmc:
-                @retry_with_backoff(max_retries=2, base_delay=1.0)
-                def fetch_europepmc():
-                    return self.europepmc.get_citing_papers(pmid=pmid, max_results=max_results)
+                        @retry_with_backoff(max_retries=2, base_delay=1.0)
+                        def _fetch():
+                            return self.openalex.get_citing_papers(
+                                doi=original_pub.doi, max_results=max_results
+                            )
 
-                try:
-                    europepmc_citations = fetch_europepmc()
-                    all_citing_papers.extend(europepmc_citations)
-                    logger.info(f"  ✓ Europe PMC: {len(europepmc_citations)} citing papers")
-                except Exception as e:
-                    logger.warning(f"  ✗ Europe PMC failed: {e}")
+                        papers = _fetch()
+                        elapsed = time.time() - start_time
+                        metrics.record_request(success=True, response_time=elapsed, papers_found=len(papers))
+                        return (source_name, papers)
+                    except Exception as e:
+                        elapsed = time.time() - start_time
+                        metrics.record_request(success=False, response_time=elapsed, error=str(e))
+                        logger.warning(f"  ✗ {source_name} failed: {e}")
+                        return (source_name, [])
+                return (source_name, [])
 
-            # Source 4: OpenCitations (DOI-based, Crossref data) with retry
-            if self.opencitations and original_pub.doi:
-                @retry_with_backoff(max_retries=2, base_delay=1.0)
-                def fetch_opencitations():
-                    return self.opencitations.get_citing_papers(doi=original_pub.doi, limit=max_results)
+            def fetch_semantic_scholar():
+                import time
 
-                try:
-                    opencitations_citations = fetch_opencitations()
-                    all_citing_papers.extend(opencitations_citations)
-                    logger.info(f"  ✓ OpenCitations: {len(opencitations_citations)} citing papers")
-                except Exception as e:
-                    logger.warning(f"  ✗ OpenCitations failed: {e}")
+                source_name = "Semantic Scholar"
+                metrics = self.source_manager.get_source(source_name)
+
+                if not self.source_manager.should_execute_source(source_name, len(all_citing_papers)):
+                    return (source_name, [])
+
+                if self.semantic_scholar:
+                    start_time = time.time()
+                    try:
+
+                        @retry_with_backoff(max_retries=2, base_delay=1.0)
+                        def _fetch():
+                            return self.semantic_scholar.get_citing_papers(pmid=pmid, limit=max_results)
+
+                        papers = _fetch()
+                        elapsed = time.time() - start_time
+                        metrics.record_request(success=True, response_time=elapsed, papers_found=len(papers))
+                        return (source_name, papers)
+                    except Exception as e:
+                        elapsed = time.time() - start_time
+                        metrics.record_request(success=False, response_time=elapsed, error=str(e))
+                        logger.warning(f"  ✗ {source_name} failed: {e}")
+                        return (source_name, [])
+                return (source_name, [])
+
+            def fetch_europepmc():
+                import time
+
+                source_name = "Europe PMC"
+                metrics = self.source_manager.get_source(source_name)
+
+                if not self.source_manager.should_execute_source(source_name, len(all_citing_papers)):
+                    return (source_name, [])
+
+                if self.europepmc:
+                    start_time = time.time()
+                    try:
+
+                        @retry_with_backoff(max_retries=2, base_delay=1.0)
+                        def _fetch():
+                            return self.europepmc.get_citing_papers(pmid=pmid, max_results=max_results)
+
+                        papers = _fetch()
+                        elapsed = time.time() - start_time
+                        metrics.record_request(success=True, response_time=elapsed, papers_found=len(papers))
+                        return (source_name, papers)
+                    except Exception as e:
+                        elapsed = time.time() - start_time
+                        metrics.record_request(success=False, response_time=elapsed, error=str(e))
+                        logger.warning(f"  ✗ {source_name} failed: {e}")
+                        return (source_name, [])
+                return (source_name, [])
+
+            def fetch_opencitations():
+                import time
+
+                source_name = "OpenCitations"
+                metrics = self.source_manager.get_source(source_name)
+
+                if not self.source_manager.should_execute_source(source_name, len(all_citing_papers)):
+                    return (source_name, [])
+
+                if self.opencitations and original_pub.doi:
+                    start_time = time.time()
+                    try:
+
+                        @retry_with_backoff(max_retries=2, base_delay=1.0)
+                        def _fetch():
+                            return self.opencitations.get_citing_papers(
+                                doi=original_pub.doi, limit=max_results
+                            )
+
+                        papers = _fetch()
+                        elapsed = time.time() - start_time
+                        metrics.record_request(success=True, response_time=elapsed, papers_found=len(papers))
+                        return (source_name, papers)
+                    except Exception as e:
+                        elapsed = time.time() - start_time
+                        metrics.record_request(success=False, response_time=elapsed, error=str(e))
+                        logger.warning(f"  ✗ {source_name} failed: {e}")
+                        return (source_name, [])
+                return (source_name, [])
+
+            def fetch_pubmed_citations():
+                import time
+
+                source_name = "PubMed"
+                metrics = self.source_manager.get_source(source_name)
+
+                if not self.source_manager.should_execute_source(source_name, len(all_citing_papers)):
+                    return (source_name, [])
+
+                if self.pubmed_client:
+                    start_time = time.time()
+                    try:
+
+                        @retry_with_backoff(max_retries=2, base_delay=1.0)
+                        def _fetch():
+                            return self.pubmed_client.get_citing_papers(pmid=pmid, max_results=max_results)
+
+                        papers = _fetch()
+                        elapsed = time.time() - start_time
+                        metrics.record_request(success=True, response_time=elapsed, papers_found=len(papers))
+                        return (source_name, papers)
+                    except Exception as e:
+                        elapsed = time.time() - start_time
+                        metrics.record_request(success=False, response_time=elapsed, error=str(e))
+                        logger.warning(f"  ✗ {source_name} failed: {e}")
+                        return (source_name, [])
+                return (source_name, [])
+
+            # Execute all sources in parallel using ThreadPoolExecutor
+            source_contributions = {}  # Track which papers came from which source
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                futures = [
+                    executor.submit(fetch_openalex),
+                    executor.submit(fetch_semantic_scholar),
+                    executor.submit(fetch_europepmc),
+                    executor.submit(fetch_opencitations),
+                    executor.submit(fetch_pubmed_citations),
+                ]
+
+                # Collect results as they complete
+                for future in concurrent.futures.as_completed(futures):
+                    try:
+                        source_name, papers = future.result()
+                        all_citing_papers.extend(papers)
+                        # Track paper IDs from this source
+                        source_contributions[source_name] = [p.doi or p.pmid or p.title for p in papers]
+                        logger.info(f"  ✓ {source_name}: {len(papers)} citing papers")
+                    except Exception as e:
+                        logger.warning(f"  ✗ Source failed: {e}")
 
             # If all sources failed, return empty (graceful degradation)
             if not all_citing_papers:
@@ -392,6 +549,17 @@ class GEOCitationDiscovery:
             )
             logger.debug(f"Dedup breakdown: {dedup_stats.to_dict()}")
 
+            # Track which unique papers came from which source (after deduplication)
+            unique_paper_ids = {p.doi or p.pmid or p.title for p in unique_papers}
+            unique_source_contributions = {}
+            for source_name, paper_ids in source_contributions.items():
+                # Find which of this source's papers survived deduplication
+                unique_from_source = [pid for pid in paper_ids if pid in unique_paper_ids]
+                unique_source_contributions[source_name] = unique_from_source
+
+            # Record deduplication metrics
+            self.source_manager.record_deduplication(unique_source_contributions)
+
             # Reset deduplicator for next use
             self.deduplicator.reset()
 
@@ -404,7 +572,7 @@ class GEOCitationDiscovery:
     def _find_via_geo_mention(self, geo_id: str, max_results: int) -> List[Publication]:
         """
         Strategy B: Find papers mentioning GEO ID
-        
+
         Uses PubMed with retry logic for reliability
         """
         papers = []
