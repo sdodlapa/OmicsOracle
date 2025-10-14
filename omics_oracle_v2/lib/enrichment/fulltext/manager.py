@@ -1320,21 +1320,3 @@ class FullTextManager:
             "by_source": {},
         }
         logger.info("Statistics reset")
-
-
-# Convenience function
-async def get_fulltext(
-    publication: Publication, config: Optional[FullTextManagerConfig] = None
-) -> FullTextResult:
-    """
-    Convenience function to get full-text for a single publication.
-
-    Args:
-        publication: Publication object
-        config: Optional configuration
-
-    Returns:
-        FullTextResult
-    """
-    async with FullTextManager(config) as manager:
-        return await manager.get_fulltext(publication)
