@@ -82,21 +82,13 @@ class SemanticScholarClient:
         if self.config.api_key:
             self.session.headers["x-api-key"] = self.config.api_key
 
-        # Create SSL context that bypasses verification (for institutional VPN/proxies)
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
+        # CRITICAL: Disable SSL verification at session level
+        # This is required for institutional VPN/proxies that use self-signed certificates
+        self.session.verify = False
         
-        # Mount adapter with SSL context
-        from requests.adapters import HTTPAdapter
-        from urllib3.util.ssl_ import create_urllib3_context
-        
-        class SSLAdapter(HTTPAdapter):
-            def init_poolmanager(self, *args, **kwargs):
-                kwargs['ssl_context'] = ssl_context
-                return super().init_poolmanager(*args, **kwargs)
-        
-        self.session.mount('https://', SSLAdapter())
+        # Suppress SSL warnings (optional but cleaner logs)
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         # Rate limiting state
         self._last_request_time = 0.0

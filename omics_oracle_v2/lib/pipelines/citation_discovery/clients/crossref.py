@@ -21,25 +21,11 @@ import time
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 import requests
-from requests.adapters import HTTPAdapter
-import ssl
 
 from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import CrossrefConfig
 
 logger = logging.getLogger(__name__)
-
-
-class SSLAdapter(HTTPAdapter):
-    """Custom SSL adapter that bypasses certificate verification for institutional VPNs."""
-    
-    def init_poolmanager(self, *args, **kwargs):
-        """Initialize pool manager with unverified SSL context."""
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-        kwargs['ssl_context'] = ssl_context
-        return super().init_poolmanager(*args, **kwargs)
 
 
 class CrossrefClient:
@@ -70,9 +56,16 @@ class CrossrefClient:
         self.config = config or CrossrefConfig()
         self.base_url = "https://api.crossref.org"
         
-        # Setup session with SSL bypass and retry
+        # Setup session with SSL bypass
         self.session = requests.Session()
-        self.session.mount('https://', SSLAdapter())
+        
+        # CRITICAL: Disable SSL verification at session level
+        # This is required for institutional VPN/proxies that use self-signed certificates
+        self.session.verify = False
+        
+        # Suppress SSL warnings (optional but cleaner logs)
+        import urllib3
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
         
         # Polite pool - add mailto to get better rate limits
         if self.config.mailto:
