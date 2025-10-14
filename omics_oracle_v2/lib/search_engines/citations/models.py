@@ -62,6 +62,7 @@ class Publication(BaseModel):
     # Source information
     source: PublicationSource
     citations: Optional[int] = 0
+    paper_type: Optional[str] = None  # "original" or "citing"
 
     # Indexing and categorization
     mesh_terms: List[str] = Field(default_factory=list)

@@ -129,19 +129,22 @@ class GEOCitationDiscovery:
     async def _find_via_citation(self, pmid: str, max_results: int) -> List[Publication]:
         """Strategy A: Find papers citing the original publication"""
         try:
-            # Use existing citation finder (OpenAlex, Semantic Scholar)
-            # Note: find_citing_papers needs a Publication object
-            # For now, create minimal Publication with PMID
-            from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+            # First, fetch the full publication details from PubMed to get DOI
+            logger.info(f"Fetching full publication details for PMID {pmid}")
+            publications = self.pubmed_client.fetch_details([pmid])
 
-            temp_pub = Publication(
-                pmid=pmid,
-                title="",  # Will be enriched by citation finder
-                doi=None,
-                source=PublicationSource.PUBMED,  # Required field
+            if not publications:
+                logger.warning(f"Could not fetch details for PMID {pmid}")
+                return []
+
+            original_pub = publications[0]
+            logger.info(
+                f"Found original paper: {original_pub.title[:50]}... DOI: {original_pub.doi or 'None'}"
             )
+
+            # Now find citing papers using the full publication object (with DOI)
             citing_papers = self.citation_finder.find_citing_papers(
-                publication=temp_pub, max_results=max_results
+                publication=original_pub, max_results=max_results
             )
             return citing_papers
         except Exception as e:
