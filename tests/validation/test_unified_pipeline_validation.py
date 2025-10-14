@@ -47,7 +47,7 @@ from omics_oracle_v2.lib.citations.filters import (
     filter_recent_publications,
     rank_by_citations_and_recency,
 )
-from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager
+from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
 from omics_oracle_v2.lib.geo.client import GEOClient
 from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
 from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
@@ -171,7 +171,7 @@ async def test_fulltext_retrieval(papers):
         ncbi_email = os.getenv("NCBI_EMAIL", "sdodl001@odu.edu")
 
         # Create FullTextManager config with API keys from .env
-        from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManagerConfig
+        from omics_oracle_v2.lib.pipelines.url_collection import FullTextManagerConfig
 
         config = FullTextManagerConfig(
             enable_institutional=False,  # Skip institutional for faster testing
@@ -263,7 +263,7 @@ async def test_pdf_download_and_mapping(fulltext_results):
         print_result("✅", f"Found {len(publications_with_urls)} publications with PDF URLs")
 
         # Step 2: Use PDFDownloadManager to actually download the files
-        from omics_oracle_v2.lib.enrichment.fulltext.download_manager import PDFDownloadManager
+        from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
 
         downloader = PDFDownloadManager(
             max_concurrent=3, max_retries=2, timeout_seconds=30, validate_pdf=True

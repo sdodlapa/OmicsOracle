@@ -11,7 +11,7 @@ Key Features:
 - Backwards compatible with existing PMID-based system
 
 Usage:
-    >>> from omics_oracle_v2.lib.enrichment.identifiers import UniversalIdentifier
+    >>> from omics_oracle_v2.lib.shared.identifiers import UniversalIdentifier
     >>> identifier = UniversalIdentifier(publication)
     >>> pdf_filename = identifier.filename  # e.g., "doi_10_1234_abc.pdf"
     >>> display_name = identifier.display_name  # e.g., "DOI 10.1234/abc"

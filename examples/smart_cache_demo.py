@@ -310,7 +310,7 @@ async def main():
 🎯 NEXT STEPS:
 
 1. Test with real papers:
-   >>> from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager
+   >>> from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
    >>> manager = FullTextManager()
    >>> await manager.initialize()
    >>> result = await manager.get_fulltext(publication)

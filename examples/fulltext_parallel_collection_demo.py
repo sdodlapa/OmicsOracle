@@ -25,8 +25,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from omics_oracle_v2.lib.enrichment.fulltext import FullTextManager, FullTextManagerConfig
-from omics_oracle_v2.lib.enrichment.fulltext.download_manager import PDFDownloadManager
+from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig
+from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 

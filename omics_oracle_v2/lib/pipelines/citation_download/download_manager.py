@@ -15,7 +15,7 @@ from typing import List, Optional
 import aiofiles
 import aiohttp
 
-from omics_oracle_v2.lib.enrichment.identifiers import UniversalIdentifier
+from omics_oracle_v2.lib.shared.identifiers import UniversalIdentifier
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 logger = logging.getLogger(__name__)

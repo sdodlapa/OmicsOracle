@@ -2,28 +2,41 @@
 Pipeline Organization
 =====================
 
-This package contains Pipeline 1 (Citation Discovery):
+This package contains all 4 production pipelines:
 
-1. citation_discovery/    - Discovers papers that cite GEO datasets
+1. citation_discovery/  - Pipeline 1: Discovers papers that cite GEO datasets
    - Uses 5 sources: PubMed, OpenAlex, Semantic Scholar, Europe PMC, OpenCitations
    - Includes quality validation (Phase 9)
    - Includes metrics logging (Phase 10)
 
-Note: Pipeline 2 (URL Collection) and Pipeline 3 (PDF Download) are in:
-- omics_oracle_v2.lib.enrichment.fulltext.manager (FullTextManager)
-- omics_oracle_v2.lib.enrichment.fulltext.download_manager (PDFDownloadManager)
+2. url_collection/      - Pipeline 2: Collects fulltext URLs from multiple sources
+   - 11 sources: PMC, Unpaywall, CORE, Institutional, etc.
+   - Priority-based ordering
+   - Comprehensive URL metadata
 
-These are the ACTIVE implementations used by the API.
+3. pdf_download/        - Pipeline 3: Downloads PDFs with smart caching
+   - Waterfall fallback through all available URLs
+   - PDF validation and deduplication
+   - Smart filesystem caching
+
+4. text_enrichment/     - Pipeline 4: Extracts and enriches text from PDFs
+   - PyMuPDF-based extraction
+   - Quality scoring
+   - Content normalization
+   - Parsed content caching
+
+All pipelines are production-ready and tested.
 """
 
-# Convenience imports for backward compatibility
+# Convenience imports
 from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
-
-# NOTE: FullTextManager and PDFDownloadManager have moved to enrichment/fulltext/
-# Import them from there:
-# from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager
-# from omics_oracle_v2.lib.enrichment.fulltext.download_manager import PDFDownloadManager
+from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
+from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
+from omics_oracle_v2.lib.pipelines.text_enrichment import PDFExtractor
 
 __all__ = [
     "GEOCitationDiscovery",
+    "FullTextManager",
+    "PDFDownloadManager",
+    "PDFExtractor",
 ]

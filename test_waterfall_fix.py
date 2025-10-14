@@ -29,8 +29,8 @@ async def test_waterfall_fix():
     """Test that waterfall fallback tries all sources."""
 
     # Import after setting up logging
-    from omics_oracle_v2.lib.enrichment.fulltext.download_manager import PDFDownloadManager
-    from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig
+    from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
+    from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig
     from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient, PubMedConfig
 
     # Initialize managers

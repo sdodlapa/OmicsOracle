@@ -8,7 +8,7 @@ Components:
 - pdf/: PDF download and storage management
 """
 
-from omics_oracle_v2.lib.enrichment.fulltext.download_manager import PDFDownloadManager
+from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
 
 __all__ = [
     "PDFDownloadManager",

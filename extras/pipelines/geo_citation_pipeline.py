@@ -15,7 +15,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig
+from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.geo.client import GEOClient
 from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.geo.query_builder import GEOQueryBuilder
