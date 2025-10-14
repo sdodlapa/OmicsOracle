@@ -28,6 +28,10 @@ from omics_oracle_v2.lib.pipelines.citation_discovery.clients.semantic_scholar i
     SemanticScholarClient,
     SemanticScholarConfig,
 )
+from omics_oracle_v2.lib.pipelines.citation_discovery.error_handling import (
+    FallbackChain,
+    retry_with_backoff,
+)
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 
@@ -184,14 +188,21 @@ class GEOCitationDiscovery:
         """
         Strategy A: Find papers citing the original publication
 
-        Uses both OpenAlex and Semantic Scholar for maximum coverage
+        Uses both OpenAlex and Semantic Scholar with:
+        - Retry logic for transient failures
+        - Fallback if one source fails
+        - Graceful degradation
         """
         all_citing_papers = []
 
         try:
-            # Fetch original publication details from PubMed
-            logger.info(f"Fetching full publication details for PMID {pmid}")
-            original_pub = self.pubmed_client.fetch_by_id(pmid)
+            # Fetch original publication details from PubMed (with retry)
+            @retry_with_backoff(max_retries=2, base_delay=1.0)
+            def fetch_original():
+                logger.info(f"Fetching full publication details for PMID {pmid}")
+                return self.pubmed_client.fetch_by_id(pmid)
+
+            original_pub = fetch_original()
 
             if not original_pub:
                 logger.warning(f"Could not fetch details for PMID {pmid}")
@@ -202,39 +213,47 @@ class GEOCitationDiscovery:
                 f"DOI: {original_pub.doi}, PMID: {pmid}"
             )
 
-            # Source 1: OpenAlex (DOI-based)
+            # Source 1: OpenAlex (DOI-based) with retry
             if self.openalex and self.openalex.config.enable and original_pub.doi:
-                try:
-                    openalex_citations = self.openalex.get_citing_papers(
+                @retry_with_backoff(max_retries=2, base_delay=1.0)
+                def fetch_openalex():
+                    return self.openalex.get_citing_papers(
                         doi=original_pub.doi, max_results=max_results
                     )
-                    all_citing_papers.extend(openalex_citations)
-                    logger.info(f"  OpenAlex: {len(openalex_citations)} citing papers")
-                except Exception as e:
-                    logger.warning(f"OpenAlex citation search failed: {e}")
 
-            # Source 2: Semantic Scholar (PMID-based)
-            if self.semantic_scholar:
                 try:
-                    s2_citations = self.semantic_scholar.get_citing_papers(
-                        pmid=pmid, limit=max_results
-                    )
+                    openalex_citations = fetch_openalex()
+                    all_citing_papers.extend(openalex_citations)
+                    logger.info(f"  ✓ OpenAlex: {len(openalex_citations)} citing papers")
+                except Exception as e:
+                    logger.warning(f"  ✗ OpenAlex failed (will try Semantic Scholar): {e}")
+
+            # Source 2: Semantic Scholar (PMID-based) with retry
+            if self.semantic_scholar:
+                @retry_with_backoff(max_retries=2, base_delay=1.0)
+                def fetch_semantic_scholar():
+                    return self.semantic_scholar.get_citing_papers(pmid=pmid, limit=max_results)
+
+                try:
+                    s2_citations = fetch_semantic_scholar()
                     # Deduplicate on-the-fly (by PMID/DOI)
-                    existing_ids = {
-                        (p.pmid, p.doi) for p in all_citing_papers
-                    }
-                    new_papers = [
-                        p
-                        for p in s2_citations
-                        if (p.pmid, p.doi) not in existing_ids
-                    ]
+                    existing_ids = {(p.pmid, p.doi) for p in all_citing_papers}
+                    new_papers = [p for p in s2_citations if (p.pmid, p.doi) not in existing_ids]
                     all_citing_papers.extend(new_papers)
                     logger.info(
-                        f"  Semantic Scholar: {len(s2_citations)} total "
+                        f"  ✓ Semantic Scholar: {len(s2_citations)} total "
                         f"({len(new_papers)} new after dedup)"
                     )
                 except Exception as e:
-                    logger.warning(f"Semantic Scholar citation search failed: {e}")
+                    logger.warning(f"  ✗ Semantic Scholar failed: {e}")
+
+            # If both sources failed, return empty (graceful degradation)
+            if not all_citing_papers:
+                logger.error(
+                    f"All citation sources failed for PMID {pmid}. "
+                    "This may be a transient issue - try again later."
+                )
+                return []
 
             # Deduplicate final list
             unique_papers = []
@@ -256,17 +275,24 @@ class GEOCitationDiscovery:
             return []
 
     def _find_via_geo_mention(self, geo_id: str, max_results: int) -> List[Publication]:
-        """Strategy B: Find papers mentioning GEO ID"""
+        """
+        Strategy B: Find papers mentioning GEO ID
+        
+        Uses PubMed with retry logic for reliability
+        """
         papers = []
 
-        # Search PubMed for GEO ID mentions
-        try:
+        # Search PubMed for GEO ID mentions (with retry)
+        @retry_with_backoff(max_retries=3, base_delay=1.0)
+        def search_pubmed():
             query = f"{geo_id}[All Fields]"
-            # PubMed client search is synchronous
-            pubmed_results = self.pubmed_client.search(query=query, max_results=max_results)
+            return self.pubmed_client.search(query=query, max_results=max_results)
+
+        try:
+            pubmed_results = search_pubmed()
             papers.extend(pubmed_results)
-            logger.info(f"  PubMed: {len(pubmed_results)} papers mentioning {geo_id}")
+            logger.info(f"  ✓ PubMed: {len(pubmed_results)} papers mentioning {geo_id}")
         except Exception as e:
-            logger.warning(f"PubMed search failed for {geo_id}: {e}")
+            logger.error(f"  ✗ PubMed search failed for {geo_id} (after retries): {e}")
 
         return papers
