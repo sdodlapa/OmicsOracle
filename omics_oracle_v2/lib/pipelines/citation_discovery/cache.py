@@ -295,13 +295,32 @@ class DiscoveryCache:
 
     def _serialize_result(self, publications: List[Publication]) -> str:
         """Serialize publications to JSON"""
-        data = [pub.dict() for pub in publications]
+        # Convert publications to dict, handling datetime serialization
+        data = []
+        for pub in publications:
+            pub_dict = pub.dict()
+            # Convert datetime objects to ISO format strings
+            if 'publication_date' in pub_dict and pub_dict['publication_date']:
+                if hasattr(pub_dict['publication_date'], 'isoformat'):
+                    pub_dict['publication_date'] = pub_dict['publication_date'].isoformat()
+            data.append(pub_dict)
         return json.dumps(data)
 
     def _deserialize_result(self, result_json: str) -> List[Publication]:
         """Deserialize JSON to publications"""
+        from datetime import datetime
         data = json.loads(result_json)
-        return [Publication(**item) for item in data]
+        publications = []
+        for item in data:
+            # Convert ISO format string back to datetime if present
+            if 'publication_date' in item and item['publication_date']:
+                if isinstance(item['publication_date'], str):
+                    try:
+                        item['publication_date'] = datetime.fromisoformat(item['publication_date'])
+                    except (ValueError, AttributeError):
+                        pass  # Keep as string if conversion fails
+            publications.append(Publication(**item))
+        return publications
 
     def invalidate(self, geo_id: str, strategy_key: Optional[str] = None) -> int:
         """
