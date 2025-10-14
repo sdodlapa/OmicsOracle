@@ -438,20 +438,26 @@ async def enrich_fulltext(
 
             # STEP 1: Handle ORIGINAL papers (if requested)
             if download_original and original_pmids:
-                logger.info(f"[ORIGINAL] Fetching metadata for {len(original_pmids)} original paper(s)...")
+                logger.info(
+                    f"[{dataset.geo_id}] [ORIGINAL] Fetching metadata for {len(original_pmids)} original paper(s)..."
+                )
                 for pmid in original_pmids:
                     try:
                         pub = pubmed_client.fetch_by_id(pmid)
                         if pub:
                             papers_to_download["original"].append(pub)
-                            logger.info(f"  [OK] PMID {pmid}: DOI={pub.doi}, PMC={pub.pmcid}")
+                            logger.info(
+                                f"  [{dataset.geo_id}] [OK] PMID {pmid}: DOI={pub.doi}, PMC={pub.pmcid}"
+                            )
                     except Exception as e:
-                        logger.error(f"  [ERROR] PMID {pmid}: {e}")
+                        logger.error(f"  [{dataset.geo_id}] [ERROR] PMID {pmid}: {e}")
 
             # STEP 2: Discover CITING papers (if requested)
             citation_result = None  # Initialize for metadata storage
             if include_citing_papers and citation_discovery:
-                logger.info(f"[CITATION] Discovering papers that cited {dataset.geo_id}...")
+                logger.info(
+                    f"[{dataset.geo_id}] [CITATION] Discovering papers that cited {dataset.geo_id}..."
+                )
 
                 # Convert DatasetResponse to GEOSeriesMetadata for citation discovery
                 geo_metadata = GEOSeriesMetadata(
@@ -472,10 +478,12 @@ async def enrich_fulltext(
                     )
 
                     if citation_result.citing_papers:
-                        logger.info(f"  [OK] Found {len(citation_result.citing_papers)} citing papers")
+                        logger.info(
+                            f"  [{dataset.geo_id}] [OK] Found {len(citation_result.citing_papers)} citing papers"
+                        )
                         papers_to_download["citing"] = citation_result.citing_papers[:max_citing_papers]
                     else:
-                        logger.warning(f"  [WARNING] No citing papers found for {dataset.geo_id}")
+                        logger.warning(f"  [{dataset.geo_id}] [WARNING] No citing papers found")
 
                 except Exception as e:
                     logger.error(f"  [ERROR] Citation discovery failed: {e}", exc_info=True)

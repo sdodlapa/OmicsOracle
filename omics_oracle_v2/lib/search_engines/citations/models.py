@@ -106,6 +106,11 @@ class Publication(BaseModel):
         return bool(self.pmcid or self.pdf_url)
 
     @property
+    def id(self) -> str:
+        """Alias for primary_id - used by FullTextManager and other components."""
+        return self.primary_id
+
+    @property
     def primary_id(self) -> str:
         """Get the primary identifier for this publication."""
         return self.pmid or self.pmcid or self.doi or f"unknown_{hash(self.title)}"

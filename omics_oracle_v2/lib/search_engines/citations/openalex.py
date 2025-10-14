@@ -371,13 +371,32 @@ class OpenAlexClient(BasePublicationClient):
         if pub_date_str:
             try:
                 pub_date = datetime.strptime(pub_date_str, "%Y-%m-%d")
-            except:
+            except (ValueError, TypeError):
                 pass
 
         # Extract DOI
         doi = work.get("doi")
         if doi and doi.startswith("https://doi.org/"):
             doi = doi.replace("https://doi.org/", "")
+
+        # Extract PMID from ids object
+        pmid = None
+        pmcid = None
+        ids = work.get("ids", {})
+        if ids:
+            # Extract PMID (format: "https://pubmed.ncbi.nlm.nih.gov/12345678")
+            pmid_url = ids.get("pmid")
+            if pmid_url and isinstance(pmid_url, str):
+                pmid = pmid_url.split("/")[-1] if "/" in pmid_url else pmid_url
+
+            # Extract PMCID (format: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC123456")
+            pmc_url = ids.get("pmcid")
+            if pmc_url and isinstance(pmc_url, str):
+                # Extract PMC12345 from URL
+                if "PMC" in pmc_url:
+                    pmcid = pmc_url.split("PMC")[-1]
+                    if pmcid:
+                        pmcid = f"PMC{pmcid}"
 
         # Extract abstract (from abstract_inverted_index)
         abstract = self._extract_abstract(work.get("abstract_inverted_index"))
@@ -397,7 +416,8 @@ class OpenAlexClient(BasePublicationClient):
             publication_date=pub_date,
             journal=journal,
             doi=doi,
-            pmid=None,  # OpenAlex doesn't provide PMID directly
+            pmid=pmid,  # Extract from OpenAlex ids
+            pmcid=pmcid,  # Extract from OpenAlex ids
             citations=work.get("cited_by_count", 0),
             source=PublicationSource.OPENALEX,
             metadata={
