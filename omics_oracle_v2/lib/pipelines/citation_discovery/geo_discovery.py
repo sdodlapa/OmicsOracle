@@ -13,6 +13,7 @@ import os
 from dataclasses import dataclass
 from typing import List, Optional, Set
 
+from omics_oracle_v2.lib.pipelines.citation_discovery.cache import DiscoveryCache
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import (
     PubMedConfig,
 )
@@ -58,8 +59,10 @@ class GEOCitationDiscovery:
         openalex_client: Optional[OpenAlexClient] = None,
         pubmed_client: Optional[PubMedClient] = None,
         semantic_scholar_client: Optional[SemanticScholarClient] = None,
+        cache: Optional[DiscoveryCache] = None,
         use_strategy_a: bool = True,  # Citation-based (OpenAlex + Semantic Scholar)
         use_strategy_b: bool = True,  # Mention-based (PubMed)
+        enable_cache: bool = True,
     ):
         # Initialize OpenAlex client if not provided
         if openalex_client is None:
@@ -92,6 +95,18 @@ class GEOCitationDiscovery:
         else:
             self.pubmed_client = pubmed_client
 
+        # Initialize cache
+        self.enable_cache = enable_cache
+        if enable_cache:
+            if cache is None:
+                self.cache = DiscoveryCache(ttl_seconds=604800)  # 1 week default
+                logger.info("Initialized citation discovery cache (TTL: 1 week)")
+            else:
+                self.cache = cache
+        else:
+            self.cache = None
+            logger.info("Cache disabled for citation discovery")
+
         self.use_strategy_a = use_strategy_a
         self.use_strategy_b = use_strategy_b
 
@@ -109,6 +124,20 @@ class GEOCitationDiscovery:
             CitationDiscoveryResult with citing papers
         """
         logger.info(f"Finding papers citing {geo_metadata.geo_id}")
+
+        # Check cache first
+        if self.enable_cache and self.cache:
+            cached_result = self.cache.get(geo_metadata.geo_id, strategy_key="all")
+            if cached_result:
+                logger.info(f"✓ Cache HIT for {geo_metadata.geo_id} ({len(cached_result)} papers)")
+                # Reconstruct result from cached papers
+                original_pmid = geo_metadata.pubmed_ids[0] if geo_metadata.pubmed_ids else None
+                return CitationDiscoveryResult(
+                    geo_id=geo_metadata.geo_id,
+                    original_pmid=original_pmid,
+                    citing_papers=cached_result[:max_results],
+                    strategy_breakdown={"cached": True},
+                )
 
         all_papers: Set[Publication] = set()
         strategy_breakdown = {"strategy_a": [], "strategy_b": []}
@@ -138,6 +167,11 @@ class GEOCitationDiscovery:
         # Deduplicate and sort
         unique_papers = list(all_papers)
         logger.info(f"Total unique citing papers: {len(unique_papers)}")
+
+        # Cache the result
+        if self.enable_cache and self.cache:
+            self.cache.set(geo_metadata.geo_id, unique_papers, strategy_key="all")
+            logger.debug(f"Cached {len(unique_papers)} papers for {geo_metadata.geo_id}")
 
         return CitationDiscoveryResult(
             geo_id=geo_metadata.geo_id,
