@@ -32,6 +32,7 @@ from omics_oracle_v2.lib.pipelines.citation_discovery.deduplication import (
     SmartDeduplicator,
 )
 from omics_oracle_v2.lib.pipelines.citation_discovery.error_handling import retry_with_backoff
+from omics_oracle_v2.lib.pipelines.citation_discovery.metrics_logger import MetricsLogger
 from omics_oracle_v2.lib.pipelines.citation_discovery.quality_validation import (
     QualityAssessment,
     QualityConfig,
@@ -89,6 +90,8 @@ class GEOCitationDiscovery:
         enable_quality_validation: bool = True,  # Enable quality validation (Phase 8)
         quality_config: Optional[QualityConfig] = None,  # Custom quality configuration
         quality_filter_level: Optional[QualityLevel] = None,  # Minimum quality level (None = no filtering)
+        enable_metrics_logging: bool = True,  # Enable metrics logging (Phase 10)
+        metrics_logger: Optional[MetricsLogger] = None,  # Custom metrics logger
     ):
         # Initialize OpenAlex client if not provided
         if openalex_client is None:
@@ -235,6 +238,15 @@ class GEOCitationDiscovery:
             self.quality_validator = None
             logger.info("Quality validation disabled")
 
+        # Initialize metrics logger (Phase 10)
+        self.enable_metrics_logging = enable_metrics_logging
+        if enable_metrics_logging:
+            self.metrics_logger = metrics_logger or MetricsLogger()
+            logger.info("✓ Initialized metrics logger")
+        else:
+            self.metrics_logger = None
+            logger.info("Metrics logging disabled")
+
         self.use_strategy_a = use_strategy_a
         self.use_strategy_b = use_strategy_b
 
@@ -318,6 +330,37 @@ class GEOCitationDiscovery:
                             f"Quality filtering (cached, min_level={self.quality_filter_level.value}): "
                             f"{pre_filter_count} → {len(final_papers)} papers"
                         )
+
+                # Log metrics for cached result (Phase 10)
+                if self.enable_metrics_logging and self.metrics_logger:
+                    source_metrics_data = {}  # No source metrics for cached results
+                    dedup_data = {"total_raw": 0, "total_unique": len(ranked_papers), "duplicate_rate": 0}
+                    quality_data = None
+                    if quality_summary:
+                        quality_data = {
+                            "enabled": True,
+                            "excellent": quality_summary.get("distribution", {}).get("excellent", 0),
+                            "good": quality_summary.get("distribution", {}).get("good", 0),
+                            "acceptable": quality_summary.get("distribution", {}).get("acceptable", 0),
+                            "poor": quality_summary.get("distribution", {}).get("poor", 0),
+                            "rejected": quality_summary.get("distribution", {}).get("rejected", 0),
+                            "avg_score": quality_summary.get("average_score", 0),
+                        }
+                        if self.quality_filter_level:
+                            quality_data["filter_applied"] = self.quality_filter_level.value
+                            quality_data["pre_filter_count"] = quality_summary.get("pre_filter_count", 0)
+                            quality_data["post_filter_count"] = quality_summary.get("post_filter_count", 0)
+
+                    cache_data = {"hit": True, "strategy": "cached"}
+
+                    self.metrics_logger.log_discovery_session(
+                        geo_id=geo_metadata.geo_id,
+                        sources=source_metrics_data,
+                        deduplication=dedup_data,
+                        quality_validation=quality_data,
+                        cache=cache_data,
+                        errors=[],
+                    )
 
                 # Reconstruct result from cached papers
                 original_pmid = geo_metadata.pubmed_ids[0] if geo_metadata.pubmed_ids else None
@@ -456,6 +499,62 @@ class GEOCitationDiscovery:
                 )
             else:
                 logger.info("Quality validation complete (no filtering applied)")
+
+        # Log metrics for this discovery session (Phase 10)
+        if self.enable_metrics_logging and self.metrics_logger:
+            # Build source metrics from source manager
+            source_metrics_data = {}
+            for source_name, metrics in metrics_summary.get("sources", {}).items():
+                source_metrics_data[source_name] = {
+                    "success": metrics.get("success_rate", "0%") != "0.00%",
+                    "response_time": float(metrics.get("avg_response_time", "0s").rstrip("s")),
+                    "papers_found": metrics.get("total_papers_found", 0),
+                    "unique_papers": metrics.get("unique_papers_contributed", 0),
+                }
+
+            # Build deduplication stats
+            dedup_data = {
+                "total_raw": len(all_papers) if 'all_papers' in locals() else 0,
+                "total_unique": len(unique_papers) if 'unique_papers' in locals() else 0,
+                "duplicate_rate": (
+                    (len(all_papers) - len(unique_papers)) / len(all_papers)
+                    if 'all_papers' in locals() and len(all_papers) > 0
+                    else 0
+                ),
+            }
+
+            # Build quality validation data
+            quality_data = None
+            if quality_summary:
+                quality_data = {
+                    "enabled": True,
+                    "excellent": quality_summary.get("distribution", {}).get("excellent", 0),
+                    "good": quality_summary.get("distribution", {}).get("good", 0),
+                    "acceptable": quality_summary.get("distribution", {}).get("acceptable", 0),
+                    "poor": quality_summary.get("distribution", {}).get("poor", 0),
+                    "rejected": quality_summary.get("distribution", {}).get("rejected", 0),
+                    "avg_score": quality_summary.get("average_score", 0),
+                }
+                if self.quality_filter_level:
+                    quality_data["filter_applied"] = self.quality_filter_level.value
+                    quality_data["pre_filter_count"] = quality_summary.get("pre_filter_count", 0)
+                    quality_data["post_filter_count"] = quality_summary.get("post_filter_count", 0)
+
+            # Build cache info
+            cache_data = {
+                "hit": cached_result is not None if 'cached_result' in locals() else False,
+                "strategy": "cached" if 'cached_result' in locals() and cached_result else "fresh",
+            }
+
+            # Log the session
+            self.metrics_logger.log_discovery_session(
+                geo_id=geo_metadata.geo_id,
+                sources=source_metrics_data,
+                deduplication=dedup_data,
+                quality_validation=quality_data,
+                cache=cache_data,
+                errors=[],  # Could track errors if we enhance error handling
+            )
 
         return CitationDiscoveryResult(
             geo_id=geo_metadata.geo_id,
