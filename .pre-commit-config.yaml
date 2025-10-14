@@ -3,7 +3,9 @@ repos:
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
+        exclude: \.(md|markdown)$
       - id: end-of-file-fixer
+        exclude: \.(md|markdown)$
       - id: check-yaml
       - id: check-json
       - id: check-toml
@@ -18,14 +20,14 @@ repos:
     hooks:
       - id: black
         language_version: python3.11
-        exclude: ^backups/
+        exclude: ^(backups/|.*\.md$|.*\.markdown$)
         # Configuration is read from pyproject.toml
 
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
       - id: isort
-        exclude: ^backups/
+        exclude: ^(backups/|.*\.md$|.*\.markdown$)
         # Configuration is read from pyproject.toml
 
   - repo: https://github.com/pycqa/flake8
@@ -34,10 +36,12 @@ repos:
       - id: flake8
         args: ["--max-line-length=110", "--extend-ignore=E203,W503"]
         name: flake8 (hard limit at 110 chars)
+        exclude: \.(md|markdown)$
       - id: flake8
         args: ["--max-line-length=80", "--extend-ignore=E203,W503", "--exit-zero"]
         name: flake8 (soft warning at 80 chars)
         verbose: true
+        exclude: \.(md|markdown)$
 
   # - repo: https://github.com/pre-commit/mirrors-mypy
   #   rev: v1.6.1
@@ -62,10 +66,11 @@ repos:
         entry: python scripts/ascii_enforcer.py
         language: system
         files: \.(py|yml|yaml|json|sh|bash|zsh|toml|ini|cfg|conf|txt|sql|ts|css|xml)$|Dockerfile$|Makefile$|requirements.*\.txt$
-        exclude: ^(docs/|\.md$|\.rst$|\.tex$|\.html$|\.htm$|\.js$|README|extracted_docs/|\.git/|__pycache__/|\.pytest_cache/|\.mypy_cache/)
+        exclude: ^(docs/.*\.md$|docs/.*\.markdown$|\.md$|\.markdown$|\.rst$|\.tex$|\.html$|\.htm$|\.js$|README|extracted_docs/|\.git/|__pycache__/|\.pytest_cache/|\.mypy_cache/)
         description: >
           Enforce ASCII-only characters in code and config files (excludes HTML, JavaScript, markdown docs).
           HTML and JavaScript files are excluded as they legitimately use emojis and Unicode for modern web interfaces.
+          Markdown files in docs/ are also excluded to allow rich documentation.
         pass_filenames: true
 
       - id: no-emoji-check
@@ -74,5 +79,5 @@ repos:
         args: [-c, 'if grep -P "[\x{1F000}-\x{1FFFF}]|\x{2705}|\x{274C}|\x{26A0}" "$@"; then echo "ERROR: Emoji characters found in code files"; exit 1; fi', find-emojis]
         language: system
         files: \.(py|yml|yaml|sh|bash|zsh|toml|ini|cfg|conf|json)$
-        exclude: ^(docs/|\.md$|\.rst$|\.html$|\.htm$|\.js$|README)
+        exclude: ^(docs/.*\.md$|docs/.*\.markdown$|\.md$|\.markdown$|\.rst$|\.html$|\.htm$|\.js$|README)
         description: Prevent emoji characters in code files (excludes HTML, JavaScript and markdown)

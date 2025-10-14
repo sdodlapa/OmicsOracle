@@ -83,7 +83,7 @@ class SourceURL:
     url: str
     source: FullTextSource
     priority: int  # 1 = highest priority, 11 = lowest
-    url_type: URLType = URLType.UNKNOWN  # ✅ NEW: URL type classification
+    url_type: URLType = URLType.UNKNOWN  # NEW: URL type classification
     confidence: float = 1.0  # 0.0-1.0 confidence score
     requires_auth: bool = False
     metadata: Dict = None
@@ -275,14 +275,14 @@ class FullTextManager:
             scihub_config = SciHubConfig(use_proxy=self.config.scihub_use_proxy)
             self.scihub_client = SciHubClient(scihub_config)
             await self.scihub_client.__aenter__()
-            logger.info("⚠️  Sci-Hub client initialized (use responsibly)")
+            logger.info("[WARNING] Sci-Hub client initialized (use responsibly)")
 
         # Initialize LibGen client (NEW - Phase 3)
         if self.config.enable_libgen:
             libgen_config = LibGenConfig()
             self.libgen_client = LibGenClient(libgen_config)
             await self.libgen_client.__aenter__()
-            logger.info("⚠️  LibGen client initialized (use responsibly)")
+            logger.info("[WARNING] LibGen client initialized (use responsibly)")
 
         self.initialized = True
         logger.info("All OA source clients initialized")
@@ -368,7 +368,7 @@ class FullTextManager:
 
         if result.found:
             logger.info(
-                f"✓ Found local {result.file_type.upper()}: "
+                f"[OK] Found local {result.file_type.upper()}: "
                 f"{result.file_path.name} "
                 f"({result.size_bytes // 1024} KB, source: {result.source})"
             )
@@ -403,9 +403,9 @@ class FullTextManager:
         The Tiered Waterfall system handles this by automatically trying other sources.
 
         EXPECTED FLOW:
-        1. Institutional → Returns DOI URL
-        2. Download attempt → HTTP 403 (not on VPN) ❌
-        3. Waterfall retry → PMC succeeds ✅
+        1. Institutional -> Returns DOI URL
+        2. Download attempt -> HTTP 403 (not on VPN) [FAIL]
+        3. Waterfall retry -> PMC succeeds [OK]
 
         This is CORRECT behavior - institutional access works for users on campus/VPN,
         while other users automatically fall back to open access sources.
@@ -444,19 +444,20 @@ class FullTextManager:
 
     async def _try_pmc(self, publication: Publication) -> FullTextResult:
         """
-        Try to get full-text from PubMed Central (PMC).
+        Try to get full-text from PubMed Central (PMC) with multiple URL patterns.
 
         PMC is the #1 legal source with 6M+ free full-text articles.
-        Uses PMC OA Web Service API to get correct OA FTP URLs.
-
-        API: https://www.ncbi.nlm.nih.gov/pmc/tools/oa-service/
-        Returns XML with FTP links to PDF/TGZ files.
+        Now tries MULTIPLE URL patterns for better success rate:
+        1. PMC OA API (FTP links - most reliable)
+        2. Direct PDF URLs (https://pmc.ncbi.nlm.nih.gov/articles/PMC{id}/pdf/)
+        3. EuropePMC PDF render (https://europepmc.org/articles/PMC{id}?pdf=render)
+        4. PMC reader view (fallback - landing page)
 
         Args:
             publication: Publication object with pmid or pmc_id
 
         Returns:
-            FullTextResult with correct FTP PDF download link
+            FullTextResult with best available URL
         """
         if not self.config.enable_pmc:
             return FullTextResult(success=False, error="PMC disabled")
@@ -492,7 +493,7 @@ class FullTextManager:
                 ssl_context.check_hostname = False
                 ssl_context.verify_mode = ssl.CERT_NONE
 
-                # Use PubMed E-utilities to convert PMID → PMCID
+                # Use PubMed E-utilities to convert PMID -> PMCID
                 pmid = publication.pmid
                 url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={pmid}&format=json"
 
@@ -504,7 +505,7 @@ class FullTextManager:
                             records = data.get("records", [])
                             if records and len(records) > 0:
                                 pmc_id = records[0].get("pmcid", "").replace("PMC", "").strip()
-                                logger.info(f"Converted PMID {pmid} → PMC{pmc_id} via E-utilities")
+                                logger.info(f"Converted PMID {pmid} -> PMC{pmc_id} via E-utilities")
 
             if not pmc_id:
                 return FullTextResult(success=False, error="No PMC ID found")
@@ -512,52 +513,108 @@ class FullTextManager:
             # Ensure PMC ID is numeric only
             pmc_id = pmc_id.strip()
 
-            # Use PMC OA Web Service to get the correct FTP download URL
-            oa_api_url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC{pmc_id}"
-
+            # NEW: Try multiple URL patterns (in priority order)
             ssl_context = ssl.create_default_context()
             ssl_context.check_hostname = False
             ssl_context.verify_mode = ssl.CERT_NONE
 
             connector = aiohttp.TCPConnector(ssl=ssl_context)
             async with aiohttp.ClientSession(connector=connector) as session:
-                async with session.get(oa_api_url, timeout=aiohttp.ClientTimeout(total=10)) as response:
-                    if response.status != 200:
-                        return FullTextResult(success=False, error=f"PMC OA API returned {response.status}")
+                # Pattern 1: Try PMC OA API (most reliable for OA articles)
+                oa_api_url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC{pmc_id}"
+                try:
+                    async with session.get(oa_api_url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+                        if response.status == 200:
+                            xml_content = await response.text()
+                            root = ET.fromstring(xml_content)
 
-                    xml_content = await response.text()
+                            # Look for PDF link
+                            for link in root.findall('.//link[@format="pdf"]'):
+                                href = link.get("href")
+                                if href:
+                                    # Convert ftp:// to https://
+                                    pdf_link = href.replace(
+                                        "ftp://ftp.ncbi.nlm.nih.gov/", "https://ftp.ncbi.nlm.nih.gov/"
+                                    )
+                                    logger.info(f"PASS Found PMC{pmc_id} via OA API: {pdf_link}")
+                                    return FullTextResult(
+                                        success=True,
+                                        source=FullTextSource.PMC,
+                                        url=pdf_link,
+                                        metadata={
+                                            "pmc_id": f"PMC{pmc_id}",
+                                            "pattern": "oa_api",
+                                            "url_type": "pdf_direct",
+                                        },
+                                    )
+                except Exception as e:
+                    logger.debug(f"PMC OA API failed: {e}")
 
-                    # Parse XML to find PDF link
-                    root = ET.fromstring(xml_content)
-
-                    # Look for PDF link: <link format="pdf" href="ftp://..." />
-                    pdf_link = None
-                    for link in root.findall('.//link[@format="pdf"]'):
-                        href = link.get("href")
-                        if href:
-                            # Convert ftp:// to https:// (both work, but https is more compatible)
-                            pdf_link = href.replace(
-                                "ftp://ftp.ncbi.nlm.nih.gov/", "https://ftp.ncbi.nlm.nih.gov/"
+                # Pattern 2: Direct PMC PDF URL
+                direct_pdf_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/pdf/"
+                try:
+                    async with session.head(
+                        direct_pdf_url, timeout=aiohttp.ClientTimeout(total=5), allow_redirects=True
+                    ) as response:
+                        if response.status == 200:
+                            logger.info(f"PASS Found PMC{pmc_id} via direct PDF: {direct_pdf_url}")
+                            return FullTextResult(
+                                success=True,
+                                source=FullTextSource.PMC,
+                                url=direct_pdf_url,
+                                metadata={
+                                    "pmc_id": f"PMC{pmc_id}",
+                                    "pattern": "direct_pdf",
+                                    "url_type": "pdf_direct",
+                                },
                             )
-                            break
+                except Exception as e:
+                    logger.debug(f"PMC direct PDF failed: {e}")
 
-                    if not pdf_link:
-                        return FullTextResult(success=False, error="No PDF link in PMC OA response")
+                # Pattern 3: EuropePMC PDF render
+                europepmc_url = f"https://europepmc.org/articles/PMC{pmc_id}?pdf=render"
+                try:
+                    async with session.head(
+                        europepmc_url, timeout=aiohttp.ClientTimeout(total=5), allow_redirects=True
+                    ) as response:
+                        if response.status == 200:
+                            logger.info(f"PASS Found PMC{pmc_id} via EuropePMC: {europepmc_url}")
+                            return FullTextResult(
+                                success=True,
+                                source=FullTextSource.PMC,
+                                url=europepmc_url,
+                                metadata={
+                                    "pmc_id": f"PMC{pmc_id}",
+                                    "pattern": "europepmc",
+                                    "url_type": "pdf_direct",
+                                },
+                            )
+                except Exception as e:
+                    logger.debug(f"EuropePMC failed: {e}")
 
-                    # Return correct OA FTP URL for PDFDownloadManager
-                    logger.info(f"✅ Found PMC{pmc_id} OA PDF URL: {pdf_link}")
-                    return FullTextResult(
-                        success=True,
-                        source=FullTextSource.PMC,
-                        url=pdf_link,  # Correct OA FTP URL
-                        metadata={
-                            "pmc_id": f"PMC{pmc_id}",
-                            "pdf_url": pdf_link,
-                            "web_url": f"https://pmc.ncbi.nlm.nih.gov/articles/PMC{pmc_id}/",
-                            "format": "pdf",
-                            "access": "open_access",
-                        },
-                    )
+                # Pattern 4: PMC reader view (landing page fallback)
+                reader_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/?report=reader"
+                try:
+                    async with session.head(
+                        reader_url, timeout=aiohttp.ClientTimeout(total=5), allow_redirects=True
+                    ) as response:
+                        if response.status == 200:
+                            logger.info(f"WARNING Found PMC{pmc_id} reader view (landing page): {reader_url}")
+                            return FullTextResult(
+                                success=True,
+                                source=FullTextSource.PMC,
+                                url=reader_url,
+                                metadata={
+                                    "pmc_id": f"PMC{pmc_id}",
+                                    "pattern": "reader_view",
+                                    "url_type": "landing_page",
+                                },
+                            )
+                except Exception as e:
+                    logger.debug(f"PMC reader view failed: {e}")
+
+            # All patterns failed
+            return FullTextResult(success=False, error=f"All PMC URL patterns failed for PMC{pmc_id}")
 
         except Exception as e:
             logger.warning(f"PMC lookup failed: {e}")
@@ -819,7 +876,7 @@ class FullTextManager:
         """
         Try to get full-text from Sci-Hub (Phase 2).
 
-        ⚠️  Use responsibly and in compliance with local laws.
+        [WARNING]  Use responsibly and in compliance with local laws.
 
         ENHANCED (Oct 11, 2025):
         - Downloads and saves PDF to data/fulltext/pdf/scihub/
@@ -847,7 +904,7 @@ class FullTextManager:
             if not pdf_url:
                 return FullTextResult(success=False, error="Not found in Sci-Hub")
 
-            logger.info(f"✓ Found PDF via Sci-Hub: {identifier}")
+            logger.info(f"[OK] Found PDF via Sci-Hub: {identifier}")
 
             # Return PDF URL for PDFDownloadManager
             return FullTextResult(
@@ -868,7 +925,7 @@ class FullTextManager:
         """
         Try to get full-text from LibGen (Phase 3).
 
-        ⚠️  Use responsibly and in compliance with local laws.
+        [WARNING]  Use responsibly and in compliance with local laws.
 
         ENHANCED (Oct 11, 2025):
         - Downloads and saves PDF to data/fulltext/pdf/libgen/
@@ -894,7 +951,7 @@ class FullTextManager:
             if not pdf_url:
                 return FullTextResult(success=False, error="Not found in LibGen")
 
-            logger.info(f"✓ Found PDF via LibGen: {publication.doi}")
+            logger.info(f"[OK] Found PDF via LibGen: {publication.doi}")
 
             # Return PDF URL for PDFDownloadManager
             return FullTextResult(
@@ -961,7 +1018,7 @@ class FullTextManager:
         cached = await cache.get(publication.id)
         if cached:
             logger.info(
-                f"✓ Parsed cache HIT for {publication.id} "
+                f"[OK] Parsed cache HIT for {publication.id} "
                 f"(age: {cache._get_age_days(cached)} days, "
                 f"tables: {len(cached.get('content', {}).get('tables', []))}, "
                 f"figures: {len(cached.get('content', {}).get('figures', []))})"
@@ -1020,7 +1077,7 @@ class FullTextManager:
             )
 
             logger.info(
-                f"✓ Parsed and cached {publication.id} "
+                f"[OK] Parsed and cached {publication.id} "
                 f"({parse_duration_ms}ms, {len(parsed.get('tables', []))} tables, "
                 f"{len(parsed.get('figures', []))} figures)"
             )
@@ -1097,7 +1154,7 @@ class FullTextManager:
         for source_name, source_func in sources:
             # Skip sources that were already tried
             if source_name in skip_sources:
-                logger.debug(f"  ⏭  Skipping {source_name} (already tried)")
+                logger.debug(f"  [SKIP]  Skipping {source_name} (already tried)")
                 continue
 
             try:
@@ -1107,17 +1164,17 @@ class FullTextManager:
                 )
 
                 if result.success:
-                    logger.info(f"  Phase 2: ✓ Verified full-text access via {source_name}")
+                    logger.info(f"  Phase 2: [OK] Verified full-text access via {source_name}")
                     self.stats["successes"] += 1
                     self.stats["by_source"][source_name] = self.stats["by_source"].get(source_name, 0) + 1
                     return result  # STOP HERE - skip remaining sources
                 else:
-                    logger.debug(f"  ✗ {source_name} did not find full-text")
+                    logger.debug(f"  [X] {source_name} did not find full-text")
 
             except asyncio.TimeoutError:
-                logger.debug(f"⏱ Timeout for source {source_name}")
+                logger.debug(f"[TIME] Timeout for source {source_name}")
             except Exception as e:
-                logger.debug(f"⚠ Error trying source {source_name}: {e}")
+                logger.debug(f"[WARNING] Error trying source {source_name}: {e}")
 
         # No source succeeded - this is expected for ~5-10% of papers
         logger.debug(f"No full-text found for: {publication.title[:60]}...")
@@ -1168,7 +1225,7 @@ class FullTextManager:
         # Check cache first (instant)
         cached = await self._check_cache(publication)
         if cached.success:
-            logger.info("✓ Found in cache")
+            logger.info("[OK] Found in cache")
             return cached
 
         # Define all sources with their priority order
@@ -1186,7 +1243,7 @@ class FullTextManager:
         ]
 
         # Execute ALL sources in PARALLEL
-        logger.info(f"⚡ Querying {len(sources)} sources in parallel...")
+        logger.info(f"[FAST] Querying {len(sources)} sources in parallel...")
         tasks = [
             asyncio.wait_for(source_func(publication), timeout=self.config.timeout_per_source)
             for _, source_func, _ in sources
@@ -1200,14 +1257,14 @@ class FullTextManager:
             source_name, _, priority = sources[i]
 
             if isinstance(result, Exception):
-                logger.debug(f"  ✗ {source_name} exception: {result}")
+                logger.debug(f"  [X] {source_name} exception: {result}")
                 continue
 
             if isinstance(result, FullTextResult) and result.success and result.url:
-                # ✅ NEW: Classify URL type automatically
+                # [OK] NEW: Classify URL type automatically
                 url_type = URLValidator.classify_url(result.url)
 
-                # ✅ NEW: Adjust priority based on URL type
+                # [OK] NEW: Adjust priority based on URL type
                 # PDF links get higher priority, landing pages get lower
                 priority_adjustment = URLValidator.get_priority_boost(result.url)
                 adjusted_priority = priority + priority_adjustment
@@ -1215,8 +1272,8 @@ class FullTextManager:
                 source_url = SourceURL(
                     url=result.url,
                     source=result.source,
-                    priority=adjusted_priority,  # ✅ Adjusted priority
-                    url_type=url_type,  # ✅ NEW: Track URL type
+                    priority=adjusted_priority,  # [OK] Adjusted priority
+                    url_type=url_type,  # [OK] NEW: Track URL type
                     confidence=1.0,
                     requires_auth=(result.source == FullTextSource.INSTITUTIONAL),
                     metadata=result.metadata or {},
@@ -1225,11 +1282,11 @@ class FullTextManager:
 
                 # Enhanced logging with URL type
                 logger.info(
-                    f"  ✓ {source_name}: Found URL "
-                    f"(type={url_type.value}, priority={priority}→{adjusted_priority})"
+                    f"  [OK] {source_name}: Found URL "
+                    f"(type={url_type.value}, priority={priority}->{adjusted_priority})"
                 )
             else:
-                logger.debug(f"  ✗ {source_name}: No URL found")
+                logger.debug(f"  [X] {source_name}: No URL found")
 
         if not all_urls:
             logger.warning(f"No URLs found from any source for: {publication.title[:60]}...")
@@ -1242,7 +1299,7 @@ class FullTextManager:
         # Use best URL as primary
         best_url = all_urls[0]
 
-        logger.info(f"✅ Found {len(all_urls)} URLs for: {publication.title[:60]}")
+        logger.info(f"[OK] Found {len(all_urls)} URLs for: {publication.title[:60]}")
         logger.info(f"   Best: {best_url.source.value} (priority {best_url.priority})")
         if len(all_urls) > 1:
             fallbacks = ", ".join([f"{u.source.value}({u.priority})" for u in all_urls[1:]])
