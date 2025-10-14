@@ -21,7 +21,6 @@ Official API Docs: https://europepmc.org/RestfulWebService
 import logging
 import ssl
 import time
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, List, Optional
 
@@ -31,19 +30,9 @@ from omics_oracle_v2.lib.search_engines.citations.models import (
     Publication,
     PublicationSource,
 )
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import EuropePMCConfig
 
 logger = logging.getLogger(__name__)
-
-
-@dataclass
-class EuropePMCConfig:
-    """Configuration for Europe PMC API"""
-
-    rate_limit: int = 3  # requests per second (conservative)
-    timeout: int = 15  # seconds
-    max_retries: int = 3
-    retry_delay: float = 1.0  # seconds
-    email: Optional[str] = None  # Optional - for polite usage
 
 
 class EuropePMCClient:
@@ -76,10 +65,7 @@ class EuropePMCClient:
         """
         self.config = config or EuropePMCConfig()
         self.session = requests.Session()
-
-        # Add email to User-Agent if provided (polite usage)
-        if self.config.email:
-            self.session.headers["User-Agent"] = f"OmicsOracle/2.0 ({self.config.email})"
+        self.session.headers["User-Agent"] = "OmicsOracle/2.0"
 
         # Create SSL context that bypasses verification (for institutional VPN/proxies)
         ssl_context = ssl.create_default_context()
@@ -98,9 +84,9 @@ class EuropePMCClient:
 
         # Rate limiting state
         self._last_request_time = 0.0
-        self._min_interval = 1.0 / self.config.rate_limit
+        self._min_interval = 1.0 / self.config.requests_per_second
 
-        logger.info(f"Europe PMC client initialized (rate: {self.config.rate_limit} req/s)")
+        logger.info(f"✓ Europe PMC client initialized (rate: {self.config.requests_per_second} req/s)")
 
     def _rate_limit(self):
         """Enforce rate limiting"""
@@ -129,14 +115,14 @@ class EuropePMCClient:
             params = {}
         params["format"] = "json"
 
-        for attempt in range(self.config.max_retries):
+        for attempt in range(self.config.retries):
             try:
                 self._rate_limit()
                 response = self.session.get(url, params=params, timeout=self.config.timeout)
 
                 # Handle rate limiting (429)
                 if response.status_code == 429:
-                    retry_after = int(response.headers.get("Retry-After", self.config.retry_delay * 2))
+                    retry_after = int(response.headers.get("Retry-After", 2.0))
                     logger.warning(f"Rate limited. Waiting {retry_after}s...")
                     time.sleep(retry_after)
                     continue
@@ -149,9 +135,9 @@ class EuropePMCClient:
                 return response.json()
 
             except requests.exceptions.Timeout:
-                logger.warning(f"Request timeout (attempt {attempt + 1}/{self.config.max_retries})")
-                if attempt < self.config.max_retries - 1:
-                    time.sleep(self.config.retry_delay * (attempt + 1))
+                logger.warning(f"Request timeout (attempt {attempt + 1}/{self.config.retries})")
+                if attempt < self.config.retries - 1:
+                    time.sleep(1.0 * (attempt + 1))
             except Exception as e:
                 logger.error(f"Request failed: {e}")
                 return None

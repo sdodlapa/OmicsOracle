@@ -15,11 +15,15 @@ from typing import List, Optional, Set
 
 from omics_oracle_v2.lib.pipelines.citation_discovery.cache import DiscoveryCache
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import (
+    CrossrefConfig,
+    EuropePMCConfig,
     PubMedConfig,
+)
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.crossref import (
+    CrossrefClient,
 )
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.europepmc import (
     EuropePMCClient,
-    EuropePMCConfig,
 )
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.openalex import (
     OpenAlexClient,
@@ -67,8 +71,9 @@ class GEOCitationDiscovery:
     Strategies:
     1. OpenAlex: Papers citing original publication
     2. Semantic Scholar: Papers citing original publication
-    3. Europe PMC: Papers citing original publication (NEW!)
-    4. PubMed: Papers mentioning GEO ID
+    3. Europe PMC: Papers citing original publication
+    4. Crossref: Papers citing original publication (NEW!)
+    5. PubMed: Papers mentioning GEO ID
     """
 
     def __init__(
@@ -77,8 +82,9 @@ class GEOCitationDiscovery:
         pubmed_client: Optional[PubMedClient] = None,
         semantic_scholar_client: Optional[SemanticScholarClient] = None,
         europepmc_client: Optional[EuropePMCClient] = None,
+        crossref_client: Optional[CrossrefClient] = None,
         cache: Optional[DiscoveryCache] = None,
-        use_strategy_a: bool = True,  # Citation-based (OpenAlex + Semantic Scholar + Europe PMC)
+        use_strategy_a: bool = True,  # Citation-based (OpenAlex + S2 + Europe PMC + Crossref)
         use_strategy_b: bool = True,  # Mention-based (PubMed)
         enable_cache: bool = True,
     ):
@@ -104,13 +110,21 @@ class GEOCitationDiscovery:
 
         # Initialize Europe PMC client if not provided
         if europepmc_client is None:
-            europepmc_config = EuropePMCConfig(
-                email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu")
-            )
+            europepmc_config = EuropePMCConfig()
             self.europepmc = EuropePMCClient(config=europepmc_config)
             logger.info("Initialized Europe PMC client for citation discovery")
         else:
             self.europepmc = europepmc_client
+
+        # Initialize Crossref client if not provided
+        if crossref_client is None:
+            crossref_config = CrossrefConfig(
+                mailto=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu")  # Use for polite pool
+            )
+            self.crossref = CrossrefClient(config=crossref_config)
+            logger.info("✓ Initialized Crossref client for citation discovery")
+        else:
+            self.crossref = crossref_client
 
         # Initialize PubMed client if not provided
         if pubmed_client is None:
@@ -278,7 +292,7 @@ class GEOCitationDiscovery:
         """
         Strategy A: Find papers citing the original publication
 
-        Uses OpenAlex, Semantic Scholar, and Europe PMC with:
+        Uses OpenAlex, Semantic Scholar, Europe PMC, and Crossref with:
         - Retry logic for transient failures
         - Fallback if one source fails
         - Graceful degradation
@@ -343,6 +357,19 @@ class GEOCitationDiscovery:
                     logger.info(f"  ✓ Europe PMC: {len(europepmc_citations)} citing papers")
                 except Exception as e:
                     logger.warning(f"  ✗ Europe PMC failed: {e}")
+
+            # Source 4: Crossref (DOI-based) with retry
+            if self.crossref and original_pub.doi:
+                @retry_with_backoff(max_retries=2, base_delay=1.0)
+                def fetch_crossref():
+                    return self.crossref.get_citing_papers(doi=original_pub.doi, limit=max_results)
+
+                try:
+                    crossref_citations = fetch_crossref()
+                    all_citing_papers.extend(crossref_citations)
+                    logger.info(f"  ✓ Crossref: {len(crossref_citations)} citing papers")
+                except Exception as e:
+                    logger.warning(f"  ✗ Crossref failed: {e}")
 
             # If all sources failed, return empty (graceful degradation)
             if not all_citing_papers:

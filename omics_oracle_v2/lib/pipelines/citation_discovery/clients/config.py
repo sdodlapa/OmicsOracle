@@ -101,6 +101,77 @@ class PubMedConfig(BaseModel):
         validate_assignment = True
 
 
+class EuropePMCConfig(BaseModel):
+    """
+    Configuration for Europe PMC API integration.
+
+    Attributes:
+        requests_per_second: API requests per second (conservative: 3)
+        max_results: Maximum results per query
+        retries: Number of retries on API errors
+        timeout: Request timeout in seconds
+    """
+
+    # Rate limiting
+    requests_per_second: float = Field(
+        3.0, ge=0.1, le=10.0, description="API requests per second (conservative)"
+    )
+
+    # Query limits
+    max_results: int = Field(100, ge=1, le=1000, description="Max results per query")
+
+    # Network settings
+    retries: int = Field(3, ge=0, le=10, description="Number of retries")
+    timeout: int = Field(30, ge=1, le=300, description="Request timeout (seconds)")
+
+    class Config:
+        """Pydantic config."""
+
+        validate_assignment = True
+
+
+class CrossrefConfig(BaseModel):
+    """
+    Configuration for Crossref API integration.
+
+    Attributes:
+        mailto: Email for polite pool (higher rate limits)
+        requests_per_second: API requests per second (50 with mailto, 10 without)
+        max_results: Maximum results per query
+        retries: Number of retries on API errors
+        timeout: Request timeout in seconds
+    """
+
+    # Optional mailto for polite pool
+    mailto: Optional[str] = Field(None, description="Email for polite pool (recommended)")
+
+    # Rate limiting (50 req/s with mailto, 10 without)
+    requests_per_second: float = Field(
+        50.0, ge=0.1, le=50.0, description="API requests per second (50 with mailto, 10 without)"
+    )
+
+    # Query limits
+    max_results: int = Field(100, ge=1, le=1000, description="Max results per query")
+
+    # Network settings
+    retries: int = Field(3, ge=0, le=10, description="Number of retries")
+    timeout: int = Field(30, ge=1, le=300, description="Request timeout (seconds)")
+
+    @validator("requests_per_second")
+    def validate_rate_limit(cls, v, values):
+        """Adjust rate limit based on mailto presence."""
+        has_mailto = values.get("mailto") is not None
+        max_rate = 50.0 if has_mailto else 10.0
+        if v > max_rate:
+            return max_rate
+        return v
+
+    class Config:
+        """Pydantic config."""
+
+        validate_assignment = True
+
+
 class LLMConfig(BaseModel):
     """
     Configuration for LLM-powered citation analysis (Week 3 Day 15-17).
