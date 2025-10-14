@@ -172,6 +172,35 @@ class CrossrefConfig(BaseModel):
         validate_assignment = True
 
 
+class OpenCitationsConfig(BaseModel):
+    """
+    Configuration for OpenCitations API integration.
+
+    Attributes:
+        requests_per_second: API requests per second (conservative: 1)
+        max_results: Maximum results per query
+        retries: Number of retries on API errors
+        timeout: Request timeout in seconds
+    """
+
+    # Rate limiting (conservative for free service)
+    requests_per_second: float = Field(
+        1.0, ge=0.1, le=5.0, description="API requests per second (conservative)"
+    )
+
+    # Query limits
+    max_results: int = Field(100, ge=1, le=1000, description="Max results per query")
+
+    # Network settings
+    retries: int = Field(3, ge=0, le=10, description="Number of retries")
+    timeout: int = Field(30, ge=1, le=300, description="Request timeout (seconds)")
+
+    class Config:
+        """Pydantic config."""
+
+        validate_assignment = True
+
+
 class LLMConfig(BaseModel):
     """
     Configuration for LLM-powered citation analysis (Week 3 Day 15-17).
