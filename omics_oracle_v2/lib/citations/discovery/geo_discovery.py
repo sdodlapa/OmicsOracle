@@ -131,13 +131,12 @@ class GEOCitationDiscovery:
         try:
             # First, fetch the full publication details from PubMed to get DOI
             logger.info(f"Fetching full publication details for PMID {pmid}")
-            publications = self.pubmed_client.fetch_details([pmid])
+            original_pub = self.pubmed_client.fetch_by_id(pmid)
 
-            if not publications:
+            if not original_pub:
                 logger.warning(f"Could not fetch details for PMID {pmid}")
                 return []
 
-            original_pub = publications[0]
             logger.info(
                 f"Found original paper: {original_pub.title[:50]}... DOI: {original_pub.doi or 'None'}"
             )
