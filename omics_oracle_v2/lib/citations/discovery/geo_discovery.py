@@ -13,9 +13,9 @@ import os
 from dataclasses import dataclass
 from typing import List, Optional, Set
 
-from omics_oracle_v2.lib.citations.discovery.finder import CitationFinder
 from omics_oracle_v2.lib.search_engines.citations.config import PubMedConfig
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.openalex import OpenAlexClient, OpenAlexConfig
 from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 
@@ -37,29 +37,26 @@ class GEOCitationDiscovery:
     Discover papers citing GEO datasets.
 
     Strategies:
-    1. OpenAlex/Semantic Scholar: Papers citing original publication
-    2. PubMed/Google Scholar: Papers mentioning GEO ID
+    1. OpenAlex: Papers citing original publication
+    2. PubMed: Papers mentioning GEO ID
     """
 
     def __init__(
         self,
-        citation_finder: Optional[CitationFinder] = None,
+        openalex_client: Optional[OpenAlexClient] = None,
         pubmed_client: Optional[PubMedClient] = None,
         use_strategy_a: bool = True,  # Citation-based
         use_strategy_b: bool = True,  # Mention-based
     ):
-        # Initialize citation finder with actual sources if not provided
-        if citation_finder is None:
-            from omics_oracle_v2.lib.search_engines.citations.openalex import OpenAlexClient, OpenAlexConfig
-
+        # Initialize OpenAlex client if not provided
+        if openalex_client is None:
             openalex_config = OpenAlexConfig(email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"), enable=True)
-            openalex_client = OpenAlexClient(config=openalex_config)
-            self.citation_finder = CitationFinder(openalex_client=openalex_client)
-            logger.info("Initialized CitationFinder with OpenAlex client")
+            self.openalex = OpenAlexClient(config=openalex_config)
+            logger.info("Initialized OpenAlex client for citation discovery")
         else:
-            self.citation_finder = citation_finder
+            self.openalex = openalex_client
 
-        # Create PubMedClient with config from environment if not provided
+        # Initialize PubMed client if not provided
         if pubmed_client is None:
             pubmed_config = PubMedConfig(
                 email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"),
@@ -97,7 +94,7 @@ class GEOCitationDiscovery:
 
         if self.use_strategy_a and original_pmid:
             logger.info(f"Strategy A: Finding papers citing PMID {original_pmid}")
-            citing_via_pmid = await self._find_via_citation(pmid=original_pmid, max_results=max_results)
+            citing_via_pmid = self._find_via_citation(pmid=original_pmid, max_results=max_results)
             for paper in citing_via_pmid:
                 all_papers.add(paper)
                 strategy_breakdown["strategy_a"].append(paper.pmid or paper.doi)
@@ -106,9 +103,7 @@ class GEOCitationDiscovery:
         # Strategy B: Papers mentioning GEO ID
         if self.use_strategy_b:
             logger.info(f"Strategy B: Finding papers mentioning {geo_metadata.geo_id}")
-            mentioning_geo = await self._find_via_geo_mention(
-                geo_id=geo_metadata.geo_id, max_results=max_results
-            )
+            mentioning_geo = self._find_via_geo_mention(geo_id=geo_metadata.geo_id, max_results=max_results)
             for paper in mentioning_geo:
                 if paper not in all_papers:
                     all_papers.add(paper)
@@ -126,8 +121,12 @@ class GEOCitationDiscovery:
             strategy_breakdown=strategy_breakdown,
         )
 
-    async def _find_via_citation(self, pmid: str, max_results: int) -> List[Publication]:
+    def _find_via_citation(self, pmid: str, max_results: int) -> List[Publication]:
         """Strategy A: Find papers citing the original publication"""
+        if not self.openalex or not self.openalex.config.enable:
+            logger.warning("OpenAlex not configured - cannot find citations")
+            return []
+
         try:
             # First, fetch the full publication details from PubMed to get DOI
             logger.info(f"Fetching full publication details for PMID {pmid}")
@@ -137,27 +136,34 @@ class GEOCitationDiscovery:
                 logger.warning(f"Could not fetch details for PMID {pmid}")
                 return []
 
-            logger.info(
-                f"Found original paper: {original_pub.title[:50]}... DOI: {original_pub.doi or 'None'}"
-            )
+            if not original_pub.doi:
+                logger.warning(f"No DOI found for PMID {pmid} - cannot find citations")
+                return []
 
-            # Now find citing papers using the full publication object (with DOI)
-            citing_papers = self.citation_finder.find_citing_papers(
-                publication=original_pub, max_results=max_results
-            )
+            logger.info(f"Found original paper: {original_pub.title[:50]}... DOI: {original_pub.doi}")
+
+            # Find citing papers using OpenAlex directly
+            citing_papers = self.openalex.get_citing_papers(doi=original_pub.doi, max_results=max_results)
+
+            if citing_papers:
+                logger.info(f"✓ Found {len(citing_papers)} citing papers from OpenAlex")
+            else:
+                logger.debug("No citing papers found in OpenAlex")
+
             return citing_papers
+
         except Exception as e:
-            logger.warning(f"Citation strategy failed for PMID {pmid}: {e}")
+            logger.error(f"OpenAlex citation search failed for PMID {pmid}: {e}")
             return []
 
-    async def _find_via_geo_mention(self, geo_id: str, max_results: int) -> List[Publication]:
+    def _find_via_geo_mention(self, geo_id: str, max_results: int) -> List[Publication]:
         """Strategy B: Find papers mentioning GEO ID"""
         papers = []
 
         # Search PubMed for GEO ID mentions
         try:
             query = f"{geo_id}[All Fields]"
-            # PubMed client search is synchronous, not async
+            # PubMed client search is synchronous
             pubmed_results = self.pubmed_client.search(query=query, max_results=max_results)
             papers.extend(pubmed_results)
             logger.info(f"  PubMed: {len(pubmed_results)} papers mentioning {geo_id}")

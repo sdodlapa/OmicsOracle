@@ -75,7 +75,6 @@ async def execute_search(
             enable_geo=True,
             enable_pubmed=True,
             enable_openalex=True,
-            enable_scholar=False,
             max_geo_results=request.max_results,
             max_publication_results=50,
             enable_cache=True,

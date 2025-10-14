@@ -23,7 +23,6 @@ class SearchConfig:
     enable_geo: bool = True
     enable_pubmed: bool = True
     enable_openalex: bool = True
-    enable_scholar: bool = False  # Often rate-limited, disabled by default
 
     # Query optimization
     enable_query_optimization: bool = True

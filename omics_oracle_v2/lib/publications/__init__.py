@@ -1,12 +1,11 @@
 """
-Publications Module - PubMed, PMC, and Google Scholar Integration
+Publications Module - PubMed and OpenAlex Integration
 
-This module provides comprehensive publication search and analysis capabilities,
-including PubMed, PubMed Central, and Google Scholar integration.
+This module provides publication search capabilities.
 
 Key Components:
 - PubMedClient: PubMed/Entrez API integration
-- GoogleScholarClient: Google Scholar scraping
+- OpenAlexClient: OpenAlex API for citation discovery
 - PDFDownloader: Full-text PDF retrieval
 
 All pipeline orchestrators have been archived (see extras/pipelines/).

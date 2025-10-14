@@ -1,27 +1,7 @@
 """
 OpenAlex API client for citation data and paper discovery.
-
-OpenAlex is a free, open-source alternative to Google Scholar with:
-- Official REST API (no scraping needed)
-- Generous rate limits (10,000 requests/day, no authentication)
-- Comprehensive coverage (250M+ works)
-- Citation data including citing papers
-- Open access status and metadata
-
-API Documentation: https://docs.openalex.org/
-Rate Limits: 10 req/second for polite pool (with email), 1 req/second otherwise
-
-Example:
-    >>> from omics_oracle_v2.lib.citations.clients.openalex import OpenAlexClient
-    >>>
-    >>> client = OpenAlexClient(email="researcher@university.edu")
-    >>>
-    >>> # Find citing papers
-    >>> citing_papers = client.get_citing_papers(doi="10.1038/nature12345")
-    >>> print(f"Found {len(citing_papers)} citing papers")
-    >>>
-    >>> # Search for papers
-    >>> papers = client.search("CRISPR gene editing", max_results=20)
+Free, open-source API with 10 req/sec (with email), 250M+ works coverage.
+API: https://docs.openalex.org/
 """
 
 import logging

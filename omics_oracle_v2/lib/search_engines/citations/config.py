@@ -101,40 +101,6 @@ class PubMedConfig(BaseModel):
         validate_assignment = True
 
 
-class GoogleScholarConfig(BaseModel):
-    """
-    Configuration for Google Scholar scraping (Week 3).
-
-    Attributes:
-        enable: Enable Google Scholar search
-        max_results: Maximum results per query
-        rate_limit_seconds: Seconds to wait between requests
-        use_proxy: Use proxy for requests
-        proxy_url: Proxy server URL
-        timeout_seconds: Request timeout
-        user_agent: User agent string (currently unused by scholarly)
-    """
-
-    enable: bool = Field(True, description="Enable Google Scholar search")
-    max_results: int = Field(50, ge=1, le=100, description="Max results per query")
-    rate_limit_seconds: float = Field(
-        3.0, ge=0.5, le=10.0, description="Seconds between requests to avoid blocking"
-    )
-    use_proxy: bool = Field(False, description="Use proxy for requests")
-    proxy_url: Optional[str] = Field(None, description="Proxy server URL")
-    timeout_seconds: int = Field(30, ge=5, le=300, description="Request timeout")
-    user_agent: str = Field(
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        description="User agent string",
-    )
-
-    class Config:
-        """Pydantic config."""
-
-        validate_assignment = True
-
-
 class PDFConfig(BaseModel):
     """
     Configuration for PDF processing (Week 4).
@@ -267,12 +233,11 @@ class PublicationSearchConfig:
         deduplication: Enable cross-source deduplication
     """
 
-    # Feature toggles - UPDATED Oct 9, 2025
-    # OpenAlex now primary source for citations (replacing Google Scholar)
+    # Feature toggles - UPDATED Oct 14, 2025
+    # OpenAlex is the only citation source (Scholar deleted)
     enable_pubmed: bool = True
-    enable_openalex: bool = True  # ✅ NEW - Free, sustainable citation source
-    enable_scholar: bool = False  # ⚠️ DISABLED - Scholar scraping blocked (Oct 9, 2025)
-    enable_citations: bool = True  # ✅ RE-ENABLED - Now uses OpenAlex (Oct 9, 2025)
+    enable_openalex: bool = True  # ✅ Free, sustainable citation source
+    enable_citations: bool = True  # ✅ Uses OpenAlex only
     enable_pdf_download: bool = True  # ✅ Week 4 - ENABLED
     enable_fulltext: bool = True  # ✅ Week 4 - ENABLED (PDF extraction)
     enable_fulltext_retrieval: bool = True  # ✅ NEW - OA source full-text URLs (Oct 9, 2025)
@@ -290,7 +255,6 @@ class PublicationSearchConfig:
             api_key=os.getenv("NCBI_API_KEY"),
         )
     )
-    scholar_config: GoogleScholarConfig = field(default_factory=GoogleScholarConfig)
     pdf_config: PDFConfig = field(default_factory=PDFConfig)
     llm_config: LLMConfig = field(default_factory=LLMConfig)  # Week 3 Day 15-17
     fuzzy_dedup_config: FuzzyDeduplicationConfig = field(
@@ -401,7 +365,6 @@ PRESET_CONFIGS = {
     "minimal": PublicationSearchConfig(
         # Fast, free, PubMed only
         enable_pubmed=True,
-        enable_scholar=False,
         enable_citations=False,
         enable_pdf_download=False,
         enable_fulltext=False,
@@ -411,7 +374,6 @@ PRESET_CONFIGS = {
     "standard": PublicationSearchConfig(
         # Good coverage, free, no LLM costs
         enable_pubmed=True,
-        enable_scholar=True,  # ✅ 3-5x more papers
         enable_citations=False,  # No LLM costs
         enable_pdf_download=True,
         enable_fulltext=True,
@@ -421,8 +383,7 @@ PRESET_CONFIGS = {
     "full": PublicationSearchConfig(
         # Complete analysis, all features enabled (RECOMMENDED)
         enable_pubmed=True,
-        enable_scholar=True,
-        enable_citations=True,  # ✅ Full citation analysis!
+        enable_citations=True,  # ✅ Full citation analysis with OpenAlex
         enable_pdf_download=True,
         enable_fulltext=True,
         enable_institutional_access=True,
@@ -436,7 +397,6 @@ PRESET_CONFIGS = {
     "research": PublicationSearchConfig(
         # For deep research, higher limits but cost-controlled
         enable_pubmed=True,
-        enable_scholar=True,
         enable_citations=True,
         enable_pdf_download=True,
         enable_fulltext=True,
@@ -452,7 +412,6 @@ PRESET_CONFIGS = {
     "enterprise": PublicationSearchConfig(
         # No cost limits, maximum analysis
         enable_pubmed=True,
-        enable_scholar=True,
         enable_citations=True,
         enable_pdf_download=True,
         enable_fulltext=True,

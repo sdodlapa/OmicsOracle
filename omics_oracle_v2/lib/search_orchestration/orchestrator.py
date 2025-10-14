@@ -22,7 +22,6 @@ from omics_oracle_v2.lib.query_processing.optimization.optimizer import QueryOpt
 from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationResult
 from omics_oracle_v2.lib.search_engines.citations.openalex import OpenAlexClient, OpenAlexConfig
 from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
-from omics_oracle_v2.lib.search_engines.citations.scholar import GoogleScholarClient, GoogleScholarConfig
 from omics_oracle_v2.lib.search_engines.geo import GEOClient
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.search_engines.geo.query_builder import GEOQueryBuilder
@@ -95,12 +94,6 @@ class SearchOrchestrator:
             self.openalex_client = OpenAlexClient(openalex_config)
         else:
             self.openalex_client = None
-
-        if config.enable_scholar:
-            logger.info("Initializing Google Scholar client")
-            self.scholar_client = GoogleScholarClient(GoogleScholarConfig(enable=True))
-        else:
-            self.scholar_client = None
 
         # Stage 7: Caching
         if config.enable_cache:
@@ -292,10 +285,6 @@ class SearchOrchestrator:
             openalex_task = self._search_openalex(query, max_publication_results)
             pub_tasks.append(("openalex", openalex_task))
 
-        if self.scholar_client:
-            scholar_task = self._search_scholar(query, max_publication_results)
-            pub_tasks.append(("scholar", scholar_task))
-
         # Execute all in parallel
         all_tasks = [t[1] for t in tasks] + [t[1] for t in pub_tasks]
 
@@ -460,9 +449,6 @@ class SearchOrchestrator:
         if self.openalex_client:
             tasks.append(("openalex", self._search_openalex(query, max_results)))
 
-        if self.scholar_client:
-            tasks.append(("scholar", self._search_scholar(query, max_results)))
-
         if not tasks:
             return []
 
@@ -508,21 +494,6 @@ class SearchOrchestrator:
             return publications
         except Exception as e:
             logger.error(f"OpenAlex search failed: {e}", exc_info=True)
-            return []
-
-    async def _search_scholar(self, query: str, max_results: int) -> List[Publication]:
-        """Search Google Scholar."""
-        if not self.scholar_client:
-            return []
-
-        try:
-            logger.info(f"🔍 Searching Google Scholar: '{query}'")
-            results = await self.scholar_client.search(query, max_results=max_results)
-            publications = [r.publication for r in results if isinstance(r, PublicationResult)]
-            logger.info(f"📄 Scholar: {len(publications)} publications")
-            return publications
-        except Exception as e:
-            logger.error(f"Google Scholar search failed: {e}", exc_info=True)
             return []
 
     def _deduplicate_geo(self, datasets: List[GEOSeriesMetadata]) -> List[GEOSeriesMetadata]:
