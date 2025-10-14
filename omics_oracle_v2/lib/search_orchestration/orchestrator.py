@@ -255,7 +255,8 @@ class SearchOrchestrator:
             try:
                 cache_search_type = search_type or "auto"
                 cache_key = f"{query}:{cache_search_type}"
-                await self.cache.set_search_result(cache_key, result.to_dict(), search_type=cache_search_type)
+                # Fixed: search_type should be 2nd positional arg, not keyword arg
+                await self.cache.set_search_result(cache_key, cache_search_type, result.to_dict())
                 logger.info("💾 Results cached")
             except Exception as e:
                 logger.warning(f"Cache set failed: {e}")

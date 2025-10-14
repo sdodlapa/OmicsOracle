@@ -31,12 +31,11 @@ from enum import Enum
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from omics_oracle_v2.lib.enrichment.fulltext.sources.libgen_client import LibGenClient, LibGenConfig
-from omics_oracle_v2.lib.enrichment.fulltext.sources.scihub_client import SciHubClient, SciHubConfig
 from omics_oracle_v2.lib.enrichment.fulltext.sources.institutional_access import (
     InstitutionalAccessManager,
     InstitutionType,
 )
+from omics_oracle_v2.lib.enrichment.fulltext.sources.libgen_client import LibGenClient, LibGenConfig
 from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources import (
     ArXivClient,
     BioRxivClient,
@@ -47,6 +46,8 @@ from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources.unpaywall_client
     UnpaywallClient,
     UnpaywallConfig,
 )
+from omics_oracle_v2.lib.enrichment.fulltext.sources.scihub_client import SciHubClient, SciHubConfig
+from omics_oracle_v2.lib.enrichment.fulltext.url_validator import URLType, URLValidator
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 logger = logging.getLogger(__name__)
@@ -69,6 +70,30 @@ class FullTextSource(str, Enum):
 
 
 @dataclass
+class SourceURL:
+    """
+    Single URL source with enhanced metadata.
+
+    NEW (Oct 13, 2025):
+    - Added url_type field for smart prioritization
+    - URL type classified automatically using URLValidator
+    - Helps download manager prioritize PDF links over landing pages
+    """
+
+    url: str
+    source: FullTextSource
+    priority: int  # 1 = highest priority, 11 = lowest
+    url_type: URLType = URLType.UNKNOWN  # ✅ NEW: URL type classification
+    confidence: float = 1.0  # 0.0-1.0 confidence score
+    requires_auth: bool = False
+    metadata: Dict = None
+
+    def __post_init__(self):
+        if self.metadata is None:
+            self.metadata = {}
+
+
+@dataclass
 class FullTextResult:
     """Result from full-text retrieval attempt."""
 
@@ -79,6 +104,7 @@ class FullTextResult:
     url: Optional[str] = None
     error: Optional[str] = None
     metadata: Optional[Dict] = None
+    all_urls: Optional[List["SourceURL"]] = None  # NEW: All URLs from all sources (for fallback)
 
 
 class FullTextManagerConfig:
@@ -1098,18 +1124,169 @@ class FullTextManager:
         self.stats["failures"] += 1
         return FullTextResult(success=False, error="No sources succeeded")
 
+    async def get_all_fulltext_urls(self, publication: Publication) -> FullTextResult:
+        """
+        Get full-text URLs from ALL sources in PARALLEL.
+
+        NEW STRATEGY (Oct 13, 2025):
+        - Queries ALL enabled sources simultaneously (not waterfall)
+        - Returns ALL found URLs sorted by priority
+        - First URL = highest priority (institutional > PMC > Unpaywall...)
+        - Remaining URLs = fallbacks for download retry
+
+        Benefits:
+        - Single pass through all sources (~2-3 seconds)
+        - Built-in fallback URLs (no re-querying needed)
+        - Higher success rate (PDFDownloadManager tries all URLs)
+        - Parallel execution = faster than sequential waterfall
+
+        Use Case:
+        - Batch downloads where fallback is critical
+        - When you want to maximize download success rate
+        - When network reliability is uncertain
+
+        Example:
+            >>> result = await manager.get_all_fulltext_urls(publication)
+            >>> if result.success:
+            >>>     print(f"Found {len(result.all_urls)} URLs")
+            >>>     print(f"Best: {result.all_urls[0].source.value}")
+            >>>     print(f"Fallbacks: {[u.source.value for u in result.all_urls[1:]]}")
+
+        Args:
+            publication: Publication object
+
+        Returns:
+            FullTextResult with all_urls populated
+        """
+        if not self.initialized:
+            await self.initialize()
+
+        self.stats["total_attempts"] += 1
+
+        logger.info(f"Collecting URLs from ALL sources for: {publication.title[:60]}...")
+
+        # Check cache first (instant)
+        cached = await self._check_cache(publication)
+        if cached.success:
+            logger.info("✓ Found in cache")
+            return cached
+
+        # Define all sources with their priority order
+        sources = [
+            ("institutional", self._try_institutional_access, 1),
+            ("pmc", self._try_pmc, 2),
+            ("unpaywall", self._try_unpaywall, 3),
+            ("core", self._try_core, 4),
+            ("openalex_oa", self._try_openalex_oa_url, 5),
+            ("crossref", self._try_crossref, 6),
+            ("biorxiv", self._try_biorxiv, 7),
+            ("arxiv", self._try_arxiv, 8),
+            ("scihub", self._try_scihub, 9),
+            ("libgen", self._try_libgen, 10),
+        ]
+
+        # Execute ALL sources in PARALLEL
+        logger.info(f"⚡ Querying {len(sources)} sources in parallel...")
+        tasks = [
+            asyncio.wait_for(source_func(publication), timeout=self.config.timeout_per_source)
+            for _, source_func, _ in sources
+        ]
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Collect all successful URLs
+        all_urls = []
+        for i, result in enumerate(results):
+            source_name, _, priority = sources[i]
+
+            if isinstance(result, Exception):
+                logger.debug(f"  ✗ {source_name} exception: {result}")
+                continue
+
+            if isinstance(result, FullTextResult) and result.success and result.url:
+                # ✅ NEW: Classify URL type automatically
+                url_type = URLValidator.classify_url(result.url)
+
+                # ✅ NEW: Adjust priority based on URL type
+                # PDF links get higher priority, landing pages get lower
+                priority_adjustment = URLValidator.get_priority_boost(result.url)
+                adjusted_priority = priority + priority_adjustment
+
+                source_url = SourceURL(
+                    url=result.url,
+                    source=result.source,
+                    priority=adjusted_priority,  # ✅ Adjusted priority
+                    url_type=url_type,  # ✅ NEW: Track URL type
+                    confidence=1.0,
+                    requires_auth=(result.source == FullTextSource.INSTITUTIONAL),
+                    metadata=result.metadata or {},
+                )
+                all_urls.append(source_url)
+
+                # Enhanced logging with URL type
+                logger.info(
+                    f"  ✓ {source_name}: Found URL "
+                    f"(type={url_type.value}, priority={priority}→{adjusted_priority})"
+                )
+            else:
+                logger.debug(f"  ✗ {source_name}: No URL found")
+
+        if not all_urls:
+            logger.warning(f"No URLs found from any source for: {publication.title[:60]}...")
+            self.stats["failures"] += 1
+            return FullTextResult(success=False, error="No URLs found from any source", all_urls=[])
+
+        # Sort by priority (lower number = higher priority)
+        all_urls.sort(key=lambda x: x.priority)
+
+        # Use best URL as primary
+        best_url = all_urls[0]
+
+        logger.info(f"✅ Found {len(all_urls)} URLs for: {publication.title[:60]}")
+        logger.info(f"   Best: {best_url.source.value} (priority {best_url.priority})")
+        if len(all_urls) > 1:
+            fallbacks = ", ".join([f"{u.source.value}({u.priority})" for u in all_urls[1:]])
+            logger.info(f"   Fallbacks: {fallbacks}")
+
+        self.stats["successes"] += 1
+        self.stats["by_source"][best_url.source.value] = (
+            self.stats["by_source"].get(best_url.source.value, 0) + 1
+        )
+
+        return FullTextResult(
+            success=True,
+            source=best_url.source,
+            url=best_url.url,
+            metadata={
+                "total_sources_found": len(all_urls),
+                "sources": [url.source.value for url in all_urls],
+                "priorities": [url.priority for url in all_urls],
+                "best_source": best_url.source.value,
+            },
+            all_urls=all_urls,
+        )
+
     async def get_fulltext_batch(
-        self, publications: List[Publication], max_concurrent: Optional[int] = None
+        self,
+        publications: List[Publication],
+        max_concurrent: Optional[int] = None,
+        collect_all_urls: bool = True,  # NEW: Collect URLs from all sources
     ) -> List[FullTextResult]:
         """
         Get full-text for multiple publications concurrently.
 
+        NEW (Oct 13, 2025):
+        - Now uses get_all_fulltext_urls() by default
+        - Collects URLs from ALL sources in parallel
+        - Returns results with all_urls populated for fallback
+
         Args:
             publications: List of Publication objects
             max_concurrent: Maximum concurrent requests (defaults to config)
+            collect_all_urls: If True, use parallel collection; if False, use waterfall
 
         Returns:
-            List of FullTextResult objects
+            List of FullTextResult objects with all_urls populated
         """
         if not self.initialized:
             await self.initialize()
@@ -1117,7 +1294,8 @@ class FullTextManager:
         max_concurrent = max_concurrent or self.config.max_concurrent
 
         logger.info(
-            f"Getting full-text for {len(publications)} publications (max {max_concurrent} concurrent)..."
+            f"Getting full-text for {len(publications)} publications "
+            f"(max {max_concurrent} concurrent, collect_all={collect_all_urls})..."
         )
 
         # Create semaphore for concurrency control
@@ -1125,13 +1303,21 @@ class FullTextManager:
 
         async def get_with_semaphore(pub):
             async with semaphore:
-                return await self.get_fulltext(pub)
+                if collect_all_urls:
+                    return await self.get_all_fulltext_urls(pub)
+                else:
+                    return await self.get_fulltext(pub)
 
         # Run all requests concurrently with limit
         results = await asyncio.gather(*[get_with_semaphore(pub) for pub in publications])
 
         success_count = sum(1 for r in results if r.success)
-        logger.info(f"Batch complete: {success_count}/{len(publications)} succeeded")
+        total_urls = sum(len(r.all_urls) for r in results if r.all_urls)
+
+        logger.info(
+            f"Batch complete: {success_count}/{len(publications)} succeeded, "
+            f"{total_urls} total URLs collected"
+        )
 
         return results
 

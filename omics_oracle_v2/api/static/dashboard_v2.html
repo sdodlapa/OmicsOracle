@@ -1206,8 +1206,8 @@
 
                 console.log(`Downloading papers for ${dataset.geo_id}...`);
 
-                // Call enrichment API for this single dataset
-                const response = await authenticatedFetch('http://localhost:8000/api/agents/enrich-fulltext?max_papers=3', {
+                // Call enrichment API for this single dataset (no max_papers = download ALL)
+                const response = await authenticatedFetch('http://localhost:8000/api/agents/enrich-fulltext', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify([dataset])
@@ -1454,16 +1454,16 @@ ${error.stack || 'Not available'}`;
                                     `<button class="btn-download-papers" onclick="event.stopPropagation(); downloadPapersForDataset(${index})" title="Download ${dataset.pubmed_ids.length} linked paper(s) for AI analysis">
                                         📥 Download ${dataset.pubmed_ids.length} Paper${dataset.pubmed_ids.length > 1 ? 's' : ''}
                                     </button>
-                                    <button class="btn-ai-analyze btn-ai-disabled" disabled title="Download papers first to enable AI analysis">
+                                    <button class="btn-ai-analyze btn-ai-disabled" disabled title="AI analysis requires full-text papers. Download PDFs first. (GEO metadata alone is too brief for meaningful AI analysis)">
                                         🤖 AI Analysis
-                                        <span class="analysis-badge analysis-badge-disabled">Download Required</span>
+                                        <span class="analysis-badge analysis-badge-disabled">PDFs Required</span>
                                     </button>`
                                 )
                                 :
                                 // No PMIDs - disable everything
-                                `<button class="btn-ai-analyze btn-ai-disabled" disabled title="AI analysis requires linked publications (none available for this dataset)">
+                                `<button class="btn-ai-analyze btn-ai-disabled" disabled title="AI analysis unavailable: No linked publications. GEO summary is brief and can be read directly.">
                                     🤖 AI Analysis
-                                    <span class="analysis-badge analysis-badge-disabled">No Publications</span>
+                                    <span class="analysis-badge analysis-badge-disabled">No Papers</span>
                                 </button>`
                             }
                         </div>
@@ -1692,6 +1692,29 @@ ${error.stack || 'Not available'}`;
             `;
         }
 
+        // Strip full-text content from dataset to reduce response size
+        // Prevents HTTP/2 protocol errors (Chrome 16MB limit)
+        function stripFullTextContent(dataset) {
+            const cleanDataset = { ...dataset };
+
+            if (cleanDataset.fulltext && Array.isArray(cleanDataset.fulltext)) {
+                cleanDataset.fulltext = cleanDataset.fulltext.map(ft => ({
+                    pmid: ft.pmid,
+                    title: ft.title,
+                    url: ft.url,
+                    pdf_path: ft.pdf_path,
+                    // Keep only metadata, not full text content
+                    has_abstract: !!ft.abstract || ft.has_abstract,
+                    has_methods: !!ft.methods || ft.has_methods,
+                    has_results: !!ft.results || ft.has_results,
+                    has_discussion: !!ft.discussion || ft.has_discussion,
+                    content_length: ft.content_length || 0
+                }));
+            }
+
+            return cleanDataset;
+        }
+
         // Analyze dataset with GPT-4
         async function analyzeDataset(dataset) {
             const analysisSection = document.getElementById('analysis-section');
@@ -1707,12 +1730,16 @@ ${error.stack || 'Not available'}`;
             `;
 
             try {
+                // Strip full-text content to prevent HTTP/2 errors
+                const cleanDataset = stripFullTextContent(dataset);
+                console.log('Sending dataset size:', JSON.stringify(cleanDataset).length, 'bytes');
+
                 // Call AI analysis API
                 const response = await authenticatedFetch('http://localhost:8000/api/agents/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        datasets: [dataset],  // Send as array
+                        datasets: [cleanDataset],  // Send cleaned dataset
                         query: currentQuery,   // Original search query
                         max_datasets: 1        // Analyzing single dataset
                     })

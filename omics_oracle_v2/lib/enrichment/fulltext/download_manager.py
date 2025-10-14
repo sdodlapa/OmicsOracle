@@ -15,6 +15,7 @@ from typing import List, Optional
 import aiofiles
 import aiohttp
 
+from omics_oracle_v2.lib.enrichment.identifiers import UniversalIdentifier
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 logger = logging.getLogger(__name__)
@@ -83,7 +84,18 @@ class PDFDownloadManager:
         url_field: str = "fulltext_url",  # Which field has the PDF URL
     ) -> DownloadReport:
         """
-        Download PDFs for a batch of publications.
+        DEPRECATED: Use download_with_fallback() instead.
+
+        This method only tries ONE URL per publication (from url_field) and was
+        causing 70% of downloads to fail unnecessarily. The correct approach is to:
+
+        1. Collect ALL URLs: result = await fulltext_manager.get_all_fulltext_urls(pub)
+        2. Try with fallback: await download_manager.download_with_fallback(pub, result.all_urls, output_dir)
+
+        See: docs/WATERFALL_FIX_COMPLETE.md for details.
+
+        Deprecated: October 13, 2025
+        Will be removed in: v3.0.0
 
         Args:
             publications: List of publications with PDF URLs
@@ -93,6 +105,15 @@ class PDFDownloadManager:
         Returns:
             DownloadReport with results
         """
+        import warnings
+
+        warnings.warn(
+            "download_batch() is deprecated and only tries ONE URL per publication. "
+            "Use get_all_fulltext_urls() + download_with_fallback() for maximum success rate. "
+            "See docs/WATERFALL_FIX_COMPLETE.md",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         output_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"Starting batch download of {len(publications)} PDFs")
@@ -294,20 +315,136 @@ class PDFDownloadManager:
                 return DownloadResult(publication=publication, success=False, error=str(e))
 
     def _generate_filename(self, publication: Publication) -> str:
-        """Generate unique filename for PDF"""
-        if publication.pmid:
-            return f"PMID_{publication.pmid}.pdf"
-        elif publication.doi:
-            # Clean DOI for filename
-            clean_doi = publication.doi.replace("/", "_").replace("\\", "_")
-            return f"DOI_{clean_doi}.pdf"
-        else:
-            # Fallback to hash of title
-            import hashlib
+        """
+        Generate unique filename for PDF using UniversalIdentifier.
 
-            title_hash = hashlib.md5(publication.title.encode()).hexdigest()[:12]
-            return f"paper_{title_hash}.pdf"
+        NEW (Oct 13, 2025):
+        - Uses hierarchical identifier fallback: PMID → DOI → PMC → arXiv → Hash
+        - Works for all 11 full-text sources (not just PMID-based ones)
+        - Filesystem-safe filenames (DOI slashes converted to underscores)
+        - Deterministic (same paper = same filename)
+
+        Returns:
+            Filename like "pmid_12345.pdf", "doi_10_1234__abc.pdf", etc.
+
+        Examples:
+            >>> pub = Publication(pmid="12345", doi="10.1234/abc")
+            >>> filename = self._generate_filename(pub)
+            >>> print(filename)  # "pmid_12345.pdf"
+
+            >>> pub = Publication(doi="10.1234/abc")  # No PMID
+            >>> filename = self._generate_filename(pub)
+            >>> print(filename)  # "doi_10_1234__abc.pdf"
+        """
+        identifier = UniversalIdentifier(publication)
+        return identifier.filename
 
     def _is_valid_pdf(self, content: bytes) -> bool:
         """Validate PDF using magic bytes"""
         return content.startswith(self.PDF_MAGIC_BYTES)
+
+    async def download_with_fallback(
+        self,
+        publication: Publication,
+        all_urls: List,  # List of SourceURL objects
+        output_dir: Path,
+    ) -> DownloadResult:
+        """
+        Download PDF with automatic fallback through multiple URLs.
+
+        NEW (Oct 13, 2025):
+        - Tries URLs in priority order (institutional > PMC > Unpaywall...)
+        - Stops at first successful download
+        - No need to re-query APIs (URLs already collected)
+        - Logs which source succeeded
+
+        Args:
+            publication: Publication object
+            all_urls: List of SourceURL objects from FullTextManager
+            output_dir: Directory to save PDF
+
+        Returns:
+            DownloadResult with success status
+
+        Example:
+            >>> # Get all URLs first
+            >>> result = await fulltext_manager.get_all_fulltext_urls(pub)
+            >>>
+            >>> # Try downloading with fallback
+            >>> download_result = await pdf_downloader.download_with_fallback(
+            >>>     pub, result.all_urls, output_dir
+            >>> )
+            >>>
+            >>> if download_result.success:
+            >>>     print(f"Downloaded from {download_result.source}")
+        """
+        if not all_urls:
+            return DownloadResult(publication=publication, success=False, error="No URLs provided")
+
+        output_dir.mkdir(parents=True, exist_ok=True)
+
+        logger.info(f"Trying {len(all_urls)} URLs for: {publication.title[:50]}...")
+
+        # NEW: Retry configuration
+        max_retries_per_url = 2  # Retry each URL up to 2 times
+        retry_delay = 1.5  # Seconds to wait between retries
+
+        # Try each URL in priority order
+        for i, source_url in enumerate(all_urls):
+            source_name = source_url.source.value
+            priority = source_url.priority
+            url = source_url.url
+
+            logger.info(
+                f"  [{i+1}/{len(all_urls)}] Trying {source_name} " f"(priority {priority}): {url[:80]}..."
+            )
+
+            # NEW: Retry logic for each URL
+            for attempt in range(max_retries_per_url):
+                try:
+                    # Attempt download
+                    result = await self._download_single(publication, url, output_dir)
+
+                    if result.success and result.pdf_path:
+                        # SUCCESS! Return immediately
+                        result.source = source_name
+                        retry_msg = f" (attempt {attempt + 1}/{max_retries_per_url})" if attempt > 0 else ""
+                        logger.info(
+                            f"  ✅ SUCCESS from {source_name}{retry_msg}! "
+                            f"Size: {result.file_size / 1024:.1f} KB, "
+                            f"Path: {result.pdf_path.name}"
+                        )
+                        return result
+                    else:
+                        # Failed this attempt
+                        if attempt < max_retries_per_url - 1:
+                            logger.warning(
+                                f"  ⚠️  {source_name} attempt {attempt + 1}/{max_retries_per_url} failed: {result.error}"
+                            )
+                            logger.info(f"     Retrying in {retry_delay}s...")
+                            await asyncio.sleep(retry_delay)
+                        else:
+                            # All retries exhausted for this URL
+                            logger.debug(
+                                f"  ✗ {source_name} failed after {max_retries_per_url} attempts: {result.error}"
+                            )
+
+                except Exception as e:
+                    if attempt < max_retries_per_url - 1:
+                        logger.warning(
+                            f"  ⚠️  {source_name} attempt {attempt + 1}/{max_retries_per_url} exception: {e}"
+                        )
+                        logger.info(f"     Retrying in {retry_delay}s...")
+                        await asyncio.sleep(retry_delay)
+                    else:
+                        logger.debug(f"  ✗ {source_name} exception after {max_retries_per_url} attempts: {e}")
+                    continue
+
+            # All retries exhausted for this URL, try next URL
+
+        # All URLs failed
+        logger.warning(f"❌ All {len(all_urls)} URLs failed for: {publication.title[:50]}")
+
+        return DownloadResult(
+            publication=publication, success=False, error=f"All {len(all_urls)} sources failed", source="none"
+        )

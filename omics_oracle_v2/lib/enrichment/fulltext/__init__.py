@@ -17,6 +17,7 @@ from omics_oracle_v2.lib.enrichment.fulltext.manager import (
     FullTextManagerConfig,
     FullTextResult,
     FullTextSource,
+    SourceURL,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "FullTextManagerConfig",
     "FullTextResult",
     "FullTextSource",
+    "SourceURL",
 ]

@@ -1,0 +1,89 @@
+digraph DatasetPDFMapping {
+    rankdir=TB;
+    node [shape=box, style=filled];
+
+    // Styling
+    graph [fontname="Arial", fontsize=12, splines=ortho];
+    node [fontname="Arial", fontsize=11];
+    edge [fontname="Arial", fontsize=10];
+
+    // Frontend Layer
+    subgraph cluster_frontend {
+        label="FRONTEND (JavaScript)";
+        style=filled;
+        color=lightblue;
+
+        currentResults [label="currentResults Array\n\n[0] { geo_id: 'GSE123456', fulltext: [] }\n[1] { geo_id: 'GSE789012', fulltext: [] }\n[2] { geo_id: 'GSE555555', fulltext: [] }", fillcolor=lightyellow];
+
+        card0 [label="Card 0\nGSE123456\n\n[Download]\n[AI Analysis]", fillcolor=lightgreen];
+        card1 [label="Card 1\nGSE789012\n\n[Download]\n[AI Analysis]", fillcolor=lightgreen];
+        card2 [label="Card 2\nGSE555555\n\n[Download]\n[AI Analysis]", fillcolor=lightgreen];
+
+        currentResults -> card0 [label="index 0"];
+        currentResults -> card1 [label="index 1"];
+        currentResults -> card2 [label="index 2"];
+    }
+
+    // Backend Layer
+    subgraph cluster_backend {
+        label="BACKEND (FastAPI)";
+        style=filled;
+        color=lightcoral;
+
+        enrich_endpoint [label="POST /enrich-fulltext\n\nInput: [dataset]\n- geo_id\n- pubmed_ids", fillcolor=lightyellow];
+        analyze_endpoint [label="POST /analyze\n\nInput: [dataset]\n- geo_id\n- fulltext[]", fillcolor=lightyellow];
+
+        process_download [label="Download Process\n\n1. Fetch PubMed metadata\n2. Find PDF URLs (11 sources)\n3. Download PDFs with retry\n4. Parse PDFs\n5. Attach to dataset.fulltext", fillcolor=lightcyan];
+
+        process_analyze [label="AI Analysis Process\n\n1. Check fulltext availability\n2. Build prompt with Methods/Results\n3. Send to GPT-4\n4. Return analysis", fillcolor=lightcyan];
+
+        enrich_endpoint -> process_download;
+        analyze_endpoint -> process_analyze;
+    }
+
+    // Database Layer
+    subgraph cluster_database {
+        label="DATABASE (File System)";
+        style=filled;
+        color=lightgray;
+
+        pdf_storage [label="data/fulltext/pdfs/\n\nPMID_12345.pdf ← GSE123456\nPMID_67890.pdf ← GSE123456\nPMID_11111.pdf ← GSE789012\nPMID_22222.pdf ← GSE789012\nPMID_33333.pdf ← GSE555555\nPMID_44444.pdf ← GSE555555", fillcolor=white];
+    }
+
+    // Connections between layers
+    card0 -> enrich_endpoint [label="onClick(0)\nDownload", color=blue, style=bold];
+    card1 -> enrich_endpoint [label="onClick(1)\nDownload", color=blue, style=bold];
+    card2 -> enrich_endpoint [label="onClick(2)\nDownload", color=blue, style=bold];
+
+    card0 -> analyze_endpoint [label="onClick(0)\nAI Analysis", color=green, style=bold];
+    card1 -> analyze_endpoint [label="onClick(1)\nAI Analysis", color=green, style=bold];
+    card2 -> analyze_endpoint [label="onClick(2)\nAI Analysis", color=green, style=bold];
+
+    process_download -> pdf_storage [label="Save PDFs", style=dashed];
+    process_download -> currentResults [label="Return enriched\ndataset", style=dashed, color=blue];
+
+    pdf_storage -> process_download [label="Read PDFs", style=dashed];
+    process_analyze -> currentResults [label="Return analysis", style=dashed, color=green];
+
+    // Key Points
+    subgraph cluster_key {
+        label="KEY ISOLATION POINTS";
+        style=filled;
+        color=lightyellow;
+
+        isolation1 [label="1. Object Encapsulation\ncurrentResults[0] ≠ currentResults[1]\nSeparate objects in memory", shape=note, fillcolor=white];
+        isolation2 [label="2. Backend Loops\nfor dataset in datasets:\n    dataset.fulltext = []\nIndependent processing", shape=note, fillcolor=white];
+        isolation3 [label="3. Unique Filenames\nPMID_12345.pdf ≠ PMID_11111.pdf\nNo collisions possible", shape=note, fillcolor=white];
+    }
+
+    // Legend
+    subgraph cluster_legend {
+        label="LEGEND";
+        style=filled;
+        color=white;
+
+        legend_download [label="Download Flow", color=blue, fillcolor=white];
+        legend_analyze [label="AI Analysis Flow", color=green, fillcolor=white];
+        legend_data [label="Data Storage", style=dashed, fillcolor=white];
+    }
+}

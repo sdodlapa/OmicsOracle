@@ -26,6 +26,7 @@ except ImportError:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -69,6 +70,12 @@ async def lifespan(app: FastAPI):
         logger.info(f"Environment: {settings.environment}")
         logger.info(f"NCBI email: {settings.geo.ncbi_email}")
         logger.info(f"CORS origins: {api_settings.cors_origins}")
+
+        # Silence noisy third-party loggers
+        logging.getLogger("GEOparse").setLevel(logging.WARNING)
+        logging.getLogger("urllib3").setLevel(logging.WARNING)
+        logging.getLogger("httpx").setLevel(logging.WARNING)
+        logger.info("Configured third-party logging levels")
 
         # Initialize database
         logger.info("Initializing database...")
@@ -142,6 +149,12 @@ def create_app(settings: Settings = None, api_settings: APISettings = None) -> F
     # ============================================================================
     # MIDDLEWARE STACK (order matters - last added runs first)
     # ============================================================================
+
+    # 0. GZip Compression - Compress large responses (FIXES HTTP/2 errors!)
+    #    ESSENTIAL for large JSON responses (reduces size by 70-90%)
+    #    Minimum size: 1000 bytes (don't compress tiny responses)
+    app.add_middleware(GZipMiddleware, minimum_size=1000)
+    logger.info("GZip compression middleware enabled (min_size=1KB)")
 
     # 1. CORS - Allow frontend to call API from different origin
     #    ESSENTIAL for dashboard_v2.html to communicate with backend

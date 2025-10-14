@@ -15,12 +15,14 @@ import time
 from datetime import datetime, timezone
 from typing import List
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from omics_oracle_v2.agents.models.search import RankedDataset
 from omics_oracle_v2.api.models.requests import SearchRequest
 from omics_oracle_v2.api.models.responses import DatasetResponse, PublicationResponse, SearchResponse
+from omics_oracle_v2.lib.citations.discovery.geo_discovery import GEOCitationDiscovery
+from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.search_orchestration import OrchestratorConfig, SearchOrchestrator
 
 logger = logging.getLogger(__name__)
@@ -320,7 +322,26 @@ async def execute_search(
 )
 async def enrich_fulltext(
     datasets: List[DatasetResponse],
-    max_papers: int = 3,
+    max_papers: int = Query(
+        default=None, description="Maximum papers to download per dataset. None = download ALL papers."
+    ),
+    include_full_content: bool = Query(
+        default=False,
+        description="Include full parsed text (abstract, methods, results, etc.). "
+        "Set to False to reduce response size and avoid HTTP/2 errors.",
+    ),
+    include_citing_papers: bool = Query(
+        default=True,
+        description="Download papers that CITED this dataset (not just original paper). "
+        "This shows how the dataset was USED in research.",
+    ),
+    max_citing_papers: int = Query(
+        default=10, description="Maximum citing papers to download per dataset (default=10)."
+    ),
+    download_original: bool = Query(
+        default=True,
+        description="Also download the original paper that generated the dataset (stored separately).",
+    ),
 ):
     """
     Enrich datasets with full-text content from linked publications.
@@ -345,9 +366,10 @@ async def enrich_fulltext(
     import os
     from pathlib import Path
 
-    from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig
-    from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient, PubMedConfig
     from omics_oracle_v2.lib.enrichment.fulltext.download_manager import PDFDownloadManager
+    from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig
+    from omics_oracle_v2.lib.registry import get_registry
+    from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient, PubMedConfig
 
     start_time = time.time()
 
@@ -385,31 +407,90 @@ async def enrich_fulltext(
 
         enriched_datasets = []
 
+        # Initialize citation discovery if needed
+        citation_discovery = None
+        if include_citing_papers:
+            logger.info("[CITATION] Initializing citation discovery...")
+            citation_discovery = GEOCitationDiscovery()
+
         for dataset in datasets:
+            logger.info(f"\n{'=' * 80}")
+            logger.info(f"Processing {dataset.geo_id}: {dataset.title[:60]}...")
+            logger.info(f"{'=' * 80}\n")
+
             if not dataset.pubmed_ids:
                 logger.warning(f"Dataset {dataset.geo_id} has no PubMed IDs")
                 enriched_datasets.append(dataset)
                 continue
 
-            # Limit to max_papers
-            pmids_to_fetch = dataset.pubmed_ids[:max_papers]
-            logger.info(f"Enriching {dataset.geo_id} with {len(pmids_to_fetch)} PMIDs...")
+            # STEP 0: Decide what papers to download based on user preferences
+            original_pmids = dataset.pubmed_ids[:max_papers] if max_papers is not None else dataset.pubmed_ids
 
-            # Fetch full metadata from PubMed (gets DOI, PMC ID, etc.)
-            publications = []
-            for pmid in pmids_to_fetch:
+            # Track what we'll download
+            papers_to_download = {
+                "original": [],  # Original paper(s) that generated the dataset
+                "citing": [],  # Papers that cited/used the dataset
+            }
+
+            # STEP 1: Handle ORIGINAL papers (if requested)
+            if download_original and original_pmids:
+                logger.info(f"[ORIGINAL] Fetching metadata for {len(original_pmids)} original paper(s)...")
+                for pmid in original_pmids:
+                    try:
+                        pub = pubmed_client.fetch_by_id(pmid)
+                        if pub:
+                            papers_to_download["original"].append(pub)
+                            logger.info(f"  [OK] PMID {pmid}: DOI={pub.doi}, PMC={pub.pmcid}")
+                    except Exception as e:
+                        logger.error(f"  [ERROR] PMID {pmid}: {e}")
+
+            # STEP 2: Discover CITING papers (if requested)
+            citation_result = None  # Initialize for metadata storage
+            if include_citing_papers and citation_discovery:
+                logger.info(f"[CITATION] Discovering papers that cited {dataset.geo_id}...")
+
+                # Convert DatasetResponse to GEOSeriesMetadata for citation discovery
+                geo_metadata = GEOSeriesMetadata(
+                    geo_id=dataset.geo_id,
+                    title=dataset.title,
+                    summary=dataset.summary or "",
+                    organism=dataset.organism or "",
+                    platform=dataset.platform or "",
+                    sample_count=dataset.sample_count,
+                    submission_date=dataset.submission_date or "",
+                    publication_date=dataset.publication_date or "",
+                    pubmed_ids=dataset.pubmed_ids,
+                )
+
                 try:
-                    pub = pubmed_client.fetch_by_id(pmid)
-                    if pub:
-                        publications.append(pub)
-                        logger.info(f"[OK] Fetched metadata for PMID {pmid}: DOI={pub.doi}, PMC={pub.pmcid}")
-                except Exception as e:
-                    logger.error(f"Error fetching metadata for PMID {pmid}: {e}")
+                    citation_result = await citation_discovery.find_citing_papers(
+                        geo_metadata, max_results=max_citing_papers
+                    )
 
-            if not publications:
-                logger.warning(f"No publications fetched for {dataset.geo_id}")
+                    if citation_result.citing_papers:
+                        logger.info(f"  [OK] Found {len(citation_result.citing_papers)} citing papers")
+                        papers_to_download["citing"] = citation_result.citing_papers[:max_citing_papers]
+                    else:
+                        logger.warning(f"  [WARNING] No citing papers found for {dataset.geo_id}")
+
+                except Exception as e:
+                    logger.error(f"  [ERROR] Citation discovery failed: {e}", exc_info=True)
+
+            # STEP 3: If no papers to download, skip
+            total_papers = len(papers_to_download["original"]) + len(papers_to_download["citing"])
+            if total_papers == 0:
+                logger.warning(f"[SKIP] No papers to download for {dataset.geo_id}")
                 enriched_datasets.append(dataset)
                 continue
+
+            logger.info(
+                f"[DOWNLOAD] Total papers to download: {total_papers} "
+                f"(original={len(papers_to_download['original'])}, "
+                f"citing={len(papers_to_download['citing'])})"
+            )
+
+            # Combine all publications for URL collection
+            publications = papers_to_download["original"] + papers_to_download["citing"]
 
             # STEP 1: Get URLs from all sources (same as pipeline)
             logger.info(f" Finding full-text URLs for {len(publications)} publications from all sources...")
@@ -437,140 +518,126 @@ async def enrich_fulltext(
                     )
             logger.warning(f"[DATA] STEP 2 COMPLETE: Set URLs on {urls_set}/{len(publications)} publications")
 
-            # STEP 3: Download PDFs with waterfall retry on failure
-            logger.info("[SEARCH] STEP 3: Preparing to download PDFs with waterfall fallback...")
-            publications_with_urls = [
-                p for p in publications if hasattr(p, "fulltext_url") and p.fulltext_url
-            ]
-            logger.info(f"   Found {len(publications_with_urls)} publications with URLs")
+            # STEP 3: Download PDFs with automatic waterfall fallback (organized by paper type)
+            logger.info("[DOWNLOAD] STEP 3: Downloading PDFs with automatic waterfall fallback...")
 
-            if publications_with_urls:
+            # Create organized directory structure: data/pdfs/{geo_id}/{original|citing}/
+            base_pdf_dir = Path("data/pdfs") / dataset.geo_id
+            original_dir = base_pdf_dir / "original"
+            citing_dir = base_pdf_dir / "citing"
+            original_dir.mkdir(parents=True, exist_ok=True)
+            citing_dir.mkdir(parents=True, exist_ok=True)
+
+            download_results = {"original": [], "citing": []}
+            successful_downloads = {"original": 0, "citing": 0}
+
+            # Download ORIGINAL papers
+            if papers_to_download["original"]:
                 logger.info(
-                    f"[DOWNLOAD]  Downloading {len(publications_with_urls)} PDFs using PDFDownloadManager..."
+                    f"  [ORIGINAL] Downloading {len(papers_to_download['original'])} original paper(s)..."
                 )
-                pdf_dir = Path("data/fulltext/pdfs")
-                pdf_dir.mkdir(parents=True, exist_ok=True)
+                for pub in papers_to_download["original"]:
+                    url_result = await fulltext_manager.get_all_fulltext_urls(pub)
 
-                # First attempt with initial URLs
-                download_report = await pdf_downloader.download_batch(
-                    publications=publications_with_urls, output_dir=pdf_dir, url_field="fulltext_url"
-                )
-                logger.warning(
-                    f"[DATA] STEP 3A: First attempt - Downloaded {download_report.successful}/{download_report.total} PDFs"
-                )
+                    # Store ALL collected URLs on publication for metadata.json
+                    pub._all_collected_urls = url_result.all_urls
 
-                # STEP 3B: WATERFALL RETRY - For failed downloads, try next sources
-                failed_pubs = []
-                for result in download_report.results:
-                    if not result.success:
-                        failed_pubs.append(result.publication)
-                        logger.warning(
-                            f"    PMID {result.publication.pmid}: Will retry with next source (failed: {result.error})"
-                        )
+                    if not url_result.all_urls:
+                        logger.warning(f"    [SKIP] PMID {pub.pmid}: No URLs found")
+                        continue
 
-                if failed_pubs:
-                    logger.warning(
-                        f"[PROCESS] STEP 3B: TIERED WATERFALL RETRY for {len(failed_pubs)} failed downloads..."
+                    logger.info(
+                        f"    [DOWNLOAD] PMID {pub.pmid}: Trying {len(url_result.all_urls)} sources "
+                        f"({', '.join([u.source.value for u in url_result.all_urls])})"
                     )
-                    logger.warning("   Strategy: Keep trying ALL remaining sources until success")
 
-                    # For each failed publication, try ALL remaining sources in waterfall
-                    retry_successes = 0
-                    for pub in failed_pubs:
-                        tried_sources = [pub.fulltext_source] if hasattr(pub, "fulltext_source") else []
-                        logger.warning(
-                            f"   [PROCESS] PMID {pub.pmid}: Starting waterfall retry (already tried: {', '.join(tried_sources)})"
-                        )
+                    result = await pdf_downloader.download_with_fallback(
+                        publication=pub, all_urls=url_result.all_urls, output_dir=original_dir
+                    )
 
-                        # Keep trying until we get a successful download or run out of sources
-                        max_attempts = 10  # Safety limit (we have 11 sources total)
-                        attempt = 0
-                        download_succeeded = False
+                    download_results["original"].append(result)
 
-                        while not download_succeeded and attempt < max_attempts:
-                            attempt += 1
-
-                            # Get next URL from waterfall, skipping all tried sources
-                            retry_result = await fulltext_manager.get_fulltext(
-                                pub, skip_sources=tried_sources
-                            )
-
-                            if not retry_result.success or not retry_result.url:
-                                logger.warning(
-                                    f"      [ERROR] Attempt {attempt}: No more sources available in waterfall"
-                                )
-                                break
-
-                            # Found alternative - try downloading
-                            current_source = retry_result.source.value
-                            tried_sources.append(current_source)
-                            pub.fulltext_url = retry_result.url
-                            pub.fulltext_source = current_source
-                            logger.warning(f"      [NEW] Attempt {attempt}: Trying {current_source}")
-
-                            # Try to download this single PDF
-                            single_result = await pdf_downloader._download_single(
-                                pub, retry_result.url, pdf_dir
-                            )
-
-                            if single_result.success and single_result.pdf_path:
-                                pub.pdf_path = str(single_result.pdf_path)
-                                retry_successes += 1
-                                download_succeeded = True
-                                logger.warning(
-                                    f"      [OK] SUCCESS via {current_source}! Size: {single_result.file_size / 1024:.1f} KB"
-                                )
-                                # Add to results
-                                download_report.results.append(single_result)
-                            else:
-                                logger.warning(
-                                    f"      [WARNING]  {current_source} failed: {single_result.error} - trying next source..."
-                                )
-
-                        if not download_succeeded:
-                            logger.warning(
-                                f"      [ERROR] EXHAUSTED: Tried {len(tried_sources)} sources, none succeeded"
-                            )
-
-                    if retry_successes > 0:
-                        download_report.successful += retry_successes
-                        download_report.failed -= retry_successes
-                        logger.warning(
-                            f"[DATA] RETRY COMPLETE: {retry_successes} additional PDFs downloaded from alternative sources"
-                        )
-
-                logger.warning(
-                    f"[OK] STEP 3 COMPLETE: Downloaded {download_report.successful}/{download_report.total} PDFs (including retries)"
-                )
-
-                # STEP 3C: Set pdf_path on publications from all download results
-                logger.warning("[SEARCH] STEP 3C: Setting pdf_path on publications from download results...")
-                paths_set = 0
-                for result in download_report.results:
                     if result.success and result.pdf_path:
-                        result.publication.pdf_path = str(result.pdf_path)
-                        paths_set += 1
-                        logger.warning(
-                            f"   [OK] PMID {result.publication.pmid}: pdf_path={result.pdf_path.name}, size={result.pdf_path.stat().st_size} bytes"
+                        successful_downloads["original"] += 1
+                        pub.pdf_path = result.pdf_path
+                        pub.fulltext_source = result.source
+                        pub.paper_type = "original"  # Mark as original paper
+                        logger.info(
+                            f"    [OK] PMID {pub.pmid}: Downloaded from {result.source} "
+                            f"({result.file_size / 1024:.1f} KB) → original/{result.pdf_path.name}"
                         )
                     else:
                         logger.warning(
-                            f"   [ERROR] PMID {result.publication.pmid}: Download FAILED after retry - {result.error}"
+                            f"    [FAIL] PMID {pub.pmid}: All sources failed. Error: {result.error}"
                         )
-                logger.warning(
-                    f"[DATA] STEP 3C COMPLETE: Set pdf_path on {paths_set}/{len(publications_with_urls)} publications"
-                )
-            else:
-                logger.warning("[ERROR] STEP 3 SKIPPED: No publications with URLs found")
+
+            # Download CITING papers
+            if papers_to_download["citing"]:
+                logger.info(f"  [CITING] Downloading {len(papers_to_download['citing'])} citing paper(s)...")
+                for pub in papers_to_download["citing"]:
+                    url_result = await fulltext_manager.get_all_fulltext_urls(pub)
+
+                    # Store ALL collected URLs on publication for metadata.json
+                    pub._all_collected_urls = url_result.all_urls
+
+                    if not url_result.all_urls:
+                        logger.warning(f"    [SKIP] PMID {pub.pmid or pub.doi}: No URLs found")
+                        continue
+
+                    logger.info(
+                        f"    [DOWNLOAD] PMID {pub.pmid or pub.doi}: Trying {len(url_result.all_urls)} sources "
+                        f"({', '.join([u.source.value for u in url_result.all_urls])})"
+                    )
+
+                    result = await pdf_downloader.download_with_fallback(
+                        publication=pub, all_urls=url_result.all_urls, output_dir=citing_dir
+                    )
+
+                    download_results["citing"].append(result)
+
+                    if result.success and result.pdf_path:
+                        successful_downloads["citing"] += 1
+                        pub.pdf_path = result.pdf_path
+                        pub.fulltext_source = result.source
+                        pub.paper_type = "citing"  # Mark as citing paper
+                        logger.info(
+                            f"    [OK] PMID {pub.pmid or pub.doi}: Downloaded from {result.source} "
+                            f"({result.file_size / 1024:.1f} KB) → citing/{result.pdf_path.name}"
+                        )
+                    else:
+                        logger.warning(
+                            f"    [FAIL] PMID {pub.pmid or pub.doi}: All sources failed. Error: {result.error}"
+                        )
+
+            # Log summary
+            total_success = successful_downloads["original"] + successful_downloads["citing"]
+            total_attempted = len(papers_to_download["original"]) + len(papers_to_download["citing"])
+            logger.warning(
+                f"[OK] STEP 3 COMPLETE: Downloaded {total_success}/{total_attempted} PDFs "
+                f"(original={successful_downloads['original']}/{len(papers_to_download['original'])}, "
+                f"citing={successful_downloads['citing']}/{len(papers_to_download['citing'])})"
+            )
 
             # STEP 4: Parse PDFs and attach to dataset
-            logger.info("[SEARCH] STEP 4: Parsing PDFs and building fulltext data...")
+            logger.info("[PARSE] STEP 4: Parsing PDFs and building fulltext data...")
             dataset.fulltext = []
             added_count = 0
             skipped_no_url = 0
             skipped_no_pdf = 0
 
-            for pub in publications:
+            # IMPORTANT: If citing papers were requested, add them FIRST to fulltext list
+            # This ensures frontend "Download Papers" button shows citing papers by default
+            papers_to_parse = []
+            if include_citing_papers and papers_to_download["citing"]:
+                papers_to_parse.extend(papers_to_download["citing"])
+                logger.info(f"  [PRIORITY] Will show {len(papers_to_download['citing'])} citing papers first")
+            if download_original and papers_to_download["original"]:
+                papers_to_parse.extend(papers_to_download["original"])
+                logger.info(
+                    f"  [SECONDARY] Will include {len(papers_to_download['original'])} original papers"
+                )
+
+            for pub in papers_to_parse:
                 # Skip if no URL found
                 if not hasattr(pub, "fulltext_url") or not pub.fulltext_url:
                     logger.debug(f"   Skipping PMID {pub.pmid}: no fulltext_url")
@@ -605,28 +672,52 @@ async def enrich_fulltext(
 
                 # Build fulltext info - ONLY if we have parsed content
                 fulltext_info = {
-                    "pmid": pub.pmid,
+                    "pmid": pub.pmid if hasattr(pub, "pmid") else None,
+                    "doi": pub.doi if hasattr(pub, "doi") else None,
                     "title": pub.title or (parsed_content.get("title") if parsed_content else pub.title),
                     "url": pub.fulltext_url,
                     "source": pub.fulltext_source if hasattr(pub, "fulltext_source") else "unknown",
                     "pdf_path": str(pub.pdf_path) if hasattr(pub, "pdf_path") and pub.pdf_path else None,
+                    "paper_type": pub.paper_type
+                    if hasattr(pub, "paper_type")
+                    else "unknown",  # "original" or "citing"
                 }
 
-                # Add parsed sections if available
+                # Add parsed sections if available AND requested
+                # FIX: Make full content optional to avoid HTTP/2 errors with large responses
                 if parsed_content:
-                    fulltext_info.update(
-                        {
-                            "abstract": parsed_content.get("abstract", ""),
-                            "methods": parsed_content.get("methods", ""),
-                            "results": parsed_content.get("results", ""),
-                            "discussion": parsed_content.get("discussion", ""),
-                            "introduction": parsed_content.get("introduction", ""),
-                            "conclusion": parsed_content.get("conclusion", ""),
-                        }
-                    )
-                    logger.warning(
-                        f"   [OK] Added PMID {pub.pmid} with {len(parsed_content.get('abstract', ''))} char abstract"
-                    )
+                    if include_full_content:
+                        # Include full parsed text (WARNING: Large response size!)
+                        fulltext_info.update(
+                            {
+                                "abstract": parsed_content.get("abstract", ""),
+                                "methods": parsed_content.get("methods", ""),
+                                "results": parsed_content.get("results", ""),
+                                "discussion": parsed_content.get("discussion", ""),
+                                "introduction": parsed_content.get("introduction", ""),
+                                "conclusion": parsed_content.get("conclusion", ""),
+                            }
+                        )
+                        logger.warning(
+                            f"   [OK] Added PMID {pub.pmid} with FULL CONTENT "
+                            f"({len(parsed_content.get('abstract', ''))} char abstract)"
+                        )
+                    else:
+                        # Just include metadata to keep response size small
+                        fulltext_info.update(
+                            {
+                                "has_abstract": bool(parsed_content.get("abstract")),
+                                "has_methods": bool(parsed_content.get("methods")),
+                                "has_results": bool(parsed_content.get("results")),
+                                "has_discussion": bool(parsed_content.get("discussion")),
+                                "content_length": sum(len(str(v)) for v in parsed_content.values() if v),
+                            }
+                        )
+                        logger.warning(
+                            f"   [OK] Added PMID {pub.pmid} with METADATA ONLY "
+                            f"(set include_full_content=true for full text)"
+                        )
+
                     dataset.fulltext.append(fulltext_info)
                     added_count += 1
                 else:
@@ -634,22 +725,216 @@ async def enrich_fulltext(
                         f"   [ERROR] SKIPPING PMID {pub.pmid}: PDF parsing failed, not adding to fulltext"
                     )
 
+            # Count papers by type
+            citing_papers_count = sum(1 for f in dataset.fulltext if f.get("paper_type") == "citing")
+            original_papers_count = sum(1 for f in dataset.fulltext if f.get("paper_type") == "original")
+
             logger.warning(
-                f"[DATA] STEP 4 COMPLETE: Added {added_count} entries to fulltext (skipped {skipped_no_url} without URL, {skipped_no_pdf} without PDF)"
+                f"[DATA] STEP 4 COMPLETE: Added {added_count} entries to fulltext "
+                f"(citing={citing_papers_count}, original={original_papers_count}, "
+                f"skipped {skipped_no_url} without URL, {skipped_no_pdf} without PDF)"
             )
             dataset.fulltext_count = len(dataset.fulltext)
 
             # More accurate status based on actual PDFs downloaded
             if dataset.fulltext_count == 0:
                 dataset.fulltext_status = "failed"
-            elif dataset.fulltext_count < len(publications):
+            elif dataset.fulltext_count < total_papers:
                 dataset.fulltext_status = "partial"
             else:
                 dataset.fulltext_status = "available"
 
             logger.warning(
-                f"[DATA] FINAL STATUS: fulltext_count={dataset.fulltext_count}/{len(publications)}, fulltext_status={dataset.fulltext_status}"
+                f"[DATA] FINAL STATUS: fulltext_count={dataset.fulltext_count}/{total_papers}, "
+                f"fulltext_status={dataset.fulltext_status}, "
+                f"citing_papers={citing_papers_count}, original_papers={original_papers_count}"
             )
+
+            # Store COMPREHENSIVE metadata about paper organization and URLs
+            # This ensures frontend has ALL information needed for robust downloads/retries
+            metadata_file = base_pdf_dir / "metadata.json"
+            import json
+
+            # Build detailed paper information with URLs
+            def build_paper_metadata(papers, paper_type):
+                """Extract comprehensive metadata for each paper"""
+                paper_list = []
+                for pub in papers:
+                    paper_info = {
+                        "pmid": pub.pmid if hasattr(pub, "pmid") else None,
+                        "doi": pub.doi if hasattr(pub, "doi") else None,
+                        "pmc_id": pub.pmcid if hasattr(pub, "pmcid") else None,
+                        "title": pub.title if hasattr(pub, "title") else None,
+                        "authors": pub.authors if hasattr(pub, "authors") else [],
+                        "journal": pub.journal if hasattr(pub, "journal") else None,
+                        "year": pub.year if hasattr(pub, "year") else None,
+                        "paper_type": paper_type,
+                        "pdf_path": str(pub.pdf_path) if hasattr(pub, "pdf_path") and pub.pdf_path else None,
+                        "fulltext_source": pub.fulltext_source if hasattr(pub, "fulltext_source") else None,
+                        "fulltext_url": pub.fulltext_url if hasattr(pub, "fulltext_url") else None,
+                        # Store ALL collected URLs for retry capability
+                        "all_urls": [],
+                    }
+
+                    # Get all URLs that were collected (for retry capability)
+                    if hasattr(pub, "_all_collected_urls"):
+                        paper_info["all_urls"] = [
+                            {
+                                "url": u.url,
+                                "source": u.source.value,
+                                "priority": u.priority,
+                                "metadata": u.metadata,
+                            }
+                            for u in pub._all_collected_urls
+                        ]
+
+                    paper_list.append(paper_info)
+                return paper_list
+
+            # Build comprehensive metadata
+            metadata = {
+                # GEO Dataset Information
+                "geo": {
+                    "geo_id": dataset.geo_id,
+                    "title": dataset.title,
+                    "summary": dataset.summary,
+                    "organism": dataset.organism,
+                    "platform": dataset.platform,
+                    "sample_count": dataset.sample_count,
+                    "submission_date": dataset.submission_date,
+                    "publication_date": dataset.publication_date,
+                    "pubmed_ids": dataset.pubmed_ids,
+                    "relevance_score": dataset.relevance_score,
+                    "match_reasons": dataset.match_reasons,
+                },
+                # Processing Information
+                "processing": {
+                    "processed_at": datetime.now(timezone.utc).isoformat(),
+                    "include_citing_papers": include_citing_papers,
+                    "max_citing_papers": max_citing_papers,
+                    "download_original": download_original,
+                    "include_full_content": include_full_content,
+                },
+                # Papers with FULL metadata and URLs
+                "papers": {
+                    "original": {
+                        "count": len(papers_to_download["original"]),
+                        "downloaded": successful_downloads["original"],
+                        "papers": build_paper_metadata(papers_to_download["original"], "original"),
+                    },
+                    "citing": {
+                        "count": len(papers_to_download["citing"]),
+                        "downloaded": successful_downloads["citing"],
+                        "papers": build_paper_metadata(papers_to_download["citing"], "citing"),
+                    },
+                },
+                # Download Statistics
+                "statistics": {
+                    "total_attempted": total_papers,
+                    "total_successful": total_success,
+                    "success_rate": round(total_success / total_papers * 100, 1) if total_papers > 0 else 0,
+                    "citing_papers_in_response": citing_papers_count,
+                    "original_papers_in_response": original_papers_count,
+                },
+                # Status
+                "status": {
+                    "fulltext_status": dataset.fulltext_status,
+                    "fulltext_count": dataset.fulltext_count,
+                    "needs_retry": total_success < total_papers,  # Flag if downloads failed
+                },
+            }
+
+            # Store citation strategy breakdown if available
+            if (
+                hasattr(citation_result, "strategy_breakdown")
+                if include_citing_papers and citation_discovery
+                else False
+            ):
+                metadata["citation_discovery"] = {
+                    "original_pmid": citation_result.original_pmid,
+                    "strategy_a_count": len(citation_result.strategy_breakdown.get("strategy_a", [])),
+                    "strategy_b_count": len(citation_result.strategy_breakdown.get("strategy_b", [])),
+                    "total_found": len(citation_result.citing_papers),
+                }
+
+            with open(metadata_file, "w") as f:
+                json.dump(metadata, f, indent=2)
+            logger.info(f"[METADATA] Saved comprehensive metadata to {metadata_file}")
+            logger.info(f"[METADATA] Frontend can use this file for robust downloads/retries")
+
+            # STEP 5: Store in centralized registry for O(1) frontend access
+            logger.info("[REGISTRY] STEP 5: Storing data in centralized registry...")
+            try:
+                registry = get_registry()
+
+                # Register GEO dataset
+                registry.register_geo_dataset(dataset.geo_id, metadata["geo"])
+                logger.info(f"  [OK] Registered GEO dataset: {dataset.geo_id}")
+
+                # Register publications with ALL URLs
+                for paper_type in ["original", "citing"]:
+                    for paper in metadata["papers"][paper_type]["papers"]:
+                        if paper["pmid"]:  # Only register if has PMID
+                            # Store publication with URLs
+                            registry.register_publication(
+                                pmid=paper["pmid"],
+                                metadata={
+                                    "title": paper["title"],
+                                    "authors": paper["authors"],
+                                    "journal": paper["journal"],
+                                    "year": paper["year"],
+                                    "doi": paper["doi"],
+                                    "pmc_id": paper["pmc_id"],
+                                },
+                                urls=paper["all_urls"],
+                                doi=paper["doi"],
+                            )
+
+                            # Link to GEO dataset
+                            citation_strategy = (
+                                citation_result.strategy_breakdown.get(paper["pmid"])
+                                if citation_result and hasattr(citation_result, "strategy_breakdown")
+                                else None
+                            )
+                            registry.link_geo_to_publication(
+                                dataset.geo_id,
+                                paper["pmid"],
+                                relationship_type=paper_type,
+                                citation_strategy=citation_strategy,
+                            )
+
+                            # Record download attempt
+                            if paper["pdf_path"] and paper["fulltext_source"]:
+                                # Success
+                                registry.record_download_attempt(
+                                    pmid=paper["pmid"],
+                                    url=paper["fulltext_url"],
+                                    source=paper["fulltext_source"],
+                                    status="success",
+                                    file_path=paper["pdf_path"],
+                                    file_size=Path(paper["pdf_path"]).stat().st_size
+                                    if Path(paper["pdf_path"]).exists()
+                                    else None,
+                                )
+                            elif paper["all_urls"]:
+                                # Failed - record all attempted URLs
+                                for url_info in paper["all_urls"]:
+                                    registry.record_download_attempt(
+                                        pmid=paper["pmid"],
+                                        url=url_info["url"],
+                                        source=url_info["source"],
+                                        status="failed",
+                                        error_message="Download failed",
+                                    )
+
+                            logger.debug(f"    [OK] Registered {paper_type} paper: PMID {paper['pmid']}")
+
+                logger.info(f"  [OK] Registry updated with complete data for {dataset.geo_id}")
+
+            except Exception as reg_error:
+                logger.error(f"  [ERROR] Failed to update registry: {reg_error}", exc_info=True)
+                # Don't fail the whole enrichment if registry fails
+
             enriched_datasets.append(dataset)
 
             # Log statistics (same as pipeline)
@@ -667,6 +952,14 @@ async def enrich_fulltext(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Enrichment error: {str(e)}",
         )
+    finally:
+        # Clean up aiohttp sessions to prevent resource leaks
+        try:
+            if fulltext_manager:
+                await fulltext_manager.cleanup()
+                logger.debug("Cleaned up fulltext_manager resources")
+        except Exception as cleanup_error:
+            logger.warning(f"Error during cleanup: {cleanup_error}")
 
 
 # AI Analysis Endpoint
@@ -722,6 +1015,8 @@ async def analyze_datasets(
         # Import here to avoid circular dependency
         from omics_oracle_v2.api.dependencies import get_settings
         from omics_oracle_v2.lib.analysis.ai.client import SummarizationClient
+        from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager
+        from omics_oracle_v2.models.publication import Publication
 
         settings = get_settings()
 
@@ -736,8 +1031,53 @@ async def analyze_datasets(
         # Initialize AI client
         ai_client = SummarizationClient(settings=settings)
 
+        # Initialize FullTextManager for loading parsed content from disk
+        fulltext_config = settings.get_fulltext_config()
+        fulltext_manager = FullTextManager(fulltext_config)
+        if not fulltext_manager.initialized:
+            await fulltext_manager.initialize()
+
         # Limit datasets
         datasets_to_analyze = request.datasets[: request.max_datasets]
+
+        # Check if we have any full-text content
+        total_fulltext_count = sum(len(ds.fulltext) if ds.fulltext else 0 for ds in datasets_to_analyze)
+
+        if total_fulltext_count == 0:
+            # No full-text available - don't waste GPT-4 API call on tiny metadata
+            logger.warning(
+                f"⚠️ AI Analysis SKIPPED: No full-text content available. "
+                f"User can read GEO summaries directly (no value in AI analysis)."
+            )
+
+            return AIAnalysisResponse(
+                analysis=(
+                    "❌ **AI Analysis Not Available**\n\n"
+                    "No full-text papers were downloaded for these datasets. "
+                    "AI analysis requires detailed Methods, Results, and Discussion sections "
+                    "to provide meaningful insights.\n\n"
+                    "**Why skip analysis?**\n"
+                    "- GEO summaries are brief and easily readable\n"
+                    "- AI analysis without full-text adds minimal value\n"
+                    "- Saves API costs and processing time\n\n"
+                    "**What you can do:**\n"
+                    "1. Download papers first (click 'Download Papers' button)\n"
+                    "2. Read the GEO summaries directly (available in dataset cards)\n"
+                    "3. Try a different dataset with linked publications\n\n"
+                    "**Current datasets:** You can review the GEO metadata manually - "
+                    "it contains basic information about sample count, organism, and study design."
+                ),
+                summary="AI analysis skipped - no full-text content available",
+                key_findings=[],
+                recommendations=[
+                    "Download papers first for meaningful AI analysis",
+                    "Review GEO summaries manually (quick to read)",
+                    "Look for datasets with linked publications",
+                ],
+                confidence=0.0,
+                processing_time=time.time() - start_time,
+                model_used="none (analysis skipped)",
+            )
 
         # DEBUG: Log what we received
         for ds in datasets_to_analyze:
@@ -773,13 +1113,45 @@ async def analyze_datasets(
                 total_fulltext_papers += len(ds.fulltext)
 
                 for j, ft in enumerate(ds.fulltext[:2], 1):  # Max 2 papers per dataset to manage tokens
+                    # Load parsed content from disk if not available in dataset object
+                    # (Frontend strips full-text to reduce HTTP payload size)
+                    abstract_text = ft.abstract if hasattr(ft, "abstract") and ft.abstract else None
+                    methods_text = ft.methods if hasattr(ft, "methods") and ft.methods else None
+                    results_text = ft.results if hasattr(ft, "results") and ft.results else None
+                    discussion_text = ft.discussion if hasattr(ft, "discussion") and ft.discussion else None
+
+                    # If content not in object, load from disk using pdf_path
+                    if not any([abstract_text, methods_text, results_text, discussion_text]):
+                        if hasattr(ft, "pdf_path") and ft.pdf_path:
+                            try:
+                                # Create Publication object for loading
+                                pub = Publication(
+                                    pmid=ft.pmid,
+                                    title=ft.title if hasattr(ft, "title") else "",
+                                    pdf_path=Path(ft.pdf_path),
+                                )
+                                # Load parsed content from disk/cache
+                                parsed_content = await fulltext_manager.get_parsed_content(pub)
+                                if parsed_content:
+                                    abstract_text = parsed_content.get("abstract", "")
+                                    methods_text = parsed_content.get("methods", "")
+                                    results_text = parsed_content.get("results", "")
+                                    discussion_text = parsed_content.get("discussion", "")
+                                    logger.info(
+                                        f"[ANALYZE] Loaded parsed content from disk for PMID {ft.pmid}"
+                                    )
+                            except Exception as e:
+                                logger.warning(
+                                    f"[ANALYZE] Could not load parsed content for PMID {ft.pmid}: {e}"
+                                )
+
                     dataset_info.extend(
                         [
                             f"\n   Paper {j}: {ft.title[:100]}... (PMID: {ft.pmid})",
-                            f"   Abstract: {ft.abstract[:250] if ft.abstract else 'N/A'}...",
-                            f"   Methods: {ft.methods[:400] if ft.methods else 'N/A'}...",
-                            f"   Results: {ft.results[:400] if ft.results else 'N/A'}...",
-                            f"   Discussion: {ft.discussion[:250] if ft.discussion else 'N/A'}...",
+                            f"   Abstract: {abstract_text[:250] if abstract_text else 'N/A'}...",
+                            f"   Methods: {methods_text[:400] if methods_text else 'N/A'}...",
+                            f"   Results: {results_text[:400] if results_text else 'N/A'}...",
+                            f"   Discussion: {discussion_text[:250] if discussion_text else 'N/A'}...",
                         ]
                     )
             else:
@@ -877,4 +1249,61 @@ Be specific and cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_pa
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"AI analysis error: {str(e)}",
+        )
+
+
+@router.get(
+    "/geo/{geo_id}/complete",
+    summary="Get Complete GEO Data",
+    description="""
+    Get complete data for a GEO dataset including:
+    - GEO metadata (title, organism, platform, etc.)
+    - All papers (original and citing)
+    - All URLs for each paper (for retry capability)
+    - Download history and statistics
+
+    This endpoint provides a single source of truth for the frontend
+    "Download Papers" button, ensuring robust downloads and retries.
+
+    Data is retrieved from the centralized registry (O(1) lookup).
+    """,
+)
+async def get_complete_geo_data(geo_id: str):
+    """
+    Get complete GEO data from registry.
+
+    Args:
+        geo_id: GEO accession (e.g., GSE12345)
+
+    Returns:
+        Complete data including GEO metadata, papers, URLs, and download history
+    """
+    try:
+        logger.info(f"[REGISTRY] Getting complete data for {geo_id}")
+
+        registry = get_registry()
+        data = registry.get_complete_geo_data(geo_id)
+
+        if not data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"GEO dataset {geo_id} not found in registry. Have you enriched it yet?",
+            )
+
+        logger.info(
+            f"[OK] Retrieved data for {geo_id}: "
+            f"{data['statistics']['total_papers']} papers, "
+            f"{data['statistics']['original_papers']} original, "
+            f"{data['statistics']['citing_papers']} citing"
+        )
+
+        return data
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Failed to get complete GEO data: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Registry error: {str(e)}",
         )
