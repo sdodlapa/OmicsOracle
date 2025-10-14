@@ -105,10 +105,11 @@ try:
         SemanticScholarClient,
         SemanticScholarConfig,
     )
-    from omics_oracle_v2.lib.citations.discovery.geo_discovery import (
+    from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import (
         CitationDiscoveryResult,
         GEOCitationDiscovery,
     )
+    from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
     # Check classes exist
     assert GEOCitationDiscovery is not None

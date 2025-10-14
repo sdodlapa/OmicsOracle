@@ -15,13 +15,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from omics_oracle_v2.lib.citations.discovery.geo_discovery import GEOCitationDiscovery
-from omics_oracle_v2.lib.fulltext.manager import FullTextManager, FullTextManagerConfig
+from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
+from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.geo.client import GEOClient
 from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.geo.query_builder import GEOQueryBuilder
 from omics_oracle_v2.lib.nlp.synonym_expansion import SynonymExpander
-from omics_oracle_v2.lib.publications.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 from omics_oracle_v2.lib.storage.pdf.download_manager import PDFDownloadManager
 
 logger = logging.getLogger(__name__)
@@ -211,20 +211,30 @@ class GEOCitationPipeline:
 
         # Step 4: Collect full-text URLs
         logger.info("Step 4: Collecting full-text URLs (optimized waterfall)...")
-        papers_with_fulltext = await self.fulltext_manager.get_fulltext_batch(unique_papers)
+        fulltext_results = await self.fulltext_manager.get_fulltext_batch(unique_papers)
+
+        # Map results back to publications and add fulltext info
+        papers_with_fulltext = []
+        for pub, result in zip(unique_papers, fulltext_results):
+            if result.success and result.url:
+                # Add fulltext info to publication
+                pub.fulltext_url = result.url
+                pub.fulltext_source = result.source.value if result.source else None
+            papers_with_fulltext.append(pub)
 
         # Calculate coverage
-        fulltext_count = sum(1 for p in papers_with_fulltext if p.fulltext_url)
-        fulltext_coverage = fulltext_count / len(papers_with_fulltext) if papers_with_fulltext else 0
+        fulltext_count = sum(1 for r in fulltext_results if r.success)
+        fulltext_coverage = fulltext_count / len(fulltext_results) if fulltext_results else 0
         logger.info(
-            f"  Full-text coverage: {fulltext_coverage:.1%} ({fulltext_count}/{len(papers_with_fulltext)})"
+            f"  Full-text coverage: {fulltext_coverage:.1%} ({fulltext_count}/{len(fulltext_results)})"
         )
 
         # Count by source
         source_counts = {}
-        for paper in papers_with_fulltext:
-            if hasattr(paper, "fulltext_source") and paper.fulltext_source:
-                source_counts[paper.fulltext_source] = source_counts.get(paper.fulltext_source, 0) + 1
+        for result in fulltext_results:
+            if result.success and result.source:
+                source_name = result.source.value
+                source_counts[source_name] = source_counts.get(source_name, 0) + 1
 
         # Step 5: Download PDFs
         download_report_dict = None
@@ -346,7 +356,7 @@ class GEOCitationPipeline:
                 "authors": p.authors,
                 "journal": p.journal,
                 "year": p.year,
-                "fulltext_url": p.fulltext_url,
+                "fulltext_url": getattr(p, "fulltext_url", None),
                 "fulltext_source": getattr(p, "fulltext_source", None),
             }
             for p in citing_papers

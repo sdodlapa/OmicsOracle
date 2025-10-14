@@ -42,7 +42,7 @@ logger.setLevel(logging.INFO)
 
 # Import OmicsOracle components
 from omics_oracle_v2.core.config import Settings
-from omics_oracle_v2.lib.citations.discovery.geo_discovery import GEOCitationDiscovery
+from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
 from omics_oracle_v2.lib.citations.filters import (
     filter_by_year_range,
     filter_recent_publications,

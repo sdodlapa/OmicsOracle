@@ -19,7 +19,7 @@ os.environ["SSL_VERIFY"] = "false"
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from omics_oracle_v2.lib.citations.discovery.geo_discovery import GEOCitationDiscovery
+from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
 from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
 
 

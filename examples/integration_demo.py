@@ -142,7 +142,7 @@ async def demo_fulltext_manager_integration():
 
     Example Usage:
 
-        from omics_oracle_v2.lib.fulltext.manager import FullTextManager
+        from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager
         from lib.fulltext.manager_integration import (
             add_pmc_xml_support,
             add_pdf_extraction_support
