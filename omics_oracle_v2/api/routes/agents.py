@@ -564,7 +564,7 @@ async def enrich_fulltext(
                         pub.paper_type = "original"  # Mark as original paper
                         logger.info(
                             f"    [OK] PMID {pub.pmid}: Downloaded from {result.source} "
-                            f"({result.file_size / 1024:.1f} KB) → original/{result.pdf_path.name}"
+                            f"({result.file_size / 1024:.1f} KB) -> original/{result.pdf_path.name}"
                         )
                     else:
                         logger.warning(
@@ -602,7 +602,7 @@ async def enrich_fulltext(
                         pub.paper_type = "citing"  # Mark as citing paper
                         logger.info(
                             f"    [OK] PMID {pub.pmid or pub.doi}: Downloaded from {result.source} "
-                            f"({result.file_size / 1024:.1f} KB) → citing/{result.pdf_path.name}"
+                            f"({result.file_size / 1024:.1f} KB) -> citing/{result.pdf_path.name}"
                         )
                     else:
                         logger.warning(
@@ -783,7 +783,12 @@ async def enrich_fulltext(
                                 "url": u.url,
                                 "source": u.source.value,
                                 "priority": u.priority,
-                                "metadata": u.metadata,
+                                "url_type": u.url_type.value
+                                if u.url_type
+                                else "unknown",  # NEW: Store URL type
+                                "confidence": u.confidence,
+                                "requires_auth": u.requires_auth,
+                                "metadata": u.metadata or {},
                             }
                             for u in pub._all_collected_urls
                         ]
@@ -1046,13 +1051,13 @@ async def analyze_datasets(
         if total_fulltext_count == 0:
             # No full-text available - don't waste GPT-4 API call on tiny metadata
             logger.warning(
-                f"⚠️ AI Analysis SKIPPED: No full-text content available. "
+                f"[WARNING] AI Analysis SKIPPED: No full-text content available. "
                 f"User can read GEO summaries directly (no value in AI analysis)."
             )
 
             return AIAnalysisResponse(
                 analysis=(
-                    "❌ **AI Analysis Not Available**\n\n"
+                    "[FAIL] **AI Analysis Not Available**\n\n"
                     "No full-text papers were downloaded for these datasets. "
                     "AI analysis requires detailed Methods, Results, and Discussion sections "
                     "to provide meaningful insights.\n\n"

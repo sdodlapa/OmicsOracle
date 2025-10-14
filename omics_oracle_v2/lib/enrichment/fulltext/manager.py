@@ -832,13 +832,22 @@ class FullTextManager:
 
     async def _try_unpaywall(self, publication: Publication) -> FullTextResult:
         """
-        Try to get full-text from Unpaywall (NEW - Phase 1+).
+        Try to get full-text from Unpaywall with enhanced OA checking.
+
+        ENHANCED (Oct 13, 2025):
+        - Verifies is_oa=true before returning URLs
+        - Tries ALL oa_locations (not just best_oa_location)
+        - Prefers url_for_pdf over landing pages
+        - Reduces 403 errors from paywalled content
+
+        Unpaywall is a free OA aggregator covering 20M+ papers.
+        No API key required.
 
         Args:
             publication: Publication object
 
         Returns:
-            FullTextResult
+            FullTextResult with verified OA URL
         """
         if not self.config.enable_unpaywall or not self.unpaywall_client:
             return FullTextResult(success=False, error="Unpaywall disabled or not initialized")
@@ -849,12 +858,18 @@ class FullTextManager:
                 return FullTextResult(success=False, error="No DOI for Unpaywall lookup")
 
             result = await self.unpaywall_client.get_oa_location(publication.doi)
-            if result and result.get("is_oa"):
-                best_oa = result.get("best_oa_location", {})
-                pdf_url = best_oa.get("url_for_pdf") or best_oa.get("url")
 
+            # Verify is_oa flag
+            if not result or not result.get("is_oa"):
+                return FullTextResult(success=False, error="Not Open Access in Unpaywall")
+
+            # Try best_oa_location first (Unpaywall's recommendation)
+            best_oa = result.get("best_oa_location")
+            if best_oa:
+                # Prefer PDF URL
+                pdf_url = best_oa.get("url_for_pdf")
                 if pdf_url:
-                    logger.info(f"Found OA via Unpaywall: {publication.doi}")
+                    logger.info(f"[OK] Found OA PDF via Unpaywall (best): {publication.doi}")
                     return FullTextResult(
                         success=True,
                         source=FullTextSource.UNPAYWALL,
@@ -863,10 +878,76 @@ class FullTextManager:
                             "version": best_oa.get("version"),
                             "license": best_oa.get("license"),
                             "oa_status": result.get("oa_status"),
+                            "location": "best_oa_location",
+                            "url_type": "pdf_direct",
                         },
                     )
 
-            return FullTextResult(success=False, error="Not OA in Unpaywall")
+                # Fall back to regular URL if no PDF URL
+                regular_url = best_oa.get("url")
+                if regular_url:
+                    is_pdf = regular_url.lower().endswith(".pdf")
+                    logger.info(f"[OK] Found OA URL via Unpaywall (best): {publication.doi}")
+                    return FullTextResult(
+                        success=True,
+                        source=FullTextSource.UNPAYWALL,
+                        url=regular_url,
+                        metadata={
+                            "version": best_oa.get("version"),
+                            "license": best_oa.get("license"),
+                            "oa_status": result.get("oa_status"),
+                            "location": "best_oa_location",
+                            "url_type": "pdf_direct" if is_pdf else "landing_page",
+                        },
+                    )
+
+            # Try all other OA locations (repositories, preprints, etc.)
+            oa_locations = result.get("oa_locations", [])
+            for i, location in enumerate(oa_locations):
+                # Skip if we already checked this as best_oa
+                if best_oa and location == best_oa:
+                    continue
+
+                # Prefer PDF URLs
+                pdf_url = location.get("url_for_pdf")
+                if pdf_url:
+                    logger.info(f"[OK] Found OA PDF via Unpaywall (location {i+1}): {publication.doi}")
+                    return FullTextResult(
+                        success=True,
+                        source=FullTextSource.UNPAYWALL,
+                        url=pdf_url,
+                        metadata={
+                            "version": location.get("version"),
+                            "license": location.get("license"),
+                            "oa_status": result.get("oa_status"),
+                            "location": f"oa_location_{i}",
+                            "url_type": "pdf_direct",
+                        },
+                    )
+
+                # Try regular URL as fallback
+                regular_url = location.get("url")
+                if regular_url:
+                    is_pdf = regular_url.lower().endswith(".pdf")
+                    logger.info(f"[OK] Found OA URL via Unpaywall (location {i+1}): {publication.doi}")
+                    return FullTextResult(
+                        success=True,
+                        source=FullTextSource.UNPAYWALL,
+                        url=regular_url,
+                        metadata={
+                            "version": location.get("version"),
+                            "license": location.get("license"),
+                            "oa_status": result.get("oa_status"),
+                            "location": f"oa_location_{i}",
+                            "url_type": "pdf_direct" if is_pdf else "landing_page",
+                        },
+                    )
+
+            # If we get here, is_oa=true but no URLs found (rare)
+            oa_status = result.get("oa_status", "unknown")
+            return FullTextResult(
+                success=False, error=f"Unpaywall reports OA but no URLs available (oa_status: {oa_status})"
+            )
 
         except Exception as e:
             logger.debug(f"Unpaywall lookup failed: {e}")
