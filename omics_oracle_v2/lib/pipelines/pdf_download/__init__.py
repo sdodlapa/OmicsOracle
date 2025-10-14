@@ -17,7 +17,7 @@ Integration Contract:
 
 Usage:
     >>> from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
-    >>> 
+    >>>
     >>> downloader = PDFDownloadManager()
     >>> result = await downloader.download_with_fallback(publication, urls)
     >>> if result.success:

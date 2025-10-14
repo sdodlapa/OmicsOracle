@@ -10,7 +10,7 @@ Coverage: 200K+ biomedical preprints
 DOI Pattern: 10.1101/*
 
 Example:
-    >>> from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources import BioRxivClient
+    >>> from omics_oracle_v2.lib.pipelines.sources.oa_sources import BioRxivClient
     >>>
     >>> client = BioRxivClient()
     >>>

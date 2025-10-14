@@ -18,7 +18,7 @@ Performance:
 - Storage: ~50KB per paper (compressed JSON)
 
 Example:
-    >>> from omics_oracle_v2.lib.enrichment.fulltext.parsed_cache import ParsedCache
+    >>> from omics_oracle_v2.lib.pipelines.parsed_cache import ParsedCache
     >>>
     >>> cache = ParsedCache()
     >>>
@@ -113,7 +113,7 @@ class ParsedCache:
     def normalizer(self):
         """Lazy-load normalizer to avoid circular imports."""
         if self._normalizer is None:
-            from omics_oracle_v2.lib.enrichment.fulltext.normalizer import ContentNormalizer
+            from omics_oracle_v2.lib.pipelines.text_enrichment.normalizer import ContentNormalizer
 
             self._normalizer = ContentNormalizer()
         return self._normalizer
@@ -165,7 +165,7 @@ class ParsedCache:
 
             # NEW (Phase 4): Update last accessed time in database
             try:
-                from omics_oracle_v2.lib.enrichment.fulltext.cache_db import get_cache_db
+                from omics_oracle_v2.lib.pipelines.text_enrichment.cache_db import get_cache_db
 
                 db = get_cache_db()
                 db.update_access_time(publication_id)
@@ -325,7 +325,10 @@ class ParsedCache:
 
             # NEW (Phase 4): Save metadata to database for fast search
             try:
-                from omics_oracle_v2.lib.enrichment.fulltext.cache_db import calculate_file_hash, get_cache_db
+                from omics_oracle_v2.lib.pipelines.text_enrichment.cache_db import (
+                    calculate_file_hash,
+                    get_cache_db,
+                )
 
                 db = get_cache_db()
 

@@ -29,7 +29,7 @@ Storage Structure:
         └── {id}.json
 
 Example:
-    >>> from omics_oracle_v2.lib.enrichment.fulltext.smart_cache import SmartCache
+    >>> from omics_oracle_v2.lib.pipelines.smart_cache import SmartCache
     >>>
     >>> cache = SmartCache()
     >>> result = cache.find_local_file(publication)

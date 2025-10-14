@@ -19,7 +19,11 @@ from unittest.mock import Mock
 
 import pytest
 
-from omics_oracle_v2.lib.pipelines.pdf_download.smart_cache import LocalFileResult, SmartCache, check_local_cache
+from omics_oracle_v2.lib.pipelines.pdf_download.smart_cache import (
+    LocalFileResult,
+    SmartCache,
+    check_local_cache,
+)
 
 
 @pytest.fixture

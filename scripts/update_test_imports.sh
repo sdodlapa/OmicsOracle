@@ -45,25 +45,25 @@ echo ""
 for file in "${test_files[@]}"; do
     if [ -f "$file" ]; then
         echo "Updating: $file"
-        
+
         # Pipeline 2: URL Collection (manager, sources)
         sed -i.bak 's|from omics_oracle_v2\.lib\.enrichment\.fulltext\.manager|from omics_oracle_v2.lib.pipelines.url_collection.manager|g' "$file"
         sed -i.bak 's|from omics_oracle_v2\.lib\.enrichment\.fulltext\.sources|from omics_oracle_v2.lib.pipelines.url_collection.sources|g' "$file"
-        
+
         # Pipeline 3: PDF Download (download_manager, smart_cache, utils)
         sed -i.bak 's|from omics_oracle_v2\.lib\.enrichment\.fulltext\.download_manager|from omics_oracle_v2.lib.pipelines.pdf_download.download_manager|g' "$file"
         sed -i.bak 's|from omics_oracle_v2\.lib\.enrichment\.fulltext\.smart_cache|from omics_oracle_v2.lib.pipelines.pdf_download.smart_cache|g' "$file"
         sed -i.bak 's|from omics_oracle_v2\.lib\.enrichment\.fulltext\.utils|from omics_oracle_v2.lib.pipelines.pdf_download.utils|g' "$file"
-        
+
         # Pipeline 4: Text Enrichment (pdf_parser, parsed_cache, cache_db, normalizer)
         sed -i.bak 's|from omics_oracle_v2\.lib\.enrichment\.fulltext\.pdf_parser|from omics_oracle_v2.lib.pipelines.text_enrichment.pdf_parser|g' "$file"
         sed -i.bak 's|from omics_oracle_v2\.lib\.enrichment\.fulltext\.parsed_cache|from omics_oracle_v2.lib.pipelines.text_enrichment.parsed_cache|g' "$file"
         sed -i.bak 's|from omics_oracle_v2\.lib\.enrichment\.fulltext\.cache_db|from omics_oracle_v2.lib.pipelines.text_enrichment.cache_db|g' "$file"
         sed -i.bak 's|from omics_oracle_v2\.lib\.enrichment\.fulltext\.normalizer|from omics_oracle_v2.lib.pipelines.text_enrichment.normalizer|g' "$file"
-        
+
         # Clean up backup files
         rm -f "${file}.bak"
-        
+
         echo "  ✓ Updated"
     else
         echo "  ⚠ File not found: $file"

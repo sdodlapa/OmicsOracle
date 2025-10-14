@@ -17,7 +17,7 @@ Integration Contract:
 
 Usage:
     >>> from omics_oracle_v2.lib.pipelines.text_enrichment import PDFExtractor
-    >>> 
+    >>>
     >>> extractor = PDFExtractor()
     >>> result = await extractor.extract_text(pdf_path)
     >>> print(f"Sections: {list(result['sections'].keys())}")

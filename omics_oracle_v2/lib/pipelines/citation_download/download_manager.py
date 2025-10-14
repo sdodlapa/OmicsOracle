@@ -370,7 +370,7 @@ class PDFDownloadManager:
             Before: [landing(priority=5), pdf(priority=4), landing(priority=2)]
             After:  [pdf(priority=4), landing(priority=2), landing(priority=5)]
         """
-        from omics_oracle_v2.lib.enrichment.fulltext.url_validator import URLType
+        from omics_oracle_v2.lib.pipelines.url_collection.url_validator import URLType
 
         # Group URLs by type
         pdf_urls = []

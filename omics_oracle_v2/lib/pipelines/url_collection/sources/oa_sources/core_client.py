@@ -9,7 +9,7 @@ Rate Limits: Free tier with API key (generous limits)
 Coverage: 45M+ open access full texts
 
 Example:
-    >>> from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources import COREClient
+    >>> from omics_oracle_v2.lib.pipelines.sources.oa_sources import COREClient
     >>>
     >>> client = COREClient(api_key="YOUR_API_KEY")
     >>>

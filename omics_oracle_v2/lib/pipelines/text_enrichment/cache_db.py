@@ -19,7 +19,7 @@ Performance:
 - Bulk insert: 1000 entries/second
 
 Example:
-    >>> from omics_oracle_v2.lib.enrichment.fulltext.cache_db import FullTextCacheDB
+    >>> from omics_oracle_v2.lib.pipelines.text_enrichment.cache_db import FullTextCacheDB
     >>>
     >>> db = FullTextCacheDB()
     >>>

@@ -18,7 +18,7 @@ Performance:
 - Storage: ~2x (original + normalized, but still compressed)
 
 Example:
-    >>> from omics_oracle_v2.lib.enrichment.fulltext.normalizer import ContentNormalizer
+    >>> from omics_oracle_v2.lib.pipelines.text_enrichment.normalizer import ContentNormalizer
     >>>
     >>> normalizer = ContentNormalizer()
     >>>

@@ -98,7 +98,10 @@ async def test_manager_integration():
 
     # Import the actual manager
     try:
-        from omics_oracle_v2.lib.pipelines.url_collection.manager import FullTextManager, FullTextManagerConfig
+        from omics_oracle_v2.lib.pipelines.url_collection.manager import (
+            FullTextManager,
+            FullTextManagerConfig,
+        )
     except ImportError:
         pytest.skip("FullTextManager not available")
 
@@ -151,7 +154,10 @@ async def test_waterfall_with_pmc_priority():
     """Test complete waterfall with PMC as Priority 0."""
 
     try:
-        from omics_oracle_v2.lib.pipelines.url_collection.manager import FullTextManager, FullTextManagerConfig
+        from omics_oracle_v2.lib.pipelines.url_collection.manager import (
+            FullTextManager,
+            FullTextManagerConfig,
+        )
     except ImportError:
         pytest.skip("FullTextManager not available")
 

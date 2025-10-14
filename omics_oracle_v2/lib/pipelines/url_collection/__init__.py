@@ -23,10 +23,10 @@ Integration Contract:
 
 Usage:
     >>> from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
-    >>> 
+    >>>
     >>> manager = FullTextManager()
     >>> await manager.initialize()
-    >>> 
+    >>>
     >>> result = await manager.get_all_fulltext_urls(publication)
     >>> if result.success:
     >>>     print(f"Found {len(result.all_urls)} URLs")

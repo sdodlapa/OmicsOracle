@@ -15,8 +15,8 @@ from typing import List, Optional
 import aiofiles
 import aiohttp
 
-from omics_oracle_v2.lib.enrichment.fulltext.utils import validate_pdf_content
 from omics_oracle_v2.lib.enrichment.identifiers import UniversalIdentifier
+from omics_oracle_v2.lib.pipelines.pdf_download.utils import validate_pdf_content
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 logger = logging.getLogger(__name__)
@@ -372,7 +372,7 @@ class PDFDownloadManager:
             Before: [landing(priority=5), pdf(priority=4), landing(priority=2)]
             After:  [pdf(priority=4), landing(priority=2), landing(priority=5)]
         """
-        from omics_oracle_v2.lib.enrichment.fulltext.url_validator import URLType
+        from omics_oracle_v2.lib.pipelines.url_collection.url_validator import URLType
 
         # Group URLs by type
         pdf_urls = []

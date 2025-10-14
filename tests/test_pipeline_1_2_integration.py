@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-Pipeline 1+2 Integration Test
-Test GEO Citation Discovery → Full-Text URL Collection
+"""Integration tests for Pipeline 1 -> Pipeline 2 flow."""
 
-This script tests the complete flow:
-1. Pipeline 1: Discover citations from GEO dataset
-2. Pipeline 2: Collect full-text URLs for discovered citations
-3. Validate: Ensure end-to-end integration works
-"""
+import asyncio
+import logging
+import os
+import sys
+
+import pytest
 
 import asyncio
 import logging
@@ -224,7 +224,10 @@ async def test_batch_processing():
     print()
 
     try:
-        from omics_oracle_v2.lib.pipelines.url_collection.manager import FullTextManager, FullTextManagerConfig
+        from omics_oracle_v2.lib.pipelines.url_collection.manager import (
+            FullTextManager,
+            FullTextManagerConfig,
+        )
         from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
         # Create test publications

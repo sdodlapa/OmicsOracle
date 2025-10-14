@@ -104,7 +104,9 @@ async def test_crossref_client_close():
 @pytest.mark.asyncio
 async def test_unpaywall_client_close():
     """Test that UnpaywallClient properly closes its session."""
-    from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import UnpaywallConfig
+    from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import (
+        UnpaywallConfig,
+    )
 
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always", ResourceWarning)
@@ -264,7 +266,9 @@ async def test_memory_cleanup():
     assert crossref.session is None
 
     # Test UnpaywallClient
-    from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import UnpaywallConfig
+    from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import (
+        UnpaywallConfig,
+    )
 
     unpaywall_config = UnpaywallConfig(email="test@example.com")
     async with UnpaywallClient(unpaywall_config) as unpaywall:
