@@ -319,22 +319,19 @@ class RankingConfig:
 # =============================================================================
 # Configuration Presets (Added Oct 9, 2025)
 # =============================================================================
-
-"""
-Quick-start configuration presets for different use cases.
-
-Usage:
-    from omics_oracle_v2.lib.search_engines.citations.config import PRESET_CONFIGS
-
-    # For fast, free searches:
-    config = PRESET_CONFIGS["minimal"]
-
-    # For comprehensive analysis (recommended):
-    config = PRESET_CONFIGS["full"]
-
-    # For research with cost control:
-    config = PRESET_CONFIGS["research"]
-"""
+# Quick-start configuration presets for different use cases.
+#
+# Usage:
+#     from omics_oracle_v2.lib.search_engines.citations.config import PRESET_CONFIGS
+#
+#     # For fast, free searches:
+#     config = PRESET_CONFIGS["minimal"]
+#
+#     # For comprehensive analysis (recommended):
+#     config = PRESET_CONFIGS["full"]
+#
+#     # For research with cost control:
+#     config = PRESET_CONFIGS["research"]
 
 PRESET_CONFIGS = {
     "minimal": PublicationSearchConfig(

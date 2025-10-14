@@ -13,9 +13,20 @@ import os
 from dataclasses import dataclass
 from typing import List, Optional, Set
 
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import PubMedConfig
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.openalex import OpenAlexClient, OpenAlexConfig
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.pubmed import PubMedClient
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import (
+    PubMedConfig,
+)
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.openalex import (
+    OpenAlexClient,
+    OpenAlexConfig,
+)
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.pubmed import (
+    PubMedClient,
+)
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.semantic_scholar import (
+    SemanticScholarClient,
+    SemanticScholarConfig,
+)
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 
@@ -38,23 +49,37 @@ class GEOCitationDiscovery:
 
     Strategies:
     1. OpenAlex: Papers citing original publication
-    2. PubMed: Papers mentioning GEO ID
+    2. Semantic Scholar: Papers citing original publication (NEW!)
+    3. PubMed: Papers mentioning GEO ID
     """
 
     def __init__(
         self,
         openalex_client: Optional[OpenAlexClient] = None,
         pubmed_client: Optional[PubMedClient] = None,
-        use_strategy_a: bool = True,  # Citation-based
-        use_strategy_b: bool = True,  # Mention-based
+        semantic_scholar_client: Optional[SemanticScholarClient] = None,
+        use_strategy_a: bool = True,  # Citation-based (OpenAlex + Semantic Scholar)
+        use_strategy_b: bool = True,  # Mention-based (PubMed)
     ):
         # Initialize OpenAlex client if not provided
         if openalex_client is None:
-            openalex_config = OpenAlexConfig(email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"), enable=True)
+            openalex_config = OpenAlexConfig(
+                email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"), enable=True
+            )
             self.openalex = OpenAlexClient(config=openalex_config)
             logger.info("Initialized OpenAlex client for citation discovery")
         else:
             self.openalex = openalex_client
+
+        # Initialize Semantic Scholar client if not provided
+        if semantic_scholar_client is None:
+            s2_config = SemanticScholarConfig(
+                api_key=os.getenv("SEMANTIC_SCHOLAR_API_KEY")  # Optional
+            )
+            self.semantic_scholar = SemanticScholarClient(config=s2_config)
+            logger.info("Initialized Semantic Scholar client for citation discovery")
+        else:
+            self.semantic_scholar = semantic_scholar_client
 
         # Initialize PubMed client if not provided
         if pubmed_client is None:
@@ -122,13 +147,15 @@ class GEOCitationDiscovery:
         )
 
     def _find_via_citation(self, pmid: str, max_results: int) -> List[Publication]:
-        """Strategy A: Find papers citing the original publication"""
-        if not self.openalex or not self.openalex.config.enable:
-            logger.warning("OpenAlex not configured - cannot find citations")
-            return []
+        """
+        Strategy A: Find papers citing the original publication
+
+        Uses both OpenAlex and Semantic Scholar for maximum coverage
+        """
+        all_citing_papers = []
 
         try:
-            # First, fetch the full publication details from PubMed to get DOI
+            # Fetch original publication details from PubMed
             logger.info(f"Fetching full publication details for PMID {pmid}")
             original_pub = self.pubmed_client.fetch_by_id(pmid)
 
@@ -136,24 +163,62 @@ class GEOCitationDiscovery:
                 logger.warning(f"Could not fetch details for PMID {pmid}")
                 return []
 
-            if not original_pub.doi:
-                logger.warning(f"No DOI found for PMID {pmid} - cannot find citations")
-                return []
+            logger.info(
+                f"Found original paper: {original_pub.title[:50]}... "
+                f"DOI: {original_pub.doi}, PMID: {pmid}"
+            )
 
-            logger.info(f"Found original paper: {original_pub.title[:50]}... DOI: {original_pub.doi}")
+            # Source 1: OpenAlex (DOI-based)
+            if self.openalex and self.openalex.config.enable and original_pub.doi:
+                try:
+                    openalex_citations = self.openalex.get_citing_papers(
+                        doi=original_pub.doi, max_results=max_results
+                    )
+                    all_citing_papers.extend(openalex_citations)
+                    logger.info(f"  OpenAlex: {len(openalex_citations)} citing papers")
+                except Exception as e:
+                    logger.warning(f"OpenAlex citation search failed: {e}")
 
-            # Find citing papers using OpenAlex directly
-            citing_papers = self.openalex.get_citing_papers(doi=original_pub.doi, max_results=max_results)
+            # Source 2: Semantic Scholar (PMID-based)
+            if self.semantic_scholar:
+                try:
+                    s2_citations = self.semantic_scholar.get_citing_papers(
+                        pmid=pmid, limit=max_results
+                    )
+                    # Deduplicate on-the-fly (by PMID/DOI)
+                    existing_ids = {
+                        (p.pmid, p.doi) for p in all_citing_papers
+                    }
+                    new_papers = [
+                        p
+                        for p in s2_citations
+                        if (p.pmid, p.doi) not in existing_ids
+                    ]
+                    all_citing_papers.extend(new_papers)
+                    logger.info(
+                        f"  Semantic Scholar: {len(s2_citations)} total "
+                        f"({len(new_papers)} new after dedup)"
+                    )
+                except Exception as e:
+                    logger.warning(f"Semantic Scholar citation search failed: {e}")
 
-            if citing_papers:
-                logger.info(f"✓ Found {len(citing_papers)} citing papers from OpenAlex")
-            else:
-                logger.debug("No citing papers found in OpenAlex")
+            # Deduplicate final list
+            unique_papers = []
+            seen_ids = set()
+            for paper in all_citing_papers:
+                paper_id = (paper.pmid, paper.doi)
+                if paper_id not in seen_ids:
+                    unique_papers.append(paper)
+                    seen_ids.add(paper_id)
 
-            return citing_papers
+            logger.info(
+                f"Total citing papers: {len(unique_papers)} "
+                f"(from {len(all_citing_papers)} before dedup)"
+            )
+            return unique_papers
 
         except Exception as e:
-            logger.error(f"OpenAlex citation search failed for PMID {pmid}: {e}")
+            logger.error(f"Citation search failed for PMID {pmid}: {e}")
             return []
 
     def _find_via_geo_mention(self, geo_id: str, max_results: int) -> List[Publication]:
