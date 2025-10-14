@@ -153,7 +153,7 @@ class PDFDownloadManager:
             total_size_mb=total_bytes / (1024 * 1024),
         )
 
-        logger.info(f"✓ Download complete: {successful}/{len(publications)} successful")
+        logger.info(f"[OK] Download complete: {successful}/{len(publications)} successful")
         logger.info(f"  Total size: {report.total_size_mb:.2f} MB")
 
         return report
@@ -260,7 +260,7 @@ class PDFDownloadManager:
                                             # Validate the new content is actually a PDF
                                             if self._is_valid_pdf(content):
                                                 logger.info(
-                                                    f"✓ Successfully downloaded PDF via landing page extraction"
+                                                    f"[OK] Successfully downloaded PDF via landing page extraction"
                                                 )
                                             else:
                                                 return DownloadResult(
@@ -299,7 +299,7 @@ class PDFDownloadManager:
                 async with aiofiles.open(pdf_path, "wb") as f:
                     await f.write(content)
 
-                logger.info(f"✓ Downloaded: {filename} ({len(content) / 1024:.1f} KB)")
+                logger.info(f"[OK] Downloaded: {filename} ({len(content) / 1024:.1f} KB)")
 
                 return DownloadResult(
                     publication=publication,
@@ -319,7 +319,7 @@ class PDFDownloadManager:
         Generate unique filename for PDF using UniversalIdentifier.
 
         NEW (Oct 13, 2025):
-        - Uses hierarchical identifier fallback: PMID → DOI → PMC → arXiv → Hash
+        - Uses hierarchical identifier fallback: PMID -> DOI -> PMC -> arXiv -> Hash
         - Works for all 11 full-text sources (not just PMID-based ones)
         - Filesystem-safe filenames (DOI slashes converted to underscores)
         - Deterministic (same paper = same filename)
@@ -343,6 +343,74 @@ class PDFDownloadManager:
         """Validate PDF using magic bytes"""
         return content.startswith(self.PDF_MAGIC_BYTES)
 
+    def _sort_urls_by_type_and_priority(self, urls: List) -> List:
+        """
+        Sort URLs by type first (PDF > HTML > Landing), then by priority.
+
+        NEW (Oct 13, 2025 - Phase 3):
+        Type-aware sorting for optimal download success.
+
+        Sorting Logic:
+        1. Group by URL type (PDF direct, HTML full-text, landing page, unknown)
+        2. Within each type, sort by source priority (lower number = higher priority)
+        3. Concatenate: PDFs + HTML + Landing + Unknown
+
+        This ensures:
+        - PDF URLs tried first (fastest, direct downloads)
+        - HTML full-text tried next (need parsing but still good)
+        - Landing pages tried last (slowest, need extraction)
+
+        Args:
+            urls: List of SourceURL objects
+
+        Returns:
+            Sorted list of SourceURL objects
+
+        Example:
+            Before: [landing(priority=5), pdf(priority=4), landing(priority=2)]
+            After:  [pdf(priority=4), landing(priority=2), landing(priority=5)]
+        """
+        from omics_oracle_v2.lib.enrichment.fulltext.url_validator import URLType
+
+        # Group URLs by type
+        pdf_urls = []
+        html_urls = []
+        landing_urls = []
+        unknown_urls = []
+
+        for url in urls:
+            url_type = getattr(url, "url_type", URLType.UNKNOWN)
+
+            if url_type == URLType.PDF_DIRECT:
+                pdf_urls.append(url)
+            elif url_type == URLType.HTML_FULLTEXT:
+                html_urls.append(url)
+            elif url_type == URLType.LANDING_PAGE:
+                landing_urls.append(url)
+            else:
+                # Unknown, DOI resolver, or other types
+                # Treat as landing pages (conservative approach)
+                landing_urls.append(url)
+
+        # Sort each group by priority (lower number = try first)
+        pdf_urls.sort(key=lambda u: u.priority)
+        html_urls.sort(key=lambda u: u.priority)
+        landing_urls.sort(key=lambda u: u.priority)
+        unknown_urls.sort(key=lambda u: u.priority)
+
+        # Concatenate: PDF -> HTML -> Landing -> Unknown
+        sorted_urls = pdf_urls + html_urls + landing_urls + unknown_urls
+
+        # Log sorting results
+        if pdf_urls:
+            logger.info(f"  Type-aware sorting: {len(pdf_urls)} PDF URLs (trying first)")
+        if html_urls:
+            logger.info(f"  Type-aware sorting: {len(html_urls)} HTML URLs (trying after PDFs)")
+        if landing_urls:
+            logger.info(f"  Type-aware sorting: {len(landing_urls)} Landing page URLs (trying last)")
+
+        return sorted_urls
+
     async def download_with_fallback(
         self,
         publication: Publication,
@@ -352,11 +420,19 @@ class PDFDownloadManager:
         """
         Download PDF with automatic fallback through multiple URLs.
 
-        NEW (Oct 13, 2025):
-        - Tries URLs in priority order (institutional > PMC > Unpaywall...)
+        ENHANCED (Oct 13, 2025 - Phase 3):
+        - Type-aware sorting: PDF URLs first, then HTML, then landing pages
+        - Tries URLs in smart order: type priority > source priority
         - Stops at first successful download
         - No need to re-query APIs (URLs already collected)
-        - Logs which source succeeded
+        - Logs which source and type succeeded
+
+        URL Prioritization:
+        1. PDF Direct URLs (fastest, direct downloads)
+        2. HTML Full-text URLs (need parsing)
+        3. Landing Pages (slowest, need extraction)
+
+        Within each type, sorted by source priority (institutional > PMC > Unpaywall...)
 
         Args:
             publication: Publication object
@@ -370,7 +446,7 @@ class PDFDownloadManager:
             >>> # Get all URLs first
             >>> result = await fulltext_manager.get_all_fulltext_urls(pub)
             >>>
-            >>> # Try downloading with fallback
+            >>> # Try downloading with fallback (now type-aware!)
             >>> download_result = await pdf_downloader.download_with_fallback(
             >>>     pub, result.all_urls, output_dir
             >>> )
@@ -383,20 +459,29 @@ class PDFDownloadManager:
 
         output_dir.mkdir(parents=True, exist_ok=True)
 
-        logger.info(f"Trying {len(all_urls)} URLs for: {publication.title[:50]}...")
+        # NEW (Phase 3): Sort URLs by type first, then by priority
+        sorted_urls = self._sort_urls_by_type_and_priority(all_urls)
+
+        logger.info(
+            f"Trying {len(sorted_urls)} URLs for: {publication.title[:50]}... "
+            f"(type-aware sorting enabled)"
+        )
 
         # NEW: Retry configuration
         max_retries_per_url = 2  # Retry each URL up to 2 times
         retry_delay = 1.5  # Seconds to wait between retries
 
-        # Try each URL in priority order
-        for i, source_url in enumerate(all_urls):
+        # Try each URL in type-aware priority order
+        for i, source_url in enumerate(sorted_urls):
             source_name = source_url.source.value
             priority = source_url.priority
             url = source_url.url
+            url_type = getattr(source_url, "url_type", None)
+            url_type_str = url_type.value if url_type else "unknown"
 
             logger.info(
-                f"  [{i+1}/{len(all_urls)}] Trying {source_name} " f"(priority {priority}): {url[:80]}..."
+                f"  [{i+1}/{len(sorted_urls)}] Trying {source_name} "
+                f"(priority={priority}, type={url_type_str}): {url[:70]}..."
             )
 
             # NEW: Retry logic for each URL
@@ -410,7 +495,7 @@ class PDFDownloadManager:
                         result.source = source_name
                         retry_msg = f" (attempt {attempt + 1}/{max_retries_per_url})" if attempt > 0 else ""
                         logger.info(
-                            f"  ✅ SUCCESS from {source_name}{retry_msg}! "
+                            f"  [OK] SUCCESS from {source_name}{retry_msg}! "
                             f"Size: {result.file_size / 1024:.1f} KB, "
                             f"Path: {result.pdf_path.name}"
                         )
@@ -419,32 +504,37 @@ class PDFDownloadManager:
                         # Failed this attempt
                         if attempt < max_retries_per_url - 1:
                             logger.warning(
-                                f"  ⚠️  {source_name} attempt {attempt + 1}/{max_retries_per_url} failed: {result.error}"
+                                f"  [WARNING] {source_name} attempt {attempt + 1}/{max_retries_per_url} failed: {result.error}"
                             )
                             logger.info(f"     Retrying in {retry_delay}s...")
                             await asyncio.sleep(retry_delay)
                         else:
                             # All retries exhausted for this URL
                             logger.debug(
-                                f"  ✗ {source_name} failed after {max_retries_per_url} attempts: {result.error}"
+                                f"  [FAIL] {source_name} failed after {max_retries_per_url} attempts: {result.error}"
                             )
 
                 except Exception as e:
                     if attempt < max_retries_per_url - 1:
                         logger.warning(
-                            f"  ⚠️  {source_name} attempt {attempt + 1}/{max_retries_per_url} exception: {e}"
+                            f"  [WARNING] {source_name} attempt {attempt + 1}/{max_retries_per_url} exception: {e}"
                         )
                         logger.info(f"     Retrying in {retry_delay}s...")
                         await asyncio.sleep(retry_delay)
                     else:
-                        logger.debug(f"  ✗ {source_name} exception after {max_retries_per_url} attempts: {e}")
+                        logger.debug(
+                            f"  [FAIL] {source_name} exception after {max_retries_per_url} attempts: {e}"
+                        )
                     continue
 
             # All retries exhausted for this URL, try next URL
 
         # All URLs failed
-        logger.warning(f"❌ All {len(all_urls)} URLs failed for: {publication.title[:50]}")
+        logger.warning(f"[FAIL] All {len(sorted_urls)} URLs failed for: {publication.title[:50]}")
 
         return DownloadResult(
-            publication=publication, success=False, error=f"All {len(all_urls)} sources failed", source="none"
+            publication=publication,
+            success=False,
+            error=f"All {len(sorted_urls)} sources failed",
+            source="none",
         )
