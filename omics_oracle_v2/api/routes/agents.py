@@ -164,6 +164,10 @@ async def execute_search(
         search_terms_lower = {term.lower() for term in request.search_terms}
 
         for dataset in geo_datasets:
+            # Handle both dict and GEOSeriesMetadata objects
+            if isinstance(dataset, dict):
+                dataset = GEOSeriesMetadata(**dataset)
+
             score = 0.0
             reasons = []
 

@@ -14,10 +14,10 @@ from dataclasses import dataclass
 from typing import List, Optional, Set
 
 from omics_oracle_v2.lib.citations.discovery.finder import CitationFinder
-from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
-from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
 from omics_oracle_v2.lib.search_engines.citations.config import PubMedConfig
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
+from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
+from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,16 @@ class GEOCitationDiscovery:
         use_strategy_a: bool = True,  # Citation-based
         use_strategy_b: bool = True,  # Mention-based
     ):
-        self.citation_finder = citation_finder or CitationFinder()
+        # Initialize citation finder with actual sources if not provided
+        if citation_finder is None:
+            from omics_oracle_v2.lib.search_engines.citations.openalex import OpenAlexClient, OpenAlexConfig
+
+            openalex_config = OpenAlexConfig(email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"), enable=True)
+            openalex_client = OpenAlexClient(config=openalex_config)
+            self.citation_finder = CitationFinder(openalex_client=openalex_client)
+            logger.info("Initialized CitationFinder with OpenAlex client")
+        else:
+            self.citation_finder = citation_finder
 
         # Create PubMedClient with config from environment if not provided
         if pubmed_client is None:
