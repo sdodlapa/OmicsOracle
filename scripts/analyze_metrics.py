@@ -239,7 +239,9 @@ def print_report(
 
     # Source Performance
     print(f"\n🔍 SOURCE PERFORMANCE")
-    print(f"{'Source':<20} {'Requests':<10} {'Success':<10} {'Avg Time':<12} {'Papers/Req':<12} {'Efficiency':<12}")
+    print(
+        f"{'Source':<20} {'Requests':<10} {'Success':<10} {'Avg Time':<12} {'Papers/Req':<12} {'Efficiency':<12}"
+    )
     print("-" * 80)
 
     for source_name, stats in sorted(source_stats.items()):

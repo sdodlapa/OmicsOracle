@@ -26,10 +26,10 @@ import asyncio
 import logging
 import ssl
 import time
-from pathlib import Path
 from typing import Dict, List, Optional
 
 import aiohttp
+from pydantic import BaseModel, Field, field_validator
 
 from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient
 from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
@@ -37,7 +37,7 @@ from omics_oracle_v2.lib.search_engines.citations.models import Publication, Pub
 logger = logging.getLogger(__name__)
 
 
-class COREConfig:
+class COREConfig(BaseModel):
     """
     Configuration for CORE API.
 
@@ -49,23 +49,23 @@ class COREConfig:
         rate_limit_per_second: Requests per second
     """
 
-    def __init__(
-        self,
-        api_key: str,
-        api_url: str = "https://api.core.ac.uk/v3",
-        timeout: int = 30,
-        retry_count: int = 3,
-        rate_limit_per_second: int = 10,
-    ):
-        if not api_key:
-            raise ValueError("CORE API key is required")
+    api_key: str = Field(..., description="CORE API key (required)")
+    api_url: str = Field(default="https://api.core.ac.uk/v3", description="Base API URL for CORE")
+    timeout: int = Field(default=30, description="Request timeout in seconds", ge=1)
+    retry_count: int = Field(default=3, description="Number of retries on failure", ge=0)
+    rate_limit_per_second: int = Field(default=10, description="Requests per second", ge=1)
 
-        self.api_key = api_key
-        self.api_url = api_url
-        self.timeout = timeout
-        self.retry_count = retry_count
-        self.rate_limit_per_second = rate_limit_per_second
-        self.min_request_interval = 1.0 / rate_limit_per_second
+    @field_validator("api_key")
+    @classmethod
+    def validate_api_key(cls, v):
+        if not v:
+            raise ValueError("CORE API key is required")
+        return v
+
+    @property
+    def min_request_interval(self) -> float:
+        """Calculate minimum request interval from rate limit"""
+        return 1.0 / self.rate_limit_per_second
 
 
 class COREClient(BasePublicationClient):
@@ -237,7 +237,7 @@ class COREClient(BasePublicationClient):
             },
         }
 
-        logger.info(f"✓ Found in CORE: {result['title'][:50]}")
+        logger.info(f"[CORE] Found in CORE: {result['title'][:50]}")
 
         # Log what's available
         has_pdf = bool(result.get("downloadUrl"))
@@ -288,57 +288,9 @@ class COREClient(BasePublicationClient):
         logger.info(f"Found {len(results)} results in CORE")
         return results
 
-    async def download_pdf(self, download_url: str, output_path: Path) -> bool:
-        """
-        Download PDF from CORE.
-
-        Args:
-            download_url: PDF download URL from CORE
-            output_path: Path to save PDF
-
-        Returns:
-            True if successful, False otherwise
-        """
-        if not download_url:
-            return False
-
-        logger.info(f"Downloading PDF from CORE: {download_url}")
-
-        if not self.session:
-            connector = aiohttp.TCPConnector(ssl=self.ssl_context)
-            self.session = aiohttp.ClientSession(connector=connector)
-
-        try:
-            # Add API key to URL
-            params = {"apiKey": self.config.api_key}
-
-            async with self.session.get(download_url, params=params, timeout=self.config.timeout) as response:
-                if response.status == 200:
-                    # Verify it's a PDF
-                    content_type = response.headers.get("Content-Type", "")
-                    content = await response.read()
-
-                    # Check PDF magic number
-                    if content[:4] != b"%PDF":
-                        logger.warning(f"Not a valid PDF (Content-Type: {content_type})")
-                        return False
-
-                    # Save to file
-                    output_path.parent.mkdir(parents=True, exist_ok=True)
-                    with open(output_path, "wb") as f:
-                        f.write(content)
-
-                    file_size = output_path.stat().st_size
-                    logger.info(f"✓ Downloaded PDF: {output_path.name} ({file_size} bytes)")
-                    return True
-
-                else:
-                    logger.warning(f"Failed to download PDF: HTTP {response.status}")
-                    return False
-
-        except Exception as e:
-            logger.error(f"Error downloading PDF from CORE: {e}")
-            return False
+    # NOTE: download_pdf() method REMOVED (redundant with PDFDownloadManager)
+    # CORE client now returns URLs only - PDFDownloadManager handles all downloads
+    # This eliminates duplicate download logic and inconsistent validation
 
     async def fetch_by_id(self, identifier: str) -> Optional[Publication]:
         """

@@ -30,6 +30,7 @@ from typing import Dict, List, Optional
 from urllib.parse import quote
 
 import aiohttp
+from pydantic import BaseModel, Field
 
 from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient
 from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
@@ -37,7 +38,7 @@ from omics_oracle_v2.lib.search_engines.citations.models import Publication, Pub
 logger = logging.getLogger(__name__)
 
 
-class CrossrefConfig:
+class CrossrefConfig(BaseModel):
     """
     Configuration for Crossref API.
 
@@ -51,24 +52,24 @@ class CrossrefConfig:
         user_agent: Custom user agent string
     """
 
-    def __init__(
-        self,
-        enable: bool = True,
-        api_url: str = "https://api.crossref.org",
-        email: Optional[str] = None,
-        timeout: int = 30,
-        retry_count: int = 3,
-        rate_limit_per_second: int = 50,  # Polite pool with email
-        user_agent: str = "OmicsOracle/1.0 (Academic Research Tool)",
-    ):
-        self.enable = enable
-        self.api_url = api_url
-        self.email = email
-        self.timeout = timeout
-        self.retry_count = retry_count
-        self.rate_limit_per_second = rate_limit_per_second
-        self.user_agent = user_agent
-        self.min_request_interval = 1.0 / rate_limit_per_second
+    enable: bool = Field(default=True, description="Enable Crossref client")
+    api_url: str = Field(default="https://api.crossref.org", description="Base API URL for Crossref")
+    email: Optional[str] = Field(
+        default=None, description="Email for polite pool (Crossref-Plus, faster rate limits)"
+    )
+    timeout: int = Field(default=30, description="Request timeout in seconds", ge=1)
+    retry_count: int = Field(default=3, description="Number of retries on failure", ge=0)
+    rate_limit_per_second: int = Field(
+        default=50, description="Requests per second (50 with email in polite pool)", ge=1
+    )
+    user_agent: str = Field(
+        default="OmicsOracle/1.0 (Academic Research Tool)", description="Custom user agent string"
+    )
+
+    @property
+    def min_request_interval(self) -> float:
+        """Calculate minimum request interval from rate limit"""
+        return 1.0 / self.rate_limit_per_second
 
 
 class CrossrefClient(BasePublicationClient):

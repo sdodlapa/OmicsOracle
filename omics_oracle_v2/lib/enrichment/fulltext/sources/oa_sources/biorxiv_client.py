@@ -25,10 +25,10 @@ import asyncio
 import logging
 import ssl
 import time
-from pathlib import Path
 from typing import Dict, List, Optional
 
 import aiohttp
+from pydantic import BaseModel, Field
 
 from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient
 from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
@@ -36,7 +36,7 @@ from omics_oracle_v2.lib.search_engines.citations.models import Publication, Pub
 logger = logging.getLogger(__name__)
 
 
-class BioRxivConfig:
+class BioRxivConfig(BaseModel):
     """
     Configuration for bioRxiv/medRxiv API.
 
@@ -47,18 +47,15 @@ class BioRxivConfig:
         rate_limit_per_second: Requests per second (be polite)
     """
 
-    def __init__(
-        self,
-        api_url: str = "https://api.biorxiv.org",
-        timeout: int = 30,
-        retry_count: int = 3,
-        rate_limit_per_second: int = 2,  # Be polite
-    ):
-        self.api_url = api_url
-        self.timeout = timeout
-        self.retry_count = retry_count
-        self.rate_limit_per_second = rate_limit_per_second
-        self.min_request_interval = 1.0 / rate_limit_per_second
+    api_url: str = Field(default="https://api.biorxiv.org", description="Base API URL for bioRxiv/medRxiv")
+    timeout: int = Field(default=30, description="Request timeout in seconds", ge=1)
+    retry_count: int = Field(default=3, description="Number of retries on failure", ge=0)
+    rate_limit_per_second: int = Field(default=2, description="Requests per second (be polite)", ge=1)
+
+    @property
+    def min_request_interval(self) -> float:
+        """Calculate minimum request interval from rate limit"""
+        return 1.0 / self.rate_limit_per_second
 
 
 class BioRxivClient(BasePublicationClient):
@@ -229,7 +226,7 @@ class BioRxivClient(BasePublicationClient):
                     "url": f"https://www.{server}.org/content/{doi}v{paper.get('version', 1)}",
                 }
 
-                logger.info(f"✓ Found in {server}: {result['title'][:50]}")
+                logger.info(f"[{server.upper()}] Found in {server}: {result['title'][:50]}")
                 return result
 
         logger.debug(f"Not found in bioRxiv or medRxiv: {doi}")
@@ -340,52 +337,9 @@ class BioRxivClient(BasePublicationClient):
 
         return pub
 
-    async def download_pdf(self, pdf_url: str, output_path: Path) -> bool:
-        """
-        Download PDF from bioRxiv/medRxiv.
-
-        Args:
-            pdf_url: PDF URL
-            output_path: Path to save PDF
-
-        Returns:
-            True if successful
-        """
-        if not pdf_url:
-            return False
-
-        logger.info(f"Downloading PDF from bioRxiv/medRxiv: {pdf_url}")
-
-        if not self.session:
-            connector = aiohttp.TCPConnector(ssl=self.ssl_context)
-            self.session = aiohttp.ClientSession(connector=connector)
-
-        try:
-            async with self.session.get(pdf_url, timeout=self.config.timeout) as response:
-                if response.status == 200:
-                    content = await response.read()
-
-                    # Verify PDF
-                    if content[:4] != b"%PDF":
-                        logger.warning("Not a valid PDF")
-                        return False
-
-                    # Save
-                    output_path.parent.mkdir(parents=True, exist_ok=True)
-                    with open(output_path, "wb") as f:
-                        f.write(content)
-
-                    file_size = output_path.stat().st_size
-                    logger.info(f"✓ Downloaded PDF: {output_path.name} ({file_size} bytes)")
-                    return True
-
-                else:
-                    logger.warning(f"Failed to download PDF: HTTP {response.status}")
-                    return False
-
-        except Exception as e:
-            logger.error(f"Error downloading PDF from bioRxiv/medRxiv: {e}")
-            return False
+    # NOTE: download_pdf() method REMOVED (redundant with PDFDownloadManager)
+    # bioRxiv client now returns URLs only - PDFDownloadManager handles all downloads
+    # This eliminates duplicate download logic and inconsistent validation
 
     async def close(self):
         """Close the HTTP session."""

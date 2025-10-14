@@ -514,11 +514,11 @@ class GEOCitationDiscovery:
 
             # Build deduplication stats
             dedup_data = {
-                "total_raw": len(all_papers) if 'all_papers' in locals() else 0,
-                "total_unique": len(unique_papers) if 'unique_papers' in locals() else 0,
+                "total_raw": len(all_papers) if "all_papers" in locals() else 0,
+                "total_unique": len(unique_papers) if "unique_papers" in locals() else 0,
                 "duplicate_rate": (
                     (len(all_papers) - len(unique_papers)) / len(all_papers)
-                    if 'all_papers' in locals() and len(all_papers) > 0
+                    if "all_papers" in locals() and len(all_papers) > 0
                     else 0
                 ),
             }
@@ -542,8 +542,8 @@ class GEOCitationDiscovery:
 
             # Build cache info
             cache_data = {
-                "hit": cached_result is not None if 'cached_result' in locals() else False,
-                "strategy": "cached" if 'cached_result' in locals() and cached_result else "fresh",
+                "hit": cached_result is not None if "cached_result" in locals() else False,
+                "strategy": "cached" if "cached_result" in locals() and cached_result else "fresh",
             }
 
             # Log the session

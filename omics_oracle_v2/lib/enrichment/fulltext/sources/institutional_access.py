@@ -13,10 +13,11 @@ Methods supported:
 """
 
 import logging
-from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, List, Optional
 from urllib.parse import quote, urlencode
+
+from pydantic import BaseModel, Field
 
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
@@ -30,8 +31,7 @@ class InstitutionType(str, Enum):
     GEORGIA_TECH = "gatech"
 
 
-@dataclass
-class InstitutionalConfig:
+class InstitutionalConfig(BaseModel):
     """
     Configuration for institutional access.
 
@@ -45,27 +45,31 @@ class InstitutionalConfig:
         prefer_open_access: Try open access first before institutional
     """
 
-    institution: InstitutionType
+    institution: InstitutionType = Field(..., description="Institution type")
 
     # EZProxy (most common)
-    ezproxy_url: Optional[str] = None
+    ezproxy_url: Optional[str] = Field(default=None, description="EZProxy server URL")
 
     # VPN/Proxy routing
-    vpn_proxy: Optional[str] = None
-    vpn_enabled: bool = False
+    vpn_proxy: Optional[str] = Field(default=None, description="VPN proxy server")
+    vpn_enabled: bool = Field(default=False, description="Whether VPN routing is enabled")
 
     # Shibboleth/SAML
-    shibboleth_idp: Optional[str] = None
+    shibboleth_idp: Optional[str] = Field(default=None, description="Shibboleth Identity Provider URL")
 
     # OpenURL resolver
-    openurl_resolver: Optional[str] = None
+    openurl_resolver: Optional[str] = Field(default=None, description="OpenURL link resolver")
 
     # Authentication
-    credentials: Dict[str, str] = field(default_factory=dict)
+    credentials: Dict[str, str] = Field(default_factory=dict, description="Authentication credentials")
 
     # Strategy
-    prefer_open_access: bool = True
-    fallback_methods: List[str] = field(default_factory=lambda: ["unpaywall", "ezproxy", "openurl", "direct"])
+    prefer_open_access: bool = Field(default=True, description="Try open access first before institutional")
+    # NOTE: Removed "unpaywall" from fallback_methods (handled by FullTextManager separately)
+    fallback_methods: List[str] = Field(
+        default_factory=lambda: ["ezproxy", "openurl", "direct"],
+        description="Fallback access methods in order of preference",
+    )
 
 
 # Pre-configured institutional settings
@@ -75,14 +79,16 @@ INSTITUTIONAL_CONFIGS = {
         ezproxy_url="https://proxy.lib.odu.edu/login?url=",
         openurl_resolver="https://odu.illiad.oclc.org/illiad/illiad.dll/OpenURL",
         shibboleth_idp="https://shib.odu.edu/idp/shibboleth",
-        fallback_methods=["unpaywall", "ezproxy", "openurl", "direct"],
+        # NOTE: Removed "unpaywall" - handled by FullTextManager separately
+        fallback_methods=["ezproxy", "openurl", "direct"],
     ),
     InstitutionType.GEORGIA_TECH: InstitutionalConfig(
         institution=InstitutionType.GEORGIA_TECH,
         ezproxy_url="",  # Georgia Tech uses VPN, not EZProxy
         openurl_resolver="https://gatech-primo.hosted.exlibrisgroup.com/primo-explore/search",
         shibboleth_idp="https://login.gatech.edu/idp/shibboleth",
-        fallback_methods=["unpaywall", "direct", "openurl"],  # Direct DOI/URL for VPN access
+        # NOTE: Removed "unpaywall" - handled by FullTextManager separately
+        fallback_methods=["direct", "openurl"],  # Direct DOI/URL for VPN access
     ),
 }
 
@@ -156,9 +162,8 @@ class InstitutionalAccessManager:
         # Try each method
         for method in methods:
             try:
-                if method == "unpaywall":
-                    url = self._try_unpaywall(publication)
-                elif method == "ezproxy":
+                # NOTE: "unpaywall" removed - handled by FullTextManager separately
+                if method == "ezproxy":
                     url = self._try_ezproxy(publication)
                 elif method == "openurl":
                     url = self._try_openurl(publication)
@@ -203,12 +208,8 @@ class InstitutionalAccessManager:
             pmc_pdf = f"https://www.ncbi.nlm.nih.gov/pmc/articles/{publication.pmcid}/pdf/"
             return pmc_pdf
 
-        # Third try: Unpaywall
-        unpaywall_url = self._try_unpaywall(publication)
-        if unpaywall_url and unpaywall_url.endswith(".pdf"):
-            return unpaywall_url
-
-        # Fourth try: DOI-based PDF (common publishers)
+        # Third try: DOI-based PDF (common publishers)
+        # NOTE: Removed Unpaywall call - handled by FullTextManager separately
         if publication.doi:
             # Try common publisher PDF patterns
             pdf_patterns = self._get_publisher_pdf_patterns(publication.doi)
@@ -219,53 +220,9 @@ class InstitutionalAccessManager:
 
         return None
 
-    def _try_unpaywall(self, publication: Publication) -> Optional[str]:
-        """
-        Try to get open access version via Unpaywall API.
-
-        Unpaywall is a database of free, legal OA articles.
-        API: https://unpaywall.org/products/api
-
-        Args:
-            publication: Publication to check
-
-        Returns:
-            OA URL or None
-        """
-        if not publication.doi:
-            return None
-
-        # Unpaywall API endpoint
-        email = "omicsoracle@example.com"  # Replace with your email
-        api_url = f"https://api.unpaywall.org/v2/{publication.doi}?email={email}"
-
-        try:
-            import requests
-
-            response = requests.get(api_url, timeout=5)
-
-            if response.status_code == 200:
-                data = response.json()
-
-                # Check if OA available
-                if data.get("is_oa"):
-                    # Prefer publisher PDF
-                    best_oa = data.get("best_oa_location")
-                    if best_oa:
-                        pdf_url = best_oa.get("url_for_pdf")
-                        if pdf_url:
-                            logger.info(f"Found OA PDF via Unpaywall: {pdf_url}")
-                            return pdf_url
-
-                        landing_url = best_oa.get("url")
-                        if landing_url:
-                            logger.info(f"Found OA landing page via Unpaywall: {landing_url}")
-                            return landing_url
-
-        except Exception as e:
-            logger.debug(f"Unpaywall lookup failed: {e}")
-
-        return None
+    # NOTE: _try_unpaywall() method REMOVED (redundant with FullTextManager)
+    # Unpaywall is now handled centrally by FullTextManager with proper async API
+    # This eliminates duplicate API calls and inconsistent behavior
 
     def _try_ezproxy(self, publication: Publication) -> Optional[str]:
         """
@@ -424,7 +381,8 @@ class InstitutionalAccessManager:
         status = {}
 
         # Check each method
-        status["unpaywall"] = bool(self._try_unpaywall(publication))
+        # NOTE: Removed unpaywall check - handled by FullTextManager separately
+        # status["unpaywall"] = bool(self._try_unpaywall(publication))
 
         # For Georgia Tech, check if VPN access is possible (DOI or URL exists)
         # For other institutions, check EZProxy
@@ -453,17 +411,15 @@ class InstitutionalAccessManager:
         """
         instructions = {}
 
-        # Check Unpaywall
-        unpaywall_url = self._try_unpaywall(publication)
-        if unpaywall_url:
-            instructions["open_access"] = f"✅ Free open access version available: {unpaywall_url}"
+        # NOTE: Removed Unpaywall check - handled by FullTextManager separately
+        # This method now focuses only on institutional-specific access
 
         # EZProxy
         if self.config.ezproxy_url:
             ezproxy_url = self._try_ezproxy(publication)
             if ezproxy_url:
                 instructions["institutional"] = (
-                    f"🏛️ Access via {self.institution.value.upper()} library: {ezproxy_url}\n"
+                    f"[{self.institution.value.upper()}] Access via library: {ezproxy_url}\n"
                     f"Note: You may need to login with your university credentials."
                 )
 
@@ -471,12 +427,12 @@ class InstitutionalAccessManager:
         if self.config.openurl_resolver:
             openurl = self._try_openurl(publication)
             if openurl:
-                instructions["link_resolver"] = f"🔗 Find full text via library resolver: {openurl}"
+                instructions["link_resolver"] = f"[RESOLVER] Find full text via library resolver: {openurl}"
 
         # PMC
         if publication.pmcid:
             instructions["pmc"] = (
-                f"📖 Free full text on PubMed Central: "
+                f"[PMC] Free full text on PubMed Central: "
                 f"https://www.ncbi.nlm.nih.gov/pmc/articles/{publication.pmcid}/"
             )
 

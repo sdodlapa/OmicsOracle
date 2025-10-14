@@ -15,6 +15,7 @@ from typing import List, Optional
 import aiofiles
 import aiohttp
 
+from omics_oracle_v2.lib.enrichment.fulltext.utils import validate_pdf_content
 from omics_oracle_v2.lib.enrichment.identifiers import UniversalIdentifier
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
@@ -60,9 +61,6 @@ class PDFDownloadManager:
     - Retry logic
     - Progress tracking
     """
-
-    # PDF magic bytes (starts with %PDF-)
-    PDF_MAGIC_BYTES = b"%PDF-"
 
     def __init__(
         self,
@@ -340,8 +338,12 @@ class PDFDownloadManager:
         return identifier.filename
 
     def _is_valid_pdf(self, content: bytes) -> bool:
-        """Validate PDF using magic bytes"""
-        return content.startswith(self.PDF_MAGIC_BYTES)
+        """
+        Validate PDF using shared utilities.
+
+        Wrapper for backward compatibility - delegates to validate_pdf_content().
+        """
+        return validate_pdf_content(content)
 
     def _sort_urls_by_type_and_priority(self, urls: List) -> List:
         """

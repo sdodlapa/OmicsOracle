@@ -34,6 +34,7 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 import aiohttp
+from pydantic import BaseModel, Field
 
 from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient
 from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
@@ -41,7 +42,7 @@ from omics_oracle_v2.lib.search_engines.citations.models import Publication, Pub
 logger = logging.getLogger(__name__)
 
 
-class ArXivConfig:
+class ArXivConfig(BaseModel):
     """
     Configuration for arXiv API.
 
@@ -55,23 +56,20 @@ class ArXivConfig:
         user_agent: Custom user agent string
     """
 
-    def __init__(
-        self,
-        enable: bool = True,
-        api_url: str = "http://export.arxiv.org/api/query",
-        timeout: int = 30,
-        retry_count: int = 3,
-        rate_limit_delay: float = 3.0,  # arXiv requires 3 seconds between requests
-        max_results_per_query: int = 100,
-        user_agent: str = "OmicsOracle/1.0 (Academic Research Tool; mailto:research@university.edu)",
-    ):
-        self.enable = enable
-        self.api_url = api_url
-        self.timeout = timeout
-        self.retry_count = retry_count
-        self.rate_limit_delay = rate_limit_delay
-        self.max_results_per_query = max_results_per_query
-        self.user_agent = user_agent
+    enable: bool = Field(default=True, description="Enable arXiv client")
+    api_url: str = Field(default="http://export.arxiv.org/api/query", description="Base API URL for arXiv")
+    timeout: int = Field(default=30, description="Request timeout in seconds", ge=1)
+    retry_count: int = Field(default=3, description="Number of retries on failure", ge=0)
+    rate_limit_delay: float = Field(
+        default=3.0, description="Delay between requests (3 seconds per arXiv policy)", ge=0.1
+    )
+    max_results_per_query: int = Field(
+        default=100, description="Maximum results per search query", ge=1, le=1000
+    )
+    user_agent: str = Field(
+        default="OmicsOracle/1.0 (Academic Research Tool; mailto:research@university.edu)",
+        description="Custom user agent string",
+    )
 
 
 class ArXivClient(BasePublicationClient):
@@ -421,45 +419,9 @@ class ArXivClient(BasePublicationClient):
             logger.error(f"Error parsing arXiv search response: {e}")
             return []
 
-    async def download_pdf(self, pdf_url: str, output_path: Path) -> bool:
-        """
-        Download PDF from arXiv.
-
-        Args:
-            pdf_url: URL to PDF
-            output_path: Local path to save PDF
-
-        Returns:
-            True if successful, False otherwise
-        """
-        if not self.session:
-            raise RuntimeError("Client not initialized. Use 'async with' context manager.")
-
-        await self._rate_limit()
-
-        try:
-            async with self.session.get(pdf_url, ssl=self.ssl_context) as response:
-                if response.status == 200:
-                    content = await response.read()
-
-                    # Validate PDF
-                    if not content.startswith(b"%PDF"):
-                        logger.error(f"Downloaded file is not a valid PDF: {pdf_url}")
-                        return False
-
-                    # Save to file
-                    output_path.parent.mkdir(parents=True, exist_ok=True)
-                    output_path.write_bytes(content)
-
-                    logger.info(f"Downloaded PDF: {output_path}")
-                    return True
-                else:
-                    logger.error(f"Failed to download PDF: {response.status} {pdf_url}")
-                    return False
-
-        except Exception as e:
-            logger.error(f"Error downloading PDF from {pdf_url}: {e}")
-            return False
+    # NOTE: download_pdf() method REMOVED (redundant with PDFDownloadManager)
+    # arXiv client now returns URLs only - PDFDownloadManager handles all downloads
+    # This eliminates duplicate download logic and inconsistent validation
 
     async def fetch_by_id(self, identifier: str) -> Optional[Publication]:
         """

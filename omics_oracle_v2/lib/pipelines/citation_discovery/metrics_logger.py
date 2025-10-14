@@ -13,7 +13,7 @@ Storage: data/analytics/metrics_log.jsonl
 
 Usage:
     logger = MetricsLogger()
-    
+
     # Log discovery session
     logger.log_discovery_session({
         "geo_id": "GSE52564",
@@ -21,17 +21,17 @@ Usage:
         "quality_validation": {...},
         "cache": {...}
     })
-    
+
     # Analyze logs
     stats = logger.get_recent_stats(days=7)
 """
 
 import json
 import logging
+from collections import defaultdict
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from collections import defaultdict
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 class MetricsLogger:
     """
     Append-only metrics logger for citation discovery sessions
-    
+
     Features:
     - Simple JSONL format (one JSON per line)
     - No database overhead (just file append)
@@ -411,7 +411,9 @@ class MetricsLogger:
             print(f"  Requests: {stats['total_requests']}")
             print(f"  Success Rate: {stats['success_rate']:.1%}")
             print(f"  Avg Response Time: {stats['avg_response_time']:.2f}s")
-            print(f"  Papers Found: {stats['total_papers_found']} total, {stats['total_unique_papers']} unique")
+            print(
+                f"  Papers Found: {stats['total_papers_found']} total, {stats['total_unique_papers']} unique"
+            )
             print(f"  Avg Papers/Request: {stats['avg_papers_per_request']:.1f}")
 
         # Quality validation

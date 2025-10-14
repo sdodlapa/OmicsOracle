@@ -21,7 +21,7 @@ from pydantic import BaseModel, Field
 from omics_oracle_v2.agents.models.search import RankedDataset
 from omics_oracle_v2.api.models.requests import SearchRequest
 from omics_oracle_v2.api.models.responses import DatasetResponse, PublicationResponse, SearchResponse
-from omics_oracle_v2.lib.citations.discovery.geo_discovery import GEOCitationDiscovery
+from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.search_orchestration import OrchestratorConfig, SearchOrchestrator
 

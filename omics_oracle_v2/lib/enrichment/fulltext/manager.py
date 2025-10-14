@@ -41,6 +41,8 @@ from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources import (
     BioRxivClient,
     COREClient,
     CrossrefClient,
+    PMCClient,
+    PMCConfig,
 )
 from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources.unpaywall_client import (
     UnpaywallClient,
@@ -67,6 +69,9 @@ class FullTextSource(str, Enum):
     SCIHUB = "scihub"  # NEW - Phase 2
     LIBGEN = "libgen"  # NEW - Phase 3
     CACHE = "cache"
+
+
+from pydantic import BaseModel, Field
 
 
 @dataclass
@@ -107,7 +112,7 @@ class FullTextResult:
     all_urls: Optional[List["SourceURL"]] = None  # NEW: All URLs from all sources (for fallback)
 
 
-class FullTextManagerConfig:
+class FullTextManagerConfig(BaseModel):
     """
     Configuration for FullTextManager.
 
@@ -130,41 +135,26 @@ class FullTextManagerConfig:
         timeout_per_source: Timeout for each source (seconds)
     """
 
-    def __init__(
-        self,
-        enable_institutional: bool = True,
-        enable_pmc: bool = True,
-        enable_openalex: bool = True,
-        enable_unpaywall: bool = True,  # NEW - Phase 1+
-        enable_core: bool = True,
-        enable_biorxiv: bool = True,
-        enable_arxiv: bool = True,
-        enable_crossref: bool = True,
-        enable_scihub: bool = False,  # NEW - Phase 2 (disabled by default)
-        enable_libgen: bool = False,  # NEW - Phase 3 (disabled by default)
-        core_api_key: Optional[str] = None,
-        unpaywall_email: Optional[str] = None,  # NEW
-        scihub_use_proxy: bool = False,  # NEW
-        libgen_use_proxy: bool = False,  # NEW
-        max_concurrent: int = 3,
-        timeout_per_source: int = 30,
-    ):
-        self.enable_institutional = enable_institutional
-        self.enable_pmc = enable_pmc
-        self.enable_openalex = enable_openalex
-        self.enable_unpaywall = enable_unpaywall  # NEW
-        self.enable_core = enable_core
-        self.enable_biorxiv = enable_biorxiv
-        self.enable_arxiv = enable_arxiv
-        self.enable_crossref = enable_crossref
-        self.enable_scihub = enable_scihub  # NEW
-        self.enable_libgen = enable_libgen  # NEW
-        self.core_api_key = core_api_key
-        self.unpaywall_email = unpaywall_email  # NEW
-        self.scihub_use_proxy = scihub_use_proxy  # NEW
-        self.libgen_use_proxy = libgen_use_proxy  # NEW
-        self.max_concurrent = max_concurrent
-        self.timeout_per_source = timeout_per_source
+    enable_institutional: bool = Field(default=True, description="Try institutional access first")
+    enable_pmc: bool = Field(default=True, description="Try PubMed Central")
+    enable_openalex: bool = Field(default=True, description="Use OpenAlex OA URLs")
+    enable_unpaywall: bool = Field(default=True, description="Try Unpaywall (Phase 1+)")
+    enable_core: bool = Field(default=True, description="Use CORE API")
+    enable_biorxiv: bool = Field(default=True, description="Try bioRxiv/medRxiv")
+    enable_arxiv: bool = Field(default=True, description="Try arXiv")
+    enable_crossref: bool = Field(default=True, description="Use Crossref full-text links")
+    enable_scihub: bool = Field(
+        default=False, description="Try Sci-Hub (Phase 2, use responsibly, disabled by default)"
+    )
+    enable_libgen: bool = Field(
+        default=False, description="Try LibGen (Phase 3, use responsibly, disabled by default)"
+    )
+    core_api_key: Optional[str] = Field(default=None, description="API key for CORE")
+    unpaywall_email: Optional[str] = Field(default=None, description="Email for Unpaywall API")
+    scihub_use_proxy: bool = Field(default=False, description="Use proxy/Tor for Sci-Hub")
+    libgen_use_proxy: bool = Field(default=False, description="Use proxy/Tor for LibGen")
+    max_concurrent: int = Field(default=3, description="Maximum concurrent source attempts", ge=1)
+    timeout_per_source: int = Field(default=30, description="Timeout for each source (seconds)", ge=1)
 
 
 class FullTextManager:
@@ -198,6 +188,7 @@ class FullTextManager:
 
         # OA source clients (will be initialized in initialize())
         self.institutional_manager: Optional[InstitutionalAccessManager] = None  # NEW - Priority 1
+        self.pmc_client: Optional[PMCClient] = None  # Extracted from manager (Phase 1.3)
         self.core_client: Optional[COREClient] = None
         self.biorxiv_client: Optional[BioRxivClient] = None
         self.arxiv_client: Optional[ArXivClient] = None
@@ -228,6 +219,13 @@ class FullTextManager:
             # Use Georgia Tech by default (can be configured)
             self.institutional_manager = InstitutionalAccessManager(institution=InstitutionType.GEORGIA_TECH)
             logger.info("Institutional Access Manager initialized (Georgia Tech)")
+
+        # Initialize PMC client (Extracted from manager - Phase 1.3)
+        if self.config.enable_pmc:
+            pmc_config = PMCConfig(enabled=True)
+            self.pmc_client = PMCClient(pmc_config)
+            await self.pmc_client.__aenter__()
+            logger.info("PMC client initialized")
 
         # Initialize CORE client
         if self.config.enable_core:
@@ -288,6 +286,8 @@ class FullTextManager:
 
         logger.info("Cleaning up OA source clients...")
 
+        if self.pmc_client:  # NEW - Phase 1.3
+            await self.pmc_client.__aexit__(None, None, None)
         if self.core_client:
             await self.core_client.__aexit__(None, None, None)
         if self.biorxiv_client:
@@ -417,14 +417,15 @@ class FullTextManager:
 
     async def _try_pmc(self, publication: Publication) -> FullTextResult:
         """
-        Try to get full-text from PubMed Central (PMC) with multiple URL patterns.
+        Try to get full-text from PubMed Central (PMC).
+
+        REFACTORED (Phase 1.3):
+        - Extracted to dedicated PMCClient class
+        - Follows standard client pattern
+        - Manager delegates to client (orchestration only)
 
         PMC is the #1 legal source with 6M+ free full-text articles.
-        Now tries MULTIPLE URL patterns for better success rate:
-        1. PMC OA API (FTP links - most reliable)
-        2. Direct PDF URLs (https://pmc.ncbi.nlm.nih.gov/articles/PMC{id}/pdf/)
-        3. EuropePMC PDF render (https://europepmc.org/articles/PMC{id}?pdf=render)
-        4. PMC reader view (fallback - landing page)
+        Client tries multiple URL patterns for better success rate.
 
         Args:
             publication: Publication object with pmid or pmc_id
@@ -435,160 +436,12 @@ class FullTextManager:
         if not self.config.enable_pmc:
             return FullTextResult(success=False, error="PMC disabled")
 
+        if not self.pmc_client:
+            return FullTextResult(success=False, error="PMC client not initialized")
+
         try:
-            import ssl
-            import xml.etree.ElementTree as ET
-
-            import aiohttp
-
-            # Extract PMC ID from publication
-            pmc_id = None
-
-            # Method 1: Direct pmcid attribute (most reliable - from PubMed fetch)
-            if hasattr(publication, "pmcid") and publication.pmcid:
-                pmc_id = publication.pmcid.replace("PMC", "").strip()
-                logger.info(f"Using PMC ID from publication.pmcid: PMC{pmc_id}")
-
-            # Method 2: Legacy pmc_id attribute
-            elif hasattr(publication, "pmc_id") and publication.pmc_id:
-                pmc_id = publication.pmc_id.replace("PMC", "").strip()
-                logger.info(f"Using PMC ID from publication.pmc_id: PMC{pmc_id}")
-
-            # Method 3: Extract from publication metadata
-            elif publication.metadata and publication.metadata.get("pmc_id"):
-                pmc_id = publication.metadata["pmc_id"].replace("PMC", "").strip()
-                logger.info(f"Using PMC ID from metadata: PMC{pmc_id}")
-
-            # Method 4: Fetch PMC ID from PMID using E-utilities (fallback)
-            elif hasattr(publication, "pmid") and publication.pmid:
-                # Create SSL context that doesn't verify certificates (for institutional networks)
-                ssl_context = ssl.create_default_context()
-                ssl_context.check_hostname = False
-                ssl_context.verify_mode = ssl.CERT_NONE
-
-                # Use PubMed E-utilities to convert PMID -> PMCID
-                pmid = publication.pmid
-                url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={pmid}&format=json"
-
-                connector = aiohttp.TCPConnector(ssl=ssl_context)
-                async with aiohttp.ClientSession(connector=connector) as session:
-                    async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
-                        if response.status == 200:
-                            data = await response.json()
-                            records = data.get("records", [])
-                            if records and len(records) > 0:
-                                pmc_id = records[0].get("pmcid", "").replace("PMC", "").strip()
-                                logger.info(f"Converted PMID {pmid} -> PMC{pmc_id} via E-utilities")
-
-            if not pmc_id:
-                return FullTextResult(success=False, error="No PMC ID found")
-
-            # Ensure PMC ID is numeric only
-            pmc_id = pmc_id.strip()
-
-            # NEW: Try multiple URL patterns (in priority order)
-            ssl_context = ssl.create_default_context()
-            ssl_context.check_hostname = False
-            ssl_context.verify_mode = ssl.CERT_NONE
-
-            connector = aiohttp.TCPConnector(ssl=ssl_context)
-            async with aiohttp.ClientSession(connector=connector) as session:
-                # Pattern 1: Try PMC OA API (most reliable for OA articles)
-                oa_api_url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC{pmc_id}"
-                try:
-                    async with session.get(oa_api_url, timeout=aiohttp.ClientTimeout(total=10)) as response:
-                        if response.status == 200:
-                            xml_content = await response.text()
-                            root = ET.fromstring(xml_content)
-
-                            # Look for PDF link
-                            for link in root.findall('.//link[@format="pdf"]'):
-                                href = link.get("href")
-                                if href:
-                                    # Convert ftp:// to https://
-                                    pdf_link = href.replace(
-                                        "ftp://ftp.ncbi.nlm.nih.gov/", "https://ftp.ncbi.nlm.nih.gov/"
-                                    )
-                                    logger.info(f"PASS Found PMC{pmc_id} via OA API: {pdf_link}")
-                                    return FullTextResult(
-                                        success=True,
-                                        source=FullTextSource.PMC,
-                                        url=pdf_link,
-                                        metadata={
-                                            "pmc_id": f"PMC{pmc_id}",
-                                            "pattern": "oa_api",
-                                            "url_type": "pdf_direct",
-                                        },
-                                    )
-                except Exception as e:
-                    logger.debug(f"PMC OA API failed: {e}")
-
-                # Pattern 2: Direct PMC PDF URL
-                direct_pdf_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/pdf/"
-                try:
-                    async with session.head(
-                        direct_pdf_url, timeout=aiohttp.ClientTimeout(total=5), allow_redirects=True
-                    ) as response:
-                        if response.status == 200:
-                            logger.info(f"PASS Found PMC{pmc_id} via direct PDF: {direct_pdf_url}")
-                            return FullTextResult(
-                                success=True,
-                                source=FullTextSource.PMC,
-                                url=direct_pdf_url,
-                                metadata={
-                                    "pmc_id": f"PMC{pmc_id}",
-                                    "pattern": "direct_pdf",
-                                    "url_type": "pdf_direct",
-                                },
-                            )
-                except Exception as e:
-                    logger.debug(f"PMC direct PDF failed: {e}")
-
-                # Pattern 3: EuropePMC PDF render
-                europepmc_url = f"https://europepmc.org/articles/PMC{pmc_id}?pdf=render"
-                try:
-                    async with session.head(
-                        europepmc_url, timeout=aiohttp.ClientTimeout(total=5), allow_redirects=True
-                    ) as response:
-                        if response.status == 200:
-                            logger.info(f"PASS Found PMC{pmc_id} via EuropePMC: {europepmc_url}")
-                            return FullTextResult(
-                                success=True,
-                                source=FullTextSource.PMC,
-                                url=europepmc_url,
-                                metadata={
-                                    "pmc_id": f"PMC{pmc_id}",
-                                    "pattern": "europepmc",
-                                    "url_type": "pdf_direct",
-                                },
-                            )
-                except Exception as e:
-                    logger.debug(f"EuropePMC failed: {e}")
-
-                # Pattern 4: PMC reader view (landing page fallback)
-                reader_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/?report=reader"
-                try:
-                    async with session.head(
-                        reader_url, timeout=aiohttp.ClientTimeout(total=5), allow_redirects=True
-                    ) as response:
-                        if response.status == 200:
-                            logger.info(f"WARNING Found PMC{pmc_id} reader view (landing page): {reader_url}")
-                            return FullTextResult(
-                                success=True,
-                                source=FullTextSource.PMC,
-                                url=reader_url,
-                                metadata={
-                                    "pmc_id": f"PMC{pmc_id}",
-                                    "pattern": "reader_view",
-                                    "url_type": "landing_page",
-                                },
-                            )
-                except Exception as e:
-                    logger.debug(f"PMC reader view failed: {e}")
-
-            # All patterns failed
-            return FullTextResult(success=False, error=f"All PMC URL patterns failed for PMC{pmc_id}")
-
+            result = await self.pmc_client.get_fulltext(publication)
+            return result
         except Exception as e:
             logger.warning(f"PMC lookup failed: {e}")
             return FullTextResult(success=False, error=str(e))
@@ -606,19 +459,24 @@ class FullTextManager:
         if not self.config.enable_openalex:
             return FullTextResult(success=False, error="OpenAlex disabled")
 
-        # Check if publication has OA URL in metadata
-        oa_url = publication.metadata.get("oa_url") if publication.metadata else None
+        try:
+            # Check if publication has OA URL in metadata
+            oa_url = publication.metadata.get("oa_url") if publication.metadata else None
 
-        if not oa_url:
-            return FullTextResult(success=False, error="No OA URL in metadata")
+            if not oa_url:
+                return FullTextResult(success=False, error="No OA URL in metadata")
 
-        logger.info(f"Found OpenAlex OA URL: {oa_url}")
-        return FullTextResult(
-            success=True,
-            source=FullTextSource.OPENALEX_OA,
-            url=oa_url,
-            metadata={"oa_url": oa_url},
-        )
+            logger.info(f"Found OpenAlex OA URL: {oa_url}")
+            return FullTextResult(
+                success=True,
+                source=FullTextSource.OPENALEX_OA,
+                url=oa_url,
+                metadata={"oa_url": oa_url},
+            )
+
+        except Exception as e:
+            logger.warning(f"OpenAlex OA URL error: {e}")
+            return FullTextResult(success=False, error=str(e))
 
     async def _try_core(self, publication: Publication) -> FullTextResult:
         """
