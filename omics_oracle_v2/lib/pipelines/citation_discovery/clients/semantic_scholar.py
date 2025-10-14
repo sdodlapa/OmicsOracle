@@ -18,6 +18,7 @@ Official API Docs: https://api.semanticscholar.org/api-docs/
 """
 
 import logging
+import ssl
 import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional
@@ -80,6 +81,22 @@ class SemanticScholarClient:
         # Set API key header if provided
         if self.config.api_key:
             self.session.headers["x-api-key"] = self.config.api_key
+
+        # Create SSL context that bypasses verification (for institutional VPN/proxies)
+        ssl_context = ssl.create_default_context()
+        ssl_context.check_hostname = False
+        ssl_context.verify_mode = ssl.CERT_NONE
+        
+        # Mount adapter with SSL context
+        from requests.adapters import HTTPAdapter
+        from urllib3.util.ssl_ import create_urllib3_context
+        
+        class SSLAdapter(HTTPAdapter):
+            def init_poolmanager(self, *args, **kwargs):
+                kwargs['ssl_context'] = ssl_context
+                return super().init_poolmanager(*args, **kwargs)
+        
+        self.session.mount('https://', SSLAdapter())
 
         # Rate limiting state
         self._last_request_time = 0.0

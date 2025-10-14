@@ -36,6 +36,10 @@ from omics_oracle_v2.lib.pipelines.citation_discovery.error_handling import (
     FallbackChain,
     retry_with_backoff,
 )
+from omics_oracle_v2.lib.pipelines.citation_discovery.relevance_scoring import (
+    RelevanceScorer,
+    ScoringWeights,
+)
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 
@@ -128,6 +132,16 @@ class GEOCitationDiscovery:
         self.deduplicator = SmartDeduplicator(dedup_config)
         logger.info("Initialized smart deduplicator (title≥85%, authors≥70%)")
 
+        # Initialize relevance scorer with simplified 4-factor model
+        scoring_weights = ScoringWeights(
+            content_similarity=0.40,  # 40% - PRIMARY: what the paper discusses
+            keyword_match=0.30,      # 30% - SECONDARY: direct keyword matches
+            recency=0.20,            # 20% - TEMPORAL: recent papers (5yr cutoff)
+            citation_count=0.10,     # 10% - IMPACT: citation count
+        )
+        self.scorer = RelevanceScorer(scoring_weights)
+        logger.info("Initialized relevance scorer: content=40%, keywords=30%, recency=20%, citations=10%")
+
         self.use_strategy_a = use_strategy_a
         self.use_strategy_b = use_strategy_b
 
@@ -151,12 +165,23 @@ class GEOCitationDiscovery:
             cached_result = self.cache.get(geo_metadata.geo_id, strategy_key="all")
             if cached_result:
                 logger.info(f"✓ Cache HIT for {geo_metadata.geo_id} ({len(cached_result)} papers)")
+                
+                # ALWAYS re-score cached papers (scores may have changed with weight updates)
+                scored_papers = self.scorer.score_publications(cached_result, geo_metadata)
+                scored_papers.sort(key=lambda x: x.total, reverse=True)
+                
+                # Attach scores to publications
+                for score in scored_papers:
+                    score.publication._relevance_score = score
+                
+                ranked_papers = [score.publication for score in scored_papers]
+                
                 # Reconstruct result from cached papers
                 original_pmid = geo_metadata.pubmed_ids[0] if geo_metadata.pubmed_ids else None
                 return CitationDiscoveryResult(
                     geo_id=geo_metadata.geo_id,
                     original_pmid=original_pmid,
-                    citing_papers=cached_result[:max_results],
+                    citing_papers=ranked_papers[:max_results],
                     strategy_breakdown={"cached": True},
                 )
 
@@ -198,15 +223,38 @@ class GEOCitationDiscovery:
         # Reset deduplicator
         self.deduplicator.reset()
 
-        # Cache the result
+        # Score papers by relevance
+        scored_papers = self.scorer.score_publications(unique_papers, geo_metadata)
+        
+        # Sort by relevance score (highest first)
+        scored_papers.sort(key=lambda x: x.total, reverse=True)
+        
+        # Attach scores to publications for transparency
+        for score in scored_papers:
+            score.publication._relevance_score = score
+        
+        # Extract just the publications in ranked order
+        ranked_papers = [score.publication for score in scored_papers]
+        
+        # Log top scores
+        if scored_papers:
+            top_5 = scored_papers[:5]
+            logger.info("Top 5 papers by relevance:")
+            for i, score in enumerate(top_5, 1):
+                logger.info(
+                    f"  {i}. Score={score.total:.3f}: "
+                    f"{score.publication.title[:60]}..."
+                )
+
+        # Cache the result (ranked papers)
         if self.enable_cache and self.cache:
-            self.cache.set(geo_metadata.geo_id, unique_papers, strategy_key="all")
-            logger.debug(f"Cached {len(unique_papers)} papers for {geo_metadata.geo_id}")
+            self.cache.set(geo_metadata.geo_id, ranked_papers, strategy_key="all")
+            logger.debug(f"Cached {len(ranked_papers)} ranked papers for {geo_metadata.geo_id}")
 
         return CitationDiscoveryResult(
             geo_id=geo_metadata.geo_id,
             original_pmid=original_pmid,
-            citing_papers=unique_papers[:max_results],
+            citing_papers=ranked_papers[:max_results],  # Return top N by relevance
             strategy_breakdown=strategy_breakdown,
         )
 
