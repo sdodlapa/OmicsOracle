@@ -28,6 +28,10 @@ from omics_oracle_v2.lib.pipelines.citation_discovery.clients.semantic_scholar i
     SemanticScholarClient,
     SemanticScholarConfig,
 )
+from omics_oracle_v2.lib.pipelines.citation_discovery.deduplication import (
+    DeduplicationConfig,
+    SmartDeduplicator,
+)
 from omics_oracle_v2.lib.pipelines.citation_discovery.error_handling import (
     FallbackChain,
     retry_with_backoff,
@@ -111,6 +115,19 @@ class GEOCitationDiscovery:
             self.cache = None
             logger.info("Cache disabled for citation discovery")
 
+        # Initialize smart deduplicator
+        dedup_config = DeduplicationConfig(
+            title_similarity_threshold=0.85,
+            author_match_threshold=0.7,
+            use_doi=True,
+            use_pmid=True,
+            use_title=True,
+            use_authors=True,
+            use_year=True,
+        )
+        self.deduplicator = SmartDeduplicator(dedup_config)
+        logger.info("Initialized smart deduplicator (title≥85%, authors≥70%)")
+
         self.use_strategy_a = use_strategy_a
         self.use_strategy_b = use_strategy_b
 
@@ -168,9 +185,18 @@ class GEOCitationDiscovery:
                     strategy_breakdown["strategy_b"].append(paper.pmid or paper.doi)
             logger.info(f"  Found {len(mentioning_geo)} papers mentioning GEO ID")
 
-        # Deduplicate and sort
-        unique_papers = list(all_papers)
-        logger.info(f"Total unique citing papers: {len(unique_papers)}")
+        # Convert set to list and apply final deduplication
+        all_papers_list = list(all_papers)
+        unique_papers = self.deduplicator.deduplicate(all_papers_list)
+        dedup_stats = self.deduplicator.get_stats()
+        
+        logger.info(
+            f"Final deduplication: {len(all_papers_list)} → {len(unique_papers)} unique papers "
+            f"({dedup_stats.duplicates_removed} duplicates removed)"
+        )
+        
+        # Reset deduplicator
+        self.deduplicator.reset()
 
         # Cache the result
         if self.enable_cache and self.cache:
@@ -236,14 +262,8 @@ class GEOCitationDiscovery:
 
                 try:
                     s2_citations = fetch_semantic_scholar()
-                    # Deduplicate on-the-fly (by PMID/DOI)
-                    existing_ids = {(p.pmid, p.doi) for p in all_citing_papers}
-                    new_papers = [p for p in s2_citations if (p.pmid, p.doi) not in existing_ids]
-                    all_citing_papers.extend(new_papers)
-                    logger.info(
-                        f"  ✓ Semantic Scholar: {len(s2_citations)} total "
-                        f"({len(new_papers)} new after dedup)"
-                    )
+                    all_citing_papers.extend(s2_citations)
+                    logger.info(f"  ✓ Semantic Scholar: {len(s2_citations)} total papers")
                 except Exception as e:
                     logger.warning(f"  ✗ Semantic Scholar failed: {e}")
 
@@ -255,19 +275,20 @@ class GEOCitationDiscovery:
                 )
                 return []
 
-            # Deduplicate final list
-            unique_papers = []
-            seen_ids = set()
-            for paper in all_citing_papers:
-                paper_id = (paper.pmid, paper.doi)
-                if paper_id not in seen_ids:
-                    unique_papers.append(paper)
-                    seen_ids.add(paper_id)
+            # Smart deduplication (fuzzy matching, title similarity, author overlap)
+            initial_count = len(all_citing_papers)
+            unique_papers = self.deduplicator.deduplicate(all_citing_papers)
+            dedup_stats = self.deduplicator.get_stats()
 
             logger.info(
-                f"Total citing papers: {len(unique_papers)} "
-                f"(from {len(all_citing_papers)} before dedup)"
+                f"Smart deduplication: {initial_count} → {len(unique_papers)} papers "
+                f"({dedup_stats.duplicates_removed} duplicates removed)"
             )
+            logger.debug(f"Dedup breakdown: {dedup_stats.to_dict()}")
+
+            # Reset deduplicator for next use
+            self.deduplicator.reset()
+
             return unique_papers
 
         except Exception as e:
