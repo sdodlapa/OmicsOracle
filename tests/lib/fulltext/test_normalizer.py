@@ -10,7 +10,7 @@ Date: October 11, 2025
 
 import pytest
 
-from omics_oracle_v2.lib.enrichment.fulltext.normalizer import NORMALIZED_VERSION, ContentNormalizer
+from omics_oracle_v2.lib.pipelines.text_enrichment.normalizer import NORMALIZED_VERSION, ContentNormalizer
 
 
 @pytest.fixture
@@ -468,7 +468,7 @@ async def test_parsed_cache_integration():
     import tempfile
     from pathlib import Path
 
-    from omics_oracle_v2.lib.enrichment.fulltext.parsed_cache import ParsedCache
+    from omics_oracle_v2.lib.pipelines.text_enrichment.parsed_cache import ParsedCache
 
     # Create temporary cache directory
     with tempfile.TemporaryDirectory() as tmpdir:

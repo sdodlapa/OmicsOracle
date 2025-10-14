@@ -369,8 +369,8 @@ async def enrich_fulltext(
     import os
     from pathlib import Path
 
-    from omics_oracle_v2.lib.enrichment.fulltext.download_manager import PDFDownloadManager
-    from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig
+    from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
+    from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig
     from omics_oracle_v2.lib.registry import get_registry
     from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient, PubMedConfig
 
@@ -1031,7 +1031,7 @@ async def analyze_datasets(
         # Import here to avoid circular dependency
         from omics_oracle_v2.api.dependencies import get_settings
         from omics_oracle_v2.lib.analysis.ai.client import SummarizationClient
-        from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager
+        from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
         from omics_oracle_v2.models.publication import Publication
 
         settings = get_settings()

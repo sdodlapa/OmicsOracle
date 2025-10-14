@@ -15,12 +15,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
 from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.geo.client import GEOClient
 from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.geo.query_builder import GEOQueryBuilder
 from omics_oracle_v2.lib.nlp.synonym_expansion import SynonymExpander
+from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 from omics_oracle_v2.lib.storage.pdf.download_manager import PDFDownloadManager
 

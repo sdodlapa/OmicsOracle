@@ -13,7 +13,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig
+from omics_oracle_v2.lib.pipelines.url_collection.manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.publications.publication import Publication
 
 

@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from omics_oracle_v2.lib.enrichment.fulltext.cache_db import FullTextCacheDB, calculate_file_hash
+from omics_oracle_v2.lib.pipelines.text_enrichment.cache_db import FullTextCacheDB, calculate_file_hash
 
 
 class TestCacheDBInit:

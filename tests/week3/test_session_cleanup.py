@@ -21,11 +21,11 @@ import asyncio
 import pytest
 
 from omics_oracle_v2.core.config import Settings
-from omics_oracle_v2.lib.enrichment.fulltext.sources.libgen_client import LibGenClient
-from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources.arxiv_client import ArXivClient
-from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources.crossref_client import CrossrefClient
-from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources.unpaywall_client import UnpaywallClient
-from omics_oracle_v2.lib.enrichment.fulltext.sources.scihub_client import SciHubClient
+from omics_oracle_v2.lib.pipelines.url_collection.sources.libgen_client import LibGenClient
+from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.arxiv_client import ArXivClient
+from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.crossref_client import CrossrefClient
+from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import UnpaywallClient
+from omics_oracle_v2.lib.pipelines.url_collection.sources.scihub_client import SciHubClient
 from omics_oracle_v2.lib.search_engines.geo.client import GEOClient
 from omics_oracle_v2.lib.search_orchestration.orchestrator import SearchOrchestrator
 
@@ -104,7 +104,7 @@ async def test_crossref_client_close():
 @pytest.mark.asyncio
 async def test_unpaywall_client_close():
     """Test that UnpaywallClient properly closes its session."""
-    from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources.unpaywall_client import UnpaywallConfig
+    from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import UnpaywallConfig
 
     with warnings.catch_warnings(record=True) as warning_list:
         warnings.simplefilter("always", ResourceWarning)
@@ -207,7 +207,7 @@ async def test_all_clients_explicit_close():
         clients.append(crossref)
 
         # 2. UnpaywallClient
-        from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources.unpaywall_client import (
+        from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import (
             UnpaywallConfig,
         )
 
@@ -217,7 +217,7 @@ async def test_all_clients_explicit_close():
         clients.append(unpaywall)
 
         # 3. LibGenClient
-        from omics_oracle_v2.lib.enrichment.fulltext.sources.libgen_client import LibGenConfig
+        from omics_oracle_v2.lib.pipelines.url_collection.sources.libgen_client import LibGenConfig
 
         libgen_config = LibGenConfig()
         libgen = LibGenClient(libgen_config)
@@ -225,7 +225,7 @@ async def test_all_clients_explicit_close():
         clients.append(libgen)
 
         # 4. SciHubClient
-        from omics_oracle_v2.lib.enrichment.fulltext.sources.scihub_client import SciHubConfig
+        from omics_oracle_v2.lib.pipelines.url_collection.sources.scihub_client import SciHubConfig
 
         scihub_config = SciHubConfig()
         scihub = SciHubClient(scihub_config)
@@ -264,7 +264,7 @@ async def test_memory_cleanup():
     assert crossref.session is None
 
     # Test UnpaywallClient
-    from omics_oracle_v2.lib.enrichment.fulltext.sources.oa_sources.unpaywall_client import UnpaywallConfig
+    from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import UnpaywallConfig
 
     unpaywall_config = UnpaywallConfig(email="test@example.com")
     async with UnpaywallClient(unpaywall_config) as unpaywall:

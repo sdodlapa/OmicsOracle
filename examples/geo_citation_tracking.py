@@ -21,9 +21,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
 from omics_oracle_v2.lib.citations.filters import filter_by_year_range, rank_by_citations_and_recency
 from omics_oracle_v2.lib.geo.fetcher import GEOFetcher
+from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
 from omics_oracle_v2.lib.publications.models import Publication
 
 # Setup logging

@@ -14,7 +14,7 @@ from pathlib import Path
 
 import pytest
 
-from omics_oracle_v2.lib.enrichment.fulltext.parsed_cache import ParsedCache
+from omics_oracle_v2.lib.pipelines.text_enrichment.parsed_cache import ParsedCache
 
 
 class TestParsedCacheInit:
@@ -488,7 +488,7 @@ class TestParsedCacheConvenienceFunction:
 
     def test_get_parsed_cache(self):
         """Test get_parsed_cache() convenience function."""
-        from omics_oracle_v2.lib.enrichment.fulltext.parsed_cache import get_parsed_cache
+        from omics_oracle_v2.lib.pipelines.text_enrichment.parsed_cache import get_parsed_cache
 
         cache = get_parsed_cache()
         assert isinstance(cache, ParsedCache)

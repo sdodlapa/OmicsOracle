@@ -20,9 +20,9 @@ from omics_oracle_v2.lib.citations.clients.semantic_scholar import (
     SemanticScholarClient,
     SemanticScholarConfig,
 )
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients import CitationFinder
 from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.llm.client import LLMClient
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients import CitationFinder
 from omics_oracle_v2.lib.publications.citations.llm_analyzer import LLMCitationAnalyzer
 from omics_oracle_v2.lib.publications.clients.institutional_access import (
     InstitutionalAccessManager,
