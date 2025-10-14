@@ -126,8 +126,6 @@ class FullTextManagerConfig:
         unpaywall_email: Email for Unpaywall API
         scihub_use_proxy: Use proxy/Tor for Sci-Hub
         libgen_use_proxy: Use proxy/Tor for LibGen
-        download_pdfs: Whether to download PDFs (vs. just get URLs)
-        pdf_cache_dir: Directory to cache downloaded PDFs
         max_concurrent: Maximum concurrent source attempts
         timeout_per_source: Timeout for each source (seconds)
     """
@@ -148,8 +146,6 @@ class FullTextManagerConfig:
         unpaywall_email: Optional[str] = None,  # NEW
         scihub_use_proxy: bool = False,  # NEW
         libgen_use_proxy: bool = False,  # NEW
-        download_pdfs: bool = False,
-        pdf_cache_dir: Optional[Path] = None,
         max_concurrent: int = 3,
         timeout_per_source: int = 30,
     ):
@@ -167,8 +163,6 @@ class FullTextManagerConfig:
         self.unpaywall_email = unpaywall_email  # NEW
         self.scihub_use_proxy = scihub_use_proxy  # NEW
         self.libgen_use_proxy = libgen_use_proxy  # NEW
-        self.download_pdfs = download_pdfs
-        self.pdf_cache_dir = pdf_cache_dir or Path("data/pdfs")
         self.max_concurrent = max_concurrent
         self.timeout_per_source = timeout_per_source
 
@@ -320,27 +314,6 @@ class FullTextManager:
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         """Async context manager exit."""
         await self.cleanup()
-
-    def _get_cache_path(self, publication: Publication) -> Path:
-        """
-        Get cache path for a publication's PDF.
-
-        Args:
-            publication: Publication object
-
-        Returns:
-            Path to cached PDF
-        """
-        # Use DOI as filename if available, otherwise title hash
-        if publication.doi:
-            filename = publication.doi.replace("/", "_").replace("\\", "_") + ".pdf"
-        else:
-            import hashlib
-
-            title_hash = hashlib.md5(publication.title.encode()).hexdigest()
-            filename = f"{title_hash}.pdf"
-
-        return self.config.pdf_cache_dir / filename
 
     async def _check_cache(self, publication: Publication) -> FullTextResult:
         """

@@ -101,30 +101,6 @@ class PubMedConfig(BaseModel):
         validate_assignment = True
 
 
-class PDFConfig(BaseModel):
-    """
-    Configuration for PDF processing (Week 4).
-
-    Attributes:
-        download_pdfs: Enable PDF downloading
-        pdf_storage_path: Path to store PDFs
-        use_grobid: Use GROBID for PDF extraction
-        grobid_url: GROBID server URL
-        max_file_size_mb: Maximum PDF file size
-    """
-
-    download_pdfs: bool = Field(True)
-    pdf_storage_path: str = Field("./data/pdfs")
-    use_grobid: bool = Field(False)
-    grobid_url: Optional[str] = Field(None)
-    max_file_size_mb: int = Field(50, ge=1, le=500)
-
-    class Config:
-        """Pydantic config."""
-
-        validate_assignment = True
-
-
 class LLMConfig(BaseModel):
     """
     Configuration for LLM-powered citation analysis (Week 3 Day 15-17).
@@ -255,7 +231,6 @@ class PublicationSearchConfig:
             api_key=os.getenv("NCBI_API_KEY"),
         )
     )
-    pdf_config: PDFConfig = field(default_factory=PDFConfig)
     llm_config: LLMConfig = field(default_factory=LLMConfig)  # Week 3 Day 15-17
     fuzzy_dedup_config: FuzzyDeduplicationConfig = field(
         default_factory=FuzzyDeduplicationConfig
