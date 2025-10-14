@@ -43,11 +43,11 @@ async def test_gse69633():
     print()
     
     # Initialize discovery
-    print("📦 Initializing GEOCitationDiscovery...")
-    discovery = GEOCitationDiscovery()
-    print("   ✓ 3 sources configured: OpenAlex, Semantic Scholar, PubMed")
-    print("   ✓ Cache enabled (TTL: 1 week)")
-    print("   ✓ Error handling enabled (retry + fallback)")
+    print(f"📦 Initializing GEOCitationDiscovery...")
+    discovery = GEOCitationDiscovery(use_strategy_a=True, use_strategy_b=True, enable_cache=True)
+    print(f"   ✓ 4 sources configured: OpenAlex, Semantic Scholar, Europe PMC, PubMed")
+    print(f"   ✓ Cache enabled (TTL: 1 week)")
+    print(f"   ✓ Error handling enabled (retry + fallback)")
     print()
     
     # Create GEO metadata for GSE69633

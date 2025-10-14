@@ -20,6 +20,8 @@ class PublicationSource(str, Enum):
     GOOGLE_SCHOLAR = "google_scholar"
     OPENALEX = "openalex"
     SEMANTIC_SCHOLAR = "semantic_scholar"
+    EUROPEPMC = "europepmc"
+    CROSSREF = "crossref"
     ARXIV = "arxiv"
     BIORXIV = "biorxiv"
     MEDRXIV = "medrxiv"

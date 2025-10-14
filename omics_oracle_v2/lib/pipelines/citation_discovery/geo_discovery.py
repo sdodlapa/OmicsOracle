@@ -17,6 +17,10 @@ from omics_oracle_v2.lib.pipelines.citation_discovery.cache import DiscoveryCach
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import (
     PubMedConfig,
 )
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.europepmc import (
+    EuropePMCClient,
+    EuropePMCConfig,
+)
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.openalex import (
     OpenAlexClient,
     OpenAlexConfig,
@@ -62,8 +66,9 @@ class GEOCitationDiscovery:
 
     Strategies:
     1. OpenAlex: Papers citing original publication
-    2. Semantic Scholar: Papers citing original publication (NEW!)
-    3. PubMed: Papers mentioning GEO ID
+    2. Semantic Scholar: Papers citing original publication
+    3. Europe PMC: Papers citing original publication (NEW!)
+    4. PubMed: Papers mentioning GEO ID
     """
 
     def __init__(
@@ -71,8 +76,9 @@ class GEOCitationDiscovery:
         openalex_client: Optional[OpenAlexClient] = None,
         pubmed_client: Optional[PubMedClient] = None,
         semantic_scholar_client: Optional[SemanticScholarClient] = None,
+        europepmc_client: Optional[EuropePMCClient] = None,
         cache: Optional[DiscoveryCache] = None,
-        use_strategy_a: bool = True,  # Citation-based (OpenAlex + Semantic Scholar)
+        use_strategy_a: bool = True,  # Citation-based (OpenAlex + Semantic Scholar + Europe PMC)
         use_strategy_b: bool = True,  # Mention-based (PubMed)
         enable_cache: bool = True,
     ):
@@ -95,6 +101,16 @@ class GEOCitationDiscovery:
             logger.info("Initialized Semantic Scholar client for citation discovery")
         else:
             self.semantic_scholar = semantic_scholar_client
+
+        # Initialize Europe PMC client if not provided
+        if europepmc_client is None:
+            europepmc_config = EuropePMCConfig(
+                email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu")
+            )
+            self.europepmc = EuropePMCClient(config=europepmc_config)
+            logger.info("Initialized Europe PMC client for citation discovery")
+        else:
+            self.europepmc = europepmc_client
 
         # Initialize PubMed client if not provided
         if pubmed_client is None:
@@ -262,7 +278,7 @@ class GEOCitationDiscovery:
         """
         Strategy A: Find papers citing the original publication
 
-        Uses both OpenAlex and Semantic Scholar with:
+        Uses OpenAlex, Semantic Scholar, and Europe PMC with:
         - Retry logic for transient failures
         - Fallback if one source fails
         - Graceful degradation
@@ -300,7 +316,7 @@ class GEOCitationDiscovery:
                     all_citing_papers.extend(openalex_citations)
                     logger.info(f"  ✓ OpenAlex: {len(openalex_citations)} citing papers")
                 except Exception as e:
-                    logger.warning(f"  ✗ OpenAlex failed (will try Semantic Scholar): {e}")
+                    logger.warning(f"  ✗ OpenAlex failed: {e}")
 
             # Source 2: Semantic Scholar (PMID-based) with retry
             if self.semantic_scholar:
@@ -315,7 +331,20 @@ class GEOCitationDiscovery:
                 except Exception as e:
                     logger.warning(f"  ✗ Semantic Scholar failed: {e}")
 
-            # If both sources failed, return empty (graceful degradation)
+            # Source 3: Europe PMC (PMID-based) with retry
+            if self.europepmc:
+                @retry_with_backoff(max_retries=2, base_delay=1.0)
+                def fetch_europepmc():
+                    return self.europepmc.get_citing_papers(pmid=pmid, max_results=max_results)
+
+                try:
+                    europepmc_citations = fetch_europepmc()
+                    all_citing_papers.extend(europepmc_citations)
+                    logger.info(f"  ✓ Europe PMC: {len(europepmc_citations)} citing papers")
+                except Exception as e:
+                    logger.warning(f"  ✗ Europe PMC failed: {e}")
+
+            # If all sources failed, return empty (graceful degradation)
             if not all_citing_papers:
                 logger.error(
                     f"All citation sources failed for PMID {pmid}. "
