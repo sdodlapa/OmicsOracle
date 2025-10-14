@@ -32,6 +32,12 @@ from omics_oracle_v2.lib.pipelines.citation_discovery.deduplication import (
     SmartDeduplicator,
 )
 from omics_oracle_v2.lib.pipelines.citation_discovery.error_handling import retry_with_backoff
+from omics_oracle_v2.lib.pipelines.citation_discovery.quality_validation import (
+    QualityAssessment,
+    QualityConfig,
+    QualityLevel,
+    QualityValidator,
+)
 from omics_oracle_v2.lib.pipelines.citation_discovery.relevance_scoring import RelevanceScorer, ScoringWeights
 from omics_oracle_v2.lib.pipelines.citation_discovery.source_metrics import (
     SourceManager,
@@ -53,6 +59,8 @@ class CitationDiscoveryResult:
     citing_papers: List[Publication]
     strategy_breakdown: dict  # Which papers came from which strategy
     source_metrics: Optional[dict] = None  # Performance metrics per source
+    quality_assessments: Optional[List[QualityAssessment]] = None  # Quality validation results (Phase 8)
+    quality_summary: Optional[dict] = None  # Quality distribution summary
 
 
 class GEOCitationDiscovery:
@@ -78,6 +86,9 @@ class GEOCitationDiscovery:
         use_strategy_a: bool = True,  # Citation-based (OpenAlex + S2 + Europe PMC + OpenCitations)
         use_strategy_b: bool = True,  # Mention-based (PubMed)
         enable_cache: bool = True,
+        enable_quality_validation: bool = True,  # Enable quality validation (Phase 8)
+        quality_config: Optional[QualityConfig] = None,  # Custom quality configuration
+        quality_filter_level: Optional[QualityLevel] = None,  # Minimum quality level (None = no filtering)
     ):
         # Initialize OpenAlex client if not provided
         if openalex_client is None:
@@ -210,6 +221,20 @@ class GEOCitationDiscovery:
 
         logger.info("✓ Initialized source manager with 5 sources")
 
+        # Initialize quality validator (Phase 8)
+        self.enable_quality_validation = enable_quality_validation
+        self.quality_filter_level = quality_filter_level
+
+        if enable_quality_validation:
+            self.quality_validator = QualityValidator(config=quality_config or QualityConfig())
+            filter_info = (
+                f" (filtering: {quality_filter_level.value}+)" if quality_filter_level else " (no filtering)"
+            )
+            logger.info(f"✓ Initialized quality validator{filter_info}")
+        else:
+            self.quality_validator = None
+            logger.info("Quality validation disabled")
+
         self.use_strategy_a = use_strategy_a
         self.use_strategy_b = use_strategy_b
 
@@ -244,13 +269,65 @@ class GEOCitationDiscovery:
 
                 ranked_papers = [score.publication for score in scored_papers]
 
+                # Apply quality validation to cached results (if enabled)
+                quality_assessments = None
+                quality_summary = None
+                final_papers = ranked_papers[:max_results]
+
+                if self.enable_quality_validation and self.quality_validator:
+                    logger.info(f"Validating quality of {len(ranked_papers)} cached papers...")
+                    quality_assessments = self.quality_validator.validate_publications(ranked_papers)
+
+                    level_counts = {}
+                    for level in QualityLevel:
+                        level_counts[level.value] = sum(
+                            1 for a in quality_assessments if a.quality_level == level
+                        )
+
+                    quality_summary = {
+                        "total_assessed": len(quality_assessments),
+                        "distribution": level_counts,
+                        "average_score": sum(a.quality_score for a in quality_assessments)
+                        / len(quality_assessments)
+                        if quality_assessments
+                        else 0,
+                    }
+
+                    if self.quality_filter_level:
+                        level_order = {
+                            QualityLevel.EXCELLENT: 5,
+                            QualityLevel.GOOD: 4,
+                            QualityLevel.ACCEPTABLE: 3,
+                            QualityLevel.POOR: 2,
+                            QualityLevel.REJECTED: 1,
+                        }
+                        min_order = level_order[self.quality_filter_level]
+                        pre_filter_count = len(final_papers)
+                        final_papers = [
+                            a.publication
+                            for a in quality_assessments
+                            if level_order[a.quality_level] >= min_order and a.recommended_action != "exclude"
+                        ][:max_results]
+
+                        quality_summary["filter_level"] = self.quality_filter_level.value
+                        quality_summary["pre_filter_count"] = pre_filter_count
+                        quality_summary["post_filter_count"] = len(final_papers)
+                        quality_summary["filtered_count"] = pre_filter_count - len(final_papers)
+
+                        logger.info(
+                            f"Quality filtering (cached, min_level={self.quality_filter_level.value}): "
+                            f"{pre_filter_count} → {len(final_papers)} papers"
+                        )
+
                 # Reconstruct result from cached papers
                 original_pmid = geo_metadata.pubmed_ids[0] if geo_metadata.pubmed_ids else None
                 return CitationDiscoveryResult(
                     geo_id=geo_metadata.geo_id,
                     original_pmid=original_pmid,
-                    citing_papers=ranked_papers[:max_results],
+                    citing_papers=final_papers,
                     strategy_breakdown={"cached": True},
+                    quality_assessments=quality_assessments,
+                    quality_summary=quality_summary,
                 )
 
         all_papers: Set[Publication] = set()
@@ -322,12 +399,72 @@ class GEOCitationDiscovery:
         # Print metrics summary
         self.source_manager.print_summary()
 
+        # Apply quality validation (Phase 8)
+        quality_assessments = None
+        quality_summary = None
+        final_papers = ranked_papers[:max_results]  # Default: top N by relevance
+
+        if self.enable_quality_validation and self.quality_validator:
+            logger.info(f"Validating quality of {len(ranked_papers)} papers...")
+
+            # Validate all papers
+            quality_assessments = self.quality_validator.validate_publications(ranked_papers)
+
+            # Create quality summary
+            level_counts = {}
+            for level in QualityLevel:
+                level_counts[level.value] = sum(1 for a in quality_assessments if a.quality_level == level)
+
+            quality_summary = {
+                "total_assessed": len(quality_assessments),
+                "distribution": level_counts,
+                "average_score": sum(a.quality_score for a in quality_assessments) / len(quality_assessments)
+                if quality_assessments
+                else 0,
+            }
+
+            # Apply filtering if level specified
+            if self.quality_filter_level:
+                # Define quality level order
+                level_order = {
+                    QualityLevel.EXCELLENT: 5,
+                    QualityLevel.GOOD: 4,
+                    QualityLevel.ACCEPTABLE: 3,
+                    QualityLevel.POOR: 2,
+                    QualityLevel.REJECTED: 1,
+                }
+
+                min_order = level_order[self.quality_filter_level]
+
+                # Filter papers by quality level
+                pre_filter_count = len(final_papers)
+                final_papers = [
+                    a.publication
+                    for a in quality_assessments
+                    if level_order[a.quality_level] >= min_order and a.recommended_action != "exclude"
+                ][:max_results]
+
+                quality_summary["filter_level"] = self.quality_filter_level.value
+                quality_summary["pre_filter_count"] = pre_filter_count
+                quality_summary["post_filter_count"] = len(final_papers)
+                quality_summary["filtered_count"] = pre_filter_count - len(final_papers)
+
+                logger.info(
+                    f"Quality filtering (min_level={self.quality_filter_level.value}): "
+                    f"{pre_filter_count} → {len(final_papers)} papers "
+                    f"({quality_summary['filtered_count']} filtered)"
+                )
+            else:
+                logger.info("Quality validation complete (no filtering applied)")
+
         return CitationDiscoveryResult(
             geo_id=geo_metadata.geo_id,
             original_pmid=original_pmid,
-            citing_papers=ranked_papers[:max_results],  # Return top N by relevance
+            citing_papers=final_papers,
             strategy_breakdown=strategy_breakdown,
             source_metrics=metrics_summary,
+            quality_assessments=quality_assessments,
+            quality_summary=quality_summary,
         )
 
     def _find_via_citation(self, pmid: str, max_results: int) -> List[Publication]:
