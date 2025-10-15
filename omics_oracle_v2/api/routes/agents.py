@@ -1085,12 +1085,44 @@ async def enrich_fulltext(
 # AI Analysis Endpoint
 
 
+class QueryProcessingContext(BaseModel):
+    """Context from query processing pipeline."""
+
+    extracted_entities: Dict[str, List[str]] = Field(
+        default_factory=dict, description="Entities extracted by entity type (GENE, DISEASE, ORGANISM, etc.)"
+    )
+    expanded_terms: List[str] = Field(default_factory=list, description="Expanded search terms and synonyms")
+    geo_search_terms: List[str] = Field(
+        default_factory=list, description="Actual search terms used in GEO query"
+    )
+    search_intent: Optional[str] = Field(None, description="Detected search intent")
+    query_type: Optional[str] = Field(None, description="Query type (gene-focused, disease-focused, etc.)")
+
+
+class MatchExplanation(BaseModel):
+    """Explanation of why a dataset matched the query."""
+
+    matched_terms: List[str] = Field(default_factory=list, description="Terms that matched in this dataset")
+    relevance_score: float = Field(..., description="Relevance score (0-1)")
+    match_type: str = Field(
+        default="unknown", description="Type of match (exact, synonym, expanded, semantic)"
+    )
+    confidence: float = Field(default=0.0, description="Confidence in the match (0-1)")
+
+
 class AIAnalysisRequest(BaseModel):
     """Request for AI analysis of datasets."""
 
     datasets: List[DatasetResponse] = Field(..., description="Datasets to analyze")
     query: str = Field(..., description="Original search query for context")
     max_datasets: int = Field(default=5, ge=1, le=10, description="Max datasets to analyze")
+    # RAG Phase 1: Enhanced context
+    query_processing: Optional[QueryProcessingContext] = Field(
+        None, description="Query processing context (entities, synonyms, search terms)"
+    )
+    match_explanations: Optional[Dict[str, MatchExplanation]] = Field(
+        None, description="Explanation of why each dataset matched (keyed by geo_id)"
+    )
 
 
 class AIAnalysisResponse(BaseModel):
@@ -1303,38 +1335,93 @@ async def analyze_datasets(
             else "\n\nNote: Analysis based on GEO metadata only (no full-text papers available)."
         )
 
+        # RAG Phase 1: Add query processing context to prompt
+        query_context_section = ""
+        if request.query_processing:
+            qp = request.query_processing
+            query_context_section = "\n# QUERY ANALYSIS CONTEXT\n"
+
+            if qp.extracted_entities:
+                query_context_section += f"Extracted Entities: {dict(qp.extracted_entities)}\n"
+
+            if qp.expanded_terms:
+                query_context_section += f"Expanded Search Terms: {', '.join(qp.expanded_terms)}\n"
+
+            if qp.geo_search_terms:
+                query_context_section += f"GEO Query Used: {', '.join(qp.geo_search_terms)}\n"
+
+            if qp.search_intent:
+                query_context_section += f"Search Intent: {qp.search_intent}\n"
+
+            if qp.query_type:
+                query_context_section += f"Query Type: {qp.query_type}\n"
+
+            query_context_section += "\n"
+
+        # RAG Phase 1: Add match explanations
+        match_context_section = ""
+        if request.match_explanations:
+            match_context_section = "\n# WHY THESE DATASETS WERE RETRIEVED\n"
+            for geo_id, explanation in request.match_explanations.items():
+                match_context_section += (
+                    f"- {geo_id}: Matched terms [{', '.join(explanation.matched_terms)}], "
+                    f"Relevance: {int(explanation.relevance_score * 100)}%, "
+                    f"Match type: {explanation.match_type}\n"
+                )
+            match_context_section += "\n"
+
         analysis_prompt = f"""
 User searched for: "{request.query}"
-
+{query_context_section}{match_context_section}
 Found {len(datasets_to_analyze)} relevant datasets:
 
 {chr(10).join(dataset_summaries)}{fulltext_note}
 
-Analyze these datasets and provide:
+# ANALYSIS TASK (Step-by-Step Reasoning)
 
-1. **Overview**: Which datasets are most relevant to the user's query and why?
-   {"Reference specific findings from the Methods and Results sections." if total_fulltext_papers > 0 else ""}
+**Step 1: Query-Dataset Alignment**
+- Review the extracted entities and search intent
+- For each dataset, explain HOW it relates to the specific entities (genes, diseases, etc.)
+- Reference the matched terms that led to its retrieval
 
-2. **Comparison**: How do these datasets differ in methodology and scope?
-   {"Compare experimental approaches described in the Methods sections." if total_fulltext_papers > 0 else ""}
+**Step 2: Methodology Assessment**
+{"- Compare experimental approaches from Methods sections" if total_fulltext_papers > 0 else "- Assess study design from GEO summaries"}
+- Identify strengths and limitations of each approach
+- Note unique methodological contributions
 
-3. **Key Insights**: What are the main scientific findings or approaches?
-   {"Cite specific results and conclusions from the papers." if total_fulltext_papers > 0 else ""}
+**Step 3: Data Quality and Scope**
+- Evaluate sample sizes and experimental conditions
+{"- Cite specific results and findings from the papers" if total_fulltext_papers > 0 else "- Consider organism and platform information"}
+- Assess data completeness and reproducibility
 
-4. **Recommendations**: Which dataset(s) would you recommend for:
-   - Basic understanding of the topic
-   - Advanced analysis and replication
-   - Method development
+**Step 4: Recommendations**
+Based on your analysis, recommend which dataset(s) for:
+- **Basic Understanding**: Best introduction to the topic
+- **Advanced Analysis**: Most comprehensive data and methods
+- **Method Development**: Best experimental protocols
 
-Write for a researcher who wants expert guidance on which datasets to use.
-Be specific and cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_papers > 0 else ""}.
-{"Ground your analysis in the actual experimental details from the papers." if total_fulltext_papers > 0 else ""}
+# OUTPUT FORMAT
+Provide your analysis in clear sections:
+1. Overview (why each dataset is relevant)
+2. Comparison (key differences)
+3. Key Insights (main findings)
+4. Recommendations (specific to use cases)
+
+Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_papers > 0 else ""}.
+{"Ground your analysis in actual experimental details from the papers." if total_fulltext_papers > 0 else ""}
+{"Reference the entities and terms from the query context when explaining relevance." if request.query_processing else ""}
 """
 
-        # Call LLM
+        # Call LLM with enhanced system message
         system_message = (
-            "You are an expert bioinformatics advisor helping researchers understand "
-            "and select genomics datasets. Provide clear, actionable insights."
+            "You are an expert bioinformatics advisor helping researchers understand and select genomics datasets. "
+            "You use step-by-step reasoning to analyze datasets based on:\n"
+            "1. Query context (extracted entities, search intent)\n"
+            "2. Match explanations (why each dataset was retrieved)\n"
+            "3. Full-text content (experimental methods, results, discussion)\n"
+            "4. Dataset metadata (organism, samples, platform)\n\n"
+            "Provide clear, actionable insights that reference specific evidence from the query analysis "
+            "and dataset content. Be specific about WHY datasets are relevant and HOW they differ."
         )
 
         analysis = ai_client._call_llm(prompt=analysis_prompt, system_message=system_message, max_tokens=800)
