@@ -25,7 +25,6 @@ Example:
 Status: Phase 1 Task 4 (Complete)
 """
 
-from .cache import SimpleCache
 from .client import GEOClient, NCBIClient
 from .models import ClientInfo, GEOPlatform, GEOSample, GEOSeriesMetadata, SearchResult, SRAInfo
 from .utils import RateLimiter, retry_with_backoff
@@ -33,7 +32,6 @@ from .utils import RateLimiter, retry_with_backoff
 __all__ = [
     "GEOClient",
     "NCBIClient",
-    "SimpleCache",
     "RateLimiter",
     "retry_with_backoff",
     "GEOSeriesMetadata",

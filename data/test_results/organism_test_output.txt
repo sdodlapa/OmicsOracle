@@ -1,0 +1,61 @@
+================================================================================
+ORGANISM FIELD POPULATION TEST - Phase 2
+================================================================================
+
+Testing 12 diverse GEO datasets...
+
+Datasets:
+   1. GSE189158
+   2. GSE100000
+   3. GSE68849
+   4. GSE30000
+   5. GSE16449
+   6. GSE10246
+   7. GSE8671
+   8. GSE2000
+   9. GSE1133
+  10. GSE500
+  11. GSE361
+  12. GSE29
+
+--------------------------------------------------------------------------------
+
+RESULTS:
+--------------------------------------------------------------------------------
+✅ GSE189158: Homo sapiens
+   Title: NOMe-HiC: joint profiling of genetic variants, DNA methylation, chromatin access
+✅ GSE100000: Mus musculus
+   Title: Fosl1 transdifferentiate embryonic stem cells to differentiated trophoblast stem
+✅ GSE68849: Homo sapiens
+   Title: Impact of influenza A on human plasmacytoid dendritic cells (pDC) gene expressio
+✅ GSE30000: Bacillus subtilis
+   Title: Reduction in membrane phosphatidylglycerol content leads to daptomycin resistanc
+🔍 GSE16449: (empty)
+   Error: No datasets returned
+🔍 GSE10246: (empty)
+   Error: No datasets returned
+🔍 GSE8671: (empty)
+   Error: No datasets returned
+✅ GSE2000: Arabidopsis thaliana
+   Title: primary stem development
+✅ GSE1133: Homo sapiens
+   Title: tissue-specific pattern of mRNA expression
+✅ GSE500: Homo sapiens
+   Title: CD34+ cell analysis
+✅ GSE361: Homo sapiens
+   Title: Mammary epithelial cell transduction
+✅ GSE29: Saccharomyces cerevisiae
+   Title: Adaptive evolution in yeast
+
+================================================================================
+SUMMARY:
+  Total tested:     12
+  ✅ Success:       9 (75.0%)
+  ⚠️  Empty:        0 (0.0%)
+  ❌ Error:         0 (0.0%)
+  🔍 Not found:     3 (25.0%)
+================================================================================
+
+⚠️  PHASE 2 NEEDS IMPROVEMENT: 75.0% organism field population
+
+Detailed results saved to: data/test_results/organism_field_test.json

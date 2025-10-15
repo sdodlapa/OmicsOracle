@@ -432,15 +432,22 @@ class SearchOrchestrator:
             # Step 6: Fetch missing datasets from GEO
             if missing_ids:
                 logger.info(f"[GEO] Fetching {len(missing_ids)} uncached datasets from GEO...")
+                logger.warning(f"[DEBUG] Missing IDs: {missing_ids}")
                 for geo_id in missing_ids:
                     try:
+                        logger.warning(f"[DEBUG] Calling get_metadata for {geo_id}")
                         metadata = await self.geo_client.get_metadata(geo_id)
                         if metadata:
+                            logger.warning(
+                                f"[DEBUG] Got metadata for {geo_id}, organism={repr(metadata.organism)}"
+                            )
                             datasets.append(metadata)
                             newly_fetched[geo_id] = metadata
                     except Exception as e:
                         logger.warning(f"Failed to fetch metadata for {geo_id}: {e}")
                         continue
+            else:
+                logger.warning(f"[DEBUG] No missing IDs! All {len(geo_ids)} datasets were cached")
 
                 # Step 7: Cache newly fetched datasets (batch operation)
                 if newly_fetched and self.cache:

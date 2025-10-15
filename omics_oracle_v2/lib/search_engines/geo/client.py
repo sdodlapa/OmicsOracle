@@ -20,7 +20,7 @@ from omics_oracle_v2.core.exceptions import GEOError
 if TYPE_CHECKING:
     from omics_oracle_v2.core.config import Settings
 
-from omics_oracle_v2.lib.search_engines.geo.cache import SimpleCache
+from omics_oracle_v2.lib.infrastructure.cache.redis_cache import RedisCache
 from omics_oracle_v2.lib.search_engines.geo.models import ClientInfo, GEOSeriesMetadata, SearchResult, SRAInfo
 from omics_oracle_v2.lib.search_engines.geo.utils import RateLimiter, retry_with_backoff
 
@@ -201,6 +201,49 @@ class NCBIClient:
         except aiohttp.ClientError as e:
             raise GEOError(f"NCBI API request failed: {e}") from e
 
+    async def esummary(self, db: str, ids: List[str], **kwargs) -> Dict[str, Any]:
+        """
+        Fetch document summaries from NCBI database.
+
+        E-Summary provides structured metadata in JSON format, including organism
+        information that may not be available in E-Search results.
+
+        Args:
+            db: Database name (e.g., 'gds' for GEO DataSets)
+            ids: List of record IDs
+            **kwargs: Additional parameters
+
+        Returns:
+            Dict with summary data for each ID
+
+        Raises:
+            GEOError: If API request fails
+
+        Example:
+            >>> summaries = await client.esummary('gds', ['200096615'])
+            >>> organism = summaries['result']['200096615']['taxon']
+        """
+        if not ids:
+            return {}
+
+        url = f"{self.BASE_URL}esummary.fcgi"
+        params = self._build_params(db=db, id=",".join(ids), retmode="json", **kwargs)
+
+        session = await self._get_session()
+
+        try:
+            async with session.get(url, params=params) as response:
+                response.raise_for_status()
+                data = await response.json()
+
+                logger.debug(f"NCBI esummary returned data for {len(ids)} IDs")
+                return data
+
+        except aiohttp.ClientError as e:
+            raise GEOError(f"NCBI API request failed: {e}") from e
+        except (KeyError, ValueError) as e:
+            raise GEOError(f"Failed to parse NCBI esummary response: {e}") from e
+
 
 class GEOClient:
     """
@@ -235,8 +278,16 @@ class GEOClient:
         # Initialize rate limiter (NCBI guidelines: 3 requests/sec without API key)
         self.rate_limiter = RateLimiter(max_calls=settings.rate_limit, time_window=1.0)
 
-        # Initialize cache
-        self.cache = SimpleCache(cache_dir=Path(self.settings.cache_dir), default_ttl=self.settings.cache_ttl)
+        # Initialize RedisCache (replaces SimpleCache for unified caching)
+        self.redis_cache = RedisCache(
+            host="localhost",
+            port=6379,
+            db=0,
+            prefix="omics_search",
+            default_ttl=self.settings.cache_ttl,
+            enabled=True,
+        )
+        logger.info("RedisCache initialized for GEO client")
 
         # Initialize NCBI client
         self.ncbi_client: Optional[NCBIClient] = None
@@ -323,12 +374,13 @@ class GEOClient:
         # Apply rate limiting
         await self.rate_limiter.acquire()
 
-        # Check cache
-        cache_key = f"search_{query}_{max_results}"
+        # Check Redis cache
         if self.settings.use_cache:
-            cached = self.cache.get(cache_key)
+            cached = await self.redis_cache.get_search_result(
+                query=query, search_type="geo", max_results=max_results
+            )
             if cached:
-                logger.info(f"Cache hit for search: {query}")
+                logger.info(f"✓ Redis cache hit for search: {query[:50]}")
                 return SearchResult(**cached)
 
         # Perform search with retry
@@ -349,9 +401,14 @@ class GEOClient:
                 search_time=search_time,
             )
 
-            # Cache results
+            # Cache results in Redis
             if self.settings.use_cache:
-                self.cache.set(cache_key, result.model_dump())
+                await self.redis_cache.set_search_result(
+                    query=query,
+                    search_type="geo",
+                    result=result,
+                    max_results=max_results,
+                )
 
             logger.info(f"Found {len(gse_ids)} GEO series for: {query}")
             return result
@@ -380,16 +437,15 @@ class GEOClient:
         if not self.validate_geo_id(geo_id):
             raise GEOError(f"Invalid GEO ID format: {geo_id}")
 
-        # Check cache
-        cache_key = f"metadata_{geo_id}_{include_sra}"
+        # Check Redis cache
         if self.settings.use_cache:
-            cached = self.cache.get(cache_key)
+            cached = await self.redis_cache.get_geo_metadata(geo_id)
             if cached:
-                logger.info(f"Cache hit for metadata: {geo_id}")
+                logger.info(f"✓ Redis cache hit for metadata: {geo_id}")
                 return GEOSeriesMetadata(**cached)
 
         try:
-            logger.info(f"Retrieving metadata for {geo_id}")
+            logger.info(f"Retrieving metadata for {geo_id} from NCBI")
 
             # Parse GEO series using GEOparse
             # Run blocking get_GEO() in thread pool to avoid blocking event loop
@@ -400,12 +456,106 @@ class GEOClient:
 
             # Extract metadata
             meta = getattr(gse, "metadata", {})
+
+            # ===================================================================
+            # PHASE 2: ORGANISM TRACE LOGGING + E-SUMMARY FALLBACK
+            # ===================================================================
+            # Extract organism from platform metadata (PRIMARY SOURCE)
+            organism = ""
+            organism_source = "none"
+
+            gpls = getattr(gse, "gpls", {})
+            logger.info(f"[ORGANISM-TRACE] {geo_id}: Found {len(gpls)} platforms in GEOparse data")
+
+            if gpls:
+                first_platform = list(gpls.values())[0]
+                platform_id = list(gpls.keys())[0]
+                platform_meta = getattr(first_platform, "metadata", {})
+                organism_list = platform_meta.get("organism", [])
+
+                logger.info(
+                    f"[ORGANISM-TRACE] {geo_id}: Platform {platform_id} organism field = {organism_list!r}"
+                )
+
+                if organism_list and organism_list[0]:
+                    organism = organism_list[0]
+                    organism_source = "geoparse_platform"
+                    logger.info(
+                        f"[ORGANISM-TRACE] ✓ {geo_id}: Got organism from GEOparse platform: {organism!r}"
+                    )
+                else:
+                    logger.warning(
+                        f"[ORGANISM-TRACE] {geo_id}: Platform organism field is empty, will try E-Summary"
+                    )
+            else:
+                logger.warning(
+                    f"[ORGANISM-TRACE] {geo_id}: No platforms found in GEOparse, will try E-Summary"
+                )
+
+            # FALLBACK: If organism is empty, try NCBI E-Summary API
+            if not organism and self.ncbi_client:
+                logger.info(f"[ORGANISM-TRACE] {geo_id}: Attempting E-Summary fallback for organism")
+
+                try:
+                    # Convert GSE ID to NCBI numeric ID for E-Summary
+                    # GSE189158 → search to get NCBI ID
+                    search_results = await self.ncbi_client.esearch(
+                        db="gds", term=f"{geo_id}[Accession]", retmax=1
+                    )
+
+                    if search_results:
+                        ncbi_id = search_results[0]
+                        logger.info(
+                            f"[ORGANISM-TRACE] {geo_id}: Found NCBI ID {ncbi_id} for E-Summary lookup"
+                        )
+
+                        # Get summary with organism (taxon) field
+                        summary_data = await self.ncbi_client.esummary(db="gds", ids=[ncbi_id])
+
+                        if "result" in summary_data and ncbi_id in summary_data["result"]:
+                            result = summary_data["result"][ncbi_id]
+                            esummary_organism = result.get("taxon", "")
+
+                            logger.info(
+                                f"[ORGANISM-TRACE] {geo_id}: E-Summary returned taxon = {esummary_organism!r}"
+                            )
+
+                            if esummary_organism:
+                                organism = esummary_organism
+                                organism_source = "ncbi_esummary"
+                                logger.info(
+                                    f"[ORGANISM-TRACE] ✓ {geo_id}: Got organism from E-Summary: {organism!r}"
+                                )
+                            else:
+                                logger.warning(
+                                    f"[ORGANISM-TRACE] {geo_id}: E-Summary taxon field is also empty!"
+                                )
+                        else:
+                            logger.warning(
+                                f"[ORGANISM-TRACE] {geo_id}: E-Summary response missing result for ID {ncbi_id}"
+                            )
+                    else:
+                        logger.warning(
+                            f"[ORGANISM-TRACE] {geo_id}: E-Search found no NCBI ID for accession lookup"
+                        )
+
+                except Exception as e:
+                    logger.error(f"[ORGANISM-TRACE] {geo_id}: E-Summary fallback failed: {e}", exc_info=True)
+
+            # Final organism status
+            if organism:
+                logger.info(
+                    f"[ORGANISM-TRACE] ✓✓ {geo_id}: FINAL organism = {organism!r} (source: {organism_source})"
+                )
+            else:
+                logger.error(f"[ORGANISM-TRACE] ✗✗ {geo_id}: ORGANISM STILL EMPTY after all attempts!")
+
             metadata = GEOSeriesMetadata(
                 geo_id=geo_id,
                 title=meta.get("title", [""])[0],
                 summary=meta.get("summary", [""])[0],
                 overall_design=meta.get("overall_design", [""])[0],
-                organism=meta.get("taxon", [""])[0],
+                organism=organism,
                 submission_date=meta.get("submission_date", [""])[0],
                 last_update_date=meta.get("last_update_date", [""])[0],
                 publication_date=meta.get("status", [""])[0],
@@ -436,9 +586,11 @@ class GEOClient:
                 except Exception as e:
                     logger.warning(f"Could not retrieve SRA data for {geo_id}: {e}")
 
-            # Cache results
+            # Cache results in Redis (30-day TTL for stable GEO metadata)
             if self.settings.use_cache:
-                self.cache.set(cache_key, metadata.model_dump())
+                await self.redis_cache.set_geo_metadata(
+                    geo_id=geo_id, metadata=metadata, ttl=2592000  # 30 days
+                )
 
             logger.info(f"Successfully retrieved metadata for {geo_id}")
             return metadata
@@ -599,15 +751,16 @@ class GEOClient:
 
         start_time = time.time()
 
-        # Step 1: Partition by cache status (fast!)
+        # Step 1: Use Redis batch get for efficiency (single round trip!)
         cached_metadata = {}
         uncached_ids = []
 
         if self.settings.use_cache:
-            for geo_id in geo_ids:
-                cache_key = f"metadata_{geo_id}_True"  # include_sra=True
-                cached_data = self.cache.get(cache_key)
+            # Batch fetch from Redis (MGET - very efficient)
+            batch_cached = await self.redis_cache.get_geo_datasets_batch(geo_ids)
 
+            for geo_id in geo_ids:
+                cached_data = batch_cached.get(geo_id)
                 if cached_data:
                     try:
                         cached_metadata[geo_id] = GEOSeriesMetadata(**cached_data)

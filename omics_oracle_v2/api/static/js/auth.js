@@ -365,9 +365,24 @@ function displayUserProfile(elementId = 'user-profile') {
     if (!element) return;
 
     if (user) {
+        // Extract a nice display name from available data
+        let displayName = 'User';
+
+        if (user.full_name && user.full_name.includes(' ')) {
+            // Has proper full name like "John Doe", use first name
+            displayName = user.full_name.split(' ')[0];
+        } else if (user.email) {
+            // Extract from email (e.g., "john.doe@example.com" -> "John")
+            const emailPart = user.email.split('@')[0];
+            // Handle formats like "john.doe" or "john_doe" or "johndoe"
+            const namePart = emailPart.split(/[._-]/)[0];
+            // Capitalize first letter
+            displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+        }
+
         element.innerHTML = `
             <div class="user-info">
-                <span class="user-name">${user.name}</span>
+                <span class="user-name">${displayName}</span>
                 <button onclick="logout()" class="btn-logout">Logout</button>
             </div>
         `;

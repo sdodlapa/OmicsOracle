@@ -1075,8 +1075,10 @@ async def enrich_fulltext(
             # so the frontend card displays accurate "X/Y PDFs downloaded, Z% processed"
             logger.info("[METRICS] STEP 6: Updating dataset metrics for frontend...")
             try:
-                # Count PMIDs in database for this dataset
-                total_pmids = len(dataset.pubmed_ids) if dataset.pubmed_ids else 0
+                # Count TOTAL papers (original + citing) from metadata
+                original_count = len(metadata["papers"]["original"]["papers"])
+                citing_count = len(metadata["papers"]["citing"]["papers"])
+                total_papers = original_count + citing_count
 
                 # Count how many have PDFs (from fulltext array)
                 pdfs_downloaded = (
@@ -1084,17 +1086,18 @@ async def enrich_fulltext(
                 )
 
                 # Calculate completion rate (if we have full content, it's processed)
-                completion = (pdfs_downloaded / total_pmids * 100) if total_pmids > 0 else 0.0
+                completion = (pdfs_downloaded / total_papers * 100) if total_papers > 0 else 0.0
 
-                # Update dataset metrics
-                dataset.citation_count = total_pmids
+                # Update dataset metrics (total citations = original + citing papers)
+                dataset.citation_count = total_papers
                 dataset.pdf_count = pdfs_downloaded
                 dataset.completion_rate = completion
                 dataset.fulltext_count = pdfs_downloaded  # Ensure this is also set
 
                 logger.info(
-                    f"  [OK] Metrics updated: {pdfs_downloaded}/{total_pmids} PDFs, "
-                    f"{completion:.0f}% complete"
+                    f"  [OK] Metrics updated: {pdfs_downloaded}/{total_papers} PDFs, "
+                    f"{completion:.0f}% complete "
+                    f"(original={original_count}, citing={citing_count})"
                 )
 
             except Exception as metrics_error:

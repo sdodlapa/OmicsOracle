@@ -1370,8 +1370,23 @@
         async function loadUserProfile() {
             const user = await getCurrentUser();
             if (user) {
+                // Extract a nice display name from available data
+                let displayName = 'User';
+
+                if (user.full_name && user.full_name.includes(' ')) {
+                    // Has proper full name like "John Doe", use first name
+                    displayName = user.full_name.split(' ')[0];
+                } else if (user.email) {
+                    // Extract from email (e.g., "john.doe@example.com" -> "John")
+                    const emailPart = user.email.split('@')[0];
+                    // Handle formats like "john.doe" or "john_doe" or "johndoe"
+                    const namePart = emailPart.split(/[._-]/)[0];
+                    // Capitalize first letter
+                    displayName = namePart.charAt(0).toUpperCase() + namePart.slice(1);
+                }
+
                 document.getElementById('user-profile').innerHTML = `
-                    <span class="user-name">👋 ${user.name}</span>
+                    <span class="user-name">👋 ${displayName}</span>
                     <button class="btn-logout" onclick="logout()">Logout</button>
                 `;
                 document.getElementById('user-profile').style.display = 'flex';
