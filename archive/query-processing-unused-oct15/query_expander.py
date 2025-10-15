@@ -18,8 +18,12 @@ class QueryExpansionConfig(BaseModel):
     """Configuration for query expansion."""
 
     enabled: bool = Field(default=True, description="Enable query expansion")
-    max_expansions: int = Field(default=5, description="Maximum number of expansions per term")
-    confidence_threshold: float = Field(default=0.7, description="Minimum confidence for expansion")
+    max_expansions: int = Field(
+        default=5, description="Maximum number of expansions per term"
+    )
+    confidence_threshold: float = Field(
+        default=0.7, description="Minimum confidence for expansion"
+    )
     synonym_database: str = Field(
         default="omics_oracle_v2/lib/nlp/synonyms.json",
         description="Path to synonym database",
@@ -94,7 +98,9 @@ class QueryExpander:
             synonym_path = project_root / self.config.synonym_database
 
         if not synonym_path.exists():
-            raise FileNotFoundError(f"Synonym database not found: {self.config.synonym_database}")
+            raise FileNotFoundError(
+                f"Synonym database not found: {self.config.synonym_database}"
+            )
 
         with open(synonym_path, "r") as f:
             self.synonyms = json.load(f)
@@ -160,7 +166,11 @@ class QueryExpander:
             expanded_terms=sorted(expanded_terms),
             organism_mappings=organism_mappings,
             technique_mappings=technique_mappings,
-            concept_mappings={**concept_mappings, **disease_mappings, **tissue_mappings},
+            concept_mappings={
+                **concept_mappings,
+                **disease_mappings,
+                **tissue_mappings,
+            },
         )
 
     def _find_organisms(self, query: str) -> Dict[str, str]:
@@ -287,13 +297,19 @@ class QueryExpander:
 
         return {
             "original": expansion.original,
-            "organisms_found": [f"{k} -> {v}" for k, v in expansion.organism_mappings.items()],
+            "organisms_found": [
+                f"{k} -> {v}" for k, v in expansion.organism_mappings.items()
+            ],
             "techniques_found": [
-                f"{k} -> {', '.join(v[:3])}..." if len(v) > 3 else f"{k} -> {', '.join(v)}"
+                f"{k} -> {', '.join(v[:3])}..."
+                if len(v) > 3
+                else f"{k} -> {', '.join(v)}"
                 for k, v in expansion.technique_mappings.items()
             ],
             "concepts_found": [
-                f"{k} -> {', '.join(v[:3])}..." if len(v) > 3 else f"{k} -> {', '.join(v)}"
+                f"{k} -> {', '.join(v[:3])}..."
+                if len(v) > 3
+                else f"{k} -> {', '.join(v)}"
                 for k, v in expansion.concept_mappings.items()
             ],
             "total_expansions": len(expansion.all_terms) - 1,  # Exclude original

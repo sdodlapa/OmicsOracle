@@ -38,7 +38,11 @@ class SynonymManager:
             "brca2": ["breast cancer 2", "brca-2", "brcaa2", "fancd1"],
             "tp53": ["tumor protein p53", "p53", "tp-53", "li-fraumeni syndrome"],
             "pten": ["phosphatase and tensin homolog", "pten1", "cowden syndrome 1"],
-            "apc": ["adenomatous polyposis coli", "apc1", "familial adenomatous polyposis"],
+            "apc": [
+                "adenomatous polyposis coli",
+                "apc1",
+                "familial adenomatous polyposis",
+            ],
             "myc": ["myelocytomatosis oncogene", "c-myc", "myc proto-oncogene"],
             "ras": ["rat sarcoma", "hras", "kras", "nras"],
             "egfr": ["epidermal growth factor receptor", "egf receptor", "erbb1"],
@@ -78,7 +82,12 @@ class SynonymManager:
                 "colorectal carcinoma",
             ],
             "alzheimer": ["alzheimer's disease", "ad", "dementia", "alzheimer disease"],
-            "parkinson": ["parkinson's disease", "pd", "parkinson disease", "paralysis agitans"],
+            "parkinson": [
+                "parkinson's disease",
+                "pd",
+                "parkinson disease",
+                "paralysis agitans",
+            ],
             "diabetes": [
                 "diabetes mellitus",
                 "dm",
@@ -98,11 +107,26 @@ class SynonymManager:
             "mouse": ["mus musculus", "m. musculus", "mmu", "laboratory mouse"],
             "rat": ["rattus norvegicus", "r. norvegicus", "rno", "laboratory rat"],
             "zebrafish": ["danio rerio", "d. rerio", "dre", "zebra fish"],
-            "fruit fly": ["drosophila melanogaster", "d. melanogaster", "dme", "drosophila"],
+            "fruit fly": [
+                "drosophila melanogaster",
+                "d. melanogaster",
+                "dme",
+                "drosophila",
+            ],
             "nematode": ["caenorhabditis elegans", "c. elegans", "cel", "roundworm"],
-            "yeast": ["saccharomyces cerevisiae", "s. cerevisiae", "sce", "baker's yeast"],
+            "yeast": [
+                "saccharomyces cerevisiae",
+                "s. cerevisiae",
+                "sce",
+                "baker's yeast",
+            ],
             "e. coli": ["escherichia coli", "e coli", "eco"],
-            "arabidopsis": ["arabidopsis thaliana", "a. thaliana", "ath", "thale cress"],
+            "arabidopsis": [
+                "arabidopsis thaliana",
+                "a. thaliana",
+                "ath",
+                "thale cress",
+            ],
         }
 
         # Tissue/organ synonyms
@@ -125,7 +149,12 @@ class SynonymManager:
             "macrophage": ["phagocyte", "antigen-presenting cell", "apc"],
             "neuron": ["nerve cell", "neural cell"],
             "fibroblast": ["connective tissue cell"],
-            "stem cell": ["progenitor cell", "undifferentiated cell", "embryonic stem cell", "esc"],
+            "stem cell": [
+                "progenitor cell",
+                "undifferentiated cell",
+                "embryonic stem cell",
+                "esc",
+            ],
             "endothelial cell": ["vascular endothelium", "blood vessel lining"],
         }
 
@@ -188,7 +217,9 @@ class SynonymManager:
 
         return synonyms
 
-    def _find_in_dict(self, term_lower: str, synonym_dict: Dict[str, List[str]]) -> Set[str]:
+    def _find_in_dict(
+        self, term_lower: str, synonym_dict: Dict[str, List[str]]
+    ) -> Set[str]:
         """Find synonyms in a specific dictionary."""
         synonyms = set()
 
@@ -249,7 +280,9 @@ class SynonymManager:
         # Return original if no normalization found
         return term
 
-    def _find_canonical(self, term_lower: str, synonym_dict: Dict[str, List[str]]) -> str:
+    def _find_canonical(
+        self, term_lower: str, synonym_dict: Dict[str, List[str]]
+    ) -> str:
         """Find canonical term in dictionary."""
         # Check if term is already canonical
         if term_lower in synonym_dict:
@@ -295,11 +328,18 @@ class SynonymManager:
             relationships["related_techniques"] = ["sequencing", "genetic testing"]
 
         elif term_lower in ["tp53", "p53"]:
-            relationships["related_diseases"] = ["li-fraumeni syndrome", "various cancers"]
+            relationships["related_diseases"] = [
+                "li-fraumeni syndrome",
+                "various cancers",
+            ]
             relationships["related_genes"] = ["mdm2", "p21"]
 
         elif "cancer" in term_lower:
-            relationships["related_techniques"] = ["rna-seq", "chip-seq", "immunohistochemistry"]
+            relationships["related_techniques"] = [
+                "rna-seq",
+                "chip-seq",
+                "immunohistochemistry",
+            ]
             relationships["related_genes"] = ["tp53", "brca1", "brca2", "pten", "apc"]
 
         return relationships

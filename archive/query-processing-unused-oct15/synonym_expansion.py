@@ -31,7 +31,9 @@ class TechniqueSynonyms:
 
     def all_terms(self) -> Set[str]:
         """Get all terms (canonical + synonyms + abbreviations + variants)."""
-        return {self.canonical_name} | self.synonyms | self.abbreviations | self.variants
+        return (
+            {self.canonical_name} | self.synonyms | self.abbreviations | self.variants
+        )
 
 
 @dataclass
@@ -40,7 +42,9 @@ class SynonymExpansionConfig:
 
     # Gazetteer settings
     use_ontologies: bool = True
-    ontology_sources: List[str] = field(default_factory=lambda: ["OBI", "EDAM", "EFO", "MeSH"])
+    ontology_sources: List[str] = field(
+        default_factory=lambda: ["OBI", "EDAM", "EFO", "MeSH"]
+    )
 
     # Abbreviation settings
     detect_abbreviations: bool = True
@@ -375,7 +379,9 @@ class SynonymExpander:
             key = abbrev
             if key not in self._gazetteer:
                 self._gazetteer[key] = TechniqueSynonyms(
-                    canonical_name=expansions[0], abbreviations={abbrev}, synonyms=set(expansions)
+                    canonical_name=expansions[0],
+                    abbreviations={abbrev},
+                    synonyms=set(expansions),
                 )
 
                 # Update normalized lookup
@@ -471,7 +477,10 @@ class SynonymExpander:
             # Check if this match overlaps with any already selected
             overlaps = False
             for selected in non_overlapping:
-                if not (match["end"] <= selected["start"] or match["start"] >= selected["end"]):
+                if not (
+                    match["end"] <= selected["start"]
+                    or match["start"] >= selected["end"]
+                ):
                     overlaps = True
                     break
             if not overlaps:
@@ -487,7 +496,9 @@ class SynonymExpander:
             tech = match["tech"]
 
             # Get top synonyms
-            synonyms = sorted(tech.synonyms)[:3]  # Top 3 synonyms (sorted for consistency)
+            synonyms = sorted(tech.synonyms)[
+                :3
+            ]  # Top 3 synonyms (sorted for consistency)
             abbrevs = sorted(tech.abbreviations)[:2]  # Top 2 abbreviations
 
             # Build OR clause: (term OR syn1 OR syn2 OR abbrev1)
@@ -498,7 +509,9 @@ class SynonymExpander:
                 expansion = match["term"]
 
             # Replace this match
-            base_query = base_query[: match["start"]] + expansion + base_query[match["end"] :]
+            base_query = (
+                base_query[: match["start"]] + expansion + base_query[match["end"] :]
+            )
 
         return base_query
 
@@ -538,7 +551,9 @@ class SynonymExpander:
         """Get statistics about the gazetteer."""
         total_terms = sum(len(tech.all_terms()) for tech in self._gazetteer.values())
         total_synonyms = sum(len(tech.synonyms) for tech in self._gazetteer.values())
-        total_abbrevs = sum(len(tech.abbreviations) for tech in self._gazetteer.values())
+        total_abbrevs = sum(
+            len(tech.abbreviations) for tech in self._gazetteer.values()
+        )
         total_variants = sum(len(tech.variants) for tech in self._gazetteer.values())
 
         return {

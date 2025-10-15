@@ -1,13 +1,105 @@
 """
 Unit tests for NLP library.
 
-Tests biomedical entity recognition and classification.
+Tests biomedical entity recognition, classification, and synonym management.
 """
 
 import pytest
 
 from omics_oracle_v2.lib.nlp import (BiomedicalNER, Entity, EntityType,
-                                     ModelInfo, NERResult)
+                                     ModelInfo, NERResult, SynonymManager)
+
+# ============================================================================
+# SynonymManager Tests
+# ============================================================================
+
+
+class TestSynonymManager:
+    """Tests for biological synonym management."""
+
+    def setup_method(self):
+        """Set up test fixtures."""
+        self.sm = SynonymManager()
+
+    def test_init(self):
+        """Test SynonymManager initialization."""
+        assert self.sm.gene_synonyms is not None
+        assert self.sm.disease_synonyms is not None
+        assert self.sm.organism_synonyms is not None
+        assert len(self.sm.gene_synonyms) > 0
+
+    def test_get_gene_synonyms(self):
+        """Test gene synonym retrieval."""
+        synonyms = self.sm.get_synonyms("brca1", "gene")
+        assert "brca1" in synonyms
+        assert "breast cancer 1" in synonyms
+        assert "brca-1" in synonyms
+
+    def test_get_disease_synonyms(self):
+        """Test disease synonym retrieval."""
+        synonyms = self.sm.get_synonyms("alzheimer", "disease")
+        assert "alzheimer" in synonyms
+        assert "alzheimer's disease" in synonyms
+        assert "ad" in synonyms
+
+    def test_get_organism_synonyms(self):
+        """Test organism synonym retrieval."""
+        synonyms = self.sm.get_synonyms("human", "organism")
+        assert "human" in synonyms
+        assert "homo sapiens" in synonyms
+        assert "h. sapiens" in synonyms
+
+    def test_get_synonyms_case_insensitive(self):
+        """Test that synonym lookup is case-insensitive."""
+        synonyms_lower = self.sm.get_synonyms("brca1", "gene")
+        synonyms_upper = self.sm.get_synonyms("BRCA1", "gene")
+        assert len(synonyms_lower) == len(synonyms_upper)
+
+    def test_get_synonyms_general(self):
+        """Test synonym retrieval without type specification."""
+        synonyms = self.sm.get_synonyms("brca1")
+        assert len(synonyms) > 0
+        assert "brca1" in synonyms
+
+    def test_normalize_gene_term(self):
+        """Test gene term normalization."""
+        # p53 -> TP53
+        normalized = self.sm.normalize_term("p53", "gene")
+        assert normalized == "TP53"
+
+        # Should already be canonical
+        normalized = self.sm.normalize_term("brca1", "gene")
+        assert normalized == "BRCA1"
+
+    def test_normalize_disease_term(self):
+        """Test disease term normalization."""
+        normalized = self.sm.normalize_term("alzheimer's disease", "disease")
+        assert normalized.lower() == "alzheimer"
+
+    def test_normalize_unknown_term(self):
+        """Test normalization of unknown terms."""
+        # Should return original term if not in dictionaries
+        normalized = self.sm.normalize_term("unknown_gene_xyz", "gene")
+        assert normalized == "unknown_gene_xyz"
+
+    def test_get_entity_relationships_brca1(self):
+        """Test relationship retrieval for BRCA1."""
+        rels = self.sm.get_entity_relationships("brca1")
+        assert "related_diseases" in rels
+        assert "breast cancer" in rels["related_diseases"]
+
+    def test_get_entity_relationships_tp53(self):
+        """Test relationship retrieval for TP53."""
+        rels = self.sm.get_entity_relationships("tp53")
+        assert "related_genes" in rels
+        assert "mdm2" in rels["related_genes"]
+
+    def test_get_entity_relationships_cancer(self):
+        """Test relationship retrieval for cancer."""
+        rels = self.sm.get_entity_relationships("breast cancer")
+        assert "related_techniques" in rels
+        assert len(rels["related_techniques"]) > 0
+
 
 # ============================================================================
 # Entity Model Tests

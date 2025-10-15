@@ -7,7 +7,6 @@ for biomedical literature and text.
 
 from .biomedical_ner import BiomedicalNER
 from .models import Entity, EntityType, ModelInfo, NERResult
-from .synonym_manager import SynonymManager
 
 __all__ = [
     "BiomedicalNER",
@@ -15,5 +14,4 @@ __all__ = [
     "EntityType",
     "ModelInfo",
     "NERResult",
-    "SynonymManager",
 ]
