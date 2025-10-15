@@ -36,7 +36,9 @@ async def test_search_with_query_processing():
         }
 
         logger.info(f"\n📤 Sending search request: '{test_query}'")
-        response = await client.post("http://localhost:8000/api/agents/search", json=search_request)
+        response = await client.post(
+            "http://localhost:8000/api/agents/search", json=search_request
+        )
 
         assert response.status_code == 200, f"Search failed: {response.status_code}"
 
@@ -45,7 +47,9 @@ async def test_search_with_query_processing():
         # Check basic response
         assert data["success"], "Search should succeed"
         assert "datasets" in data, "Response should contain datasets"
-        assert "query_processing" in data, "Response should contain query_processing (Phase 3)"
+        assert (
+            "query_processing" in data
+        ), "Response should contain query_processing (Phase 3)"
 
         logger.info(f"✅ Search returned {len(data['datasets'])} datasets")
 
@@ -54,9 +58,15 @@ async def test_search_with_query_processing():
 
         if query_processing:
             logger.info("\n📦 Query Processing Context Received:")
-            logger.info(f"   Extracted Entities: {query_processing.get('extracted_entities', {})}")
-            logger.info(f"   Expanded Terms: {query_processing.get('expanded_terms', [])}")
-            logger.info(f"   GEO Search Terms: {query_processing.get('geo_search_terms', [])}")
+            logger.info(
+                f"   Extracted Entities: {query_processing.get('extracted_entities', {})}"
+            )
+            logger.info(
+                f"   Expanded Terms: {query_processing.get('expanded_terms', [])}"
+            )
+            logger.info(
+                f"   GEO Search Terms: {query_processing.get('geo_search_terms', [])}"
+            )
             logger.info(f"   Search Intent: {query_processing.get('search_intent')}")
             logger.info(f"   Query Type: {query_processing.get('query_type')}")
 
@@ -84,8 +94,12 @@ async def test_search_with_query_processing():
 
             logger.info("\n✅ TEST 1 PASSED: Query processing context exposed")
         else:
-            logger.warning("\n⚠️  No query_processing in response (QueryOptimizer disabled?)")
-            logger.info("✅ TEST 1 PASSED: Response structure valid (backward compatible)")
+            logger.warning(
+                "\n⚠️  No query_processing in response (QueryOptimizer disabled?)"
+            )
+            logger.info(
+                "✅ TEST 1 PASSED: Response structure valid (backward compatible)"
+            )
 
         return data
 
@@ -115,7 +129,9 @@ async def test_ai_analysis_with_context():
 
     if not test_dataset:
         test_dataset = search_data["datasets"][0]
-        logger.info(f"\n📊 Using dataset: {test_dataset['geo_id']} (no fulltext available)")
+        logger.info(
+            f"\n📊 Using dataset: {test_dataset['geo_id']} (no fulltext available)"
+        )
     else:
         logger.info(
             f"\n📊 Using dataset: {test_dataset['geo_id']} (has {test_dataset.get('fulltext_count', 0)} fulltext papers)"
@@ -160,14 +176,18 @@ async def test_ai_analysis_with_context():
         logger.info(f"   Match Explanations: {bool(match_explanations)}")
 
         try:
-            response = await client.post("http://localhost:8000/api/agents/analyze", json=analysis_request)
+            response = await client.post(
+                "http://localhost:8000/api/agents/analyze", json=analysis_request
+            )
 
             if response.status_code == 200:
                 data = response.json()
                 logger.info(f"\n✅ AI Analysis succeeded")
                 logger.info(f"   Success: {data.get('success')}")
                 logger.info(f"   Insights Count: {len(data.get('insights', []))}")
-                logger.info(f"   Recommendations Count: {len(data.get('recommendations', []))}")
+                logger.info(
+                    f"   Recommendations Count: {len(data.get('recommendations', []))}"
+                )
 
                 # Check if analysis mentions entities
                 insights_text = " ".join(data.get("insights", []))
@@ -175,7 +195,9 @@ async def test_ai_analysis_with_context():
                 full_text = insights_text + recommendations_text
 
                 if "BRCA1" in full_text or "breast cancer" in full_text.lower():
-                    logger.info("\n✅ Analysis mentions query entities (RAG enhancement working!)")
+                    logger.info(
+                        "\n✅ Analysis mentions query entities (RAG enhancement working!)"
+                    )
                 else:
                     logger.info(
                         "\n⚠️  Analysis doesn't mention entities (may need fulltext for better results)"

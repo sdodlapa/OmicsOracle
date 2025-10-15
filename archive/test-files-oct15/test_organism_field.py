@@ -100,7 +100,9 @@ async def main():
     print("-" * 80)
 
     for result in results:
-        status_emoji = {"success": "✅", "empty": "⚠️ ", "error": "❌", "not_found": "🔍"}[result["status"]]
+        status_emoji = {"success": "✅", "empty": "⚠️ ", "error": "❌", "not_found": "🔍"}[
+            result["status"]
+        ]
 
         organism_display = result["organism"] or "(empty)"
         print(f"{status_emoji} {result['geo_id']}: {organism_display}")
@@ -114,10 +116,18 @@ async def main():
     print("\n" + "=" * 80)
     print("SUMMARY:")
     print(f"  Total tested:     {len(test_datasets)}")
-    print(f"  ✅ Success:       {success_count} ({success_count/len(test_datasets)*100:.1f}%)")
-    print(f"  ⚠️  Empty:        {empty_count} ({empty_count/len(test_datasets)*100:.1f}%)")
-    print(f"  ❌ Error:         {error_count} ({error_count/len(test_datasets)*100:.1f}%)")
-    print(f"  🔍 Not found:     {not_found_count} ({not_found_count/len(test_datasets)*100:.1f}%)")
+    print(
+        f"  ✅ Success:       {success_count} ({success_count/len(test_datasets)*100:.1f}%)"
+    )
+    print(
+        f"  ⚠️  Empty:        {empty_count} ({empty_count/len(test_datasets)*100:.1f}%)"
+    )
+    print(
+        f"  ❌ Error:         {error_count} ({error_count/len(test_datasets)*100:.1f}%)"
+    )
+    print(
+        f"  🔍 Not found:     {not_found_count} ({not_found_count/len(test_datasets)*100:.1f}%)"
+    )
     print("=" * 80)
 
     # Phase 2 success criteria
@@ -128,7 +138,9 @@ async def main():
     elif success_rate >= 90:
         print(f"\n✅ PHASE 2 GOOD: {success_rate:.1f}% organism field population")
     elif success_rate >= 75:
-        print(f"\n⚠️  PHASE 2 NEEDS IMPROVEMENT: {success_rate:.1f}% organism field population")
+        print(
+            f"\n⚠️  PHASE 2 NEEDS IMPROVEMENT: {success_rate:.1f}% organism field population"
+        )
     else:
         print(f"\n❌ PHASE 2 FAILED: Only {success_rate:.1f}% organism field population")
 

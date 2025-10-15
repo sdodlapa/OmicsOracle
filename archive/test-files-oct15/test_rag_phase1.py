@@ -52,7 +52,12 @@ async def test_enhanced_rag():
                 "DISEASE": ["breast cancer"],
                 "VARIANT": ["mutations"],
             },
-            "expanded_terms": ["BRCA1", "breast cancer 1", "tumor suppressor", "DNA repair"],
+            "expanded_terms": [
+                "BRCA1",
+                "breast cancer 1",
+                "tumor suppressor",
+                "DNA repair",
+            ],
             "geo_search_terms": ["BRCA1", "breast cancer", "mutations"],
             "search_intent": "Find datasets studying BRCA1 mutations in breast cancer",
             "query_type": "gene-focused",
@@ -94,7 +99,9 @@ async def test_enhanced_rag():
             baseline_data = baseline_response.json()
             logger.info("\n--- BASELINE ANALYSIS (no context) ---")
             logger.info(f"Model: {baseline_data.get('model_used')}")
-            logger.info(f"Execution time: {baseline_data.get('execution_time_ms'):.0f}ms")
+            logger.info(
+                f"Execution time: {baseline_data.get('execution_time_ms'):.0f}ms"
+            )
             logger.info("\nAnalysis:")
             logger.info(baseline_data.get("analysis", "")[:500])
         else:
@@ -121,21 +128,31 @@ async def test_enhanced_rag():
             enhanced_data = enhanced_response.json()
             logger.info("\n--- ENHANCED ANALYSIS (with context) ---")
             logger.info(f"Model: {enhanced_data.get('model_used')}")
-            logger.info(f"Execution time: {enhanced_data.get('execution_time_ms'):.0f}ms")
+            logger.info(
+                f"Execution time: {enhanced_data.get('execution_time_ms'):.0f}ms"
+            )
             logger.info("\nAnalysis:")
             logger.info(enhanced_data.get("analysis", ""))
 
             # Step 6: Compare results
             logger.info("\n=== STEP 6: Quality comparison ===")
-            baseline_text = baseline_data.get("analysis", "") if baseline_response.status_code == 200 else ""
+            baseline_text = (
+                baseline_data.get("analysis", "")
+                if baseline_response.status_code == 200
+                else ""
+            )
             enhanced_text = enhanced_data.get("analysis", "")
 
             # Check for entity mentions
             entity_mentions_baseline = sum(
-                1 for entity in ["BRCA1", "breast cancer", "mutations"] if entity in baseline_text
+                1
+                for entity in ["BRCA1", "breast cancer", "mutations"]
+                if entity in baseline_text
             )
             entity_mentions_enhanced = sum(
-                1 for entity in ["BRCA1", "breast cancer", "mutations"] if entity in enhanced_text
+                1
+                for entity in ["BRCA1", "breast cancer", "mutations"]
+                if entity in enhanced_text
             )
 
             logger.info(f"\nEntity mentions:")
@@ -143,8 +160,14 @@ async def test_enhanced_rag():
             logger.info(f"  Enhanced: {entity_mentions_enhanced}/3")
 
             # Check for match explanation references
-            match_refs_baseline = "matched" in baseline_text.lower() or "relevance" in baseline_text.lower()
-            match_refs_enhanced = "matched" in enhanced_text.lower() or "relevance" in enhanced_text.lower()
+            match_refs_baseline = (
+                "matched" in baseline_text.lower()
+                or "relevance" in baseline_text.lower()
+            )
+            match_refs_enhanced = (
+                "matched" in enhanced_text.lower()
+                or "relevance" in enhanced_text.lower()
+            )
 
             logger.info(f"\nMatch explanation references:")
             logger.info(f"  Baseline: {'Yes' if match_refs_baseline else 'No'}")
@@ -176,7 +199,9 @@ async def test_enhanced_rag():
             elif improvements == 1:
                 logger.info("\n⚠️  PARTIAL: Enhanced RAG shows some improvements")
             else:
-                logger.info("\n❌ CONCERN: Enhanced RAG not showing expected improvements")
+                logger.info(
+                    "\n❌ CONCERN: Enhanced RAG not showing expected improvements"
+                )
 
         else:
             logger.error(f"Enhanced analysis failed: {enhanced_response.status_code}")

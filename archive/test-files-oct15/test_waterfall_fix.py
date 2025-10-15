@@ -21,7 +21,9 @@ import os
 from pathlib import Path
 
 # Setup logging to see detailed output
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -30,8 +32,10 @@ async def test_waterfall_fix():
 
     # Import after setting up logging
     from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
-    from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig
-    from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient, PubMedConfig
+    from omics_oracle_v2.lib.pipelines.url_collection import (
+        FullTextManager, FullTextManagerConfig)
+    from omics_oracle_v2.lib.search_engines.citations.pubmed import (
+        PubMedClient, PubMedConfig)
 
     # Initialize managers
     logger.info("Initializing managers...")
@@ -55,7 +59,9 @@ async def test_waterfall_fix():
     pdf_downloader = PDFDownloadManager(
         max_concurrent=3, max_retries=2, timeout_seconds=30, validate_pdf=True
     )
-    pubmed_client = PubMedClient(PubMedConfig(email=os.getenv("NCBI_EMAIL", "research@omicsoracle.ai")))
+    pubmed_client = PubMedClient(
+        PubMedConfig(email=os.getenv("NCBI_EMAIL", "research@omicsoracle.ai"))
+    )
 
     await fulltext_manager.initialize()
 

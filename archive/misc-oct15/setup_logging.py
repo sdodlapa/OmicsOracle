@@ -105,7 +105,9 @@ def get_latest_log(log_dir: Path = Path("logs")) -> Optional[Path]:
     if not log_dir.exists():
         return None
 
-    log_files = sorted(log_dir.glob("*.log"), key=lambda f: f.stat().st_mtime, reverse=True)
+    log_files = sorted(
+        log_dir.glob("*.log"), key=lambda f: f.stat().st_mtime, reverse=True
+    )
     return log_files[0] if log_files else None
 
 

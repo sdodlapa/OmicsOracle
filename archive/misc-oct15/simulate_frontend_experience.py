@@ -12,7 +12,9 @@ from pathlib import Path
 import httpx
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -57,7 +59,9 @@ class FrontendSimulator:
             logger.info(f"   Execution time: {data.get('execution_time_ms', 0):.2f}ms")
 
             # Display results as they would appear in frontend
-            logger.info(f"\n📊 FRONTEND RENDERS {len(self.current_results)} DATASET CARDS:")
+            logger.info(
+                f"\n📊 FRONTEND RENDERS {len(self.current_results)} DATASET CARDS:"
+            )
             logger.info("=" * 80)
 
             for i, dataset in enumerate(self.current_results[:3], 1):  # Show first 3
@@ -88,7 +92,9 @@ class FrontendSimulator:
         logger.info(f"│")
         logger.info(f"│ 📚 Citations in database: {citation_count}")
         logger.info(f"│ 📄 PDFs downloaded: {pdf_count}/{citation_count}")
-        logger.info(f"│ 📊 Processing: {completion_rate:.0f}% complete ({processed_count} processed)")
+        logger.info(
+            f"│ 📊 Processing: {completion_rate:.0f}% complete ({processed_count} processed)"
+        )
 
         # Button states
         fulltext_count = dataset.get("fulltext_count", 0)
@@ -96,9 +102,13 @@ class FrontendSimulator:
         logger.info(f"│")
         if citation_count > 0:
             if fulltext_count > 0:
-                logger.info(f"│ 🟢 [AI Analysis] button - ENABLED ({fulltext_count} PDFs available)")
+                logger.info(
+                    f"│ 🟢 [AI Analysis] button - ENABLED ({fulltext_count} PDFs available)"
+                )
             else:
-                logger.info(f"│ 🔵 [Download Papers] button - ENABLED ({citation_count} in DB)")
+                logger.info(
+                    f"│ 🔵 [Download Papers] button - ENABLED ({citation_count} in DB)"
+                )
                 logger.info(f"│ ⚪ [AI Analysis] button - DISABLED (PDFs required)")
         else:
             logger.info(f"│ ⚪ [Download Papers] button - DISABLED (no citations in DB)")
@@ -115,8 +125,12 @@ class FrontendSimulator:
         dataset = self.current_results[card_index]
 
         logger.info("\n" + "=" * 80)
-        logger.info(f"👤 USER ACTION: Clicks 'Download Papers' button on Card #{card_index + 1}")
-        logger.info(f"   Dataset: {dataset.get('geo_id')} - {dataset.get('title', '')[:50]}...")
+        logger.info(
+            f"👤 USER ACTION: Clicks 'Download Papers' button on Card #{card_index + 1}"
+        )
+        logger.info(
+            f"   Dataset: {dataset.get('geo_id')} - {dataset.get('title', '')[:50]}..."
+        )
         logger.info("=" * 80)
 
         # Frontend disables button and shows loading
@@ -124,15 +138,20 @@ class FrontendSimulator:
         logger.info(f"   Button text changes: '📥 Download Papers' → '⏳ Downloading...'")
         logger.info(f"   Button disabled: true")
 
-        async with httpx.AsyncClient(timeout=120.0) as client:  # Longer timeout for downloads
-            logger.info(f"\n📡 Frontend sends: POST {self.base_url}/api/agents/enrich-fulltext")
+        async with httpx.AsyncClient(
+            timeout=120.0
+        ) as client:  # Longer timeout for downloads
+            logger.info(
+                f"\n📡 Frontend sends: POST {self.base_url}/api/agents/enrich-fulltext"
+            )
             logger.info(f"   Payload: [dataset]  (1 dataset object)")
 
             start_time = datetime.now()
 
             try:
                 response = await client.post(
-                    f"{self.base_url}/api/agents/enrich-fulltext", json=[dataset]  # Send as array
+                    f"{self.base_url}/api/agents/enrich-fulltext",
+                    json=[dataset],  # Send as array
                 )
 
                 duration = (datetime.now() - start_time).total_seconds()
@@ -150,7 +169,9 @@ class FrontendSimulator:
 
                 logger.info(f"\n✅ Backend responds after {duration:.1f} seconds:")
                 logger.info(f"   Fulltext count: {enriched.get('fulltext_count', 0)}")
-                logger.info(f"   Fulltext status: {enriched.get('fulltext_status', 'unknown')}")
+                logger.info(
+                    f"   Fulltext status: {enriched.get('fulltext_status', 'unknown')}"
+                )
 
                 # Show what frontend would display
                 fulltext_count = enriched.get("fulltext_count", 0)
@@ -158,7 +179,9 @@ class FrontendSimulator:
 
                 logger.info(f"\n🎨 Frontend updates:")
                 if fulltext_count > 0:
-                    logger.info(f"   ✅ Success message: 'Downloaded {fulltext_count} papers'")
+                    logger.info(
+                        f"   ✅ Success message: 'Downloaded {fulltext_count} papers'"
+                    )
                     logger.info(f"   Button text: '📥 Download Papers' → Hidden")
                     logger.info(f"   AI Analysis button: ENABLED (green)")
                     logger.info(f"   Status badge: '✓ {fulltext_count} PDFs available'")
@@ -184,7 +207,9 @@ class FrontendSimulator:
                                 logger.info(f"   {subdir}/: {len(pdfs)} PDFs")
                                 for pdf in pdfs[:3]:  # Show first 3
                                     size_kb = pdf.stat().st_size / 1024
-                                    logger.info(f"      - {pdf.name} ({size_kb:.1f} KB)")
+                                    logger.info(
+                                        f"      - {pdf.name} ({size_kb:.1f} KB)"
+                                    )
 
                 return True
 
@@ -204,14 +229,20 @@ class FrontendSimulator:
         dataset = self.current_results[card_index]
 
         logger.info("\n" + "=" * 80)
-        logger.info(f"👤 USER ACTION: Clicks 'AI Analysis' button on Card #{card_index + 1}")
-        logger.info(f"   Dataset: {dataset.get('geo_id')} - {dataset.get('title', '')[:50]}...")
+        logger.info(
+            f"👤 USER ACTION: Clicks 'AI Analysis' button on Card #{card_index + 1}"
+        )
+        logger.info(
+            f"   Dataset: {dataset.get('geo_id')} - {dataset.get('title', '')[:50]}..."
+        )
         logger.info("=" * 80)
 
         # Check if full-text is available
         fulltext_count = dataset.get("fulltext_count", 0)
         if fulltext_count == 0:
-            logger.warning(f"\n⚠️  Frontend should prevent this click (button disabled)")
+            logger.warning(
+                f"\n⚠️  Frontend should prevent this click (button disabled)"
+            )
             logger.warning(f"   Reason: No full-text content available")
             return False
 
@@ -224,14 +255,20 @@ class FrontendSimulator:
 
         async with httpx.AsyncClient(timeout=60.0) as client:
             logger.info(f"\n📡 Frontend sends: POST {self.base_url}/api/agents/analyze")
-            logger.info(f"   Payload: {{datasets: [dataset], query: 'user query', max_datasets: 1}}")
+            logger.info(
+                f"   Payload: {{datasets: [dataset], query: 'user query', max_datasets: 1}}"
+            )
 
             start_time = datetime.now()
 
             try:
                 response = await client.post(
                     f"{self.base_url}/api/agents/analyze",
-                    json={"datasets": [dataset], "query": "breast cancer analysis", "max_datasets": 1},
+                    json={
+                        "datasets": [dataset],
+                        "query": "breast cancer analysis",
+                        "max_datasets": 1,
+                    },
                 )
 
                 duration = (datetime.now() - start_time).total_seconds()
@@ -246,7 +283,9 @@ class FrontendSimulator:
                 logger.info(f"\n✅ Backend responds after {duration:.1f} seconds:")
                 logger.info(f"   Success: {analysis.get('success', False)}")
                 logger.info(f"   Model used: {analysis.get('model_used', 'unknown')}")
-                logger.info(f"   Execution time: {analysis.get('execution_time_ms', 0):.2f}ms")
+                logger.info(
+                    f"   Execution time: {analysis.get('execution_time_ms', 0):.2f}ms"
+                )
 
                 # Display analysis as frontend would
                 logger.info(f"\n🎨 Frontend displays inline analysis:")
@@ -260,7 +299,11 @@ class FrontendSimulator:
                 logger.info("-" * 80)
                 # Show first 500 chars of analysis
                 if analysis_text:
-                    logger.info(analysis_text[:500] + "..." if len(analysis_text) > 500 else analysis_text)
+                    logger.info(
+                        analysis_text[:500] + "..."
+                        if len(analysis_text) > 500
+                        else analysis_text
+                    )
                 else:
                     logger.info("(No analysis text)")
 
@@ -352,7 +395,9 @@ async def run_complete_simulation():
     logger.info(f"  Citations in DB: {final_dataset.get('citation_count', 0)}")
     logger.info(f"  PDFs downloaded: {final_dataset.get('pdf_count', 0)}")
     logger.info(f"  Full-text available: {final_dataset.get('fulltext_count', 0)}")
-    logger.info(f"  Processing: {final_dataset.get('completion_rate', 0):.0f}% complete")
+    logger.info(
+        f"  Processing: {final_dataset.get('completion_rate', 0):.0f}% complete"
+    )
     logger.info(f"  Status: {final_dataset.get('fulltext_status', 'unknown')}")
 
     logger.info("\n✅ All user interactions simulated successfully!")

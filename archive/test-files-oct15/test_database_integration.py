@@ -10,7 +10,9 @@ import logging
 import httpx
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -95,7 +97,9 @@ async def test_search_with_database_metrics():
                     logger.warning(
                         f"   ⚠️  citation_count ({citation_count}) == pubmed_ids.length ({pubmed_ids_count})"
                     )
-                    logger.warning(f"       This might be from search results, not database!")
+                    logger.warning(
+                        f"       This might be from search results, not database!"
+                    )
 
             logger.info("\n" + "=" * 80)
             if success:
@@ -134,7 +138,9 @@ async def test_database_queries_directly():
 
         logger.info(f"   Total GEO datasets: {stats.get('total_geo_datasets', 0)}")
         logger.info(f"   Total publications: {stats.get('total_publications', 0)}")
-        logger.info(f"   Publications with PDFs: {stats.get('publications_with_pdf', 0)}")
+        logger.info(
+            f"   Publications with PDFs: {stats.get('publications_with_pdf', 0)}"
+        )
         logger.info(f"   Database size: {stats.get('database_size_mb', 0):.2f} MB")
 
         # Test get_geo_statistics for a known GEO ID
@@ -173,8 +179,12 @@ async def main():
     logger.info("\n" + "=" * 80)
     logger.info("Test Summary")
     logger.info("=" * 80)
-    logger.info(f"   DatabaseQueries Test: {'✅ PASSED' if test1_passed else '❌ FAILED'}")
-    logger.info(f"   API Integration Test: {'✅ PASSED' if test2_passed else '❌ FAILED'}")
+    logger.info(
+        f"   DatabaseQueries Test: {'✅ PASSED' if test1_passed else '❌ FAILED'}"
+    )
+    logger.info(
+        f"   API Integration Test: {'✅ PASSED' if test2_passed else '❌ FAILED'}"
+    )
 
     if test1_passed and test2_passed:
         logger.info("\n🎉 All tests PASSED!")

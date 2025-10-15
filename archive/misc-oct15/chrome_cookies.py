@@ -54,7 +54,9 @@ def get_chrome_cookies_for_domain(domain: str) -> dict:
         return cookie_dict
 
     except ImportError:
-        logger.error("browser-cookie3 not installed. Run: pip install browser-cookie3 pycryptodome")
+        logger.error(
+            "browser-cookie3 not installed. Run: pip install browser-cookie3 pycryptodome"
+        )
         return {}
     except Exception as e:
         logger.warning(f"Could not extract Chrome cookies: {e}")
@@ -62,7 +64,9 @@ def get_chrome_cookies_for_domain(domain: str) -> dict:
         return {}
 
 
-async def download_with_chrome_cookies(url: str, output_path: Path, timeout: int = 30) -> bool:
+async def download_with_chrome_cookies(
+    url: str, output_path: Path, timeout: int = 30
+) -> bool:
     """
     Download a file using cookies from Chrome browser.
 
@@ -97,8 +101,12 @@ async def download_with_chrome_cookies(url: str, output_path: Path, timeout: int
 
     try:
         connector = aiohttp.TCPConnector(ssl=ssl_context)
-        async with aiohttp.ClientSession(connector=connector, cookies=cookies) as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=timeout)) as response:
+        async with aiohttp.ClientSession(
+            connector=connector, cookies=cookies
+        ) as session:
+            async with session.get(
+                url, timeout=aiohttp.ClientTimeout(total=timeout)
+            ) as response:
                 if response.status == 200:
                     content = await response.read()
 
@@ -111,7 +119,9 @@ async def download_with_chrome_cookies(url: str, output_path: Path, timeout: int
                     output_path.parent.mkdir(parents=True, exist_ok=True)
                     output_path.write_bytes(content)
 
-                    logger.info(f"✅ Downloaded {len(content) // 1024} KB to {output_path}")
+                    logger.info(
+                        f"✅ Downloaded {len(content) // 1024} KB to {output_path}"
+                    )
                     return True
 
                 else:

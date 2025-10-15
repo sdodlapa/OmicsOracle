@@ -12,7 +12,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent))
 
 from omics_oracle_v2.api.models.responses import DatasetResponse
-from omics_oracle_v2.api.routes.agents import AIAnalysisRequest, MatchExplanation, QueryProcessingContext
+from omics_oracle_v2.api.routes.agents import (AIAnalysisRequest,
+                                               MatchExplanation,
+                                               QueryProcessingContext)
 
 
 def test_model_structure():
@@ -29,7 +31,10 @@ def test_model_structure():
         search_intent="Find BRCA1 mutation datasets",
         query_type="gene-focused",
     )
-    assert query_ctx.extracted_entities == {"GENE": ["BRCA1", "TP53"], "DISEASE": ["breast cancer"]}
+    assert query_ctx.extracted_entities == {
+        "GENE": ["BRCA1", "TP53"],
+        "DISEASE": ["breast cancer"],
+    }
     assert len(query_ctx.expanded_terms) == 3
     print("   ✅ QueryProcessingContext validated")
 
@@ -89,7 +94,11 @@ def test_prompt_construction():
 
     # Simulate the prompt construction logic
     query_processing = QueryProcessingContext(
-        extracted_entities={"GENE": ["BRCA1"], "DISEASE": ["breast cancer"], "VARIANT": ["mutations"]},
+        extracted_entities={
+            "GENE": ["BRCA1"],
+            "DISEASE": ["breast cancer"],
+            "VARIANT": ["mutations"],
+        },
         expanded_terms=["BRCA1", "breast cancer 1", "tumor suppressor"],
         geo_search_terms=["BRCA1", "breast cancer", "mutations"],
         search_intent="Find datasets studying BRCA1 mutations in breast cancer",
@@ -114,11 +123,17 @@ def test_prompt_construction():
     # Build query context section
     query_context_section = "\n# QUERY ANALYSIS CONTEXT\n"
     if query_processing.extracted_entities:
-        query_context_section += f"Extracted Entities: {dict(query_processing.extracted_entities)}\n"
+        query_context_section += (
+            f"Extracted Entities: {dict(query_processing.extracted_entities)}\n"
+        )
     if query_processing.expanded_terms:
-        query_context_section += f"Expanded Search Terms: {', '.join(query_processing.expanded_terms)}\n"
+        query_context_section += (
+            f"Expanded Search Terms: {', '.join(query_processing.expanded_terms)}\n"
+        )
     if query_processing.geo_search_terms:
-        query_context_section += f"GEO Query Used: {', '.join(query_processing.geo_search_terms)}\n"
+        query_context_section += (
+            f"GEO Query Used: {', '.join(query_processing.geo_search_terms)}\n"
+        )
     if query_processing.search_intent:
         query_context_section += f"Search Intent: {query_processing.search_intent}\n"
     if query_processing.query_type:
@@ -167,7 +182,10 @@ def test_serialization():
     )
 
     match_exp = MatchExplanation(
-        matched_terms=["BRCA1"], relevance_score=0.95, match_type="exact", confidence=0.9
+        matched_terms=["BRCA1"],
+        relevance_score=0.95,
+        match_type="exact",
+        confidence=0.9,
     )
 
     # Test serialization

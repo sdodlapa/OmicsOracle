@@ -62,12 +62,16 @@ async def test_with_validated_dataset():
             logger.info(f"      Citations in DB: {dataset.get('citation_count', 0)}")
             logger.info(f"      PDFs downloaded: {dataset.get('pdf_count', 0)}")
             logger.info(f"      Papers processed: {dataset.get('processed_count', 0)}")
-            logger.info(f"      Completion rate: {dataset.get('completion_rate', 0):.1f}%")
+            logger.info(
+                f"      Completion rate: {dataset.get('completion_rate', 0):.1f}%"
+            )
             logger.info(f"   ")
             logger.info(f"   🔗 SEARCH RESULT DATA:")
             logger.info(f"      PubMed IDs: {len(dataset.get('pubmed_ids', []))}")
             logger.info(f"      Fulltext count: {dataset.get('fulltext_count', 0)}")
-            logger.info(f"      Fulltext status: {dataset.get('fulltext_status', 'unknown')}")
+            logger.info(
+                f"      Fulltext status: {dataset.get('fulltext_status', 'unknown')}"
+            )
 
             # Button state analysis
             citation_count = dataset.get("citation_count", 0)
@@ -78,10 +82,14 @@ async def test_with_validated_dataset():
 
             if citation_count > 0:
                 if fulltext_count > 0:
-                    logger.info(f"      ✅ Download Papers: SUCCESS (already downloaded)")
+                    logger.info(
+                        f"      ✅ Download Papers: SUCCESS (already downloaded)"
+                    )
                     logger.info(f"      🟢 AI Analysis: ENABLED ({fulltext_count} PDFs)")
                 else:
-                    logger.info(f"      🔵 Download Papers: ENABLED ({citation_count} in DB)")
+                    logger.info(
+                        f"      🔵 Download Papers: ENABLED ({citation_count} in DB)"
+                    )
                     logger.info(f"      ⚪ AI Analysis: DISABLED (needs PDFs)")
             else:
                 logger.info(f"      ⚪ Download Papers: DISABLED (no citations)")
@@ -96,14 +104,18 @@ async def test_with_validated_dataset():
                 logger.warning(
                     f"      ⚠️  citation_count ({citation_count}) == pubmed_ids.length ({pubmed_count})"
                 )
-                logger.warning(f"         This might indicate data is from search, not database!")
+                logger.warning(
+                    f"         This might indicate data is from search, not database!"
+                )
             elif citation_count > 0:
                 logger.info(
                     f"      ✅ citation_count ({citation_count}) != pubmed_ids.length ({pubmed_count})"
                 )
                 logger.info(f"         Good! Data is from database, not search results")
             else:
-                logger.info(f"      ℹ️  No citations in database yet (expected for new datasets)")
+                logger.info(
+                    f"      ℹ️  No citations in database yet (expected for new datasets)"
+                )
 
 
 async def check_database_directly():
@@ -123,7 +135,9 @@ async def check_database_directly():
     logger.info(f"   Total GEO datasets: {stats.get('total_geo_datasets', 0)}")
     logger.info(f"   Total publications: {stats.get('total_publications', 0)}")
     logger.info(f"   Publications with PDFs: {stats.get('publications_with_pdf', 0)}")
-    logger.info(f"   Publications with extraction: {stats.get('publications_with_extraction', 0)}")
+    logger.info(
+        f"   Publications with extraction: {stats.get('publications_with_extraction', 0)}"
+    )
     logger.info(f"   Database size: {stats.get('database_size_mb', 0):.2f} MB")
 
     # Try to get specific GEO stats
@@ -139,8 +153,12 @@ async def check_database_directly():
                 logger.info(f"\n   ✅ {geo_id}:")
                 logger.info(f"      Total papers: {pub_counts.get('total', 0)}")
                 logger.info(f"      With PDFs: {pub_counts.get('with_pdf', 0)}")
-                logger.info(f"      With extraction: {pub_counts.get('with_extraction', 0)}")
-                logger.info(f"      Completion: {geo_stats.get('completion_rate', 0):.1f}%")
+                logger.info(
+                    f"      With extraction: {pub_counts.get('with_extraction', 0)}"
+                )
+                logger.info(
+                    f"      Completion: {geo_stats.get('completion_rate', 0):.1f}%"
+                )
             else:
                 logger.info(f"   ⚪ {geo_id}: No data in database")
         except Exception as e:
@@ -161,8 +179,12 @@ async def main():
     logger.info("\n💡 OBSERVATIONS:")
     logger.info("   1. If citation_count = 0: Dataset not in database yet (NEW)")
     logger.info("   2. If citation_count > 0: Database integration working!")
-    logger.info("   3. If citation_count = pubmed_ids.length: Might be from search (investigate)")
-    logger.info("   4. If citation_count != pubmed_ids.length: Correctly using database!")
+    logger.info(
+        "   3. If citation_count = pubmed_ids.length: Might be from search (investigate)"
+    )
+    logger.info(
+        "   4. If citation_count != pubmed_ids.length: Correctly using database!"
+    )
     logger.info("\n")
 
 
