@@ -11,7 +11,7 @@ Key Features:
 - Backwards compatible with existing PMID-based system
 
 Usage:
-    >>> from omics_oracle_v2.lib.shared.identifiers import UniversalIdentifier
+    >>> from omics_oracle_v2.lib.utils.identifiers import UniversalIdentifier
     >>> identifier = UniversalIdentifier(publication)
     >>> pdf_filename = identifier.filename  # e.g., "doi_10_1234_abc.pdf"
     >>> display_name = identifier.display_name  # e.g., "DOI 10.1234/abc"
@@ -379,7 +379,9 @@ def resolve_doi_from_filename(filename: str) -> Optional[str]:
             # Only restore dots after "10" prefix
             parts = restored.split("/")
             if parts[0].startswith("10_"):
-                parts[0] = parts[0].replace("_", ".", 1)  # Replace first underscore after 10
+                parts[0] = parts[0].replace(
+                    "_", ".", 1
+                )  # Replace first underscore after 10
             restored = "/".join(parts)
             return restored
         return None
@@ -397,7 +399,11 @@ if __name__ == "__main__":
 
     # Test Case 1: PubMed paper
     pub1 = SimpleNamespace(
-        pmid="12345", doi="10.1234/abc", pmcid=None, title="Example PubMed Paper", metadata={}
+        pmid="12345",
+        doi="10.1234/abc",
+        pmcid=None,
+        title="Example PubMed Paper",
+        metadata={},
     )
     uid1 = UniversalIdentifier(pub1)
     print("\n1. PubMed Paper:")
@@ -407,7 +413,11 @@ if __name__ == "__main__":
 
     # Test Case 2: Paper with only DOI (common for CORE, Unpaywall)
     pub2 = SimpleNamespace(
-        pmid=None, doi="10.1234/example.paper", pmcid=None, title="Example DOI-only Paper", metadata={}
+        pmid=None,
+        doi="10.1234/example.paper",
+        pmcid=None,
+        title="Example DOI-only Paper",
+        metadata={},
     )
     uid2 = UniversalIdentifier(pub2)
     print("\n2. DOI-only Paper:")
@@ -417,7 +427,11 @@ if __name__ == "__main__":
 
     # Test Case 3: arXiv preprint
     pub3 = SimpleNamespace(
-        pmid=None, doi=None, pmcid=None, title="Example arXiv Preprint", metadata={"arxiv_id": "2401.12345"}
+        pmid=None,
+        doi=None,
+        pmcid=None,
+        title="Example arXiv Preprint",
+        metadata={"arxiv_id": "2401.12345"},
     )
     uid3 = UniversalIdentifier(pub3)
     print("\n3. arXiv Preprint:")
@@ -426,7 +440,9 @@ if __name__ == "__main__":
     print(f"   Display: {uid3.display_name}")
 
     # Test Case 4: No identifiers (fallback to hash)
-    pub4 = SimpleNamespace(pmid=None, doi=None, pmcid=None, title="Paper with No Identifiers", metadata={})
+    pub4 = SimpleNamespace(
+        pmid=None, doi=None, pmcid=None, title="Paper with No Identifiers", metadata={}
+    )
     uid4 = UniversalIdentifier(pub4)
     print("\n4. No Identifiers (fallback):")
     print(f"   Filename: {uid4.filename}")

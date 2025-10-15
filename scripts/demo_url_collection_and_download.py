@@ -25,7 +25,6 @@ import logging
 import os
 import sys
 from pathlib import Path
-from typing import Any, Dict, List
 
 from dotenv import load_dotenv
 
@@ -36,12 +35,10 @@ load_dotenv()
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from omics_oracle_v2.lib.pipelines.pdf_download.download_manager import (
-    DownloadResult, PDFDownloadManager)
+from omics_oracle_v2.lib.pipelines.pdf_download.download_manager import \
+    PDFDownloadManager
 from omics_oracle_v2.lib.pipelines.url_collection import (
-    FullTextManager, FullTextManagerConfig, SourceURL)
-from omics_oracle_v2.lib.pipelines.url_collection.url_validator import (
-    URLType, URLValidator)
+    FullTextManager, FullTextManagerConfig)
 from omics_oracle_v2.lib.search_engines.citations.models import (
     Publication, PublicationSource)
 
@@ -392,7 +389,7 @@ class URLCollectionDemo:
                         print(f"  ✗ Error reading file: {e}")
 
                 # Check 4: Correct filename (matches UniversalIdentifier)
-                from omics_oracle_v2.lib.shared.identifiers import \
+                from omics_oracle_v2.lib.utils.identifiers import \
                     UniversalIdentifier
 
                 identifier = UniversalIdentifier(pub)

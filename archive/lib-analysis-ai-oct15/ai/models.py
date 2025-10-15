@@ -24,11 +24,15 @@ class SummaryRequest(BaseModel):
     """Request for AI summary generation."""
 
     metadata: Dict[str, Any] = Field(..., description="Dataset metadata to summarize")
-    query_context: Optional[str] = Field(None, description="Original user query for context")
+    query_context: Optional[str] = Field(
+        None, description="Original user query for context"
+    )
     summary_type: SummaryType = Field(
         default=SummaryType.COMPREHENSIVE, description="Type of summary to generate"
     )
-    dataset_id: Optional[str] = Field(None, description="Dataset identifier (for caching)")
+    dataset_id: Optional[str] = Field(
+        None, description="Dataset identifier (for caching)"
+    )
     overrides: Optional[Dict[str, Any]] = Field(
         None, description="Override default settings (max_tokens, temperature, etc.)"
     )
@@ -46,7 +50,9 @@ class SummaryResponse(BaseModel):
     significance: Optional[str] = Field(None, description="Research significance")
     technical_details: Optional[str] = Field(None, description="Technical information")
     brief: Optional[str] = Field(None, description="Brief one-paragraph summary")
-    token_usage: Optional[Dict[str, Any]] = Field(None, description="Token usage statistics")
+    token_usage: Optional[Dict[str, Any]] = Field(
+        None, description="Token usage statistics"
+    )
     model_used: Optional[str] = Field(None, description="LLM model used")
 
     def has_content(self) -> bool:
@@ -85,9 +91,12 @@ class BatchSummaryResponse(BaseModel):
 
     query: str = Field(..., description="Original query")
     total_datasets: int = Field(..., description="Total number of datasets")
-    summarized_count: int = Field(..., description="Number of datasets actually summarized")
+    summarized_count: int = Field(
+        ..., description="Number of datasets actually summarized"
+    )
     statistics: Dict[str, Dict[str, int]] = Field(
-        default_factory=dict, description="Aggregated statistics (organisms, platforms, etc.)"
+        default_factory=dict,
+        description="Aggregated statistics (organisms, platforms, etc.)",
     )
     overview: Optional[str] = Field(None, description="Batch overview summary")
 

@@ -15,9 +15,10 @@ from typing import List, Optional
 import aiofiles
 import aiohttp
 
-from omics_oracle_v2.lib.shared.identifiers import UniversalIdentifier
-from omics_oracle_v2.lib.pipelines.pdf_download.utils import validate_pdf_content
+from omics_oracle_v2.lib.pipelines.pdf_download.utils import \
+    validate_pdf_content
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
+from omics_oracle_v2.lib.utils.identifiers import UniversalIdentifier
 
 logger = logging.getLogger(__name__)
 
@@ -151,7 +152,9 @@ class PDFDownloadManager:
             total_size_mb=total_bytes / (1024 * 1024),
         )
 
-        logger.info(f"[OK] Download complete: {successful}/{len(publications)} successful")
+        logger.info(
+            f"[OK] Download complete: {successful}/{len(publications)} successful"
+        )
         logger.info(f"  Total size: {report.total_size_mb:.2f} MB")
 
         return report
@@ -174,10 +177,14 @@ class PDFDownloadManager:
 
         # All retries failed
         return DownloadResult(
-            publication=publication, success=False, error=f"Failed after {self.max_retries} attempts"
+            publication=publication,
+            success=False,
+            error=f"Failed after {self.max_retries} attempts",
         )
 
-    async def _download_single(self, publication: Publication, url: str, output_dir: Path) -> DownloadResult:
+    async def _download_single(
+        self, publication: Publication, url: str, output_dir: Path
+    ) -> DownloadResult:
         """
         Download a single PDF with User-Agent headers and redirect handling.
 
@@ -214,10 +221,15 @@ class PDFDownloadManager:
 
                 connector = aiohttp.TCPConnector(ssl=ssl_context)
                 async with aiohttp.ClientSession(
-                    timeout=timeout, connector=connector, headers=headers, cookie_jar=cookie_jar
+                    timeout=timeout,
+                    connector=connector,
+                    headers=headers,
+                    cookie_jar=cookie_jar,
                 ) as session:
                     # Follow redirects (important for DOI links)
-                    async with session.get(url, allow_redirects=True, max_redirects=10) as response:
+                    async with session.get(
+                        url, allow_redirects=True, max_redirects=10
+                    ) as response:
                         if response.status != 200:
                             return DownloadResult(
                                 publication=publication,
@@ -235,8 +247,12 @@ class PDFDownloadManager:
                     # Validate PDF (still inside session context!)
                     if self.validate_pdf and not self._is_valid_pdf(content):
                         # If we got HTML instead of PDF, try to extract PDF link from landing page
-                        if content.startswith(b"<!DOCTYPE") or content.startswith(b"<html"):
-                            logger.info(f"Received HTML landing page, attempting to extract PDF URL...")
+                        if content.startswith(b"<!DOCTYPE") or content.startswith(
+                            b"<html"
+                        ):
+                            logger.info(
+                                f"Received HTML landing page, attempting to extract PDF URL..."
+                            )
 
                             from .landing_page_parser import get_parser
 
@@ -247,7 +263,9 @@ class PDFDownloadManager:
                                 pdf_url = parser.extract_pdf_url(html, final_url)
 
                                 if pdf_url:
-                                    logger.info(f"Found PDF URL in landing page: {pdf_url}")
+                                    logger.info(
+                                        f"Found PDF URL in landing page: {pdf_url}"
+                                    )
                                     # Retry download with the extracted PDF URL (session still open!)
                                     async with session.get(
                                         pdf_url, allow_redirects=True, max_redirects=10
@@ -297,7 +315,9 @@ class PDFDownloadManager:
                 async with aiofiles.open(pdf_path, "wb") as f:
                     await f.write(content)
 
-                logger.info(f"[OK] Downloaded: {filename} ({len(content) / 1024:.1f} KB)")
+                logger.info(
+                    f"[OK] Downloaded: {filename} ({len(content) / 1024:.1f} KB)"
+                )
 
                 return DownloadResult(
                     publication=publication,
@@ -308,9 +328,13 @@ class PDFDownloadManager:
                 )
 
             except asyncio.TimeoutError:
-                return DownloadResult(publication=publication, success=False, error="Timeout")
+                return DownloadResult(
+                    publication=publication, success=False, error="Timeout"
+                )
             except Exception as e:
-                return DownloadResult(publication=publication, success=False, error=str(e))
+                return DownloadResult(
+                    publication=publication, success=False, error=str(e)
+                )
 
     def _generate_filename(self, publication: Publication) -> str:
         """
@@ -372,7 +396,8 @@ class PDFDownloadManager:
             Before: [landing(priority=5), pdf(priority=4), landing(priority=2)]
             After:  [pdf(priority=4), landing(priority=2), landing(priority=5)]
         """
-        from omics_oracle_v2.lib.pipelines.url_collection.url_validator import URLType
+        from omics_oracle_v2.lib.pipelines.url_collection.url_validator import \
+            URLType
 
         # Group URLs by type
         pdf_urls = []
@@ -405,11 +430,17 @@ class PDFDownloadManager:
 
         # Log sorting results
         if pdf_urls:
-            logger.info(f"  Type-aware sorting: {len(pdf_urls)} PDF URLs (trying first)")
+            logger.info(
+                f"  Type-aware sorting: {len(pdf_urls)} PDF URLs (trying first)"
+            )
         if html_urls:
-            logger.info(f"  Type-aware sorting: {len(html_urls)} HTML URLs (trying after PDFs)")
+            logger.info(
+                f"  Type-aware sorting: {len(html_urls)} HTML URLs (trying after PDFs)"
+            )
         if landing_urls:
-            logger.info(f"  Type-aware sorting: {len(landing_urls)} Landing page URLs (trying last)")
+            logger.info(
+                f"  Type-aware sorting: {len(landing_urls)} Landing page URLs (trying last)"
+            )
 
         return sorted_urls
 
@@ -457,7 +488,9 @@ class PDFDownloadManager:
             >>>     print(f"Downloaded from {download_result.source}")
         """
         if not all_urls:
-            return DownloadResult(publication=publication, success=False, error="No URLs provided")
+            return DownloadResult(
+                publication=publication, success=False, error="No URLs provided"
+            )
 
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -495,7 +528,11 @@ class PDFDownloadManager:
                     if result.success and result.pdf_path:
                         # SUCCESS! Return immediately
                         result.source = source_name
-                        retry_msg = f" (attempt {attempt + 1}/{max_retries_per_url})" if attempt > 0 else ""
+                        retry_msg = (
+                            f" (attempt {attempt + 1}/{max_retries_per_url})"
+                            if attempt > 0
+                            else ""
+                        )
                         logger.info(
                             f"  [OK] SUCCESS from {source_name}{retry_msg}! "
                             f"Size: {result.file_size / 1024:.1f} KB, "
@@ -532,7 +569,9 @@ class PDFDownloadManager:
             # All retries exhausted for this URL, try next URL
 
         # All URLs failed
-        logger.warning(f"[FAIL] All {len(sorted_urls)} URLs failed for: {publication.title[:50]}")
+        logger.warning(
+            f"[FAIL] All {len(sorted_urls)} URLs failed for: {publication.title[:50]}"
+        )
 
         return DownloadResult(
             publication=publication,

@@ -8,7 +8,8 @@ import os
 from dataclasses import dataclass
 from typing import Optional
 
-from omics_oracle_v2.lib.search_engines.citations.config import PubMedConfig
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import \
+    PubMedConfig
 
 
 @dataclass

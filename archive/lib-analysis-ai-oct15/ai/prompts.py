@@ -12,7 +12,9 @@ class PromptBuilder:
 
     @staticmethod
     def build_overview_prompt(
-        metadata: Dict[str, Any], query_context: Optional[str] = None, brief: bool = False
+        metadata: Dict[str, Any],
+        query_context: Optional[str] = None,
+        brief: bool = False,
     ) -> str:
         """
         Build prompt for generating dataset overview.
@@ -83,7 +85,9 @@ Provide a technical but accessible summary in 2-3 sentences.
         return prompt.strip()
 
     @staticmethod
-    def build_significance_prompt(metadata: Dict[str, Any], query_context: Optional[str] = None) -> str:
+    def build_significance_prompt(
+        metadata: Dict[str, Any], query_context: Optional[str] = None
+    ) -> str:
         """
         Build prompt for research significance summary.
 

@@ -23,15 +23,20 @@ from datetime import datetime
 from typing import List, Optional
 
 from omics_oracle_v2.lib.infrastructure.cache.redis_cache import RedisCache
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.openalex import (
+    OpenAlexClient, OpenAlexConfig)
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.pubmed import \
+    PubMedClient
 from omics_oracle_v2.lib.pipelines.coordinator import PipelineCoordinator
-from omics_oracle_v2.lib.query_processing.optimization.analyzer import QueryAnalyzer, SearchType
-from omics_oracle_v2.lib.query_processing.optimization.optimizer import QueryOptimizer
+from omics_oracle_v2.lib.query_processing.optimization.analyzer import (
+    QueryAnalyzer, SearchType)
+from omics_oracle_v2.lib.query_processing.optimization.optimizer import \
+    QueryOptimizer
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
-from omics_oracle_v2.lib.search_engines.citations.openalex import OpenAlexClient, OpenAlexConfig
-from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
 from omics_oracle_v2.lib.search_engines.geo import GEOClient
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
-from omics_oracle_v2.lib.search_engines.geo.query_builder import GEOQueryBuilder
+from omics_oracle_v2.lib.search_engines.geo.query_builder import \
+    GEOQueryBuilder
 from omics_oracle_v2.lib.search_orchestration.config import SearchConfig
 from omics_oracle_v2.lib.search_orchestration.models import SearchResult
 
@@ -113,16 +118,22 @@ class SearchOrchestrator:
                 self.coordinator = PipelineCoordinator(
                     db_path=config.db_path, storage_path=config.storage_path
                 )
-                logger.info("Database integration active - search results will be persisted")
+                logger.info(
+                    "Database integration active - search results will be persisted"
+                )
             except Exception as e:
-                logger.warning(f"Database initialization failed: {e}. Continuing without persistence.")
+                logger.warning(
+                    f"Database initialization failed: {e}. Continuing without persistence."
+                )
                 self.coordinator = None
         else:
             self.coordinator = None
 
         # Stage 7: Caching
         if config.enable_cache:
-            logger.info(f"Initializing Redis cache ({config.cache_host}:{config.cache_port})")
+            logger.info(
+                f"Initializing Redis cache ({config.cache_host}:{config.cache_port})"
+            )
             try:
                 self.cache = RedisCache(
                     host=config.cache_host,
@@ -131,7 +142,9 @@ class SearchOrchestrator:
                     default_ttl=config.cache_ttl,
                 )
             except Exception as e:
-                logger.warning(f"Cache initialization failed: {e}. Continuing without cache.")
+                logger.warning(
+                    f"Cache initialization failed: {e}. Continuing without cache."
+                )
                 self.cache = None
         else:
             self.cache = None
@@ -163,7 +176,9 @@ class SearchOrchestrator:
 
         # Apply defaults
         max_geo_results = max_geo_results or self.config.max_geo_results
-        max_publication_results = max_publication_results or self.config.max_publication_results
+        max_publication_results = (
+            max_publication_results or self.config.max_publication_results
+        )
 
         logger.info(f"🔍 Search request: '{query}' (type={search_type})")
 
@@ -173,7 +188,9 @@ class SearchOrchestrator:
             try:
                 cache_search_type = search_type or "auto"
                 cache_key = f"{query}:{cache_search_type}"
-                cached = await self.cache.get_search_result(cache_key, search_type=cache_search_type)
+                cached = await self.cache.get_search_result(
+                    cache_key, search_type=cache_search_type
+                )
                 if cached:
                     logger.info("✅ Cache hit - returning cached results")
                     cached_result = SearchResult(**cached)
@@ -193,7 +210,9 @@ class SearchOrchestrator:
             logger.info("AUTO mode: Enabling HYBRID search (GEO + Publications)")
             analysis.search_type = SearchType.HYBRID
         elif analysis.search_type == SearchType.PUBLICATIONS:
-            logger.info("PUBLICATIONS mode: Enabling HYBRID to also find linked datasets")
+            logger.info(
+                "PUBLICATIONS mode: Enabling HYBRID to also find linked datasets"
+            )
             analysis.search_type = SearchType.HYBRID
 
         # Override if specified
@@ -245,13 +264,16 @@ class SearchOrchestrator:
         # Publications only
         elif analysis.search_type == SearchType.PUBLICATIONS:
             logger.info("📄 Publications-only search")
-            publications = await self._search_publications(optimized_query, max_publication_results)
+            publications = await self._search_publications(
+                optimized_query, max_publication_results
+            )
 
         # Step 5: Deduplicate GEO results (GEO IDs are unique)
         geo_datasets = self._deduplicate_geo(geo_datasets)
 
         # Step 5.5: Build query processing context for RAG (Phase 3)
-        from omics_oracle_v2.lib.search_orchestration.models import QueryProcessingContext
+        from omics_oracle_v2.lib.search_orchestration.models import \
+            QueryProcessingContext
 
         query_processing_context = None
         if optimization_result:
@@ -259,7 +281,9 @@ class SearchOrchestrator:
             query_processing_context = QueryProcessingContext(
                 extracted_entities=optimization_result.entities,
                 expanded_terms=optimization_result.expanded_terms,
-                geo_search_terms=[optimized_query],  # The actual query used for GEO search
+                geo_search_terms=[
+                    optimized_query
+                ],  # The actual query used for GEO search
                 search_intent=None,  # From QueryAnalyzer (future enhancement)
                 query_type=analysis.search_type.value,  # From QueryAnalyzer
             )
@@ -284,7 +308,9 @@ class SearchOrchestrator:
             query_processing=query_processing_context,  # RAG Phase 3
         )
 
-        logger.info(f"✅ Search complete: {result.total_results} results in {search_time_ms:.1f}ms")
+        logger.info(
+            f"✅ Search complete: {result.total_results} results in {search_time_ms:.1f}ms"
+        )
 
         # Step 6.5: Persist to database (Phase B integration)
         if self.coordinator:
@@ -299,7 +325,9 @@ class SearchOrchestrator:
                 cache_search_type = search_type or "auto"
                 cache_key = f"{query}:{cache_search_type}"
                 # Fixed: search_type should be 2nd positional arg, not keyword arg
-                await self.cache.set_search_result(cache_key, cache_search_type, result.to_dict())
+                await self.cache.set_search_result(
+                    cache_key, cache_search_type, result.to_dict()
+                )
                 logger.info("💾 Results cached")
             except Exception as e:
                 logger.warning(f"Cache set failed: {e}")
@@ -365,7 +393,9 @@ class SearchOrchestrator:
 
         return geo_datasets, publications
 
-    async def _search_geo(self, query: str, max_results: int) -> List[GEOSeriesMetadata]:
+    async def _search_geo(
+        self, query: str, max_results: int
+    ) -> List[GEOSeriesMetadata]:
         """
         Search GEO datasets with per-item caching for 10-50x speedup.
 
@@ -390,7 +420,9 @@ class SearchOrchestrator:
             logger.info(f"[GEO] Executing search with query: '{geo_query}'")
 
             # Step 2: Get GEO IDs from search (lightweight, returns IDs only)
-            search_result = await self.geo_client.search(geo_query, max_results=max_results)
+            search_result = await self.geo_client.search(
+                geo_query, max_results=max_results
+            )
 
             if not search_result.geo_ids:
                 logger.info("[GEO] No datasets found")
@@ -402,11 +434,15 @@ class SearchOrchestrator:
             # Step 3: Check cache for full metadata (batch operation - FAST!)
             cached_datasets = {}
             if self.cache:
-                logger.info(f"[GEO] Checking cache for {len(geo_ids)} datasets (batch operation)...")
+                logger.info(
+                    f"[GEO] Checking cache for {len(geo_ids)} datasets (batch operation)..."
+                )
                 cached_datasets = await self.cache.get_geo_datasets_batch(geo_ids)
 
             # Step 4: Identify what needs fetching
-            cached_ids = [gse_id for gse_id, data in cached_datasets.items() if data is not None]
+            cached_ids = [
+                gse_id for gse_id, data in cached_datasets.items() if data is not None
+            ]
             missing_ids = [gse_id for gse_id in geo_ids if gse_id not in cached_ids]
 
             cache_hit_rate = (len(cached_ids) / len(geo_ids) * 100) if geo_ids else 0
@@ -426,12 +462,16 @@ class SearchOrchestrator:
                     metadata = GEOSeriesMetadata(**cached_datasets[gse_id])
                     datasets.append(metadata)
                 except Exception as e:
-                    logger.warning(f"Failed to deserialize cached dataset {gse_id}: {e}")
+                    logger.warning(
+                        f"Failed to deserialize cached dataset {gse_id}: {e}"
+                    )
                     missing_ids.append(gse_id)  # Re-fetch if cache corrupt
 
             # Step 6: Fetch missing datasets from GEO
             if missing_ids:
-                logger.info(f"[GEO] Fetching {len(missing_ids)} uncached datasets from GEO...")
+                logger.info(
+                    f"[GEO] Fetching {len(missing_ids)} uncached datasets from GEO..."
+                )
                 logger.warning(f"[DEBUG] Missing IDs: {missing_ids}")
                 for geo_id in missing_ids:
                     try:
@@ -447,11 +487,15 @@ class SearchOrchestrator:
                         logger.warning(f"Failed to fetch metadata for {geo_id}: {e}")
                         continue
             else:
-                logger.warning(f"[DEBUG] No missing IDs! All {len(geo_ids)} datasets were cached")
+                logger.warning(
+                    f"[DEBUG] No missing IDs! All {len(geo_ids)} datasets were cached"
+                )
 
                 # Step 7: Cache newly fetched datasets (batch operation)
                 if newly_fetched and self.cache:
-                    cached_count = await self.cache.set_geo_datasets_batch(newly_fetched)
+                    cached_count = await self.cache.set_geo_datasets_batch(
+                        newly_fetched
+                    )
                     logger.info(f"[GEO] Cached {cached_count} newly fetched datasets")
 
             logger.info(
@@ -496,7 +540,9 @@ class SearchOrchestrator:
             logger.error(f"GEO ID lookup failed: {e}")
             return []
 
-    async def _search_publications(self, query: str, max_results: int) -> List[Publication]:
+    async def _search_publications(
+        self, query: str, max_results: int
+    ) -> List[Publication]:
         """Search all publication sources in parallel."""
         tasks = []
 
@@ -556,7 +602,8 @@ class SearchOrchestrator:
 
             loop = asyncio.get_event_loop()
             results = await loop.run_in_executor(
-                None, lambda: self.openalex_client.search(query, max_results=max_results)
+                None,
+                lambda: self.openalex_client.search(query, max_results=max_results),
             )
             # Results are already Publication objects, not PublicationResult wrappers
             publications = results if isinstance(results, list) else []
@@ -566,7 +613,9 @@ class SearchOrchestrator:
             logger.error(f"OpenAlex search failed: {e}", exc_info=True)
             return []
 
-    def _deduplicate_geo(self, datasets: List[GEOSeriesMetadata]) -> List[GEOSeriesMetadata]:
+    def _deduplicate_geo(
+        self, datasets: List[GEOSeriesMetadata]
+    ) -> List[GEOSeriesMetadata]:
         """Remove duplicate GEO datasets by geo_id."""
         seen_ids = set()
         unique = []
@@ -608,7 +657,9 @@ class SearchOrchestrator:
             for dataset in result.geo_datasets:
                 if hasattr(dataset, "pubmed_ids") and dataset.pubmed_ids:
                     pmids = (
-                        dataset.pubmed_ids if isinstance(dataset.pubmed_ids, list) else [dataset.pubmed_ids]
+                        dataset.pubmed_ids
+                        if isinstance(dataset.pubmed_ids, list)
+                        else [dataset.pubmed_ids]
                     )
 
                     for pmid in pmids:
@@ -628,12 +679,16 @@ class SearchOrchestrator:
                             }
 
                             self.coordinator.save_citation_discovery(
-                                geo_id=dataset.geo_id, pmid=str(pmid), citation_data=citation_data
+                                geo_id=dataset.geo_id,
+                                pmid=str(pmid),
+                                citation_data=citation_data,
                             )
                             persisted_count += 1
 
             if persisted_count > 0:
-                logger.info(f"💾 Persisted {persisted_count} GEO→PMID citations to database")
+                logger.info(
+                    f"💾 Persisted {persisted_count} GEO→PMID citations to database"
+                )
 
         except Exception as e:
             logger.error(f"Failed to persist results to database: {e}", exc_info=True)

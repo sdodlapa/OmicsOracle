@@ -24,9 +24,11 @@ except ImportError:
     BIOPYTHON_AVAILABLE = False
     logging.warning("Biopython not available. PubMed client will not function.")
 
-from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient, FetchError, SearchError
+from omics_oracle_v2.lib.search_engines.citations.base import (
+    BasePublicationClient, FetchError, SearchError)
 from omics_oracle_v2.lib.search_engines.citations.config import PubMedConfig
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 logger = logging.getLogger(__name__)
 
@@ -64,7 +66,8 @@ class PubMedClient(BasePublicationClient):
         """
         if not BIOPYTHON_AVAILABLE:
             raise ImportError(
-                "Biopython is required for PubMed client. " "Install with: pip install biopython"
+                "Biopython is required for PubMed client. "
+                "Install with: pip install biopython"
             )
 
         super().__init__(config)
@@ -80,7 +83,8 @@ class PubMedClient(BasePublicationClient):
         self._min_interval = 1.0 / config.requests_per_second
 
         logger.info(
-            f"PubMed client initialized (email={config.email}, " f"rate={config.requests_per_second} req/s)"
+            f"PubMed client initialized (email={config.email}, "
+            f"rate={config.requests_per_second} req/s)"
         )
 
     @property
@@ -95,7 +99,9 @@ class PubMedClient(BasePublicationClient):
             time.sleep(self._min_interval - elapsed)
         self._last_request_time = time.time()
 
-    def _search_pubmed(self, query: str, max_results: int = 100, retstart: int = 0) -> List[str]:
+    def _search_pubmed(
+        self, query: str, max_results: int = 100, retstart: int = 0
+    ) -> List[str]:
         """
         Search PubMed and return list of PMIDs.
 
@@ -174,7 +180,10 @@ class PubMedClient(BasePublicationClient):
 
                 records.extend(batch_records)
 
-                logger.debug(f"Fetched batch {i//batch_size + 1}: " f"{len(batch_records)} records")
+                logger.debug(
+                    f"Fetched batch {i//batch_size + 1}: "
+                    f"{len(batch_records)} records"
+                )
 
             logger.info(f"Fetched {len(records)} publication details")
             return records
@@ -332,7 +341,9 @@ class PubMedClient(BasePublicationClient):
                 pub = self._parse_medline_record(record)
                 publications.append(pub)
             except Exception as e:
-                logger.warning(f"Failed to parse record {record.get('PMID', 'unknown')}: {e}")
+                logger.warning(
+                    f"Failed to parse record {record.get('PMID', 'unknown')}: {e}"
+                )
                 continue
 
         return publications

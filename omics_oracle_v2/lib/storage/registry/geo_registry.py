@@ -61,7 +61,9 @@ class GEORegistry:
         # Use check_same_thread=False for FastAPI async
         # This is safe because we use connection locks
         self.conn = sqlite3.connect(
-            str(self.db_path), check_same_thread=False, timeout=10.0  # Wait up to 10s for locks
+            str(self.db_path),
+            check_same_thread=False,
+            timeout=10.0,  # Wait up to 10s for locks
         )
         self.conn.row_factory = sqlite3.Row  # Access columns by name
 
@@ -247,7 +249,9 @@ class GEORegistry:
             self.conn.commit()
 
             pub_id = cursor.lastrowid
-            logger.info(f"Registered publication: PMID {pmid} (ID {pub_id}) with {len(urls)} URLs")
+            logger.info(
+                f"Registered publication: PMID {pmid} (ID {pub_id}) with {len(urls)} URLs"
+            )
             return pub_id
 
         except Exception as e:
@@ -256,7 +260,11 @@ class GEORegistry:
             raise
 
     def link_geo_to_publication(
-        self, geo_id: str, pmid: str, relationship_type: str, citation_strategy: Optional[str] = None
+        self,
+        geo_id: str,
+        pmid: str,
+        relationship_type: str,
+        citation_strategy: Optional[str] = None,
     ) -> None:
         """
         Link GEO dataset to publication.
@@ -269,7 +277,9 @@ class GEORegistry:
         """
         try:
             # Get publication ID
-            cursor = self.conn.execute("SELECT id FROM publications WHERE pmid = ?", (pmid,))
+            cursor = self.conn.execute(
+                "SELECT id FROM publications WHERE pmid = ?", (pmid,)
+            )
             row = cursor.fetchone()
             if not row:
                 logger.warning(f"Publication {pmid} not found, cannot link to {geo_id}")
@@ -313,7 +323,9 @@ class GEORegistry:
         """
         try:
             # Get GEO metadata
-            cursor = self.conn.execute("SELECT metadata FROM geo_datasets WHERE geo_id = ?", (geo_id,))
+            cursor = self.conn.execute(
+                "SELECT metadata FROM geo_datasets WHERE geo_id = ?", (geo_id,)
+            )
             row = cursor.fetchone()
             if not row:
                 logger.warning(f"GEO {geo_id} not found")
@@ -369,7 +381,11 @@ class GEORegistry:
                     if any(h["status"] == "success" for h in paper["download_history"]):
                         successful_downloads += 1
 
-            success_rate = round(successful_downloads / total_papers * 100, 1) if total_papers > 0 else 0
+            success_rate = (
+                round(successful_downloads / total_papers * 100, 1)
+                if total_papers > 0
+                else 0
+            )
 
             return {
                 "geo": geo_metadata,
@@ -423,7 +439,9 @@ class GEORegistry:
         Returns:
             List of URL dicts with {url, source, priority, metadata}
         """
-        cursor = self.conn.execute("SELECT urls FROM publications WHERE pmid = ?", (pmid,))
+        cursor = self.conn.execute(
+            "SELECT urls FROM publications WHERE pmid = ?", (pmid,)
+        )
         row = cursor.fetchone()
 
         if not row or not row[0]:
@@ -457,7 +475,9 @@ class GEORegistry:
         """
         try:
             # Get publication ID
-            cursor = self.conn.execute("SELECT id FROM publications WHERE pmid = ?", (pmid,))
+            cursor = self.conn.execute(
+                "SELECT id FROM publications WHERE pmid = ?", (pmid,)
+            )
             row = cursor.fetchone()
             if not row:
                 logger.warning(f"Publication {pmid} not found, cannot record download")
@@ -472,7 +492,16 @@ class GEORegistry:
                 (publication_id, url, source, status, file_path, file_size, error_message, attempt_number)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-                (pub_id, url, source, status, file_path, file_size, error_message, attempt_number),
+                (
+                    pub_id,
+                    url,
+                    source,
+                    status,
+                    file_path,
+                    file_size,
+                    error_message,
+                    attempt_number,
+                ),
             )
             self.conn.commit()
 
@@ -500,7 +529,9 @@ class GEORegistry:
             "total_publications": row[1],
             "successful_downloads": row[2],
             "failed_downloads": row[3],
-            "success_rate": round(row[2] / (row[2] + row[3]) * 100, 1) if (row[2] + row[3]) > 0 else 0,
+            "success_rate": round(row[2] / (row[2] + row[3]) * 100, 1)
+            if (row[2] + row[3]) > 0
+            else 0,
         }
 
     def close(self):

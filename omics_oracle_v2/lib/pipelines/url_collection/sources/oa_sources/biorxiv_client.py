@@ -30,8 +30,10 @@ from typing import Dict, List, Optional
 import aiohttp
 from pydantic import BaseModel, Field
 
-from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.base import \
+    BasePublicationClient
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 logger = logging.getLogger(__name__)
 
@@ -47,10 +49,17 @@ class BioRxivConfig(BaseModel):
         rate_limit_per_second: Requests per second (be polite)
     """
 
-    api_url: str = Field(default="https://api.biorxiv.org", description="Base API URL for bioRxiv/medRxiv")
+    api_url: str = Field(
+        default="https://api.biorxiv.org",
+        description="Base API URL for bioRxiv/medRxiv",
+    )
     timeout: int = Field(default=30, description="Request timeout in seconds", ge=1)
-    retry_count: int = Field(default=3, description="Number of retries on failure", ge=0)
-    rate_limit_per_second: int = Field(default=2, description="Requests per second (be polite)", ge=1)
+    retry_count: int = Field(
+        default=3, description="Number of retries on failure", ge=0
+    )
+    rate_limit_per_second: int = Field(
+        default=2, description="Requests per second (be polite)", ge=1
+    )
 
     @property
     def min_request_interval(self) -> float:
@@ -121,7 +130,9 @@ class BioRxivClient(BasePublicationClient):
         doi = doi.replace("https://doi.org/", "").replace("http://doi.org/", "")
         return doi.startswith("10.1101/")
 
-    async def _make_request(self, endpoint: str, params: Optional[Dict] = None) -> Optional[Dict]:
+    async def _make_request(
+        self, endpoint: str, params: Optional[Dict] = None
+    ) -> Optional[Dict]:
         """
         Make API request with retry logic.
 
@@ -142,7 +153,9 @@ class BioRxivClient(BasePublicationClient):
 
         for attempt in range(self.config.retry_count):
             try:
-                async with self.session.get(url, params=params, timeout=self.config.timeout) as response:
+                async with self.session.get(
+                    url, params=params, timeout=self.config.timeout
+                ) as response:
                     if response.status == 200:
                         return await response.json()
 
@@ -152,13 +165,17 @@ class BioRxivClient(BasePublicationClient):
 
                     elif response.status == 429:
                         # Rate limited
-                        wait_time = (attempt + 1) * 3  # Longer wait for preprint servers
+                        wait_time = (
+                            attempt + 1
+                        ) * 3  # Longer wait for preprint servers
                         logger.warning(f"Rate limited by bioRxiv, waiting {wait_time}s")
                         await asyncio.sleep(wait_time)
                         continue
 
                     else:
-                        logger.warning(f"bioRxiv API error {response.status}: {endpoint}")
+                        logger.warning(
+                            f"bioRxiv API error {response.status}: {endpoint}"
+                        )
                         return None
 
             except aiohttp.ClientError as e:
@@ -226,13 +243,17 @@ class BioRxivClient(BasePublicationClient):
                     "url": f"https://www.{server}.org/content/{doi}v{paper.get('version', 1)}",
                 }
 
-                logger.info(f"[{server.upper()}] Found in {server}: {result['title'][:50]}")
+                logger.info(
+                    f"[{server.upper()}] Found in {server}: {result['title'][:50]}"
+                )
                 return result
 
         logger.debug(f"Not found in bioRxiv or medRxiv: {doi}")
         return None
 
-    async def search_by_title(self, title: str, server: str = "biorxiv", limit: int = 10) -> List[Dict]:
+    async def search_by_title(
+        self, title: str, server: str = "biorxiv", limit: int = 10
+    ) -> List[Dict]:
         """
         Search preprints by title.
 
@@ -253,7 +274,9 @@ class BioRxivClient(BasePublicationClient):
         # Instead, we can search recent papers by interval
         # This is a limitation of the bioRxiv API
 
-        logger.warning("bioRxiv API doesn't support title search - use DOI lookup instead")
+        logger.warning(
+            "bioRxiv API doesn't support title search - use DOI lookup instead"
+        )
         return []
 
     async def fetch_by_id(self, identifier: str) -> Optional[Publication]:
@@ -271,7 +294,9 @@ class BioRxivClient(BasePublicationClient):
             return self._convert_to_publication(result)
         return None
 
-    async def search(self, query: str, max_results: int = 100, **kwargs) -> List[Publication]:
+    async def search(
+        self, query: str, max_results: int = 100, **kwargs
+    ) -> List[Publication]:
         """
         Search for publications (implements BasePublicationClient interface).
 
@@ -292,7 +317,9 @@ class BioRxivClient(BasePublicationClient):
             if result:
                 return [self._convert_to_publication(result)]
 
-        logger.warning("bioRxiv search works best with DOI - general search not supported")
+        logger.warning(
+            "bioRxiv search works best with DOI - general search not supported"
+        )
         return []
 
     def _convert_to_publication(self, result: Dict) -> Publication:

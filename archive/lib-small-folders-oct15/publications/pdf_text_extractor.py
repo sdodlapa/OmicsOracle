@@ -52,10 +52,16 @@ class PDFTextExtractor:
 
     def __init__(self):
         """Initialize full-text extractor."""
-        self.capabilities = {"pdfplumber": HAS_PDFPLUMBER, "pypdf2": HAS_PYPDF2, "html": HAS_BS4}
+        self.capabilities = {
+            "pdfplumber": HAS_PDFPLUMBER,
+            "pypdf2": HAS_PYPDF2,
+            "html": HAS_BS4,
+        }
 
         if not (HAS_PDFPLUMBER or HAS_PYPDF2):
-            logger.error("No PDF extraction libraries available! Install pdfplumber or PyPDF2")
+            logger.error(
+                "No PDF extraction libraries available! Install pdfplumber or PyPDF2"
+            )
 
     def extract_from_pdf(self, pdf_path: Path) -> Optional[str]:
         """Extract text from PDF using multiple methods.
@@ -77,7 +83,9 @@ class PDFTextExtractor:
             try:
                 text = self._extract_with_pdfplumber(pdf_path)
                 if text and len(text) > 100:
-                    logger.info(f"Extracted {len(text)} chars with pdfplumber from {pdf_path.name}")
+                    logger.info(
+                        f"Extracted {len(text)} chars with pdfplumber from {pdf_path.name}"
+                    )
                     return self.clean_text(text)
             except Exception as e:
                 logger.debug(f"pdfplumber failed for {pdf_path.name}: {e}")
@@ -87,7 +95,9 @@ class PDFTextExtractor:
             try:
                 text = self._extract_with_pypdf2(pdf_path)
                 if text and len(text) > 100:
-                    logger.info(f"Extracted {len(text)} chars with PyPDF2 from {pdf_path.name}")
+                    logger.info(
+                        f"Extracted {len(text)} chars with PyPDF2 from {pdf_path.name}"
+                    )
                     return self.clean_text(text)
             except Exception as e:
                 logger.debug(f"PyPDF2 failed for {pdf_path.name}: {e}")
@@ -298,5 +308,7 @@ class PDFTextExtractor:
             "characters": len(text),
             "words": len(words),
             "lines": len(lines),
-            "avg_word_length": round(sum(len(w) for w in words) / len(words), 2) if words else 0,
+            "avg_word_length": round(sum(len(w) for w in words) / len(words), 2)
+            if words
+            else 0,
         }

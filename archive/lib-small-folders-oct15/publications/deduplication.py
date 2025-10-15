@@ -104,7 +104,9 @@ class AdvancedDeduplicator:
 
         duplicates_removed = len(publications) - len(unique_pubs)
         if duplicates_removed > 0:
-            print(f"Advanced deduplication removed {duplicates_removed} additional duplicates")
+            print(
+                f"Advanced deduplication removed {duplicates_removed} additional duplicates"
+            )
 
         return unique_pubs
 
@@ -311,7 +313,9 @@ class AdvancedDeduplicator:
             if not pub1.journal:
                 continue
 
-            is_preprint1 = any(venue in pub1.journal.lower() for venue in preprint_venues)
+            is_preprint1 = any(
+                venue in pub1.journal.lower() for venue in preprint_venues
+            )
 
             if not is_preprint1:
                 continue  # Not a preprint
@@ -321,7 +325,9 @@ class AdvancedDeduplicator:
                 if not pub2.journal:
                     continue
 
-                is_preprint2 = any(venue in pub2.journal.lower() for venue in preprint_venues)
+                is_preprint2 = any(
+                    venue in pub2.journal.lower() for venue in preprint_venues
+                )
 
                 if is_preprint2:
                     continue  # Both preprints

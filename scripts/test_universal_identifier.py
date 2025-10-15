@@ -29,7 +29,7 @@ sys.path.insert(0, str(project_root))
 
 from omics_oracle_v2.lib.search_engines.citations.models import (
     Publication, PublicationSource)
-from omics_oracle_v2.lib.shared.identifiers import (
+from omics_oracle_v2.lib.utils.identifiers import (
     IdentifierType, UniversalIdentifier, get_identifier_from_filename,
     resolve_doi_from_filename)
 

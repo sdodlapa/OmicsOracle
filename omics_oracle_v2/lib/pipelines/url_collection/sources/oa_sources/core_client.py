@@ -31,8 +31,10 @@ from typing import Dict, List, Optional
 import aiohttp
 from pydantic import BaseModel, Field, field_validator
 
-from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.base import \
+    BasePublicationClient
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 logger = logging.getLogger(__name__)
 
@@ -50,10 +52,16 @@ class COREConfig(BaseModel):
     """
 
     api_key: str = Field(..., description="CORE API key (required)")
-    api_url: str = Field(default="https://api.core.ac.uk/v3", description="Base API URL for CORE")
+    api_url: str = Field(
+        default="https://api.core.ac.uk/v3", description="Base API URL for CORE"
+    )
     timeout: int = Field(default=30, description="Request timeout in seconds", ge=1)
-    retry_count: int = Field(default=3, description="Number of retries on failure", ge=0)
-    rate_limit_per_second: int = Field(default=10, description="Requests per second", ge=1)
+    retry_count: int = Field(
+        default=3, description="Number of retries on failure", ge=0
+    )
+    rate_limit_per_second: int = Field(
+        default=10, description="Requests per second", ge=1
+    )
 
     @field_validator("api_key")
     @classmethod
@@ -83,7 +91,9 @@ class COREClient(BasePublicationClient):
     - Metadata enrichment
     """
 
-    def __init__(self, config: Optional[COREConfig] = None, api_key: Optional[str] = None):
+    def __init__(
+        self, config: Optional[COREConfig] = None, api_key: Optional[str] = None
+    ):
         """
         Initialize CORE client.
 
@@ -149,7 +159,9 @@ class COREClient(BasePublicationClient):
 
         for attempt in range(self.config.retry_count):
             try:
-                async with self.session.get(url, params=params, timeout=self.config.timeout) as response:
+                async with self.session.get(
+                    url, params=params, timeout=self.config.timeout
+                ) as response:
                     if response.status == 200:
                         return await response.json()
 
@@ -244,7 +256,9 @@ class COREClient(BasePublicationClient):
         has_fulltext = bool(result.get("fullText"))
         has_sources = bool(result.get("sourceFulltextUrls"))
 
-        logger.debug(f"CORE result - PDF: {has_pdf}, FullText: {has_fulltext}, Sources: {has_sources}")
+        logger.debug(
+            f"CORE result - PDF: {has_pdf}, FullText: {has_fulltext}, Sources: {has_sources}"
+        )
 
         return result
 
@@ -314,7 +328,9 @@ class COREClient(BasePublicationClient):
 
         return None
 
-    async def search(self, query: str, max_results: int = 100, **kwargs) -> List[Publication]:
+    async def search(
+        self, query: str, max_results: int = 100, **kwargs
+    ) -> List[Publication]:
         """
         Search for publications (implements BasePublicationClient interface).
 

@@ -36,8 +36,10 @@ from typing import Dict, List, Optional
 import aiohttp
 from pydantic import BaseModel, Field
 
-from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.base import \
+    BasePublicationClient
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 logger = logging.getLogger(__name__)
 
@@ -57,11 +59,18 @@ class ArXivConfig(BaseModel):
     """
 
     enable: bool = Field(default=True, description="Enable arXiv client")
-    api_url: str = Field(default="http://export.arxiv.org/api/query", description="Base API URL for arXiv")
+    api_url: str = Field(
+        default="http://export.arxiv.org/api/query",
+        description="Base API URL for arXiv",
+    )
     timeout: int = Field(default=30, description="Request timeout in seconds", ge=1)
-    retry_count: int = Field(default=3, description="Number of retries on failure", ge=0)
+    retry_count: int = Field(
+        default=3, description="Number of retries on failure", ge=0
+    )
     rate_limit_delay: float = Field(
-        default=3.0, description="Delay between requests (3 seconds per arXiv policy)", ge=0.1
+        default=3.0,
+        description="Delay between requests (3 seconds per arXiv policy)",
+        ge=0.1,
     )
     max_results_per_query: int = Field(
         default=100, description="Maximum results per search query", ge=1, le=1000
@@ -92,10 +101,15 @@ class ArXivClient(BasePublicationClient):
     # arXiv ID patterns
     # Old format: math/0703324 (subject/YYMMNNN)
     # New format: 2301.12345 (YYMM.NNNNN)
-    ARXIV_ID_PATTERN = re.compile(r"(?:arxiv:)?(\d{4}\.\d{4,5}|[a-z\-]+/\d{7})", re.IGNORECASE)
+    ARXIV_ID_PATTERN = re.compile(
+        r"(?:arxiv:)?(\d{4}\.\d{4,5}|[a-z\-]+/\d{7})", re.IGNORECASE
+    )
 
     # Atom namespace for parsing XML responses
-    ATOM_NS = {"atom": "http://www.w3.org/2005/Atom", "arxiv": "http://arxiv.org/schemas/atom"}
+    ATOM_NS = {
+        "atom": "http://www.w3.org/2005/Atom",
+        "arxiv": "http://arxiv.org/schemas/atom",
+    }
 
     def __init__(self, config: Optional[ArXivConfig] = None):
         """
@@ -114,7 +128,9 @@ class ArXivClient(BasePublicationClient):
         self.ssl_context.check_hostname = False
         self.ssl_context.verify_mode = ssl.CERT_NONE
 
-        logger.info(f"Initialized arXiv client (rate limit: 1 req/{self.config.rate_limit_delay}s)")
+        logger.info(
+            f"Initialized arXiv client (rate limit: 1 req/{self.config.rate_limit_delay}s)"
+        )
 
     @property
     def source_name(self) -> str:
@@ -167,17 +183,23 @@ class ArXivClient(BasePublicationClient):
             XML response as string, or None on failure
         """
         if not self.session:
-            raise RuntimeError("Client not initialized. Use 'async with' context manager.")
+            raise RuntimeError(
+                "Client not initialized. Use 'async with' context manager."
+            )
 
         await self._rate_limit()
 
         for attempt in range(self.config.retry_count):
             try:
-                async with self.session.get(self.config.api_url, params=params) as response:
+                async with self.session.get(
+                    self.config.api_url, params=params
+                ) as response:
                     if response.status == 200:
                         return await response.text()
                     else:
-                        logger.warning(f"arXiv API returned status {response.status} (attempt {attempt + 1})")
+                        logger.warning(
+                            f"arXiv API returned status {response.status} (attempt {attempt + 1})"
+                        )
 
             except asyncio.TimeoutError:
                 logger.warning(f"arXiv API timeout (attempt {attempt + 1})")
@@ -222,15 +244,28 @@ class ArXivClient(BasePublicationClient):
                 return None
 
             entry_id = entry_id_elem.text
-            arxiv_id = entry_id.split("/abs/")[-1].replace("v1", "").replace("v2", "").replace("v3", "")
+            arxiv_id = (
+                entry_id.split("/abs/")[-1]
+                .replace("v1", "")
+                .replace("v2", "")
+                .replace("v3", "")
+            )
 
             # Title
             title_elem = entry.find("atom:title", self.ATOM_NS)
-            title = title_elem.text.strip() if title_elem is not None and title_elem.text else None
+            title = (
+                title_elem.text.strip()
+                if title_elem is not None and title_elem.text
+                else None
+            )
 
             # Summary (abstract)
             summary_elem = entry.find("atom:summary", self.ATOM_NS)
-            abstract = summary_elem.text.strip() if summary_elem is not None and summary_elem.text else None
+            abstract = (
+                summary_elem.text.strip()
+                if summary_elem is not None and summary_elem.text
+                else None
+            )
 
             # Authors
             authors = []
@@ -302,7 +337,9 @@ class ArXivClient(BasePublicationClient):
         # Clean arXiv ID
         clean_id = self._extract_arxiv_id(arxiv_id)
         if not clean_id:
-            logger.debug(f"Invalid arXiv ID: {arxiv_id}")  # Changed from warning to debug
+            logger.debug(
+                f"Invalid arXiv ID: {arxiv_id}"
+            )  # Changed from warning to debug
             return None
 
         params = {"id_list": clean_id}

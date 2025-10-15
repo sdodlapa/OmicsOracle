@@ -12,13 +12,10 @@ All pipeline orchestrators have been archived (see extras/pipelines/).
 Production uses SearchOrchestrator for direct client coordination.
 """
 
-from omics_oracle_v2.lib.search_engines.citations.config import PublicationSearchConfig, PubMedConfig
+from omics_oracle_v2.lib.search_engines.citations.config import (
+    PublicationSearchConfig, PubMedConfig)
 from omics_oracle_v2.lib.search_engines.citations.models import (
-    Publication,
-    PublicationResult,
-    PublicationSearchResult,
-    PublicationSource,
-)
+    Publication, PublicationResult, PublicationSearchResult, PublicationSource)
 
 __all__ = [
     # Models

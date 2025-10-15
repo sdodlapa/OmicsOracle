@@ -20,10 +20,14 @@ from pydantic import BaseModel, Field
 
 from omics_oracle_v2.agents.models.search import RankedDataset
 from omics_oracle_v2.api.models.requests import SearchRequest
-from omics_oracle_v2.api.models.responses import DatasetResponse, PublicationResponse, SearchResponse
-from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
+from omics_oracle_v2.api.models.responses import (DatasetResponse,
+                                                  PublicationResponse,
+                                                  SearchResponse)
+from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import \
+    GEOCitationDiscovery
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
-from omics_oracle_v2.lib.search_orchestration import OrchestratorConfig, SearchOrchestrator
+from omics_oracle_v2.lib.search_orchestration import (OrchestratorConfig,
+                                                      SearchOrchestrator)
 from omics_oracle_v2.lib.storage.queries import DatabaseQueries
 
 logger = logging.getLogger(__name__)
@@ -34,7 +38,9 @@ router = APIRouter(tags=["Agents"])
 # Agent Execution Endpoints
 
 
-@router.post("/search", response_model=SearchResponse, summary="Search Datasets and Publications")
+@router.post(
+    "/search", response_model=SearchResponse, summary="Search Datasets and Publications"
+)
 async def execute_search(
     request: SearchRequest,
 ):
@@ -87,7 +93,9 @@ async def execute_search(
         # Build query from search terms
         original_query = " ".join(request.search_terms)
         search_logs.append(f"[SEARCH] Original query: '{original_query}'")
-        logger.info(f"Search request: '{original_query}' (semantic={request.enable_semantic})")
+        logger.info(
+            f"Search request: '{original_query}' (semantic={request.enable_semantic})"
+        )
 
         # Apply GEO filters to query (organism, study_type)
         query_parts = [original_query]
@@ -134,8 +142,13 @@ async def execute_search(
         else:
             search_logs.append(f"[DATA] Query type: {query_type}")
 
-        if search_result.optimized_query and search_result.optimized_query != original_query:
-            search_logs.append(f"[CONFIG] Optimized query: '{search_result.optimized_query}'")
+        if (
+            search_result.optimized_query
+            and search_result.optimized_query != original_query
+        ):
+            search_logs.append(
+                f"[CONFIG] Optimized query: '{search_result.optimized_query}'"
+            )
         else:
             search_logs.append("[INFO] Query used as-is (no optimization needed)")
 
@@ -144,7 +157,9 @@ async def execute_search(
         else:
             search_logs.append("[PROCESS] Fresh search - results fetched from sources")
 
-        search_logs.append(f"[TIME] Pipeline search time: {search_result.search_time_ms:.2f}ms")
+        search_logs.append(
+            f"[TIME] Pipeline search time: {search_result.search_time_ms:.2f}ms"
+        )
 
         # Extract GEO datasets
         geo_datasets = search_result.geo_datasets
@@ -154,10 +169,18 @@ async def execute_search(
         min_samples = request.filters.get("min_samples") if request.filters else None
         if min_samples:
             min_samples_int = int(min_samples)
-            geo_datasets = [d for d in geo_datasets if d.sample_count and d.sample_count >= min_samples_int]
+            geo_datasets = [
+                d
+                for d in geo_datasets
+                if d.sample_count and d.sample_count >= min_samples_int
+            ]
             filters_applied["min_samples"] = str(min_samples_int)
-            search_logs.append(f" After min_samples={min_samples_int} filter: {len(geo_datasets)}")
-            logger.info(f"Filtered by min_samples={min_samples_int}: {len(geo_datasets)} remain")
+            search_logs.append(
+                f" After min_samples={min_samples_int} filter: {len(geo_datasets)}"
+            )
+            logger.info(
+                f"Filtered by min_samples={min_samples_int}: {len(geo_datasets)} remain"
+            )
 
         # Simple ranking by keyword relevance
         ranked_datasets = []
@@ -180,7 +203,9 @@ async def execute_search(
 
             # Summary matches (weight: 0.3)
             summary_lower = (dataset.summary or "").lower()
-            summary_matches = sum(1 for term in search_terms_lower if term in summary_lower)
+            summary_matches = sum(
+                1 for term in search_terms_lower if term in summary_lower
+            )
             if summary_matches > 0:
                 score += min(0.3, summary_matches * 0.15)
                 reasons.append(f"Summary matches {summary_matches} term(s)")
@@ -204,7 +229,9 @@ async def execute_search(
 
             score = min(1.0, score)
             ranked_datasets.append(
-                RankedDataset(dataset=dataset, relevance_score=score, match_reasons=reasons)
+                RankedDataset(
+                    dataset=dataset, relevance_score=score, match_reasons=reasons
+                )
             )
 
         # Sort by relevance (highest first)
@@ -218,7 +245,9 @@ async def execute_search(
         # Add search mode to filters
         filters_applied["search_mode"] = search_result.query_type
         filters_applied["cache_hit"] = str(search_result.cache_hit)
-        filters_applied["optimized"] = str(search_result.optimized_query != original_query)
+        filters_applied["optimized"] = str(
+            search_result.optimized_query != original_query
+        )
 
         # Add result counts
         search_logs.append(
@@ -242,12 +271,16 @@ async def execute_search(
                     pub_counts = geo_stats.get("publication_counts", {})
 
                     db_metrics_map[ranked.dataset.geo_id] = {
-                        "citation_count": pub_counts.get("total", 0),  # Total papers in database
+                        "citation_count": pub_counts.get(
+                            "total", 0
+                        ),  # Total papers in database
                         "pdf_count": pub_counts.get("with_pdf", 0),  # Papers with PDFs
                         "processed_count": pub_counts.get(
                             "with_extraction", 0
                         ),  # Papers with extracted content
-                        "completion_rate": geo_stats.get("completion_rate", 0.0),  # Processing completion %
+                        "completion_rate": geo_stats.get(
+                            "completion_rate", 0.0
+                        ),  # Processing completion %
                     }
                     logger.debug(
                         f"[DB] {ranked.dataset.geo_id}: "
@@ -255,7 +288,9 @@ async def execute_search(
                         f"pdfs={pub_counts.get('with_pdf', 0)}"
                     )
                 except Exception as e:
-                    logger.warning(f"[DB] Could not get stats for {ranked.dataset.geo_id}: {e}")
+                    logger.warning(
+                        f"[DB] Could not get stats for {ranked.dataset.geo_id}: {e}"
+                    )
                     # Default to 0 if database query fails
                     db_metrics_map[ranked.dataset.geo_id] = {
                         "citation_count": 0,
@@ -264,7 +299,9 @@ async def execute_search(
                         "completion_rate": 0.0,
                     }
 
-            search_logs.append(f"[DATABASE] Enriched {len(db_metrics_map)} datasets with database metrics")
+            search_logs.append(
+                f"[DATABASE] Enriched {len(db_metrics_map)} datasets with database metrics"
+            )
         except Exception as db_error:
             logger.error(f"[DB] Database enrichment failed: {db_error}")
             search_logs.append(f"[WARNING] Database enrichment failed: {db_error}")
@@ -291,7 +328,9 @@ async def execute_search(
                 summary=ranked.dataset.summary,
                 organism=ranked.dataset.organism,
                 sample_count=ranked.dataset.sample_count,
-                platform=ranked.dataset.platforms[0] if ranked.dataset.platforms else None,
+                platform=ranked.dataset.platforms[0]
+                if ranked.dataset.platforms
+                else None,
                 relevance_score=ranked.relevance_score,
                 match_reasons=ranked.match_reasons,
                 publication_date=ranked.dataset.publication_date,
@@ -341,7 +380,8 @@ async def execute_search(
                         journal=getattr(pub, "journal", None),
                         publication_date=pub_date_str,
                         geo_ids_mentioned=list(set(geo_ids)),
-                        fulltext_available=hasattr(pub, "full_text") and pub.full_text is not None,
+                        fulltext_available=hasattr(pub, "full_text")
+                        and pub.full_text is not None,
                         pdf_path=getattr(pub, "pdf_path", None),
                     )
                 )
@@ -352,7 +392,8 @@ async def execute_search(
         # RAG Phase 3: Build query processing context for frontend
         query_processing_response = None
         if search_result.query_processing:
-            from omics_oracle_v2.api.models.responses import QueryProcessingResponse
+            from omics_oracle_v2.api.models.responses import \
+                QueryProcessingResponse
 
             query_processing_response = QueryProcessingResponse(
                 extracted_entities=search_result.query_processing.extracted_entities,
@@ -408,7 +449,8 @@ async def execute_search(
 async def enrich_fulltext(
     datasets: List[DatasetResponse],
     max_papers: int = Query(
-        default=None, description="Maximum papers to download per dataset. None = download ALL papers."
+        default=None,
+        description="Maximum papers to download per dataset. None = download ALL papers.",
     ),
     include_full_content: bool = Query(
         default=False,
@@ -421,7 +463,8 @@ async def enrich_fulltext(
         "This shows how the dataset was USED in research.",
     ),
     max_citing_papers: int = Query(
-        default=10, description="Maximum citing papers to download per dataset (default=10)."
+        default=10,
+        description="Maximum citing papers to download per dataset (default=10).",
     ),
     download_original: bool = Query(
         default=True,
@@ -451,10 +494,14 @@ async def enrich_fulltext(
     import os
     from pathlib import Path
 
+    from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import \
+        PubMedConfig
+    from omics_oracle_v2.lib.pipelines.citation_discovery.clients.pubmed import \
+        PubMedClient
     from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
-    from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig
-    from omics_oracle_v2.lib.registry import get_registry
-    from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient, PubMedConfig
+    from omics_oracle_v2.lib.pipelines.url_collection import (
+        FullTextManager, FullTextManagerConfig)
+    from omics_oracle_v2.lib.storage import get_registry
 
     start_time = time.time()
 
@@ -484,7 +531,9 @@ async def enrich_fulltext(
         )
 
         # Initialize PubMed client for metadata fetching
-        pubmed_client = PubMedClient(PubMedConfig(email=os.getenv("NCBI_EMAIL", "research@omicsoracle.ai")))
+        pubmed_client = PubMedClient(
+            PubMedConfig(email=os.getenv("NCBI_EMAIL", "research@omicsoracle.ai"))
+        )
 
         # Initialize manager
         if not fulltext_manager.initialized:
@@ -509,7 +558,11 @@ async def enrich_fulltext(
                 continue
 
             # STEP 0: Decide what papers to download based on user preferences
-            original_pmids = dataset.pubmed_ids[:max_papers] if max_papers is not None else dataset.pubmed_ids
+            original_pmids = (
+                dataset.pubmed_ids[:max_papers]
+                if max_papers is not None
+                else dataset.pubmed_ids
+            )
 
             # Track what we'll download
             papers_to_download = {
@@ -562,15 +615,23 @@ async def enrich_fulltext(
                         logger.info(
                             f"  [{dataset.geo_id}] [OK] Found {len(citation_result.citing_papers)} citing papers"
                         )
-                        papers_to_download["citing"] = citation_result.citing_papers[:max_citing_papers]
+                        papers_to_download["citing"] = citation_result.citing_papers[
+                            :max_citing_papers
+                        ]
                     else:
-                        logger.warning(f"  [{dataset.geo_id}] [WARNING] No citing papers found")
+                        logger.warning(
+                            f"  [{dataset.geo_id}] [WARNING] No citing papers found"
+                        )
 
                 except Exception as e:
-                    logger.error(f"  [ERROR] Citation discovery failed: {e}", exc_info=True)
+                    logger.error(
+                        f"  [ERROR] Citation discovery failed: {e}", exc_info=True
+                    )
 
             # STEP 3: If no papers to download, skip
-            total_papers = len(papers_to_download["original"]) + len(papers_to_download["citing"])
+            total_papers = len(papers_to_download["original"]) + len(
+                papers_to_download["citing"]
+            )
             if total_papers == 0:
                 logger.warning(f"[SKIP] No papers to download for {dataset.geo_id}")
                 enriched_datasets.append(dataset)
@@ -586,33 +647,45 @@ async def enrich_fulltext(
             publications = papers_to_download["original"] + papers_to_download["citing"]
 
             # STEP 1: Get URLs from all sources (same as pipeline)
-            logger.info(f" Finding full-text URLs for {len(publications)} publications from all sources...")
+            logger.info(
+                f" Finding full-text URLs for {len(publications)} publications from all sources..."
+            )
             fulltext_results = await fulltext_manager.get_fulltext_batch(publications)
 
             # DEBUG: Log all fulltext results
-            logger.warning(f"[DATA] FULLTEXT RESULTS: Received {len(fulltext_results)} results")
+            logger.warning(
+                f"[DATA] FULLTEXT RESULTS: Received {len(fulltext_results)} results"
+            )
             for idx, (pub, result) in enumerate(zip(publications, fulltext_results)):
                 logger.warning(
                     f"   [{idx+1}] PMID {pub.pmid}: success={result.success}, source={result.source.value if result.success else 'NONE'}, has_url={bool(result.url)}"
                 )
 
             # STEP 2: Set fulltext_url on publications for PDFDownloadManager
-            logger.warning("[LINK] STEP 2: Setting fulltext URLs on publication objects...")
+            logger.warning(
+                "[LINK] STEP 2: Setting fulltext URLs on publication objects..."
+            )
             urls_set = 0
             for pub, result in zip(publications, fulltext_results):
                 if result.success and result.url:
                     pub.fulltext_url = result.url
                     pub.fulltext_source = result.source.value
                     urls_set += 1
-                    logger.warning(f"   [OK] PMID {pub.pmid}: URL set from {result.source.value}")
+                    logger.warning(
+                        f"   [OK] PMID {pub.pmid}: URL set from {result.source.value}"
+                    )
                 else:
                     logger.warning(
                         f"   [ERROR] PMID {pub.pmid}: NO URL (success={result.success}, url={bool(result.url)})"
                     )
-            logger.warning(f"[DATA] STEP 2 COMPLETE: Set URLs on {urls_set}/{len(publications)} publications")
+            logger.warning(
+                f"[DATA] STEP 2 COMPLETE: Set URLs on {urls_set}/{len(publications)} publications"
+            )
 
             # STEP 3: Download PDFs with automatic waterfall fallback (organized by paper type)
-            logger.info("[DOWNLOAD] STEP 3: Downloading PDFs with automatic waterfall fallback...")
+            logger.info(
+                "[DOWNLOAD] STEP 3: Downloading PDFs with automatic waterfall fallback..."
+            )
 
             # Create organized directory structure: data/pdfs/{geo_id}/{original|citing}/
             base_pdf_dir = Path("data/pdfs") / dataset.geo_id
@@ -645,7 +718,9 @@ async def enrich_fulltext(
                     )
 
                     result = await pdf_downloader.download_with_fallback(
-                        publication=pub, all_urls=url_result.all_urls, output_dir=original_dir
+                        publication=pub,
+                        all_urls=url_result.all_urls,
+                        output_dir=original_dir,
                     )
 
                     download_results["original"].append(result)
@@ -666,7 +741,9 @@ async def enrich_fulltext(
 
             # Download CITING papers
             if papers_to_download["citing"]:
-                logger.info(f"  [CITING] Downloading {len(papers_to_download['citing'])} citing paper(s)...")
+                logger.info(
+                    f"  [CITING] Downloading {len(papers_to_download['citing'])} citing paper(s)..."
+                )
                 for pub in papers_to_download["citing"]:
                     url_result = await fulltext_manager.get_all_fulltext_urls(pub)
 
@@ -674,7 +751,9 @@ async def enrich_fulltext(
                     pub._all_collected_urls = url_result.all_urls
 
                     if not url_result.all_urls:
-                        logger.warning(f"    [SKIP] PMID {pub.pmid or pub.doi}: No URLs found")
+                        logger.warning(
+                            f"    [SKIP] PMID {pub.pmid or pub.doi}: No URLs found"
+                        )
                         continue
 
                     logger.info(
@@ -683,7 +762,9 @@ async def enrich_fulltext(
                     )
 
                     result = await pdf_downloader.download_with_fallback(
-                        publication=pub, all_urls=url_result.all_urls, output_dir=citing_dir
+                        publication=pub,
+                        all_urls=url_result.all_urls,
+                        output_dir=citing_dir,
                     )
 
                     download_results["citing"].append(result)
@@ -703,8 +784,12 @@ async def enrich_fulltext(
                         )
 
             # Log summary
-            total_success = successful_downloads["original"] + successful_downloads["citing"]
-            total_attempted = len(papers_to_download["original"]) + len(papers_to_download["citing"])
+            total_success = (
+                successful_downloads["original"] + successful_downloads["citing"]
+            )
+            total_attempted = len(papers_to_download["original"]) + len(
+                papers_to_download["citing"]
+            )
             logger.warning(
                 f"[OK] STEP 3 COMPLETE: Downloaded {total_success}/{total_attempted} PDFs "
                 f"(original={successful_downloads['original']}/{len(papers_to_download['original'])}, "
@@ -723,7 +808,9 @@ async def enrich_fulltext(
             papers_to_parse = []
             if include_citing_papers and papers_to_download["citing"]:
                 papers_to_parse.extend(papers_to_download["citing"])
-                logger.info(f"  [PRIORITY] Will show {len(papers_to_download['citing'])} citing papers first")
+                logger.info(
+                    f"  [PRIORITY] Will show {len(papers_to_download['citing'])} citing papers first"
+                )
             if download_original and papers_to_download["original"]:
                 papers_to_parse.extend(papers_to_download["original"])
                 logger.info(
@@ -739,16 +826,20 @@ async def enrich_fulltext(
 
                 # Try to get parsed content if PDF was downloaded
                 parsed_content = None
-                has_pdf = hasattr(pub, "pdf_path") and pub.pdf_path and Path(pub.pdf_path).exists()
+                has_pdf = (
+                    hasattr(pub, "pdf_path")
+                    and pub.pdf_path
+                    and Path(pub.pdf_path).exists()
+                )
 
                 if has_pdf:
-                    logger.info(f"[DOC] Parsing PDF for PMID {pub.pmid} from {pub.pdf_path}...")
+                    logger.info(
+                        f"[DOC] Parsing PDF for PMID {pub.pmid} from {pub.pdf_path}..."
+                    )
                     try:
                         # FIX: Use ParsedCache directly instead of deprecated get_parsed_content()
                         from omics_oracle_v2.lib.pipelines.text_enrichment import (
-                            PDFExtractor,
-                            get_parsed_cache,
-                        )
+                            PDFExtractor, get_parsed_cache)
 
                         # Check cache first
                         cache = get_parsed_cache()
@@ -756,12 +847,15 @@ async def enrich_fulltext(
 
                         if cached_content:
                             parsed_content = cached_content.get("content", {})
-                            logger.info(f"   [CACHE] Using cached parsed content for {pub.pmid}")
+                            logger.info(
+                                f"   [CACHE] Using cached parsed content for {pub.pmid}"
+                            )
                         else:
                             # Parse the downloaded PDF
                             extractor = PDFExtractor(enable_enrichment=True)
                             parsed_content = extractor.extract_text(
-                                Path(pub.pdf_path), metadata={"pmid": pub.pmid, "title": pub.title}
+                                Path(pub.pdf_path),
+                                metadata={"pmid": pub.pmid, "title": pub.title},
                             )
 
                             # Cache it for future use
@@ -771,7 +865,9 @@ async def enrich_fulltext(
                                 source_file=str(pub.pdf_path),
                                 source_type="pdf",
                             )
-                            logger.info(f"   [CACHE] Saved parsed content for {pub.pmid}")
+                            logger.info(
+                                f"   [CACHE] Saved parsed content for {pub.pmid}"
+                            )
 
                         logger.info(
                             f"   [OK] Parsed {Path(pub.pdf_path).stat().st_size // 1024} KB PDF: "
@@ -779,7 +875,9 @@ async def enrich_fulltext(
                             f"methods={len(parsed_content.get('methods', ''))} chars"
                         )
                     except Exception as e:
-                        logger.error(f"   [ERROR] Failed to parse PDF for {pub.pmid}: {e}")
+                        logger.error(
+                            f"   [ERROR] Failed to parse PDF for {pub.pmid}: {e}"
+                        )
                         import traceback
 
                         logger.error(f"   [TRACE] {traceback.format_exc()}")
@@ -798,10 +896,15 @@ async def enrich_fulltext(
                 fulltext_info = {
                     "pmid": pub.pmid if hasattr(pub, "pmid") else None,
                     "doi": pub.doi if hasattr(pub, "doi") else None,
-                    "title": pub.title or (parsed_content.get("title") if parsed_content else pub.title),
+                    "title": pub.title
+                    or (parsed_content.get("title") if parsed_content else pub.title),
                     "url": pub.fulltext_url,
-                    "source": pub.fulltext_source if hasattr(pub, "fulltext_source") else "unknown",
-                    "pdf_path": str(pub.pdf_path) if hasattr(pub, "pdf_path") and pub.pdf_path else None,
+                    "source": pub.fulltext_source
+                    if hasattr(pub, "fulltext_source")
+                    else "unknown",
+                    "pdf_path": str(pub.pdf_path)
+                    if hasattr(pub, "pdf_path") and pub.pdf_path
+                    else None,
                     "paper_type": pub.paper_type
                     if hasattr(pub, "paper_type")
                     else "unknown",  # "original" or "citing"
@@ -846,8 +949,12 @@ async def enrich_fulltext(
                     )
 
             # Count papers by type
-            citing_papers_count = sum(1 for f in dataset.fulltext if f.get("paper_type") == "citing")
-            original_papers_count = sum(1 for f in dataset.fulltext if f.get("paper_type") == "original")
+            citing_papers_count = sum(
+                1 for f in dataset.fulltext if f.get("paper_type") == "citing"
+            )
+            original_papers_count = sum(
+                1 for f in dataset.fulltext if f.get("paper_type") == "original"
+            )
 
             logger.warning(
                 f"[DATA] STEP 4 COMPLETE: Added {added_count} entries to fulltext "
@@ -860,19 +967,27 @@ async def enrich_fulltext(
             if dataset.fulltext_count == 0:
                 # Differentiate between download failure and parse failure
                 if total_successful > 0:
-                    dataset.fulltext_status = "parse_failed"  # Downloaded but couldn't parse
+                    dataset.fulltext_status = (
+                        "parse_failed"  # Downloaded but couldn't parse
+                    )
                     logger.error(
                         f"[STATUS] Parse failed: {total_successful} PDFs downloaded but none could be parsed"
                     )
                 else:
                     dataset.fulltext_status = "download_failed"  # Couldn't download
-                    logger.error(f"[STATUS] Download failed: No PDFs could be downloaded from any source")
+                    logger.error(
+                        f"[STATUS] Download failed: No PDFs could be downloaded from any source"
+                    )
             elif dataset.fulltext_count < total_papers:
                 dataset.fulltext_status = "partial"
-                logger.warning(f"[STATUS] Partial: {dataset.fulltext_count}/{total_papers} papers processed")
+                logger.warning(
+                    f"[STATUS] Partial: {dataset.fulltext_count}/{total_papers} papers processed"
+                )
             else:
                 dataset.fulltext_status = "available"
-                logger.info(f"[STATUS] Success: All {dataset.fulltext_count} papers processed")
+                logger.info(
+                    f"[STATUS] Success: All {dataset.fulltext_count} papers processed"
+                )
 
             logger.warning(
                 f"[DATA] FINAL STATUS: fulltext_count={dataset.fulltext_count}/{total_papers}, "
@@ -899,9 +1014,15 @@ async def enrich_fulltext(
                         "journal": pub.journal if hasattr(pub, "journal") else None,
                         "year": pub.year if hasattr(pub, "year") else None,
                         "paper_type": paper_type,
-                        "pdf_path": str(pub.pdf_path) if hasattr(pub, "pdf_path") and pub.pdf_path else None,
-                        "fulltext_source": pub.fulltext_source if hasattr(pub, "fulltext_source") else None,
-                        "fulltext_url": pub.fulltext_url if hasattr(pub, "fulltext_url") else None,
+                        "pdf_path": str(pub.pdf_path)
+                        if hasattr(pub, "pdf_path") and pub.pdf_path
+                        else None,
+                        "fulltext_source": pub.fulltext_source
+                        if hasattr(pub, "fulltext_source")
+                        else None,
+                        "fulltext_url": pub.fulltext_url
+                        if hasattr(pub, "fulltext_url")
+                        else None,
                         # Store ALL collected URLs for retry capability
                         "all_urls": [],
                     }
@@ -955,19 +1076,25 @@ async def enrich_fulltext(
                     "original": {
                         "count": len(papers_to_download["original"]),
                         "downloaded": successful_downloads["original"],
-                        "papers": build_paper_metadata(papers_to_download["original"], "original"),
+                        "papers": build_paper_metadata(
+                            papers_to_download["original"], "original"
+                        ),
                     },
                     "citing": {
                         "count": len(papers_to_download["citing"]),
                         "downloaded": successful_downloads["citing"],
-                        "papers": build_paper_metadata(papers_to_download["citing"], "citing"),
+                        "papers": build_paper_metadata(
+                            papers_to_download["citing"], "citing"
+                        ),
                     },
                 },
                 # Download Statistics
                 "statistics": {
                     "total_attempted": total_papers,
                     "total_successful": total_success,
-                    "success_rate": round(total_success / total_papers * 100, 1) if total_papers > 0 else 0,
+                    "success_rate": round(total_success / total_papers * 100, 1)
+                    if total_papers > 0
+                    else 0,
                     "citing_papers_in_response": citing_papers_count,
                     "original_papers_in_response": original_papers_count,
                 },
@@ -975,7 +1102,8 @@ async def enrich_fulltext(
                 "status": {
                     "fulltext_status": dataset.fulltext_status,
                     "fulltext_count": dataset.fulltext_count,
-                    "needs_retry": total_success < total_papers,  # Flag if downloads failed
+                    "needs_retry": total_success
+                    < total_papers,  # Flag if downloads failed
                 },
             }
 
@@ -987,15 +1115,21 @@ async def enrich_fulltext(
             ):
                 metadata["citation_discovery"] = {
                     "original_pmid": citation_result.original_pmid,
-                    "strategy_a_count": len(citation_result.strategy_breakdown.get("strategy_a", [])),
-                    "strategy_b_count": len(citation_result.strategy_breakdown.get("strategy_b", [])),
+                    "strategy_a_count": len(
+                        citation_result.strategy_breakdown.get("strategy_a", [])
+                    ),
+                    "strategy_b_count": len(
+                        citation_result.strategy_breakdown.get("strategy_b", [])
+                    ),
                     "total_found": len(citation_result.citing_papers),
                 }
 
             with open(metadata_file, "w") as f:
                 json.dump(metadata, f, indent=2)
             logger.info(f"[METADATA] Saved comprehensive metadata to {metadata_file}")
-            logger.info(f"[METADATA] Frontend can use this file for robust downloads/retries")
+            logger.info(
+                f"[METADATA] Frontend can use this file for robust downloads/retries"
+            )
 
             # STEP 5: Store in centralized registry for O(1) frontend access
             logger.info("[REGISTRY] STEP 5: Storing data in centralized registry...")
@@ -1028,7 +1162,8 @@ async def enrich_fulltext(
                             # Link to GEO dataset
                             citation_strategy = (
                                 citation_result.strategy_breakdown.get(paper["pmid"])
-                                if citation_result and hasattr(citation_result, "strategy_breakdown")
+                                if citation_result
+                                and hasattr(citation_result, "strategy_breakdown")
                                 else None
                             )
                             registry.link_geo_to_publication(
@@ -1062,12 +1197,18 @@ async def enrich_fulltext(
                                         error_message="Download failed",
                                     )
 
-                            logger.debug(f"    [OK] Registered {paper_type} paper: PMID {paper['pmid']}")
+                            logger.debug(
+                                f"    [OK] Registered {paper_type} paper: PMID {paper['pmid']}"
+                            )
 
-                logger.info(f"  [OK] Registry updated with complete data for {dataset.geo_id}")
+                logger.info(
+                    f"  [OK] Registry updated with complete data for {dataset.geo_id}"
+                )
 
             except Exception as reg_error:
-                logger.error(f"  [ERROR] Failed to update registry: {reg_error}", exc_info=True)
+                logger.error(
+                    f"  [ERROR] Failed to update registry: {reg_error}", exc_info=True
+                )
                 # Don't fail the whole enrichment if registry fails
 
             # STEP 6: Update dataset metrics for frontend display (Oct 15, 2025)
@@ -1082,11 +1223,15 @@ async def enrich_fulltext(
 
                 # Count how many have PDFs (from fulltext array)
                 pdfs_downloaded = (
-                    len([ft for ft in dataset.fulltext if ft.get("pdf_path")]) if dataset.fulltext else 0
+                    len([ft for ft in dataset.fulltext if ft.get("pdf_path")])
+                    if dataset.fulltext
+                    else 0
                 )
 
                 # Calculate completion rate (if we have full content, it's processed)
-                completion = (pdfs_downloaded / total_papers * 100) if total_papers > 0 else 0.0
+                completion = (
+                    (pdfs_downloaded / total_papers * 100) if total_papers > 0 else 0.0
+                )
 
                 # Update dataset metrics (total citations = original + citing papers)
                 dataset.citation_count = total_papers
@@ -1110,7 +1255,9 @@ async def enrich_fulltext(
             logger.info(f"Sources used: {stats.get('by_source', {})}")
 
         execution_time_ms = (time.time() - start_time) * 1000
-        logger.info(f"Enriched {len(enriched_datasets)} datasets in {execution_time_ms:.2f}ms")
+        logger.info(
+            f"Enriched {len(enriched_datasets)} datasets in {execution_time_ms:.2f}ms"
+        )
 
         return enriched_datasets
 
@@ -1137,23 +1284,31 @@ class QueryProcessingContext(BaseModel):
     """Context from query processing pipeline."""
 
     extracted_entities: Dict[str, List[str]] = Field(
-        default_factory=dict, description="Entities extracted by entity type (GENE, DISEASE, ORGANISM, etc.)"
+        default_factory=dict,
+        description="Entities extracted by entity type (GENE, DISEASE, ORGANISM, etc.)",
     )
-    expanded_terms: List[str] = Field(default_factory=list, description="Expanded search terms and synonyms")
+    expanded_terms: List[str] = Field(
+        default_factory=list, description="Expanded search terms and synonyms"
+    )
     geo_search_terms: List[str] = Field(
         default_factory=list, description="Actual search terms used in GEO query"
     )
     search_intent: Optional[str] = Field(None, description="Detected search intent")
-    query_type: Optional[str] = Field(None, description="Query type (gene-focused, disease-focused, etc.)")
+    query_type: Optional[str] = Field(
+        None, description="Query type (gene-focused, disease-focused, etc.)"
+    )
 
 
 class MatchExplanation(BaseModel):
     """Explanation of why a dataset matched the query."""
 
-    matched_terms: List[str] = Field(default_factory=list, description="Terms that matched in this dataset")
+    matched_terms: List[str] = Field(
+        default_factory=list, description="Terms that matched in this dataset"
+    )
     relevance_score: float = Field(..., description="Relevance score (0-1)")
     match_type: str = Field(
-        default="unknown", description="Type of match (exact, synonym, expanded, semantic)"
+        default="unknown",
+        description="Type of match (exact, synonym, expanded, semantic)",
     )
     confidence: float = Field(default=0.0, description="Confidence in the match (0-1)")
 
@@ -1163,7 +1318,9 @@ class AIAnalysisRequest(BaseModel):
 
     datasets: List[DatasetResponse] = Field(..., description="Datasets to analyze")
     query: str = Field(..., description="Original search query for context")
-    max_datasets: int = Field(default=5, ge=1, le=10, description="Max datasets to analyze")
+    max_datasets: int = Field(
+        default=5, ge=1, le=10, description="Max datasets to analyze"
+    )
     # RAG Phase 1: Enhanced context
     query_processing: Optional[QueryProcessingContext] = Field(
         None, description="Query processing context (entities, synonyms, search terms)"
@@ -1184,11 +1341,15 @@ class AIAnalysisResponse(BaseModel):
     query: str = Field(..., description="Original query")
     analysis: str = Field(..., description="AI-generated analysis")
     insights: List[str] = Field(default_factory=list, description="Key insights")
-    recommendations: List[str] = Field(default_factory=list, description="Recommendations")
+    recommendations: List[str] = Field(
+        default_factory=list, description="Recommendations"
+    )
     model_used: str = Field(default="", description="LLM model used")
 
 
-@router.post("/analyze", response_model=AIAnalysisResponse, summary="AI Analysis of Datasets")
+@router.post(
+    "/analyze", response_model=AIAnalysisResponse, summary="AI Analysis of Datasets"
+)
 async def analyze_datasets(
     request: AIAnalysisRequest,
 ):
@@ -1214,8 +1375,9 @@ async def analyze_datasets(
     try:
         # Import here to avoid circular dependency
         from omics_oracle_v2.api.dependencies import get_settings
-        from omics_oracle_v2.lib.analysis.ai.client import SummarizationClient
-        from omics_oracle_v2.lib.pipelines.text_enrichment import get_parsed_cache
+        from omics_oracle_v2.api.helpers import call_openai
+        from omics_oracle_v2.lib.pipelines.text_enrichment import \
+            get_parsed_cache
 
         settings = get_settings()
 
@@ -1227,8 +1389,8 @@ async def analyze_datasets(
                 "Set OPENAI_API_KEY environment variable.",
             )
 
-        # Initialize AI client
-        ai_client = SummarizationClient(settings=settings)
+        # No longer need to initialize heavy AI client
+        # ai_client = SummarizationClient(settings=settings)  # REMOVED: 791 LOC replaced with 50-line helper
 
         # Initialize ParsedCache for loading parsed content from disk
         # (Direct access to Phase 4 component - no deprecated wrapper)
@@ -1342,7 +1504,12 @@ async def analyze_datasets(
                     ds.fulltext,
                     key=lambda p: (
                         # Priority 1: Original dataset papers first
-                        0 if (hasattr(ds, "pubmed_ids") and p.pmid in (ds.pubmed_ids or [])) else 1,
+                        0
+                        if (
+                            hasattr(ds, "pubmed_ids")
+                            and p.pmid in (ds.pubmed_ids or [])
+                        )
+                        else 1,
                         # Priority 2: Papers with parsed content (quality check)
                         0 if (hasattr(p, "has_methods") and p.has_methods) else 1,
                         # Priority 3: Reverse PMID (newer papers first, roughly)
@@ -1367,13 +1534,25 @@ async def analyze_datasets(
                 for j, ft in enumerate(papers_to_analyze, 1):
                     # Load parsed content from disk if not available in dataset object
                     # (Frontend strips full-text to reduce HTTP payload size)
-                    abstract_text = ft.abstract if hasattr(ft, "abstract") and ft.abstract else None
-                    methods_text = ft.methods if hasattr(ft, "methods") and ft.methods else None
-                    results_text = ft.results if hasattr(ft, "results") and ft.results else None
-                    discussion_text = ft.discussion if hasattr(ft, "discussion") and ft.discussion else None
+                    abstract_text = (
+                        ft.abstract if hasattr(ft, "abstract") and ft.abstract else None
+                    )
+                    methods_text = (
+                        ft.methods if hasattr(ft, "methods") and ft.methods else None
+                    )
+                    results_text = (
+                        ft.results if hasattr(ft, "results") and ft.results else None
+                    )
+                    discussion_text = (
+                        ft.discussion
+                        if hasattr(ft, "discussion") and ft.discussion
+                        else None
+                    )
 
                     # If content not in object, load from disk using ParsedCache
-                    if not any([abstract_text, methods_text, results_text, discussion_text]):
+                    if not any(
+                        [abstract_text, methods_text, results_text, discussion_text]
+                    ):
                         if hasattr(ft, "pmid") and ft.pmid:
                             try:
                                 # Load parsed content directly from cache (Phase 4 component)
@@ -1403,7 +1582,9 @@ async def analyze_datasets(
                         ]
                     )
             else:
-                dataset_info.append("   [WARNING] No full-text available (analyzing GEO summary only)")
+                dataset_info.append(
+                    "   [WARNING] No full-text available (analyzing GEO summary only)"
+                )
 
             dataset_summaries.append("\n".join(dataset_info))
 
@@ -1423,13 +1604,19 @@ async def analyze_datasets(
             query_context_section = "\n# QUERY ANALYSIS CONTEXT\n"
 
             if qp.extracted_entities:
-                query_context_section += f"Extracted Entities: {dict(qp.extracted_entities)}\n"
+                query_context_section += (
+                    f"Extracted Entities: {dict(qp.extracted_entities)}\n"
+                )
 
             if qp.expanded_terms:
-                query_context_section += f"Expanded Search Terms: {', '.join(qp.expanded_terms)}\n"
+                query_context_section += (
+                    f"Expanded Search Terms: {', '.join(qp.expanded_terms)}\n"
+                )
 
             if qp.geo_search_terms:
-                query_context_section += f"GEO Query Used: {', '.join(qp.geo_search_terms)}\n"
+                query_context_section += (
+                    f"GEO Query Used: {', '.join(qp.geo_search_terms)}\n"
+                )
 
             if qp.search_intent:
                 query_context_section += f"Search Intent: {qp.search_intent}\n"
@@ -1505,7 +1692,16 @@ Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_paper
             "and dataset content. Be specific about WHY datasets are relevant and HOW they differ."
         )
 
-        analysis = ai_client._call_llm(prompt=analysis_prompt, system_message=system_message, max_tokens=800)
+        # Call OpenAI directly with simple helper (no 791-line library needed)
+        analysis = call_openai(
+            prompt=analysis_prompt,
+            system_message=system_message,
+            api_key=settings.ai.openai_api_key,
+            model=settings.ai.model,
+            max_tokens=800,
+            temperature=settings.ai.temperature,
+            timeout=settings.ai.timeout,
+        )
 
         if not analysis:
             raise HTTPException(
@@ -1526,7 +1722,9 @@ Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_paper
                 current_section = "insights"
             elif "recommend" in line_lower:
                 current_section = "recommendations"
-            elif line.strip() and (line.strip()[0].isdigit() or line.strip().startswith("-")):
+            elif line.strip() and (
+                line.strip()[0].isdigit() or line.strip().startswith("-")
+            ):
                 if current_section == "insights":
                     insights.append(line.strip().lstrip("0123456789.-) "))
                 elif current_section == "recommendations":

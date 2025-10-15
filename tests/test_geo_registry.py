@@ -11,10 +11,9 @@ from pathlib import Path
 # Add project to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import json
 import tempfile
 
-from omics_oracle_v2.lib.registry.geo_registry import GEORegistry
+from omics_oracle_v2.lib.storage.registry.geo_registry import GEORegistry
 
 
 def test_registry():
@@ -67,7 +66,12 @@ def test_registry():
                 "priority": 1,
                 "metadata": {},
             },
-            {"url": "https://unpaywall.org/12345.pdf", "source": "unpaywall", "priority": 2, "metadata": {}},
+            {
+                "url": "https://unpaywall.org/12345.pdf",
+                "source": "unpaywall",
+                "priority": 2,
+                "metadata": {},
+            },
             {
                 "url": "https://doi.org/10.1234/nature.12345",
                 "source": "institutional",
@@ -75,7 +79,9 @@ def test_registry():
                 "metadata": {},
             },
         ]
-        pub_id = registry.register_publication("12345", pub_metadata, urls, doi="10.1234/nature.12345")
+        pub_id = registry.register_publication(
+            "12345", pub_metadata, urls, doi="10.1234/nature.12345"
+        )
         print(f"   ✅ Publication registered (ID: {pub_id})\n")
 
         # Link GEO to publication
@@ -144,7 +150,9 @@ def test_registry():
         if complete_data:
             print("   ✅ Complete data retrieved!\n")
             print("   Data structure:")
-            print(f"   - GEO: {complete_data['geo']['geo_id']} - {complete_data['geo']['title']}")
+            print(
+                f"   - GEO: {complete_data['geo']['geo_id']} - {complete_data['geo']['title']}"
+            )
             print(f"   - Original papers: {len(complete_data['papers']['original'])}")
             print(f"   - Citing papers: {len(complete_data['papers']['citing'])}")
             print(f"   - Total papers: {complete_data['statistics']['total_papers']}")
@@ -159,13 +167,17 @@ def test_registry():
                     print(f"     • {url['source']}: {url['url'][:50]}...")
                 print(f"   - Downloads: {len(orig['download_history'])}")
                 for dl in orig["download_history"]:
-                    print(f"     • {dl['source']}: {dl['status']} ({dl['downloaded_at']})")
+                    print(
+                        f"     • {dl['source']}: {dl['status']} ({dl['downloaded_at']})"
+                    )
 
             # Show citing papers
             print(f"\n   Citing papers ({len(complete_data['papers']['citing'])}):")
             for paper in complete_data["papers"]["citing"]:
                 print(f"   - PMID {paper['pmid']}: {paper['title'][:50]}...")
-                print(f"     URLs: {len(paper['urls'])}, Downloads: {len(paper['download_history'])}")
+                print(
+                    f"     URLs: {len(paper['urls'])}, Downloads: {len(paper['download_history'])}"
+                )
         else:
             print("   ❌ Failed to retrieve data!")
             return False
@@ -176,7 +188,9 @@ def test_registry():
         if retry_urls:
             print(f"   ✅ Found {len(retry_urls)} URLs for retry")
             for url in retry_urls:
-                print(f"   - {url['source']} (priority {url['priority']}): {url['url'][:50]}...")
+                print(
+                    f"   - {url['source']} (priority {url['priority']}): {url['url'][:50]}..."
+                )
         else:
             print("   ⚠️ No URLs found")
 

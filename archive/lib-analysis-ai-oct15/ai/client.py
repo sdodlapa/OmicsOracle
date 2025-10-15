@@ -14,9 +14,11 @@ from omics_oracle_v2.core.exceptions import AIError
 if TYPE_CHECKING:
     from omics_oracle_v2.core.config import Settings
 
-from .models import BatchSummaryResponse, ModelInfo, SummaryResponse, SummaryType
+from .models import (BatchSummaryResponse, ModelInfo, SummaryResponse,
+                     SummaryType)
 from .prompts import PromptBuilder
-from .utils import aggregate_batch_statistics, estimate_tokens, extract_technical_details, prepare_metadata
+from .utils import (aggregate_batch_statistics, estimate_tokens,
+                    extract_technical_details, prepare_metadata)
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +67,9 @@ class SummarizationClient:
         if HAS_OPENAI and self.settings.openai_api_key:
             try:
                 self.client = OpenAI(api_key=self.settings.openai_api_key)
-                logger.info(f"OpenAI client initialized with model: {self.settings.model}")
+                logger.info(
+                    f"OpenAI client initialized with model: {self.settings.model}"
+                )
             except Exception as e:
                 logger.error(f"Failed to initialize OpenAI client: {e}")
         else:
@@ -110,7 +114,10 @@ class SummarizationClient:
 
         # Extract dataset ID
         actual_dataset_id = (
-            dataset_id or cleaned_metadata.get("accession") or cleaned_metadata.get("id") or "unknown"
+            dataset_id
+            or cleaned_metadata.get("accession")
+            or cleaned_metadata.get("id")
+            or "unknown"
         )
 
         logger.info(f"Generating {summary_type.value} summary for {actual_dataset_id}")
@@ -125,11 +132,15 @@ class SummarizationClient:
 
             # Generate different components based on summary type
             if summary_type in [SummaryType.BRIEF, SummaryType.COMPREHENSIVE]:
-                response.overview = self._generate_overview(cleaned_metadata, query_context)
+                response.overview = self._generate_overview(
+                    cleaned_metadata, query_context
+                )
 
             if summary_type in [SummaryType.COMPREHENSIVE, SummaryType.TECHNICAL]:
                 response.methodology = self._generate_methodology(cleaned_metadata)
-                response.significance = self._generate_significance(cleaned_metadata, query_context)
+                response.significance = self._generate_significance(
+                    cleaned_metadata, query_context
+                )
 
             if summary_type == SummaryType.BRIEF:
                 response.brief = self._generate_brief(cleaned_metadata, query_context)
@@ -152,7 +163,10 @@ class SummarizationClient:
             )
             response.token_usage = estimate_tokens(total_text)
 
-            logger.info(f"Generated summary for {actual_dataset_id} " f"(~{response.token_usage} tokens)")
+            logger.info(
+                f"Generated summary for {actual_dataset_id} "
+                f"(~{response.token_usage} tokens)"
+            )
 
             return response if response.has_content() else None
 
@@ -167,7 +181,9 @@ class SummarizationClient:
         prompt = self.prompt_builder.build_overview_prompt(metadata, query_context)
         system_message = self.prompt_builder.get_system_message("overview")
 
-        return self._call_llm(prompt, system_message, max_tokens=self.settings.max_tokens)
+        return self._call_llm(
+            prompt, system_message, max_tokens=self.settings.max_tokens
+        )
 
     def _generate_methodology(self, metadata: Dict[str, Any]) -> Optional[str]:
         """Generate methodology summary."""
@@ -185,14 +201,20 @@ class SummarizationClient:
 
         return self._call_llm(prompt, system_message, max_tokens=300)
 
-    def _generate_brief(self, metadata: Dict[str, Any], query_context: Optional[str] = None) -> Optional[str]:
+    def _generate_brief(
+        self, metadata: Dict[str, Any], query_context: Optional[str] = None
+    ) -> Optional[str]:
         """Generate brief one-paragraph summary."""
-        prompt = self.prompt_builder.build_overview_prompt(metadata, query_context, brief=True)
+        prompt = self.prompt_builder.build_overview_prompt(
+            metadata, query_context, brief=True
+        )
         system_message = self.prompt_builder.get_system_message("brief")
 
         return self._call_llm(prompt, system_message, max_tokens=200)
 
-    def _call_llm(self, prompt: str, system_message: str, max_tokens: int = 500) -> Optional[str]:
+    def _call_llm(
+        self, prompt: str, system_message: str, max_tokens: int = 500
+    ) -> Optional[str]:
         """
         Make LLM API call.
 

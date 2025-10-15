@@ -8,13 +8,9 @@ Components:
 - UniversalIdentifier: Cross-pipeline publication identifier system
 """
 
-from omics_oracle_v2.lib.shared.identifiers import (
-    IdentifierMetadata,
-    IdentifierType,
-    UniversalIdentifier,
-    get_identifier_from_filename,
-    resolve_doi_from_filename,
-)
+from omics_oracle_v2.lib.utils.identifiers import (
+    IdentifierMetadata, IdentifierType, UniversalIdentifier,
+    get_identifier_from_filename, resolve_doi_from_filename)
 
 __all__ = [
     "UniversalIdentifier",

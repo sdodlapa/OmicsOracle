@@ -21,10 +21,9 @@ from pathlib import Path
 # Add project to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import json
 import tempfile
 
-from omics_oracle_v2.lib.registry import GEORegistry
+from omics_oracle_v2.lib.storage import GEORegistry
 
 
 def test_registry_integration():
@@ -103,7 +102,9 @@ def test_registry_integration():
         ]
         registry.register_publication(original_pmid, original_metadata, original_urls)
         registry.link_geo_to_publication(geo_id, original_pmid, "original")
-        print(f"✅ Registered original paper: PMID {original_pmid} with {len(original_urls)} URLs")
+        print(
+            f"✅ Registered original paper: PMID {original_pmid} with {len(original_urls)} URLs"
+        )
 
         # Simulate successful download
         registry.record_download_attempt(
@@ -188,11 +189,17 @@ def test_registry_integration():
         # Check GEO metadata
         assert complete_data["geo"]["geo_id"] == geo_id, "GEO ID mismatch"
         assert complete_data["geo"]["title"] == geo_metadata["title"], "Title mismatch"
-        print(f"✅ GEO metadata: {complete_data['geo']['geo_id']} - {complete_data['geo']['title'][:50]}...")
+        print(
+            f"✅ GEO metadata: {complete_data['geo']['geo_id']} - {complete_data['geo']['title'][:50]}..."
+        )
 
         # Check papers
-        assert len(complete_data["papers"]["original"]) == 1, "Should have 1 original paper"
-        assert len(complete_data["papers"]["citing"]) == 3, "Should have 3 citing papers"
+        assert (
+            len(complete_data["papers"]["original"]) == 1
+        ), "Should have 1 original paper"
+        assert (
+            len(complete_data["papers"]["citing"]) == 3
+        ), "Should have 3 citing papers"
         print(
             f"✅ Papers: {len(complete_data['papers']['original'])} original, {len(complete_data['papers']['citing'])} citing"
         )
@@ -200,11 +207,17 @@ def test_registry_integration():
         # Check URLs are present (for retry capability)
         original_paper = complete_data["papers"]["original"][0]
         assert len(original_paper["urls"]) == 3, "Should have 3 URLs for original paper"
-        print(f"✅ Original paper has {len(original_paper['urls'])} URLs for retry capability")
+        print(
+            f"✅ Original paper has {len(original_paper['urls'])} URLs for retry capability"
+        )
 
         # Check download history
-        assert len(original_paper["download_history"]) == 1, "Should have 1 download attempt"
-        assert original_paper["download_history"][0]["status"] == "success", "Download should be successful"
+        assert (
+            len(original_paper["download_history"]) == 1
+        ), "Should have 1 download attempt"
+        assert (
+            original_paper["download_history"][0]["status"] == "success"
+        ), "Download should be successful"
         print(f"✅ Download history: {len(original_paper['download_history'])} attempts")
 
         # Check statistics
@@ -212,7 +225,9 @@ def test_registry_integration():
         assert stats["total_papers"] == 4, "Should have 4 total papers"
         assert stats["original_papers"] == 1, "Should have 1 original paper"
         assert stats["citing_papers"] == 3, "Should have 3 citing papers"
-        print(f"✅ Statistics: {stats['total_papers']} papers, {stats['successful_downloads']} successful")
+        print(
+            f"✅ Statistics: {stats['total_papers']} papers, {stats['successful_downloads']} successful"
+        )
 
         print()
 
@@ -229,7 +244,9 @@ def test_registry_integration():
         assert len(retry_urls) > 0, "Should have URLs for retry"
         print(f"✅ Found {len(retry_urls)} URLs to retry for PMID {failed_pmid}")
         for url in retry_urls:
-            print(f"   - {url['source']} (priority {url['priority']}): {url['url'][:60]}...")
+            print(
+                f"   - {url['source']} (priority {url['priority']}): {url['url'][:60]}..."
+            )
 
         print()
 
@@ -258,7 +275,9 @@ def test_registry_integration():
         print()
         print("4. Show download statistics:")
         print(f"   - Success rate: {stats['success_rate']}%")
-        print(f"   - {stats['successful_downloads']}/{stats['total_papers']} papers downloaded")
+        print(
+            f"   - {stats['successful_downloads']}/{stats['total_papers']} papers downloaded"
+        )
         print()
 
         # ========================================================================

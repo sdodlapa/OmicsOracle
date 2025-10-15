@@ -32,8 +32,10 @@ from urllib.parse import quote
 import aiohttp
 from pydantic import BaseModel, Field
 
-from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.base import \
+    BasePublicationClient
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 logger = logging.getLogger(__name__)
 
@@ -53,17 +55,25 @@ class CrossrefConfig(BaseModel):
     """
 
     enable: bool = Field(default=True, description="Enable Crossref client")
-    api_url: str = Field(default="https://api.crossref.org", description="Base API URL for Crossref")
+    api_url: str = Field(
+        default="https://api.crossref.org", description="Base API URL for Crossref"
+    )
     email: Optional[str] = Field(
-        default=None, description="Email for polite pool (Crossref-Plus, faster rate limits)"
+        default=None,
+        description="Email for polite pool (Crossref-Plus, faster rate limits)",
     )
     timeout: int = Field(default=30, description="Request timeout in seconds", ge=1)
-    retry_count: int = Field(default=3, description="Number of retries on failure", ge=0)
+    retry_count: int = Field(
+        default=3, description="Number of retries on failure", ge=0
+    )
     rate_limit_per_second: int = Field(
-        default=50, description="Requests per second (50 with email in polite pool)", ge=1
+        default=50,
+        description="Requests per second (50 with email in polite pool)",
+        ge=1,
     )
     user_agent: str = Field(
-        default="OmicsOracle/1.0 (Academic Research Tool)", description="Custom user agent string"
+        default="OmicsOracle/1.0 (Academic Research Tool)",
+        description="Custom user agent string",
     )
 
     @property
@@ -88,7 +98,9 @@ class CrossrefClient(BasePublicationClient):
     Not all DOIs have full-text links available.
     """
 
-    def __init__(self, config: Optional[CrossrefConfig] = None, email: Optional[str] = None):
+    def __init__(
+        self, config: Optional[CrossrefConfig] = None, email: Optional[str] = None
+    ):
         """
         Initialize Crossref client.
 
@@ -122,7 +134,9 @@ class CrossrefClient(BasePublicationClient):
 
         # Add email to User-Agent for polite pool (Crossref-Plus)
         if self.config.email:
-            headers["User-Agent"] = f"{self.config.user_agent}; mailto:{self.config.email}"
+            headers[
+                "User-Agent"
+            ] = f"{self.config.user_agent}; mailto:{self.config.email}"
 
         connector = aiohttp.TCPConnector(ssl=self.ssl_context)
         self.session = aiohttp.ClientSession(
@@ -167,7 +181,9 @@ class CrossrefClient(BasePublicationClient):
             JSON response as dict, or None on failure
         """
         if not self.session:
-            raise RuntimeError("Client not initialized. Use 'async with' context manager.")
+            raise RuntimeError(
+                "Client not initialized. Use 'async with' context manager."
+            )
 
         await self._rate_limit()
 
@@ -270,7 +286,8 @@ class CrossrefClient(BasePublicationClient):
         # License (indicates OA status)
         licenses = work.get("license", [])
         is_open_access = any(
-            "creativecommons.org" in lic.get("URL", "") or "open" in lic.get("URL", "").lower()
+            "creativecommons.org" in lic.get("URL", "")
+            or "open" in lic.get("URL", "").lower()
             for lic in licenses
         )
 

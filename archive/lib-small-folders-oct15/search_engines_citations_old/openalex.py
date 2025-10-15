@@ -12,8 +12,10 @@ from urllib.parse import quote
 
 import requests
 
-from omics_oracle_v2.lib.search_engines.citations.base import BasePublicationClient
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.base import \
+    BasePublicationClient
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 logger = logging.getLogger(__name__)
 
@@ -93,13 +95,19 @@ class OpenAlexClient(BasePublicationClient):
 
         # Add email to user agent for polite pool (faster rate limits)
         if self.config.email:
-            headers["User-Agent"] = f"{self.config.user_agent}; mailto:{self.config.email}"
+            headers[
+                "User-Agent"
+            ] = f"{self.config.user_agent}; mailto:{self.config.email}"
             logger.info(
                 f"OpenAlex client initialized with polite pool ({self.config.rate_limit_per_second} req/s)"
             )
         else:
-            logger.info(f"OpenAlex client initialized ({self.config.rate_limit_per_second} req/s)")
-            logger.warning("No email provided - consider adding for faster rate limits (10x)")
+            logger.info(
+                f"OpenAlex client initialized ({self.config.rate_limit_per_second} req/s)"
+            )
+            logger.warning(
+                "No email provided - consider adding for faster rate limits (10x)"
+            )
 
         self.session.headers.update(headers)
 
@@ -138,7 +146,9 @@ class OpenAlexClient(BasePublicationClient):
 
         for attempt in range(self.config.retry_count):
             try:
-                response = self.session.get(url, params=params, timeout=self.config.timeout)
+                response = self.session.get(
+                    url, params=params, timeout=self.config.timeout
+                )
 
                 if response.status_code == 200:
                     return response.json()
@@ -193,7 +203,10 @@ class OpenAlexClient(BasePublicationClient):
         return self._make_request(url)
 
     def get_citing_papers(
-        self, doi: Optional[str] = None, openalex_id: Optional[str] = None, max_results: int = 100
+        self,
+        doi: Optional[str] = None,
+        openalex_id: Optional[str] = None,
+        max_results: int = 100,
     ) -> List[Publication]:
         """
         Get papers that cite a given work.
@@ -409,7 +422,9 @@ class OpenAlexClient(BasePublicationClient):
                 "oa_url": work.get("open_access", {}).get("oa_url"),
                 "topics": [t.get("display_name") for t in work.get("topics", [])[:3]],
                 "referenced_works_count": work.get("referenced_works_count", 0),
-                "concepts": [c.get("display_name") for c in work.get("concepts", [])[:5]],
+                "concepts": [
+                    c.get("display_name") for c in work.get("concepts", [])[:5]
+                ],
             },
         )
 
@@ -487,7 +502,9 @@ class OpenAlexClient(BasePublicationClient):
             }
         )
 
-        logger.debug(f"Enriched publication with OpenAlex data: {publication.title[:50]}")
+        logger.debug(
+            f"Enriched publication with OpenAlex data: {publication.title[:50]}"
+        )
         return publication
 
     def get_citation_contexts(self, cited_doi: str, citing_doi: str) -> List[str]:

@@ -43,14 +43,8 @@ Status: Phase 1 Task 5
 """
 
 from .client import SummarizationClient
-from .models import (
-    BatchSummaryRequest,
-    BatchSummaryResponse,
-    ModelInfo,
-    SummaryRequest,
-    SummaryResponse,
-    SummaryType,
-)
+from .models import (BatchSummaryRequest, BatchSummaryResponse, ModelInfo,
+                     SummaryRequest, SummaryResponse, SummaryType)
 from .prompts import PromptBuilder
 
 __all__ = [

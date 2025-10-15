@@ -12,7 +12,9 @@ from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 
 def filter_by_year_range(
-    publications: List[Publication], min_year: Optional[int] = None, max_year: Optional[int] = None
+    publications: List[Publication],
+    min_year: Optional[int] = None,
+    max_year: Optional[int] = None,
 ) -> List[Publication]:
     """
     Filter publications by publication year range.
@@ -50,7 +52,9 @@ def filter_by_year_range(
     return filtered
 
 
-def filter_recent_publications(publications: List[Publication], years_back: int = 5) -> List[Publication]:
+def filter_recent_publications(
+    publications: List[Publication], years_back: int = 5
+) -> List[Publication]:
     """
     Filter publications to only recent ones (last N years).
 
@@ -72,7 +76,9 @@ def filter_recent_publications(publications: List[Publication], years_back: int 
 
 
 def filter_by_citation_count(
-    publications: List[Publication], min_citations: Optional[int] = None, max_citations: Optional[int] = None
+    publications: List[Publication],
+    min_citations: Optional[int] = None,
+    max_citations: Optional[int] = None,
 ) -> List[Publication]:
     """
     Filter publications by citation count.
@@ -108,7 +114,9 @@ def filter_by_citation_count(
 
 
 def rank_by_citations_and_recency(
-    publications: List[Publication], citation_weight: float = 0.7, recency_weight: float = 0.3
+    publications: List[Publication],
+    citation_weight: float = 0.7,
+    recency_weight: float = 0.3,
 ) -> List[Publication]:
     """
     Rank publications by combination of citations and recency.
@@ -132,7 +140,9 @@ def rank_by_citations_and_recency(
 
     def calculate_score(pub: Publication) -> float:
         # Citation score (normalized 0-1)
-        citation_score = (pub.citations or 0) / max_citations if max_citations > 0 else 0
+        citation_score = (
+            (pub.citations or 0) / max_citations if max_citations > 0 else 0
+        )
 
         # Recency score (0-1, where 1 = current year)
         if pub.publication_date:
