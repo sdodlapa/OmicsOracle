@@ -881,44 +881,61 @@ class FullTextManager:
 
     async def get_parsed_content(self, publication: Publication) -> Optional[Dict]:
         """
-        Get parsed structured content for a publication with smart caching.
+        DEPRECATED: Use Pipeline 3 + Pipeline 4 instead.
 
-        NEW (Phase 3 - Oct 11, 2025):
-        This is the SMART way to access full-text content:
-        1. Check parsed cache first (instant <10ms, 200x faster than parsing!)
-        2. If not cached, get PDF/XML via waterfall
-        3. Parse the content (tables, figures, sections - ~2s)
-        4. Cache the parsed result for future access
+        This method violates single responsibility principle by:
+        1. Downloading PDFs (Pipeline 3's job)
+        2. Parsing content (Pipeline 4's job)
 
-        PERFORMANCE:
-        - First access: ~2-3s (download + parse)
-        - Subsequent access: ~10ms (cache hit) = 200x faster!
-        - Cache hit rate: 90%+ after warmup
-        - API calls saved: 95%+ reduction
+        CORRECT APPROACH (Pipeline Separation):
+            # Pipeline 2: Collect URLs
+            from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
+            url_manager = FullTextManager()
+            urls_result = await url_manager.get_all_fulltext_urls(publication)
 
-        Returns structured content dict:
-        {
-            'title': str,
-            'abstract': str,
-            'sections': [{'heading': str, 'text': str}, ...],
-            'tables': [{'caption': str, 'data': [[...]], ...], ...],
-            'figures': [{'caption': str, 'url': str, ...], ...],
-            'references': [{'title': str, 'doi': str, ...], ...],
-            'metadata': {...}
-        }
+            # Pipeline 3: Download PDF
+            from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
+            pdf_manager = PDFDownloadManager()
+            pdf_path = await pdf_manager.download_with_fallback(
+                publication, urls_result.all_urls, output_dir=Path("data/pdfs")
+            )
+
+            # Pipeline 4: Parse and enrich content
+            from omics_oracle_v2.lib.pipelines.text_enrichment import PDFExtractor
+            extractor = PDFExtractor(enable_enrichment=True)
+            parsed = extractor.extract_text(
+                pdf_path,
+                metadata={
+                    "pmid": publication.pmid,
+                    "doi": publication.doi,
+                    "title": publication.title,
+                }
+            )
+
+            # Result: Fully enriched content
+            print(f"Sections: {list(parsed['sections'].keys())}")
+            print(f"Tables: {parsed['table_count']}")
+            print(f"Quality: {parsed['quality_score']}")
+
+        Deprecated: October 14, 2025
+        Will be removed in: v3.0.0
+        See: docs/PIPELINE2_CLEANUP_PLAN.md for migration guide
 
         Args:
             publication: Publication object
 
         Returns:
             Dict with parsed content, or None if unavailable
-
-        Example:
-            >>> content = await manager.get_parsed_content(publication)
-            >>> if content:
-            >>>     print(f"Tables: {len(content['tables'])}")
-            >>>     print(f"Sections: {len(content['sections'])}")
         """
+        import warnings
+
+        warnings.warn(
+            "get_parsed_content() is deprecated and violates pipeline separation. "
+            "Use get_all_fulltext_urls() -> PDFDownloadManager -> PDFExtractor instead. "
+            "See docs/PIPELINE2_CLEANUP_PLAN.md for migration guide.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         import time
 
         from omics_oracle_v2.lib.pipelines.text_enrichment.parsed_cache import get_parsed_cache
@@ -1003,7 +1020,32 @@ class FullTextManager:
         self, publication: Publication, skip_sources: Optional[List[str]] = None
     ) -> FullTextResult:
         """
-        Get full-text for a publication by trying sources in priority order.
+        DEPRECATED: Use get_all_fulltext_urls() + PDFDownloadManager instead.
+
+        This method downloads PDFs which belongs in Pipeline 3 (PDF Download).
+        Pipeline 2 should ONLY collect URLs, not download content.
+
+        CORRECT APPROACH (Pipeline Separation):
+            # Pipeline 2: Collect ALL URLs from all sources
+            from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
+            url_manager = FullTextManager()
+            result = await url_manager.get_all_fulltext_urls(publication)
+
+            # Pipeline 3: Download PDF with automatic fallback
+            from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
+            pdf_manager = PDFDownloadManager()
+            pdf_path = await pdf_manager.download_with_fallback(
+                publication,
+                result.all_urls,
+                output_dir=Path("data/pdfs")
+            )
+
+        WHY THIS IS BETTER:
+        - get_all_fulltext_urls() queries ALL sources in PARALLEL (faster)
+        - PDFDownloadManager tries URLs with smart fallback logic
+        - Clean separation of concerns
+        - Better error handling
+        - Higher success rates
 
         OPTIMIZED WATERFALL STRATEGY (Phase 6 - Oct 10, 2025):
         - Sources ordered by: effectiveness > legality > speed
@@ -1012,10 +1054,9 @@ class FullTextManager:
         - Sci-Hub/LibGen last (legal gray area, use as fallback)
         - STOPS at first success (skip remaining sources)
 
-        NOTE (Phase 3 - Oct 11, 2025):
-        For structured content access, use get_parsed_content() instead!
-        That method provides smart caching and returns parsed structures
-        (tables, figures, sections) instead of raw PDFs.
+        Deprecated: October 14, 2025
+        Will be removed in: v3.0.0
+        See: docs/PIPELINE2_CLEANUP_PLAN.md for migration guide
 
         Args:
             publication: Publication object
@@ -1024,6 +1065,15 @@ class FullTextManager:
         Returns:
             FullTextResult with success status and content/URL
         """
+        import warnings
+
+        warnings.warn(
+            "get_fulltext() is deprecated and violates pipeline separation. "
+            "Use get_all_fulltext_urls() + PDFDownloadManager.download_with_fallback() instead. "
+            "See docs/PIPELINE2_CLEANUP_PLAN.md for migration guide.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
         if not self.initialized:
             await self.initialize()
 
