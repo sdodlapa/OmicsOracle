@@ -267,7 +267,7 @@ class Analytics:
         """
         stats = self.queries.get_processing_statistics()
 
-        # Get detailed score distribution
+        # Get detailed score distribution and percentiles
         with self.db.get_connection() as conn:
             cursor = conn.execute(
                 """
@@ -292,16 +292,16 @@ class Analytics:
                     }
                 )
 
-        # Calculate percentiles
-        cursor = conn.execute(
+            # Calculate percentiles
+            cursor = conn.execute(
+                """
+                SELECT extraction_quality
+                FROM content_extraction
+                WHERE extraction_quality IS NOT NULL
+                ORDER BY extraction_quality
             """
-            SELECT extraction_quality
-            FROM content_extraction
-            WHERE extraction_quality IS NOT NULL
-            ORDER BY extraction_quality
-        """
-        )
-        scores = [row[0] for row in cursor]
+            )
+            scores = [row[0] for row in cursor]
 
         percentiles = {}
         if scores:
