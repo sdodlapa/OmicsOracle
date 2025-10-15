@@ -48,9 +48,15 @@ except ImportError:
 class NLPSettings(BaseSettings):
     """Configuration for NLP services."""
 
-    model_name: str = Field(default="en_core_web_sm", description="spaCy model name for NER")
-    batch_size: int = Field(default=32, ge=1, le=1000, description="Batch size for processing")
-    max_entities: int = Field(default=100, ge=1, le=10000, description="Max entities to extract per document")
+    model_name: str = Field(
+        default="en_core_web_sm", description="spaCy model name for NER"
+    )
+    batch_size: int = Field(
+        default=32, ge=1, le=1000, description="Batch size for processing"
+    )
+    max_entities: int = Field(
+        default=100, ge=1, le=10000, description="Max entities to extract per document"
+    )
 
     class Config:
         env_prefix = "OMICS_NLP_"
@@ -68,19 +74,34 @@ class GEOSettings(BaseSettings):
         extra="ignore",
     )
 
-    ncbi_email: Optional[str] = Field(default=None, description="Email for NCBI API (required)")
+    ncbi_email: Optional[str] = Field(
+        default=None, description="Email for NCBI API (required)"
+    )
     ncbi_api_key: Optional[str] = Field(
         default=None, description="Optional NCBI API key for higher rate limits"
     )
-    cache_dir: Path = Field(default=Path(".cache/geo"), description="Directory for cached responses")
-    cache_ttl: int = Field(default=3600, ge=0, description="Cache time-to-live in seconds")
+    cache_dir: Path = Field(
+        default=Path(".cache/geo"), description="Directory for cached responses"
+    )
+    cache_ttl: int = Field(
+        default=3600, ge=0, description="Cache time-to-live in seconds"
+    )
     use_cache: bool = Field(default=True, description="Enable caching of API responses")
     rate_limit: int = Field(
-        default=3, ge=1, le=10, description="Requests per second (NCBI guideline: 3 without API key)"
+        default=3,
+        ge=1,
+        le=10,
+        description="Requests per second (NCBI guideline: 3 without API key)",
     )
-    max_retries: int = Field(default=3, ge=0, le=10, description="Maximum retry attempts for API calls")
-    timeout: int = Field(default=30, ge=1, le=300, description="Request timeout in seconds")
-    verify_ssl: bool = Field(default=True, description="Verify SSL certificates for API calls")
+    max_retries: int = Field(
+        default=3, ge=0, le=10, description="Maximum retry attempts for API calls"
+    )
+    timeout: int = Field(
+        default=30, ge=1, le=300, description="Request timeout in seconds"
+    )
+    verify_ssl: bool = Field(
+        default=True, description="Verify SSL certificates for API calls"
+    )
     max_concurrent_fetches: int = Field(
         default=20,
         ge=1,
@@ -100,17 +121,33 @@ class AISettings(BaseSettings):
     )
 
     openai_api_key: Optional[str] = Field(
-        default=None, description="OpenAI API key for summarization", env="OPENAI_API_KEY"
+        default=None,
+        description="OpenAI API key for summarization",
+        env="OPENAI_API_KEY",
     )
-    model: str = Field(default="gpt-4", description="OpenAI model to use", env="OMICS_AI_MODEL")
+    model: str = Field(
+        default="gpt-4", description="OpenAI model to use", env="OMICS_AI_MODEL"
+    )
     max_tokens: int = Field(
-        default=1000, ge=1, le=32000, description="Maximum tokens in response", env="OMICS_AI_MAX_TOKENS"
+        default=1000,
+        ge=1,
+        le=32000,
+        description="Maximum tokens in response",
+        env="OMICS_AI_MAX_TOKENS",
     )
     temperature: float = Field(
-        default=0.7, ge=0.0, le=2.0, description="Sampling temperature", env="OMICS_AI_TEMPERATURE"
+        default=0.7,
+        ge=0.0,
+        le=2.0,
+        description="Sampling temperature",
+        env="OMICS_AI_TEMPERATURE",
     )
     timeout: int = Field(
-        default=60, ge=1, le=300, description="Request timeout in seconds", env="OMICS_AI_TIMEOUT"
+        default=60,
+        ge=1,
+        le=300,
+        description="Request timeout in seconds",
+        env="OMICS_AI_TIMEOUT",
     )
 
 
@@ -122,12 +159,18 @@ class RedisSettings(BaseSettings):
         description="Redis connection URL",
     )
     password: str | None = Field(default=None, description="Redis password")
-    max_connections: int = Field(default=10, ge=1, le=100, description="Maximum number of Redis connections")
-    socket_timeout: int = Field(default=5, ge=1, le=60, description="Socket timeout in seconds")
+    max_connections: int = Field(
+        default=10, ge=1, le=100, description="Maximum number of Redis connections"
+    )
+    socket_timeout: int = Field(
+        default=5, ge=1, le=60, description="Socket timeout in seconds"
+    )
     socket_connect_timeout: int = Field(
         default=5, ge=1, le=60, description="Socket connect timeout in seconds"
     )
-    decode_responses: bool = Field(default=True, description="Automatically decode responses to strings")
+    decode_responses: bool = Field(
+        default=True, description="Automatically decode responses to strings"
+    )
     health_check_interval: int = Field(
         default=30, ge=5, le=300, description="Health check interval in seconds"
     )
@@ -146,22 +189,42 @@ class RateLimitSettings(BaseSettings):
     )
 
     # Tier limits (requests per hour)
-    free_tier_limit_hour: int = Field(default=100, ge=1, description="Free tier hourly limit")
-    pro_tier_limit_hour: int = Field(default=1000, ge=1, description="Pro tier hourly limit")
-    enterprise_tier_limit_hour: int = Field(default=10000, ge=1, description="Enterprise tier hourly limit")
+    free_tier_limit_hour: int = Field(
+        default=100, ge=1, description="Free tier hourly limit"
+    )
+    pro_tier_limit_hour: int = Field(
+        default=1000, ge=1, description="Pro tier hourly limit"
+    )
+    enterprise_tier_limit_hour: int = Field(
+        default=10000, ge=1, description="Enterprise tier hourly limit"
+    )
 
     # Daily limits
-    free_tier_limit_day: int = Field(default=1000, ge=1, description="Free tier daily limit")
-    pro_tier_limit_day: int = Field(default=20000, ge=1, description="Pro tier daily limit")
-    enterprise_tier_limit_day: int = Field(default=200000, ge=1, description="Enterprise tier daily limit")
+    free_tier_limit_day: int = Field(
+        default=1000, ge=1, description="Free tier daily limit"
+    )
+    pro_tier_limit_day: int = Field(
+        default=20000, ge=1, description="Pro tier daily limit"
+    )
+    enterprise_tier_limit_day: int = Field(
+        default=200000, ge=1, description="Enterprise tier daily limit"
+    )
 
     # Anonymous/IP-based limits
-    anonymous_limit_hour: int = Field(default=10, ge=1, description="Anonymous hourly limit")
+    anonymous_limit_hour: int = Field(
+        default=10, ge=1, description="Anonymous hourly limit"
+    )
 
     # Concurrent request limits
-    free_tier_concurrent: int = Field(default=5, ge=1, description="Free tier concurrent limit")
-    pro_tier_concurrent: int = Field(default=20, ge=1, description="Pro tier concurrent limit")
-    enterprise_tier_concurrent: int = Field(default=100, ge=1, description="Enterprise tier concurrent limit")
+    free_tier_concurrent: int = Field(
+        default=5, ge=1, description="Free tier concurrent limit"
+    )
+    pro_tier_concurrent: int = Field(
+        default=20, ge=1, description="Pro tier concurrent limit"
+    )
+    enterprise_tier_concurrent: int = Field(
+        default=100, ge=1, description="Enterprise tier concurrent limit"
+    )
 
     class Config:
         env_prefix = "OMICS_RATE_LIMIT_"
@@ -177,7 +240,9 @@ class DatabaseSettings(BaseSettings):
     )
     echo: bool = Field(default=False, description="Echo SQL queries (debug)")
     pool_size: int = Field(default=5, ge=1, le=100, description="Connection pool size")
-    max_overflow: int = Field(default=10, ge=0, le=100, description="Max connections beyond pool_size")
+    max_overflow: int = Field(
+        default=10, ge=0, le=100, description="Max connections beyond pool_size"
+    )
 
     class Config:
         env_prefix = "OMICS_DB_"
@@ -202,7 +267,9 @@ class AuthSettings(BaseSettings):
     email_verification_token_expire_hours: int = Field(
         default=48, ge=1, description="Email verification token expiration (hours)"
     )
-    bcrypt_rounds: int = Field(default=12, ge=4, le=31, description="Bcrypt hashing rounds")
+    bcrypt_rounds: int = Field(
+        default=12, ge=4, le=31, description="Bcrypt hashing rounds"
+    )
 
     class Config:
         env_prefix = "OMICS_AUTH_"
@@ -525,6 +592,59 @@ class QualityConfig(BaseSettings):
         case_sensitive = False
 
 
+class SearchSettings(BaseSettings):
+    """Configuration for SearchOrchestrator."""
+
+    # Search sources
+    enable_geo: bool = Field(default=True, description="Enable GEO dataset search")
+    enable_pubmed: bool = Field(default=True, description="Enable PubMed search")
+    enable_openalex: bool = Field(default=True, description="Enable OpenAlex search")
+
+    # Query optimization
+    enable_query_optimization: bool = Field(
+        default=True, description="Enable query optimization"
+    )
+    enable_ner: bool = Field(
+        default=True, description="Enable Named Entity Recognition"
+    )
+    enable_sapbert: bool = Field(
+        default=True, description="Enable SapBERT entity extraction"
+    )
+
+    # Caching
+    enable_cache: bool = Field(default=True, description="Enable result caching")
+
+    # Result limits
+    max_geo_results: int = Field(
+        default=100, ge=1, le=1000, description="Maximum GEO results"
+    )
+    max_publication_results: int = Field(
+        default=100, ge=1, le=1000, description="Maximum publication results"
+    )
+
+    # OpenAlex config
+    openalex_email: str | None = Field(
+        default=None, description="Email for OpenAlex polite pool"
+    )
+
+    # Feature flags
+    enable_citations: bool = Field(
+        default=False, description="Enable citation discovery"
+    )
+    enable_fulltext: bool = Field(
+        default=False, description="Enable fulltext extraction"
+    )
+
+    # Database persistence
+    enable_database: bool = Field(
+        default=True, description="Enable database persistence"
+    )
+
+    class Config:
+        env_prefix = "OMICS_SEARCH_"
+        case_sensitive = False
+
+
 class Settings(BaseSettings):
     """Main application settings."""
 
@@ -540,19 +660,36 @@ class Settings(BaseSettings):
     )
 
     # Service-specific settings
-    nlp: NLPSettings = Field(default_factory=NLPSettings, description="NLP service configuration")
-    geo: GEOSettings = Field(default_factory=GEOSettings, description="GEO service configuration")
-    ai: AISettings = Field(default_factory=AISettings, description="AI service configuration")
-    redis: RedisSettings = Field(default_factory=RedisSettings, description="Redis configuration")
+    nlp: NLPSettings = Field(
+        default_factory=NLPSettings, description="NLP service configuration"
+    )
+    geo: GEOSettings = Field(
+        default_factory=GEOSettings, description="GEO service configuration"
+    )
+    ai: AISettings = Field(
+        default_factory=AISettings, description="AI service configuration"
+    )
+    redis: RedisSettings = Field(
+        default_factory=RedisSettings, description="Redis configuration"
+    )
     rate_limit: RateLimitSettings = Field(
         default_factory=RateLimitSettings, description="Rate limiting configuration"
     )
-    database: DatabaseSettings = Field(default_factory=DatabaseSettings, description="Database configuration")
-    auth: AuthSettings = Field(default_factory=AuthSettings, description="Authentication configuration")
+    database: DatabaseSettings = Field(
+        default_factory=DatabaseSettings, description="Database configuration"
+    )
+    auth: AuthSettings = Field(
+        default_factory=AuthSettings, description="Authentication configuration"
+    )
     ranking: RankingConfig = Field(
         default_factory=RankingConfig, description="Ranking algorithm configuration"
     )
-    quality: QualityConfig = Field(default_factory=QualityConfig, description="Quality scoring configuration")
+    quality: QualityConfig = Field(
+        default_factory=QualityConfig, description="Quality scoring configuration"
+    )
+    search: SearchSettings = Field(
+        default_factory=SearchSettings, description="Search orchestration configuration"
+    )
 
     # Computed properties for convenience
     @property
@@ -642,16 +779,25 @@ class EmbeddingConfig(BaseModel):
         description="Embedding model: text-embedding-3-small (fast) or text-embedding-3-large (accurate)",
     )
     dimension: int = Field(
-        default=1536, description="Embedding vector dimension (1536 for small, 3072 for large)"
+        default=1536,
+        description="Embedding vector dimension (1536 for small, 3072 for large)",
     )
 
     # Performance
-    batch_size: int = Field(default=100, description="Number of texts to embed in single API call")
-    max_retries: int = Field(default=3, description="Maximum API retry attempts on failure")
+    batch_size: int = Field(
+        default=100, description="Number of texts to embed in single API call"
+    )
+    max_retries: int = Field(
+        default=3, description="Maximum API retry attempts on failure"
+    )
 
     # Caching
-    cache_enabled: bool = Field(default=True, description="Enable file-based embedding cache")
-    cache_dir: str = Field(default="data/embeddings/cache", description="Directory for cached embeddings")
+    cache_enabled: bool = Field(
+        default=True, description="Enable file-based embedding cache"
+    )
+    cache_dir: str = Field(
+        default="data/embeddings/cache", description="Directory for cached embeddings"
+    )
 
     def explain_config(self) -> str:
         """

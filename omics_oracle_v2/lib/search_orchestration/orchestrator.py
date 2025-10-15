@@ -23,6 +23,7 @@ from datetime import datetime
 from typing import List, Optional
 
 from omics_oracle_v2.cache.redis_cache import RedisCache
+from omics_oracle_v2.core.config import SearchSettings
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.openalex import (
     OpenAlexClient, OpenAlexConfig)
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.pubmed import \
@@ -37,7 +38,6 @@ from omics_oracle_v2.lib.search_engines.geo import GEOClient
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.search_engines.geo.query_builder import \
     GEOQueryBuilder
-from omics_oracle_v2.lib.search_orchestration.config import SearchConfig
 from omics_oracle_v2.lib.search_orchestration.models import SearchResult
 
 logger = logging.getLogger(__name__)
@@ -51,7 +51,7 @@ class SearchOrchestrator:
     All searches execute in parallel for maximum performance.
 
     Example:
-        >>> config = SearchConfig(
+        >>> config = SearchSettings(
         ...     enable_geo=True,
         ...     enable_pubmed=True,
         ...     enable_openalex=True,
@@ -60,7 +60,7 @@ class SearchOrchestrator:
         >>> result = await orchestrator.search("diabetes")
     """
 
-    def __init__(self, config: SearchConfig):
+    def __init__(self, config: SearchSettings):
         """
         Initialize search orchestrator.
 

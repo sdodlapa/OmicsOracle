@@ -26,7 +26,8 @@ except ImportError:
 
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.base import (
     BasePublicationClient, FetchError, SearchError)
-from omics_oracle_v2.lib.search_engines.citations.config import PubMedConfig
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import \
+    PubMedConfig
 from omics_oracle_v2.lib.search_engines.citations.models import (
     Publication, PublicationSource)
 
