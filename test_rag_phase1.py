@@ -12,7 +12,7 @@ import httpx
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-BASE_URL = "http://localhost:8002"
+BASE_URL = "http://localhost:8000"
 
 
 async def test_enhanced_rag():
@@ -22,8 +22,12 @@ async def test_enhanced_rag():
         # Step 1: Search for datasets
         logger.info("\n=== STEP 1: Search for datasets ===")
         search_response = await client.post(
-            f"{BASE_URL}/api/search",
-            json={"query": "BRCA1 mutations in breast cancer", "max_results": 5},
+            f"{BASE_URL}/api/agents/search",
+            json={
+                "search_terms": ["BRCA1", "mutations", "breast cancer"],
+                "max_results": 5,
+                "enable_semantic": True,
+            },
         )
 
         if search_response.status_code != 200:

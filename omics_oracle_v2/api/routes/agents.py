@@ -1200,6 +1200,10 @@ async def analyze_datasets(
             )
 
             return AIAnalysisResponse(
+                success=False,
+                execution_time_ms=(time.time() - start_time) * 1000,
+                timestamp=datetime.now(timezone.utc),
+                query=request.query,
                 analysis=(
                     "[FAIL] **AI Analysis Not Available**\n\n"
                     "No full-text papers were downloaded for these datasets. "
@@ -1216,15 +1220,12 @@ async def analyze_datasets(
                     "**Current datasets:** You can review the GEO metadata manually - "
                     "it contains basic information about sample count, organism, and study design."
                 ),
-                summary="AI analysis skipped - no full-text content available",
-                key_findings=[],
+                insights=[],
                 recommendations=[
                     "Download papers first for meaningful AI analysis",
                     "Review GEO summaries manually (quick to read)",
                     "Look for datasets with linked publications",
                 ],
-                confidence=0.0,
-                processing_time=time.time() - start_time,
                 model_used="none (analysis skipped)",
             )
 
