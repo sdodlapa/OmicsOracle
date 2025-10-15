@@ -266,3 +266,51 @@ Architecture: Clean service layer + pipeline integration
 4. ❌ Phase 3: Complete FulltextService with PipelineCoordinator integration (~906 LOC)
 5. ❌ Investigate `tests/` folder for cleanup opportunities
 
+
+---
+
+## Phase 3: /complete-geo-data Endpoint Review ✅
+
+**Completed:** Reviewed endpoint - **NO EXTRACTION NEEDED**
+
+### Assessment:
+- **Size:** 57 LOC (well within thin controller guidelines)
+- **Complexity:** Low - simple registry lookup
+- **Pattern:** Already follows best practices
+
+### Why No Extraction:
+✅ Single responsibility (registry.get_complete_geo_data())  
+✅ No complex business logic  
+✅ Proper error handling  
+✅ Clean logging  
+✅ Direct response (no transformation)  
+
+**Conclusion:** This endpoint is already a good example of what a thin controller should look like after refactoring.
+
+---
+
+## Remaining Work
+
+### agents.py Status:
+- **Current:** 1,081 LOC
+- **Endpoints:**
+  - ✅ `/search` - 35 LOC (thin controller)
+  - ✅ `/analyze` - 38 LOC (thin controller)
+  - ✅ `/complete-geo-data` - 57 LOC (already thin, no extraction needed)
+  - ❌ `/enrich-fulltext` - ~906 LOC (MAJOR REFACTORING NEEDED)
+
+### Next Priority: /enrich-fulltext Architecture Fix
+
+**Problem:** Duplicates PipelineCoordinator (~800 LOC duplication)
+
+**Required Work:**
+1. Complete `FulltextService` implementation
+2. Integrate with PipelineCoordinator (eliminate duplication)
+3. Maintain frontend-specific response formatting
+4. **Impact:** ~800 LOC reduction + proper architecture
+
+**Estimated Result:**
+- agents.py: 1,081 → ~300 LOC (mostly enrich-fulltext reduction)
+- Proper use of existing pipeline infrastructure
+- Elimination of duplicate database operations
+
