@@ -7,7 +7,9 @@ Quick Start:
     from omics_oracle_v2.lib.storage import (
         UnifiedDatabase,
         UniversalIdentifier,
-        GEOStorage
+        GEOStorage,
+        DatabaseQueries,
+        Analytics
     )
 
     # Initialize database
@@ -32,7 +34,12 @@ Quick Start:
     )
 
     # Query
-    pubs = db.get_publications_by_geo("GSE12345")
+    queries = DatabaseQueries()
+    pubs = queries.get_geo_publications("GSE12345")
+
+    # Analytics
+    analytics = Analytics()
+    analytics.export_geo_dataset("GSE12345", "output/")
 
 Legacy:
     PDFDownloadManager from pipelines.pdf_download (will be deprecated)
@@ -40,6 +47,7 @@ Legacy:
 
 from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
 
+from .analytics import Analytics
 from .geo_storage import GEOStorage
 from .integrity import IntegrityVerifier, calculate_sha256, verify_file_integrity
 from .models import (
@@ -54,11 +62,15 @@ from .models import (
     expires_at_iso,
     now_iso,
 )
+from .queries import DatabaseQueries
 from .unified_db import UnifiedDatabase
 
 __all__ = [
     # Database
     "UnifiedDatabase",
+    # Query & Analytics
+    "DatabaseQueries",
+    "Analytics",
     # Storage
     "GEOStorage",
     # Models
