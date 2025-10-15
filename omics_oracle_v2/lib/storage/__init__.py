@@ -47,7 +47,6 @@ Legacy:
 
 from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
 
-from .analytics import Analytics
 from .geo_storage import GEOStorage
 from .integrity import (IntegrityVerifier, calculate_sha256,
                         verify_file_integrity)
@@ -55,16 +54,12 @@ from .models import (CacheMetadata, ContentExtraction, EnrichedContent,
                      GEODataset, PDFAcquisition, ProcessingLog,
                      UniversalIdentifier, URLDiscovery, expires_at_iso,
                      now_iso)
-from .queries import DatabaseQueries
 from .registry import GEORegistry, get_registry
 from .unified_db import UnifiedDatabase
 
 __all__ = [
     # Database
     "UnifiedDatabase",
-    # Query & Analytics
-    "DatabaseQueries",
-    "Analytics",
     # Storage
     "GEOStorage",
     # Registry

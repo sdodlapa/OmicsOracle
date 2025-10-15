@@ -28,7 +28,8 @@ from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import \
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.search_orchestration import (OrchestratorConfig,
                                                       SearchOrchestrator)
-from omics_oracle_v2.lib.storage.queries import DatabaseQueries
+# TODO: DatabaseQueries deleted - use UnifiedDatabase directly if needed
+# from omics_oracle_v2.lib.storage.queries import DatabaseQueries
 
 logger = logging.getLogger(__name__)
 
@@ -257,18 +258,20 @@ async def execute_search(
         # =====================================================================
         # ENRICH WITH DATABASE METRICS
         # =====================================================================
-        # Query UnifiedDatabase for accurate citation/PDF counts (not just search results)
+        # TODO: DatabaseQueries deleted - skip metrics enrichment for now
+        # Can add get_geo_statistics() method to UnifiedDatabase if needed
         try:
-            # Initialize DatabaseQueries with production database
-            db_queries = DatabaseQueries(db_path="data/database/search_data.db")
-            search_logs.append("[DATABASE] Enriching results with database metrics...")
+            # # Initialize DatabaseQueries with production database
+            # db_queries = DatabaseQueries(db_path="data/database/search_data.db")
+            search_logs.append("[DATABASE] Skipping database metrics (DatabaseQueries removed)...")
 
             # Collect database metrics for all datasets
             db_metrics_map = {}
             for ranked in ranked_datasets:
                 try:
-                    geo_stats = db_queries.get_geo_statistics(ranked.dataset.geo_id)
-                    pub_counts = geo_stats.get("publication_counts", {})
+                    # geo_stats = db_queries.get_geo_statistics(ranked.dataset.geo_id)
+                    # pub_counts = geo_stats.get("publication_counts", {})
+                    pub_counts = {}
 
                     db_metrics_map[ranked.dataset.geo_id] = {
                         "citation_count": pub_counts.get(
