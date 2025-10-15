@@ -198,3 +198,71 @@ Architecture: Clean service layer + pipeline integration
 - Lines added: 700 (services)
 - Lines removed: 368 (routes)
 - Net: +332 LOC (better architecture, clearer separation)
+
+---
+
+## Phase 2: /analyze Endpoint ✅
+
+**Completed:** `/analyze` endpoint refactored to use service layer
+
+### Changes:
+- **Created:** `services/analysis_service.py` (544 LOC)
+  - `AnalysisService` class with complete business logic
+  - Methods:
+    - `analyze_datasets()` - Main entry point
+    - `_check_content_availability()` - Validates fulltext exists
+    - `_build_no_content_response()` - Helpful blocking response
+    - `_build_dataset_summaries()` - Comprehensive summaries with fulltext
+    - `_load_paper_content()` - Retrieves from ParsedCache
+    - `_build_analysis_prompt()` - LLM prompt construction
+    - `_call_llm()` - OpenAI API integration
+    - `_parse_analysis_results()` - Extract insights/recommendations
+
+- **Updated:** `api/routes/agents.py`
+  - Reduced from 1,449 → 1,081 LOC (368 LOC extracted)
+  - Route handler now thin controller (~38 LOC)
+  - Total extraction: 736 LOC (Phases 1+2)
+
+### Benefits:
+- ✅ Complex AI analysis logic isolated and testable
+- ✅ Paper prioritization logic reusable
+- ✅ LLM integration cleanly separated
+- ✅ Content validation logic extracted
+
+---
+
+## Cumulative Metrics
+
+| Phase | LOC Removed | File Size |
+|-------|-------------|-----------|
+| **Start** | - | 1,817 LOC |
+| Phase 1 (SearchService) | -368 | 1,449 LOC |
+| Phase 2 (AnalysisService) | -368 | **1,081 LOC** |
+| **Total Extracted** | **-736** | **40% reduction** |
+
+### Service Layer Created:
+- `search_service.py`: 425 LOC
+- `analysis_service.py`: 544 LOC
+- `fulltext_service.py`: 275 LOC (skeleton)
+- **Total Service Layer:** 1,244 LOC
+
+### Cumulative Cleanup Across Project:
+| Phase | Description | LOC |
+|-------|-------------|-----|
+| 1 | lib/ folder cleanup | 3,867 |
+| 2 | Folder investigations | 808 |
+| 3 | agents/ deletion | 1,220 |
+| 4 | SearchService extraction | 368 |
+| 5 | AnalysisService extraction | 368 |
+| **Total** | | **6,631** |
+
+---
+
+## Next Steps
+
+1. ✅ Phase 1: SearchService - **COMPLETE**
+2. ✅ Phase 2: AnalysisService - **COMPLETE**
+3. ❌ Review `/complete-geo-data` endpoint (~55 LOC)
+4. ❌ Phase 3: Complete FulltextService with PipelineCoordinator integration (~906 LOC)
+5. ❌ Investigate `tests/` folder for cleanup opportunities
+
