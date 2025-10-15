@@ -7,7 +7,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.search_engines.citations.oa_sources.core_client import COREClient, COREConfig
+from omics_oracle_v2.lib.search_engines.citations.oa_sources.core_client import (
+    COREClient, COREConfig)
 
 
 async def test_core_api():
@@ -53,7 +54,9 @@ async def test_core_api():
             else:
                 print("❌ No results by title either")
                 print()
-                print("CORE API might have changed or the API key might not have access")
+                print(
+                    "CORE API might have changed or the API key might not have access"
+                )
 
 
 if __name__ == "__main__":

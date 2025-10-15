@@ -33,8 +33,10 @@ os.environ["PYTHONHTTPSVERIFY"] = "0"
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
-from omics_oracle_v2.lib.search_engines.citations.config import PublicationSearchConfig
+from omics_oracle_v2.lib.pipelines.publication_pipeline import \
+    PublicationSearchPipeline
+from omics_oracle_v2.lib.search_engines.citations.config import \
+    PublicationSearchConfig
 
 # Real-world biomedical research queries
 RESEARCH_QUERIES = [
@@ -99,12 +101,24 @@ async def demonstrate_robust_search():
 
     print("Pipeline Configuration:")
     print("-" * 80)
-    print(f"  PubMed:              {'✅ Enabled' if config.enable_pubmed else '❌ Disabled'}")
-    print(f"  OpenAlex:            {'✅ Enabled' if config.enable_openalex else '❌ Disabled'}")
-    print(f"  Full-text Retrieval: {'✅ Enabled' if config.enable_fulltext_retrieval else '❌ Disabled'}")
-    print(f"  Citation Enrichment: {'✅ Enabled' if config.enable_citations else '❌ Disabled'}")
-    print(f"  Deduplication:       {'✅ Enabled' if config.fuzzy_dedup_config.enable else '❌ Disabled'}")
-    print(f"  Caching:             {'✅ Enabled' if config.enable_cache else '❌ Disabled'}")
+    print(
+        f"  PubMed:              {'✅ Enabled' if config.enable_pubmed else '❌ Disabled'}"
+    )
+    print(
+        f"  OpenAlex:            {'✅ Enabled' if config.enable_openalex else '❌ Disabled'}"
+    )
+    print(
+        f"  Full-text Retrieval: {'✅ Enabled' if config.enable_fulltext_retrieval else '❌ Disabled'}"
+    )
+    print(
+        f"  Citation Enrichment: {'✅ Enabled' if config.enable_citations else '❌ Disabled'}"
+    )
+    print(
+        f"  Deduplication:       {'✅ Enabled' if config.fuzzy_dedup_config.enable else '❌ Disabled'}"
+    )
+    print(
+        f"  Caching:             {'✅ Enabled' if config.enable_cache else '❌ Disabled'}"
+    )
     print()
 
     # Initialize pipeline
@@ -139,36 +153,62 @@ async def demonstrate_robust_search():
             # Analyze results
             total_papers = len(results.publications)
             with_fulltext = sum(
-                1 for p in results.publications if p.metadata and p.metadata.get("fulltext_url")
+                1
+                for p in results.publications
+                if p.metadata and p.metadata.get("fulltext_url")
             )
             with_citations = sum(
-                1 for p in results.publications if p.metadata and p.metadata.get("citation_count")
+                1
+                for p in results.publications
+                if p.metadata and p.metadata.get("citation_count")
             )
 
-            fulltext_coverage = with_fulltext / total_papers * 100 if total_papers > 0 else 0
-            citation_coverage = with_citations / total_papers * 100 if total_papers > 0 else 0
+            fulltext_coverage = (
+                with_fulltext / total_papers * 100 if total_papers > 0 else 0
+            )
+            citation_coverage = (
+                with_citations / total_papers * 100 if total_papers > 0 else 0
+            )
 
             print(f"Results: {total_papers} papers found in {elapsed:.1f}s")
             print()
-            print(f"Full-text Coverage: {with_fulltext}/{total_papers} ({fulltext_coverage:.1f}%)")
-            print(f"Citation Coverage:  {with_citations}/{total_papers} ({citation_coverage:.1f}%)")
+            print(
+                f"Full-text Coverage: {with_fulltext}/{total_papers} ({fulltext_coverage:.1f}%)"
+            )
+            print(
+                f"Citation Coverage:  {with_citations}/{total_papers} ({citation_coverage:.1f}%)"
+            )
             print()
 
             # Show top 5 papers with full-text
             fulltext_papers = [
-                p for p in results.publications if p.metadata and p.metadata.get("fulltext_url")
+                p
+                for p in results.publications
+                if p.metadata and p.metadata.get("fulltext_url")
             ]
             if fulltext_papers:
                 print(f"Sample Results (Top 5 with Full-Text):")
                 print("-" * 80)
                 for j, paper in enumerate(fulltext_papers[:5], 1):
-                    title = paper.title[:70] + "..." if len(paper.title) > 70 else paper.title
+                    title = (
+                        paper.title[:70] + "..."
+                        if len(paper.title) > 70
+                        else paper.title
+                    )
                     year = paper.year or "N/A"
-                    citations = paper.metadata.get("citation_count", 0) if paper.metadata else 0
-                    source = paper.metadata.get("fulltext_source", "unknown") if paper.metadata else "unknown"
+                    citations = (
+                        paper.metadata.get("citation_count", 0) if paper.metadata else 0
+                    )
+                    source = (
+                        paper.metadata.get("fulltext_source", "unknown")
+                        if paper.metadata
+                        else "unknown"
+                    )
 
                     print(f"{j}. {title}")
-                    print(f"   Year: {year} | Citations: {citations} | Full-text: {source}")
+                    print(
+                        f"   Year: {year} | Citations: {citations} | Full-text: {source}"
+                    )
                 print()
 
             # Store results
@@ -212,12 +252,20 @@ async def demonstrate_robust_search():
     total_citations = sum(r.get("citation_count", 0) for r in all_results)
     total_time = sum(r.get("elapsed_seconds", 0) for r in all_results)
 
-    overall_fulltext_coverage = total_fulltext / total_papers * 100 if total_papers > 0 else 0
-    overall_citation_coverage = total_citations / total_papers * 100 if total_papers > 0 else 0
+    overall_fulltext_coverage = (
+        total_fulltext / total_papers * 100 if total_papers > 0 else 0
+    )
+    overall_citation_coverage = (
+        total_citations / total_papers * 100 if total_papers > 0 else 0
+    )
 
     print(f"Total Papers Found:      {total_papers}")
-    print(f"Total with Full-Text:    {total_fulltext} ({overall_fulltext_coverage:.1f}%)")
-    print(f"Total with Citations:    {total_citations} ({overall_citation_coverage:.1f}%)")
+    print(
+        f"Total with Full-Text:    {total_fulltext} ({overall_fulltext_coverage:.1f}%)"
+    )
+    print(
+        f"Total with Citations:    {total_citations} ({overall_citation_coverage:.1f}%)"
+    )
     print(f"Total Search Time:       {total_time:.1f}s")
     print(f"Average Time per Query:  {total_time/len(RESEARCH_QUERIES):.1f}s")
     print(f"Average Time per Paper:  {total_time/total_papers:.2f}s")
@@ -230,7 +278,11 @@ async def demonstrate_robust_search():
     print("-" * 80)
     for result in all_results:
         if "error" not in result:
-            query_short = result["query"][:37] + "..." if len(result["query"]) > 40 else result["query"]
+            query_short = (
+                result["query"][:37] + "..."
+                if len(result["query"]) > 40
+                else result["query"]
+            )
             papers = result["total_papers"]
             ft_pct = result["fulltext_coverage"]
             cit_pct = result["citation_coverage"]

@@ -6,8 +6,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.pipelines.url_collection.manager import FullTextManager, FullTextManagerConfig
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.pipelines.url_collection.manager import (
+    FullTextManager, FullTextManagerConfig)
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 # Same 20 DOIs from the earlier test
 DIVERSE_DOIS = [
@@ -88,7 +90,9 @@ async def test_identify_failures():
     print("SUMMARY")
     print("=" * 80)
     print(f"Total: {len(DIVERSE_DOIS)}")
-    print(f"✅ Successes: {len(successes)} ({len(successes)/len(DIVERSE_DOIS)*100:.1f}%)")
+    print(
+        f"✅ Successes: {len(successes)} ({len(successes)/len(DIVERSE_DOIS)*100:.1f}%)"
+    )
     print(f"❌ Failures: {len(failures)} ({len(failures)/len(DIVERSE_DOIS)*100:.1f}%)")
     print()
     print(f"By source: {stats['by_source']}")

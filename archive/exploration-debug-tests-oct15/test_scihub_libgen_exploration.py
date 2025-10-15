@@ -24,7 +24,9 @@ from urllib.parse import quote
 import aiohttp
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 # SSL context
@@ -195,9 +197,13 @@ class PDFPattern:
 # ALL possible PDF extraction patterns to test
 PDF_PATTERNS = [
     # Pattern 1: embed tag with src
-    PDFPattern("embed_src", r'<embed[^>]+src="([^"]+)"', "Embed tag with src attribute"),
+    PDFPattern(
+        "embed_src", r'<embed[^>]+src="([^"]+)"', "Embed tag with src attribute"
+    ),
     # Pattern 2: iframe with PDF
-    PDFPattern("iframe_pdf", r'<iframe[^>]+src="([^"]+\.pdf[^"]*)"', "Iframe with PDF in src"),
+    PDFPattern(
+        "iframe_pdf", r'<iframe[^>]+src="([^"]+\.pdf[^"]*)"', "Iframe with PDF in src"
+    ),
     # Pattern 3: iframe (any)
     PDFPattern("iframe_any", r'<iframe[^>]+src="([^"]+)"', "Iframe with any src"),
     # Pattern 4: Direct download link
@@ -213,32 +219,67 @@ PDF_PATTERNS = [
         "Button with onclick location",
     ),
     # Pattern 6: Meta refresh
-    PDFPattern("meta_refresh", r'<meta[^>]+content="0;url=([^"]+)"', "Meta refresh redirect"),
+    PDFPattern(
+        "meta_refresh", r'<meta[^>]+content="0;url=([^"]+)"', "Meta refresh redirect"
+    ),
     # Pattern 7: JavaScript redirect
-    PDFPattern("js_redirect", r'location\.href\s*=\s*["\']([^"\']+\.pdf[^"\']*)', "JavaScript location.href"),
+    PDFPattern(
+        "js_redirect",
+        r'location\.href\s*=\s*["\']([^"\']+\.pdf[^"\']*)',
+        "JavaScript location.href",
+    ),
     # Pattern 8: window.open
-    PDFPattern("window_open", r'window\.open\(["\']([^"\']+\.pdf[^"\']*)', "JavaScript window.open"),
+    PDFPattern(
+        "window_open",
+        r'window\.open\(["\']([^"\']+\.pdf[^"\']*)',
+        "JavaScript window.open",
+    ),
     # Pattern 9: Any PDF link in href
     PDFPattern("any_pdf_href", r'href="([^"]+\.pdf[^"]*)"', "Any href with PDF"),
     # Pattern 10: Protocol-relative PDF URL
-    PDFPattern("protocol_relative", r'(?:src|href)="(//[^"]+\.pdf[^"]*)"', "Protocol-relative PDF URL"),
+    PDFPattern(
+        "protocol_relative",
+        r'(?:src|href)="(//[^"]+\.pdf[^"]*)"',
+        "Protocol-relative PDF URL",
+    ),
     # Pattern 11: Absolute PDF URL anywhere in HTML
-    PDFPattern("absolute_pdf", r'(https?://[^\s"<>]+\.pdf[^\s"<>]*)', "Absolute PDF URL anywhere"),
+    PDFPattern(
+        "absolute_pdf",
+        r'(https?://[^\s"<>]+\.pdf[^\s"<>]*)',
+        "Absolute PDF URL anywhere",
+    ),
     # Pattern 12: PDF.js viewer URL
-    PDFPattern("pdfjs_viewer", r'(?:pdf\.js|viewer\.html)\?file=([^&"\s]+)', "PDF.js viewer URL"),
+    PDFPattern(
+        "pdfjs_viewer",
+        r'(?:pdf\.js|viewer\.html)\?file=([^&"\s]+)',
+        "PDF.js viewer URL",
+    ),
     # Pattern 13: Data attribute
-    PDFPattern("data_attribute", r'data-(?:pdf|file|url)="([^"]+\.pdf[^"]*)"', "Data attribute with PDF"),
+    PDFPattern(
+        "data_attribute",
+        r'data-(?:pdf|file|url)="([^"]+\.pdf[^"]*)"',
+        "Data attribute with PDF",
+    ),
     # Pattern 14: LibGen specific - download link
     PDFPattern(
-        "libgen_download", r'<a[^>]+href="([^"]+)"[^>]*>(?:\[1\]|\[GET\]|download)', "LibGen download link"
+        "libgen_download",
+        r'<a[^>]+href="([^"]+)"[^>]*>(?:\[1\]|\[GET\]|download)',
+        "LibGen download link",
     ),
     # Pattern 15: LibGen specific - direct link
-    PDFPattern("libgen_direct", r'<a[^>]+href="(http[^"]+/get\.php[^"]+)"', "LibGen direct download"),
+    PDFPattern(
+        "libgen_direct",
+        r'<a[^>]+href="(http[^"]+/get\.php[^"]+)"',
+        "LibGen direct download",
+    ),
 ]
 
 
 async def test_scihub_mirror(
-    mirror: str, paper: TestPaper, session: aiohttp.ClientSession, patterns: List[PDFPattern]
+    mirror: str,
+    paper: TestPaper,
+    session: aiohttp.ClientSession,
+    patterns: List[PDFPattern],
 ) -> Tuple[bool, Optional[str], Optional[str], str]:
     """
     Test a single Sci-Hub mirror with a paper.
@@ -281,7 +322,10 @@ async def test_scihub_mirror(
 
 
 async def test_libgen_mirror(
-    mirror: str, paper: TestPaper, session: aiohttp.ClientSession, patterns: List[PDFPattern]
+    mirror: str,
+    paper: TestPaper,
+    session: aiohttp.ClientSession,
+    patterns: List[PDFPattern],
 ) -> Tuple[bool, Optional[str], Optional[str], str]:
     """
     Test LibGen mirror with a paper.
@@ -430,7 +474,9 @@ async def comprehensive_exploration():
     print("\n\nMOST SUCCESSFUL PATTERNS:")
     print("-" * 60)
     working_patterns = [p for p in PDF_PATTERNS if p.successes > 0]
-    for pattern in sorted(working_patterns, key=lambda p: p.successes, reverse=True)[:5]:
+    for pattern in sorted(working_patterns, key=lambda p: p.successes, reverse=True)[
+        :5
+    ]:
         print(f"  {pattern.successes:2}x  {pattern.name:25} - {pattern.description}")
 
     # Mirror comparison
@@ -457,18 +503,25 @@ async def comprehensive_exploration():
     print("RECOMMENDATIONS FOR IMPLEMENTATION")
     print("=" * 80)
 
-    best_patterns = sorted(working_patterns, key=lambda p: p.successes, reverse=True)[:3]
+    best_patterns = sorted(working_patterns, key=lambda p: p.successes, reverse=True)[
+        :3
+    ]
 
     print("\n1. IMPLEMENT THESE PATTERNS (in order):")
     for i, pattern in enumerate(best_patterns, 1):
         print(f"   {i}. {pattern.name:25} - {pattern.description}")
         print(f"      Regex: {pattern.regex[:70]}...")
 
-    best_scihub = max(results["scihub"].items(), key=lambda x: sum(1 for r in x[1] if r["success"]))
+    best_scihub = max(
+        results["scihub"].items(), key=lambda x: sum(1 for r in x[1] if r["success"])
+    )
     print(f"\n2. BEST SCI-HUB MIRROR: {best_scihub[0]}")
 
     if results["libgen"]:
-        best_libgen = max(results["libgen"].items(), key=lambda x: sum(1 for r in x[1] if r["success"]))
+        best_libgen = max(
+            results["libgen"].items(),
+            key=lambda x: sum(1 for r in x[1] if r["success"]),
+        )
         print(f"\n3. BEST LIBGEN MIRROR: {best_libgen[0]}")
 
     print("\n4. RECOMMENDED WATERFALL ORDER:")

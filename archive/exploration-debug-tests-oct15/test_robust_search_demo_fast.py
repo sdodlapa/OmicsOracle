@@ -30,8 +30,10 @@ os.environ["PYTHONHTTPSVERIFY"] = "0"
 logging.basicConfig(level=logging.INFO, format="%(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-from omics_oracle_v2.lib.pipelines.publication_pipeline import PublicationSearchPipeline
-from omics_oracle_v2.lib.search_engines.citations.config import PublicationSearchConfig
+from omics_oracle_v2.lib.pipelines.publication_pipeline import \
+    PublicationSearchPipeline
+from omics_oracle_v2.lib.search_engines.citations.config import \
+    PublicationSearchConfig
 
 # Real-world biomedical research queries
 RESEARCH_QUERIES = [
@@ -98,14 +100,24 @@ def demonstrate_fast_robust_search():
 
     print("Pipeline Configuration:")
     print("-" * 80)
-    print(f"  PubMed:              {'✅ Enabled' if config.enable_pubmed else '❌ Disabled'}")
-    print(f"  OpenAlex:            {'✅ Enabled' if config.enable_openalex else '❌ Disabled'}")
-    print(f"  Full-text Retrieval: {'✅ Enabled' if config.enable_fulltext_retrieval else '❌ Disabled'}")
+    print(
+        f"  PubMed:              {'✅ Enabled' if config.enable_pubmed else '❌ Disabled'}"
+    )
+    print(
+        f"  OpenAlex:            {'✅ Enabled' if config.enable_openalex else '❌ Disabled'}"
+    )
+    print(
+        f"  Full-text Retrieval: {'✅ Enabled' if config.enable_fulltext_retrieval else '❌ Disabled'}"
+    )
     print(
         f"  Citation Enrichment: {'✅ Enabled' if config.enable_citations else '❌ Disabled'} (DISABLED for speed)"
     )
-    print(f"  Deduplication:       {'✅ Enabled' if config.fuzzy_dedup_config.enable else '❌ Disabled'}")
-    print(f"  Caching:             {'✅ Enabled' if config.enable_cache else '❌ Disabled'}")
+    print(
+        f"  Deduplication:       {'✅ Enabled' if config.fuzzy_dedup_config.enable else '❌ Disabled'}"
+    )
+    print(
+        f"  Caching:             {'✅ Enabled' if config.enable_cache else '❌ Disabled'}"
+    )
     print()
 
     # Initialize pipeline
@@ -158,7 +170,9 @@ def demonstrate_fast_robust_search():
         print()
         print("📊 Results:")
         print(f"  - Total papers:   {len(papers)}")
-        print(f"  - Full-text URLs: {fulltext_count}/{len(papers)} ({fulltext_pct:.1f}%)")
+        print(
+            f"  - Full-text URLs: {fulltext_count}/{len(papers)} ({fulltext_pct:.1f}%)"
+        )
         print(f"  - Search time:    {search_time:.1f}s")
         print()
 
@@ -204,7 +218,9 @@ def demonstrate_fast_robust_search():
 
     print(f"Total Queries:       {len(RESEARCH_QUERIES)}")
     print(f"Total Papers:        {total_papers}")
-    print(f"Full-text Coverage:  {total_fulltext}/{total_papers} ({avg_fulltext_pct:.1f}%)")
+    print(
+        f"Full-text Coverage:  {total_fulltext}/{total_papers} ({avg_fulltext_pct:.1f}%)"
+    )
     print(f"Total Time:          {total_time:.1f}s")
     print(f"Avg Time per Query:  {total_time/len(RESEARCH_QUERIES):.1f}s")
     print()
@@ -251,7 +267,9 @@ def demonstrate_fast_robust_search():
     print("1. ✅ NO OpenAI rate limits (429 errors)")
     print("2. ✅ NO 20-second retry delays")
     print("3. ✅ Fast execution (~5-10s per query)")
-    print(f"4. {'✅' if avg_fulltext_pct >= 80 else '⚠️ '} Full-text coverage: {avg_fulltext_pct:.1f}%")
+    print(
+        f"4. {'✅' if avg_fulltext_pct >= 80 else '⚠️ '} Full-text coverage: {avg_fulltext_pct:.1f}%"
+    )
     print()
     print("To enable citation analysis:")
     print("  - Set enable_citations=True in config")

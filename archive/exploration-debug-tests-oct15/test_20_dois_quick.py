@@ -7,8 +7,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.pipelines.url_collection import (
+    FullTextManager, FullTextManagerConfig)
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 # 20 diverse DOIs
 DIVERSE_DOIS = [
@@ -69,14 +71,19 @@ async def test_20_dois():
         max_concurrent=3,
     )
 
-    publications = [Publication(title="", doi=doi, source=PublicationSource.PUBMED) for doi in DIVERSE_DOIS]
+    publications = [
+        Publication(title="", doi=doi, source=PublicationSource.PUBMED)
+        for doi in DIVERSE_DOIS
+    ]
 
     async with FullTextManager(config1) as manager:
         results1 = await manager.get_fulltext_batch(publications)
         stats1 = manager.get_statistics()
 
     successes1 = sum(1 for r in results1 if r.success)
-    print(f"✅ Found: {successes1}/{len(DIVERSE_DOIS)} ({successes1/len(DIVERSE_DOIS)*100:.1f}%)")
+    print(
+        f"✅ Found: {successes1}/{len(DIVERSE_DOIS)} ({successes1/len(DIVERSE_DOIS)*100:.1f}%)"
+    )
     print(f"By source: {stats1['by_source']}")
     print()
 
@@ -102,7 +109,9 @@ async def test_20_dois():
         stats2 = manager.get_statistics()
 
     successes2 = sum(1 for r in results2 if r.success)
-    print(f"✅ Found: {successes2}/{len(DIVERSE_DOIS)} ({successes2/len(DIVERSE_DOIS)*100:.1f}%)")
+    print(
+        f"✅ Found: {successes2}/{len(DIVERSE_DOIS)} ({successes2/len(DIVERSE_DOIS)*100:.1f}%)"
+    )
     print(f"By source: {stats2['by_source']}")
     print()
 

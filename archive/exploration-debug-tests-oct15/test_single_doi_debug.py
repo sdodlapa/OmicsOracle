@@ -8,11 +8,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.pipelines.url_collection.manager import FullTextManager, FullTextManagerConfig
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.pipelines.url_collection.manager import (
+    FullTextManager, FullTextManagerConfig)
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 # Enable debug logging
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 
 
 async def test_single_doi():

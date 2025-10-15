@@ -7,11 +7,15 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from omics_oracle_v2.lib.pipelines.url_collection.manager import FullTextManager, FullTextManagerConfig
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.pipelines.url_collection.manager import (
+    FullTextManager, FullTextManagerConfig)
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 # Enable detailed logging
-logging.basicConfig(level=logging.DEBUG, format="%(levelname)s - %(name)s - %(message)s")
+logging.basicConfig(
+    level=logging.DEBUG, format="%(levelname)s - %(name)s - %(message)s"
+)
 
 
 async def test_scihub_waterfall():
@@ -28,7 +32,10 @@ async def test_scihub_waterfall():
         "10.1016/j.cell.2013.05.039",  # Cell - paywalled
     ]
 
-    publications = [Publication(title="Paper", doi=doi, source=PublicationSource.PUBMED) for doi in test_dois]
+    publications = [
+        Publication(title="Paper", doi=doi, source=PublicationSource.PUBMED)
+        for doi in test_dois
+    ]
 
     # Test with Sci-Hub ENABLED
     print("Configuration:")

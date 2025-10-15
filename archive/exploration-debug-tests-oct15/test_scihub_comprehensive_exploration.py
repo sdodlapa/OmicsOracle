@@ -36,7 +36,9 @@ spec.loader.exec_module(diverse_papers)
 COMPREHENSIVE_100_PAPERS = diverse_papers.COMPREHENSIVE_100_PAPERS
 
 # Enable detailed logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -73,15 +75,29 @@ class PDFPattern:
 # ============================================================================
 PDF_PATTERNS = [
     # Pattern 1: embed tag with any src
-    PDFPattern("embed_any_src", r'<embed[^>]+src="([^"]+)"', "Embed tag with any src attribute"),
+    PDFPattern(
+        "embed_any_src", r'<embed[^>]+src="([^"]+)"', "Embed tag with any src attribute"
+    ),
     # Pattern 2: embed tag with PDF in src
-    PDFPattern("embed_pdf_src", r'<embed[^>]+src="([^"]+\.pdf[^"]*)"', "Embed tag with .pdf in src"),
+    PDFPattern(
+        "embed_pdf_src",
+        r'<embed[^>]+src="([^"]+\.pdf[^"]*)"',
+        "Embed tag with .pdf in src",
+    ),
     # Pattern 3: iframe with any src
-    PDFPattern("iframe_any_src", r'<iframe[^>]+src="([^"]+)"', "iFrame with any src attribute"),
+    PDFPattern(
+        "iframe_any_src", r'<iframe[^>]+src="([^"]+)"', "iFrame with any src attribute"
+    ),
     # Pattern 4: iframe with PDF in src
-    PDFPattern("iframe_pdf_src", r'<iframe[^>]+src="([^"]+\.pdf[^"]*)"', "iFrame with .pdf in src"),
+    PDFPattern(
+        "iframe_pdf_src",
+        r'<iframe[^>]+src="([^"]+\.pdf[^"]*)"',
+        "iFrame with .pdf in src",
+    ),
     # Pattern 5: Meta redirect
-    PDFPattern("meta_redirect", r'<meta[^>]+content="0;url=([^"]+)"', "Meta tag redirect"),
+    PDFPattern(
+        "meta_redirect", r'<meta[^>]+content="0;url=([^"]+)"', "Meta tag redirect"
+    ),
     # Pattern 6: JavaScript location redirect
     PDFPattern(
         "js_location",
@@ -95,7 +111,11 @@ PDF_PATTERNS = [
         "Button with onclick location.href",
     ),
     # Pattern 8: Download link
-    PDFPattern("download_link", r'<a[^>]+download[^>]*href="([^"]+\.pdf[^"]*)"', "Download link with href"),
+    PDFPattern(
+        "download_link",
+        r'<a[^>]+download[^>]*href="([^"]+\.pdf[^"]*)"',
+        "Download link with href",
+    ),
     # Pattern 9: Protocol-relative URL (// prefix)
     PDFPattern(
         "protocol_relative",
@@ -103,13 +123,29 @@ PDF_PATTERNS = [
         "Protocol-relative URL (//domain/path.pdf)",
     ),
     # Pattern 10: Absolute HTTPS URL
-    PDFPattern("absolute_https", r'https://[^"\s<>]+\.pdf[^"\s<>]*', "Absolute HTTPS URL anywhere in HTML"),
+    PDFPattern(
+        "absolute_https",
+        r'https://[^"\s<>]+\.pdf[^"\s<>]*',
+        "Absolute HTTPS URL anywhere in HTML",
+    ),
     # Pattern 11: Absolute HTTP URL
-    PDFPattern("absolute_http", r'http://[^"\s<>]+\.pdf[^"\s<>]*', "Absolute HTTP URL anywhere in HTML"),
+    PDFPattern(
+        "absolute_http",
+        r'http://[^"\s<>]+\.pdf[^"\s<>]*',
+        "Absolute HTTP URL anywhere in HTML",
+    ),
     # Pattern 12: PDF in id or data attribute
-    PDFPattern("data_attribute", r'data-[^=]+=\s*"([^"]+\.pdf[^"]*)"', "Data attribute with PDF"),
+    PDFPattern(
+        "data_attribute",
+        r'data-[^=]+=\s*"([^"]+\.pdf[^"]*)"',
+        "Data attribute with PDF",
+    ),
     # Pattern 13: PDF.js viewer
-    PDFPattern("pdfjs_viewer", r'viewer\.html\?file=([^"&\s]+)', "PDF.js viewer with file parameter"),
+    PDFPattern(
+        "pdfjs_viewer",
+        r'viewer\.html\?file=([^"&\s]+)',
+        "PDF.js viewer with file parameter",
+    ),
     # Pattern 14: Direct download parameter
     PDFPattern(
         "download_param",
@@ -196,7 +232,9 @@ class SciHubExplorer:
             async with self.session.get(url, timeout=20) as response:
                 # Follow redirects and accept 200/301/302
                 if response.status not in [200, 301, 302]:
-                    logger.debug(f"Unexpected status {response.status} from {mirror}/{doi}")
+                    logger.debug(
+                        f"Unexpected status {response.status} from {mirror}/{doi}"
+                    )
                     return None
 
                 html = await response.text()
@@ -242,7 +280,9 @@ class SciHubExplorer:
 
         return None
 
-    async def test_paper_on_mirror(self, mirror: str, paper: Dict, save_html_samples: bool = False) -> Dict:
+    async def test_paper_on_mirror(
+        self, mirror: str, paper: Dict, save_html_samples: bool = False
+    ) -> Dict:
         """Test a single paper on a single mirror."""
         doi = paper["doi"]
 
@@ -314,7 +354,9 @@ class SciHubExplorer:
         results = []
         for i, paper in enumerate(papers, 1):
             result = await self.test_paper_on_mirror(
-                mirror, paper, save_html_samples=(i <= 5)  # Save first 5 samples per mirror
+                mirror,
+                paper,
+                save_html_samples=(i <= 5),  # Save first 5 samples per mirror
             )
             results.append(result)
 
@@ -371,7 +413,9 @@ class SciHubExplorer:
         # Paper statistics (which papers found on which mirrors)
         all_results = []
         for mirror_results in self.results["mirrors"].values():
-            all_results.extend(mirror_results) if isinstance(mirror_results, list) else None
+            all_results.extend(mirror_results) if isinstance(
+                mirror_results, list
+            ) else None
 
         paper_stats = defaultdict(lambda: {"found_on": [], "not_found_on": []})
         for result in all_results:
@@ -391,7 +435,9 @@ class SciHubExplorer:
         output = {
             "timestamp": self.start_time.isoformat() if self.start_time else None,
             "duration_minutes": (
-                (datetime.now() - self.start_time).total_seconds() / 60 if self.start_time else None
+                (datetime.now() - self.start_time).total_seconds() / 60
+                if self.start_time
+                else None
             ),
             "mirrors": dict(self.results["mirrors"]),
             "patterns": dict(self.results["patterns"]),
@@ -419,20 +465,33 @@ class SciHubExplorer:
             if isinstance(stats, dict) and "success_rate" in stats:
                 mirror_stats.append((mirror, stats))
 
-        for mirror, stats in sorted(mirror_stats, key=lambda x: x[1]["success_rate"], reverse=True):
-            print(f"{mirror:30} → {stats['success']}/{stats['total']} ({stats['success_rate']:.1f}%)")
+        for mirror, stats in sorted(
+            mirror_stats, key=lambda x: x[1]["success_rate"], reverse=True
+        ):
+            print(
+                f"{mirror:30} → {stats['success']}/{stats['total']} ({stats['success_rate']:.1f}%)"
+            )
             if stats["patterns_used"]:
-                top_patterns = sorted(stats["patterns_used"].items(), key=lambda x: x[1], reverse=True)[:3]
-                print(f"  Top patterns: {', '.join(f'{p}({c})' for p, c in top_patterns)}")
+                top_patterns = sorted(
+                    stats["patterns_used"].items(), key=lambda x: x[1], reverse=True
+                )[:3]
+                print(
+                    f"  Top patterns: {', '.join(f'{p}({c})' for p, c in top_patterns)}"
+                )
 
         # Pattern performance
         print("\nPATTERN PERFORMANCE:")
         print("-" * 80)
         pattern_stats = sorted(
-            self.results["patterns"].items(), key=lambda x: x[1]["success_rate"], reverse=True
+            self.results["patterns"].items(),
+            key=lambda x: x[1]["success_rate"],
+            reverse=True,
         )
         for pattern_name, stats in pattern_stats[:10]:  # Top 10
-            print(f"{pattern_name:25} → {stats['successes']:3} successes " f"({stats['success_rate']:5.1f}%)")
+            print(
+                f"{pattern_name:25} → {stats['successes']:3} successes "
+                f"({stats['success_rate']:5.1f}%)"
+            )
 
         # Coverage by paper type
         print("\nCOVERAGE BY PAPER TYPE:")
@@ -442,7 +501,10 @@ class SciHubExplorer:
             doi = paper["doi"]
             ptype = paper.get("type", "unknown")
             type_stats[ptype]["total"] += 1
-            if doi in self.results["papers"] and self.results["papers"][doi]["found_on"]:
+            if (
+                doi in self.results["papers"]
+                and self.results["papers"][doi]["found_on"]
+            ):
                 type_stats[ptype]["found"] += 1
 
         for ptype, stats in sorted(type_stats.items(), key=lambda x: x[0]):
@@ -453,7 +515,9 @@ class SciHubExplorer:
         if self.results["errors"]:
             print("\nERRORS:")
             print("-" * 80)
-            for error_type, count in sorted(self.results["errors"].items(), key=lambda x: x[1], reverse=True):
+            for error_type, count in sorted(
+                self.results["errors"].items(), key=lambda x: x[1], reverse=True
+            ):
                 print(f"{error_type:30} → {count}")
 
 
@@ -465,14 +529,18 @@ async def run_comprehensive_exploration():
     logger.info(f"Total papers: {len(COMPREHENSIVE_100_PAPERS)}")
     logger.info(f"Total mirrors: {len(SCIHUB_MIRRORS)}")
     logger.info(f"Total patterns: {len(PDF_PATTERNS)}")
-    logger.info(f"Estimated tests: {len(COMPREHENSIVE_100_PAPERS) * len(SCIHUB_MIRRORS)}")
+    logger.info(
+        f"Estimated tests: {len(COMPREHENSIVE_100_PAPERS) * len(SCIHUB_MIRRORS)}"
+    )
     logger.info("=" * 80)
 
     async with SciHubExplorer() as explorer:
         # Test each mirror with all papers
         for mirror in SCIHUB_MIRRORS:
             results = await explorer.test_all_papers_on_mirror(
-                mirror, COMPREHENSIVE_100_PAPERS, rate_limit_delay=1.5  # 1.5s between requests
+                mirror,
+                COMPREHENSIVE_100_PAPERS,
+                rate_limit_delay=1.5,  # 1.5s between requests
             )
             explorer.results["mirrors"][mirror] = results
 

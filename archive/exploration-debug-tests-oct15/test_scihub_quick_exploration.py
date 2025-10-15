@@ -51,7 +51,9 @@ async def quick_test():
     print("=" * 80)
     print("QUICK SCI-HUB EXPLORATION - 10 Papers")
     print("=" * 80)
-    print(f"Testing {len(QUICK_TEST_PAPERS)} papers across {len(exploration.SCIHUB_MIRRORS)} mirrors")
+    print(
+        f"Testing {len(QUICK_TEST_PAPERS)} papers across {len(exploration.SCIHUB_MIRRORS)} mirrors"
+    )
     print(f"Estimated time: 2-3 minutes")
     print("=" * 80)
     print()
