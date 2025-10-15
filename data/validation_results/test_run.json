@@ -1,0 +1,135 @@
+{
+  "start_time": "2025-10-14T21:48:55.184489",
+  "geo_datasets_processed": 2,
+  "publications_attempted": 10,
+  "p1_citation_success": 10,
+  "p2_url_success": 10,
+  "p3_pdf_success": 10,
+  "p4_extraction_success": 10,
+  "p4_enrichment_success": 0,
+  "total_success": 10,
+  "errors": [],
+  "performance": {
+    "db_queries": [
+      {
+        "operation": "citation_save",
+        "duration_ms": 9.04393196105957
+      },
+      {
+        "operation": "citation_save",
+        "duration_ms": 3.255128860473633
+      },
+      {
+        "operation": "citation_save",
+        "duration_ms": 3.1402111053466797
+      },
+      {
+        "operation": "citation_save",
+        "duration_ms": 3.1332969665527344
+      },
+      {
+        "operation": "citation_save",
+        "duration_ms": 2.8448104858398438
+      },
+      {
+        "operation": "citation_save",
+        "duration_ms": 2.8378963470458984
+      },
+      {
+        "operation": "citation_save",
+        "duration_ms": 3.3190250396728516
+      },
+      {
+        "operation": "citation_save",
+        "duration_ms": 2.792835235595703
+      },
+      {
+        "operation": "citation_save",
+        "duration_ms": 2.9609203338623047
+      },
+      {
+        "operation": "citation_save",
+        "duration_ms": 2.777099609375
+      }
+    ],
+    "file_operations": []
+  },
+  "quality_distribution": {
+    "grade_distribution": {
+      "B": 20
+    },
+    "average_score": 0.85,
+    "score_distribution": [
+      {
+        "extraction_quality": 0.85,
+        "extraction_grade": "B",
+        "count": 20
+      }
+    ],
+    "percentiles": {
+      "p25": 0.85,
+      "p50": 0.85,
+      "p75": 0.85,
+      "p90": 0.85,
+      "p95": 0.85
+    },
+    "total_extracted": 20
+  },
+  "integrity_checks": {
+    "sha256_verified": 0,
+    "sha256_failed": 0
+  },
+  "end_time": "2025-10-14T21:48:55.326336",
+  "dataset_results": [
+    {
+      "geo_id": "GSE12345",
+      "papers_attempted": 5,
+      "papers_successful": 5,
+      "stages": {
+        "p1": 5,
+        "p2": 5,
+        "p3": 5,
+        "p4": 5
+      },
+      "errors": []
+    },
+    {
+      "geo_id": "GSE67890",
+      "papers_attempted": 5,
+      "papers_successful": 5,
+      "stages": {
+        "p1": 5,
+        "p2": 5,
+        "p3": 5,
+        "p4": 5
+      },
+      "errors": []
+    }
+  ],
+  "success_rates": {
+    "p1_citation_rate": 100.0,
+    "p2_url_rate": 100.0,
+    "p3_pdf_rate": 100.0,
+    "p4_extraction_rate": 100.0,
+    "end_to_end_rate": 100.0
+  },
+  "database_stats": {
+    "total_publications": 10,
+    "pipeline_completion": {
+      "url_discovery": 5,
+      "pdf_acquisition": 5,
+      "content_extraction": 5,
+      "enriched_content": 0
+    },
+    "quality_distribution": {
+      "B": 20
+    },
+    "average_extraction_quality": 0.85,
+    "total_geo_datasets": 2,
+    "storage": {
+      "total_pdf_bytes": 640,
+      "total_pdf_mb": 0.0,
+      "pdf_count": 20
+    }
+  }
+}

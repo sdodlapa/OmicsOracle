@@ -24,6 +24,7 @@ from omics_oracle_v2.api.models.responses import DatasetResponse, PublicationRes
 from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.search_orchestration import OrchestratorConfig, SearchOrchestrator
+from omics_oracle_v2.lib.storage.queries import DatabaseQueries
 
 logger = logging.getLogger(__name__)
 
@@ -224,9 +225,67 @@ async def execute_search(
             f"[OK] Total results: {len(ranked_datasets)} datasets, {len(publications)} publications"
         )
 
-        # Convert datasets to response format
-        datasets = [
-            DatasetResponse(
+        # =====================================================================
+        # ENRICH WITH DATABASE METRICS
+        # =====================================================================
+        # Query UnifiedDatabase for accurate citation/PDF counts (not just search results)
+        try:
+            # Initialize DatabaseQueries with production database
+            db_queries = DatabaseQueries(db_path="data/database/search_data.db")
+            search_logs.append("[DATABASE] Enriching results with database metrics...")
+
+            # Collect database metrics for all datasets
+            db_metrics_map = {}
+            for ranked in ranked_datasets:
+                try:
+                    geo_stats = db_queries.get_geo_statistics(ranked.dataset.geo_id)
+                    pub_counts = geo_stats.get("publication_counts", {})
+
+                    db_metrics_map[ranked.dataset.geo_id] = {
+                        "citation_count": pub_counts.get("total", 0),  # Total papers in database
+                        "pdf_count": pub_counts.get("with_pdf", 0),  # Papers with PDFs
+                        "processed_count": pub_counts.get(
+                            "with_extraction", 0
+                        ),  # Papers with extracted content
+                        "completion_rate": geo_stats.get("completion_rate", 0.0),  # Processing completion %
+                    }
+                    logger.debug(
+                        f"[DB] {ranked.dataset.geo_id}: "
+                        f"citations={pub_counts.get('total', 0)}, "
+                        f"pdfs={pub_counts.get('with_pdf', 0)}"
+                    )
+                except Exception as e:
+                    logger.warning(f"[DB] Could not get stats for {ranked.dataset.geo_id}: {e}")
+                    # Default to 0 if database query fails
+                    db_metrics_map[ranked.dataset.geo_id] = {
+                        "citation_count": 0,
+                        "pdf_count": 0,
+                        "processed_count": 0,
+                        "completion_rate": 0.0,
+                    }
+
+            search_logs.append(f"[DATABASE] Enriched {len(db_metrics_map)} datasets with database metrics")
+        except Exception as db_error:
+            logger.error(f"[DB] Database enrichment failed: {db_error}")
+            search_logs.append(f"[WARNING] Database enrichment failed: {db_error}")
+            # Create empty metrics map
+            db_metrics_map = {}
+
+        # Convert datasets to response format WITH database metrics
+        datasets = []
+        for ranked in ranked_datasets:
+            # Get database metrics (or use defaults)
+            db_metrics = db_metrics_map.get(
+                ranked.dataset.geo_id,
+                {
+                    "citation_count": 0,
+                    "pdf_count": 0,
+                    "processed_count": 0,
+                    "completion_rate": 0.0,
+                },
+            )
+
+            dataset_response = DatasetResponse(
                 geo_id=ranked.dataset.geo_id,
                 title=ranked.dataset.title,
                 summary=ranked.dataset.summary,
@@ -238,9 +297,13 @@ async def execute_search(
                 publication_date=ranked.dataset.publication_date,
                 submission_date=ranked.dataset.submission_date,
                 pubmed_ids=ranked.dataset.pubmed_ids,
+                # NEW: Database metrics (accurate counts from UnifiedDatabase)
+                citation_count=db_metrics["citation_count"],
+                pdf_count=db_metrics["pdf_count"],
+                processed_count=db_metrics["processed_count"],
+                completion_rate=db_metrics["completion_rate"],
             )
-            for ranked in ranked_datasets
-        ]
+            datasets.append(dataset_response)
 
         # Convert publications to response format
         publication_responses = []
@@ -662,7 +725,35 @@ async def enrich_fulltext(
                 if has_pdf:
                     logger.info(f"[DOC] Parsing PDF for PMID {pub.pmid} from {pub.pdf_path}...")
                     try:
-                        parsed_content = await fulltext_manager.get_parsed_content(pub)
+                        # FIX: Use ParsedCache directly instead of deprecated get_parsed_content()
+                        from omics_oracle_v2.lib.pipelines.text_enrichment import (
+                            PDFExtractor,
+                            get_parsed_cache,
+                        )
+
+                        # Check cache first
+                        cache = get_parsed_cache()
+                        cached_content = await cache.get(pub.pmid)
+
+                        if cached_content:
+                            parsed_content = cached_content.get("content", {})
+                            logger.info(f"   [CACHE] Using cached parsed content for {pub.pmid}")
+                        else:
+                            # Parse the downloaded PDF
+                            extractor = PDFExtractor(enable_enrichment=True)
+                            parsed_content = extractor.extract_text(
+                                Path(pub.pdf_path), metadata={"pmid": pub.pmid, "title": pub.title}
+                            )
+
+                            # Cache it for future use
+                            await cache.save(
+                                publication_id=pub.pmid,
+                                content=parsed_content,
+                                source_file=str(pub.pdf_path),
+                                source_type="pdf",
+                            )
+                            logger.info(f"   [CACHE] Saved parsed content for {pub.pmid}")
+
                         logger.info(
                             f"   [OK] Parsed {Path(pub.pdf_path).stat().st_size // 1024} KB PDF: "
                             f"abstract={len(parsed_content.get('abstract', ''))} chars, "
@@ -670,6 +761,9 @@ async def enrich_fulltext(
                         )
                     except Exception as e:
                         logger.error(f"   [ERROR] Failed to parse PDF for {pub.pmid}: {e}")
+                        import traceback
+
+                        logger.error(f"   [TRACE] {traceback.format_exc()}")
                 else:
                     logger.warning(
                         f"[WARNING]  PMID {pub.pmid}: No PDF file (pdf_path={getattr(pub, 'pdf_path', 'NOT SET')})"
@@ -747,13 +841,23 @@ async def enrich_fulltext(
             )
             dataset.fulltext_count = len(dataset.fulltext)
 
-            # More accurate status based on actual PDFs downloaded
+            # More accurate status based on actual PDFs downloaded and parsed
             if dataset.fulltext_count == 0:
-                dataset.fulltext_status = "failed"
+                # Differentiate between download failure and parse failure
+                if total_successful > 0:
+                    dataset.fulltext_status = "parse_failed"  # Downloaded but couldn't parse
+                    logger.error(
+                        f"[STATUS] Parse failed: {total_successful} PDFs downloaded but none could be parsed"
+                    )
+                else:
+                    dataset.fulltext_status = "download_failed"  # Couldn't download
+                    logger.error(f"[STATUS] Download failed: No PDFs could be downloaded from any source")
             elif dataset.fulltext_count < total_papers:
                 dataset.fulltext_status = "partial"
+                logger.warning(f"[STATUS] Partial: {dataset.fulltext_count}/{total_papers} papers processed")
             else:
                 dataset.fulltext_status = "available"
+                logger.info(f"[STATUS] Success: All {dataset.fulltext_count} papers processed")
 
             logger.warning(
                 f"[DATA] FINAL STATUS: fulltext_count={dataset.fulltext_count}/{total_papers}, "
@@ -1031,8 +1135,7 @@ async def analyze_datasets(
         # Import here to avoid circular dependency
         from omics_oracle_v2.api.dependencies import get_settings
         from omics_oracle_v2.lib.analysis.ai.client import SummarizationClient
-        from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
-        from omics_oracle_v2.models.publication import Publication
+        from omics_oracle_v2.lib.pipelines.text_enrichment import get_parsed_cache
 
         settings = get_settings()
 
@@ -1047,11 +1150,9 @@ async def analyze_datasets(
         # Initialize AI client
         ai_client = SummarizationClient(settings=settings)
 
-        # Initialize FullTextManager for loading parsed content from disk
-        fulltext_config = settings.get_fulltext_config()
-        fulltext_manager = FullTextManager(fulltext_config)
-        if not fulltext_manager.initialized:
-            await fulltext_manager.initialize()
+        # Initialize ParsedCache for loading parsed content from disk
+        # (Direct access to Phase 4 component - no deprecated wrapper)
+        parsed_cache = get_parsed_cache()
 
         # Limit datasets
         datasets_to_analyze = request.datasets[: request.max_datasets]
@@ -1123,12 +1224,34 @@ async def analyze_datasets(
 
             # Add full-text content if available
             if ds.fulltext and len(ds.fulltext) > 0:
-                dataset_info.append(
-                    f"\n   [DOC] Full-text content from {len(ds.fulltext)} linked publication(s):"
+                # Prioritize papers for analysis (most important first)
+                sorted_papers = sorted(
+                    ds.fulltext,
+                    key=lambda p: (
+                        # Priority 1: Original dataset papers first
+                        0 if (hasattr(ds, "pubmed_ids") and p.pmid in (ds.pubmed_ids or [])) else 1,
+                        # Priority 2: Papers with parsed content (quality check)
+                        0 if (hasattr(p, "has_methods") and p.has_methods) else 1,
+                        # Priority 3: Reverse PMID (newer papers first, roughly)
+                        -int(p.pmid) if p.pmid and p.pmid.isdigit() else 0,
+                    ),
                 )
-                total_fulltext_papers += len(ds.fulltext)
 
-                for j, ft in enumerate(ds.fulltext[:2], 1):  # Max 2 papers per dataset to manage tokens
+                # Analyze up to 2 papers (token limit management)
+                papers_to_analyze = sorted_papers[:2]
+                total_papers = len(ds.fulltext)
+
+                dataset_info.append(
+                    f"\n   [DOC] Full-text content from {len(papers_to_analyze)} of {total_papers} linked publication(s):"
+                )
+                if total_papers > 2:
+                    dataset_info.append(
+                        f"   [INFO] Analyzing {len(papers_to_analyze)} papers (token limit). "
+                        f"Prioritized: original dataset papers, papers with parsed content."
+                    )
+                total_fulltext_papers += len(papers_to_analyze)
+
+                for j, ft in enumerate(papers_to_analyze, 1):
                     # Load parsed content from disk if not available in dataset object
                     # (Frontend strips full-text to reduce HTTP payload size)
                     abstract_text = ft.abstract if hasattr(ft, "abstract") and ft.abstract else None
@@ -1136,25 +1259,21 @@ async def analyze_datasets(
                     results_text = ft.results if hasattr(ft, "results") and ft.results else None
                     discussion_text = ft.discussion if hasattr(ft, "discussion") and ft.discussion else None
 
-                    # If content not in object, load from disk using pdf_path
+                    # If content not in object, load from disk using ParsedCache
                     if not any([abstract_text, methods_text, results_text, discussion_text]):
-                        if hasattr(ft, "pdf_path") and ft.pdf_path:
+                        if hasattr(ft, "pmid") and ft.pmid:
                             try:
-                                # Create Publication object for loading
-                                pub = Publication(
-                                    pmid=ft.pmid,
-                                    title=ft.title if hasattr(ft, "title") else "",
-                                    pdf_path=Path(ft.pdf_path),
-                                )
-                                # Load parsed content from disk/cache
-                                parsed_content = await fulltext_manager.get_parsed_content(pub)
-                                if parsed_content:
-                                    abstract_text = parsed_content.get("abstract", "")
-                                    methods_text = parsed_content.get("methods", "")
-                                    results_text = parsed_content.get("results", "")
-                                    discussion_text = parsed_content.get("discussion", "")
+                                # Load parsed content directly from cache (Phase 4 component)
+                                # Uses publication ID (PMID) to look up cached content
+                                cached_data = await parsed_cache.get(ft.pmid)
+                                if cached_data:
+                                    content_data = cached_data.get("content", {})
+                                    abstract_text = content_data.get("abstract", "")
+                                    methods_text = content_data.get("methods", "")
+                                    results_text = content_data.get("results", "")
+                                    discussion_text = content_data.get("discussion", "")
                                     logger.info(
-                                        f"[ANALYZE] Loaded parsed content from disk for PMID {ft.pmid}"
+                                        f"[ANALYZE] Loaded parsed content from cache for PMID {ft.pmid}"
                                     )
                             except Exception as e:
                                 logger.warning(

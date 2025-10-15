@@ -48,6 +48,11 @@ class SearchConfig:
     enable_citations: bool = False
     enable_fulltext: bool = False
 
+    # Database persistence (Phase 5 integration)
+    enable_database: bool = True
+    db_path: str = "data/database/search_data.db"
+    storage_path: str = "data/pdfs"
+
     def __post_init__(self):
         """Initialize default configs if not provided."""
         if self.pubmed_config is None:

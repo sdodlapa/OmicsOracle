@@ -83,6 +83,12 @@ class DatasetResponse(BaseModel):
     submission_date: Optional[str] = Field(None, description="Submission date")
     pubmed_ids: List[str] = Field(default_factory=list, description="Associated PubMed IDs")
 
+    # Database metrics (accurate counts from UnifiedDatabase)
+    citation_count: int = Field(default=0, description="Total papers in database for this GEO dataset")
+    pdf_count: int = Field(default=0, description="Number of papers with downloaded PDFs")
+    processed_count: int = Field(default=0, description="Number of papers with extracted content")
+    completion_rate: float = Field(default=0.0, description="Processing completion percentage")
+
     # Full-text content fields
     fulltext: List[FullTextContent] = Field(
         default_factory=list, description="Full-text content from publications"

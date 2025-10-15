@@ -9,17 +9,24 @@ Key improvements:
 - Simpler architecture (1 layer instead of 3)
 - Easier to test and maintain
 - ~60% less code (600 LOC vs 1,800 LOC)
+
+Phase B Integration:
+- Added PipelineCoordinator for database persistence
+- Search results now saved to UnifiedDatabase
 """
 
 import asyncio
 import logging
+import os
 import time
+from datetime import datetime
 from typing import List, Optional
 
 from omics_oracle_v2.lib.infrastructure.cache.redis_cache import RedisCache
+from omics_oracle_v2.lib.pipelines.coordinator import PipelineCoordinator
 from omics_oracle_v2.lib.query_processing.optimization.analyzer import QueryAnalyzer, SearchType
 from omics_oracle_v2.lib.query_processing.optimization.optimizer import QueryOptimizer
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationResult
+from omics_oracle_v2.lib.search_engines.citations.models import Publication
 from omics_oracle_v2.lib.search_engines.citations.openalex import OpenAlexClient, OpenAlexConfig
 from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
 from omics_oracle_v2.lib.search_engines.geo import GEOClient
@@ -94,6 +101,24 @@ class SearchOrchestrator:
             self.openalex_client = OpenAlexClient(openalex_config)
         else:
             self.openalex_client = None
+
+        # Stage 6: Database persistence (Phase B integration)
+        if config.enable_database:
+            logger.info(f"Initializing database persistence ({config.db_path})")
+            try:
+                # Ensure database directory exists
+                os.makedirs(os.path.dirname(config.db_path), exist_ok=True)
+                os.makedirs(config.storage_path, exist_ok=True)
+
+                self.coordinator = PipelineCoordinator(
+                    db_path=config.db_path, storage_path=config.storage_path
+                )
+                logger.info("Database integration active - search results will be persisted")
+            except Exception as e:
+                logger.warning(f"Database initialization failed: {e}. Continuing without persistence.")
+                self.coordinator = None
+        else:
+            self.coordinator = None
 
         # Stage 7: Caching
         if config.enable_cache:
@@ -242,6 +267,13 @@ class SearchOrchestrator:
         )
 
         logger.info(f"✅ Search complete: {result.total_results} results in {search_time_ms:.1f}ms")
+
+        # Step 6.5: Persist to database (Phase B integration)
+        if self.coordinator:
+            try:
+                await self._persist_results(result)
+            except Exception as e:
+                logger.error(f"Persistence failed (non-fatal): {e}")
 
         # Step 7: Cache result
         if use_cache and self.cache and not cache_hit:
@@ -472,9 +504,15 @@ class SearchOrchestrator:
 
         try:
             logger.info(f"🔍 Searching PubMed: '{query}'")
-            results = await self.pubmed_client.search(query, max_results=max_results)
-            # Extract Publication objects from PublicationResult wrappers
-            publications = [r.publication for r in results if isinstance(r, PublicationResult)]
+            # PubMed client search() is synchronous, not async
+            import asyncio
+
+            loop = asyncio.get_event_loop()
+            results = await loop.run_in_executor(
+                None, lambda: self.pubmed_client.search(query, max_results=max_results)
+            )
+            # Results are already Publication objects, not PublicationResult wrappers
+            publications = results if isinstance(results, list) else []
             logger.info(f"📄 PubMed: {len(publications)} publications")
             return publications
         except Exception as e:
@@ -488,8 +526,15 @@ class SearchOrchestrator:
 
         try:
             logger.info(f"🔍 Searching OpenAlex: '{query}'")
-            results = await self.openalex_client.search_publications(query, max_results=max_results)
-            publications = [r.publication for r in results if isinstance(r, PublicationResult)]
+            # OpenAlex client search() is synchronous, not async
+            import asyncio
+
+            loop = asyncio.get_event_loop()
+            results = await loop.run_in_executor(
+                None, lambda: self.openalex_client.search(query, max_results=max_results)
+            )
+            # Results are already Publication objects, not PublicationResult wrappers
+            publications = results if isinstance(results, list) else []
             logger.info(f"📄 OpenAlex: {len(publications)} publications")
             return publications
         except Exception as e:
@@ -514,10 +559,65 @@ class SearchOrchestrator:
 
         return unique
 
+    async def _persist_results(self, result: SearchResult) -> None:
+        """
+        Persist search results to the unified database (Phase B integration).
+
+        Saves GEO-PMID citation links discovered during search.
+
+        Args:
+            result: SearchResult containing datasets and publications
+        """
+        logger.info(
+            f"💾 _persist_results called: coordinator={self.coordinator is not None}, datasets={len(result.geo_datasets)}"
+        )
+
+        if not self.coordinator:
+            logger.warning("Database persistence disabled - coordinator is None")
+            return  # Database integration disabled
+
+        try:
+            persisted_count = 0
+
+            # Save GEO→PMID citations for each dataset that has PubMed IDs
+            for dataset in result.geo_datasets:
+                if hasattr(dataset, "pubmed_ids") and dataset.pubmed_ids:
+                    pmids = (
+                        dataset.pubmed_ids if isinstance(dataset.pubmed_ids, list) else [dataset.pubmed_ids]
+                    )
+
+                    for pmid in pmids:
+                        if pmid:  # Skip empty PMIDs
+                            citation_data = {
+                                "title": dataset.title or "",
+                                "authors": [],  # GEO datasets don't have author info
+                                "journal": "",
+                                "year": None,
+                                "doi": "",
+                                "pmc_id": "",
+                                "publication_date": "",
+                                # Additional metadata
+                                "source": "geo_search",
+                                "search_query": result.query,
+                                "search_date": datetime.now().isoformat(),
+                            }
+
+                            self.coordinator.save_citation_discovery(
+                                geo_id=dataset.geo_id, pmid=str(pmid), citation_data=citation_data
+                            )
+                            persisted_count += 1
+
+            if persisted_count > 0:
+                logger.info(f"💾 Persisted {persisted_count} GEO→PMID citations to database")
+
+        except Exception as e:
+            logger.error(f"Failed to persist results to database: {e}", exc_info=True)
+
     async def close(self):
         """Clean up resources.
 
         Week 3 Day 3: Added GEO client cleanup to cascade close() calls.
+        Phase B: Added PubMed/OpenAlex session cleanup and coordinator cleanup.
         """
         logger.info("Closing SearchOrchestrator")
 
@@ -528,6 +628,24 @@ class SearchOrchestrator:
                 logger.debug("GEO client closed")
             except Exception as e:
                 logger.warning(f"GEO client close failed: {e}")
+
+        # Close PubMed client (has aiohttp session)
+        if self.pubmed_client and hasattr(self.pubmed_client, "session"):
+            try:
+                if hasattr(self.pubmed_client.session, "close"):
+                    self.pubmed_client.session.close()
+                    logger.debug("PubMed client session closed")
+            except Exception as e:
+                logger.warning(f"PubMed client close failed: {e}")
+
+        # Close OpenAlex client (has requests session)
+        if self.openalex_client and hasattr(self.openalex_client, "session"):
+            try:
+                if hasattr(self.openalex_client.session, "close"):
+                    self.openalex_client.session.close()
+                    logger.debug("OpenAlex client session closed")
+            except Exception as e:
+                logger.warning(f"OpenAlex client close failed: {e}")
 
         # Close cache
         if self.cache:

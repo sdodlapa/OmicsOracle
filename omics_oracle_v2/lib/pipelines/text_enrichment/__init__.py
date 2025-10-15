@@ -64,7 +64,7 @@ from omics_oracle_v2.lib.pipelines.text_enrichment.enrichers import (
     TableExtractor,
 )
 from omics_oracle_v2.lib.pipelines.text_enrichment.normalizer import ContentNormalizer
-from omics_oracle_v2.lib.pipelines.text_enrichment.parsed_cache import ParsedCache
+from omics_oracle_v2.lib.pipelines.text_enrichment.parsed_cache import ParsedCache, get_parsed_cache
 from omics_oracle_v2.lib.pipelines.text_enrichment.pdf_parser import PDFExtractor
 from omics_oracle_v2.lib.pipelines.text_enrichment.quality_scorer import QualityScorer
 
@@ -83,6 +83,7 @@ __all__ = [
     "QualityScorer",
     # Caching
     "ParsedCache",
+    "get_parsed_cache",
     "FullTextCacheDB",
     # Utilities
     "ContentNormalizer",

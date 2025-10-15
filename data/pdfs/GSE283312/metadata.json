@@ -1,0 +1,152 @@
+{
+  "geo": {
+    "geo_id": "GSE283312",
+    "title": "CREB5 promotes tumorigenicity and upregulates druggable cell surface modalities in basal-like breast cancer",
+    "summary": "Basal-like breast cancers (BLBC), of which many are triple negative, have poor outcomes due to the limited targeted therapies available for patients. To address this need, we examined the clinical correlates and functional properties of CREB5, a transcription factor commonly amplified or overexpressed in other metastatic cancers. Using transcriptomic data from TCGA and METABRIC, we found BLBCs harbored the highest levels of CREB5 expression compared to other BC subtypes and that CREB5-high tumors had poor outcomes. In patient-matched primary and metastatic biopsies, CREB5 expression was robust and further increased in BLBCs that develop brain metastasis. CREB5 overexpression in 2 BLBC cell lines increased cell viability, formation of tumorspheres, and led to substantial increases in mRNA and cell surface expression of IL13RA2, a stem cell-like gene in brain cancers. IL13RA2 is a current CAR-T cell target in gliomas, and our work nominates IL13RA2 as a novel potential target in BLBCs.",
+    "organism": "",
+    "platform": "GPL24676",
+    "sample_count": 23,
+    "submission_date": "Dec 02 2024",
+    "publication_date": "Public on Aug 01 2025",
+    "pubmed_ids": [
+      "40770411"
+    ],
+    "relevance_score": 0.05,
+    "match_reasons": [
+      "Adequate sample size: 23"
+    ]
+  },
+  "processing": {
+    "processed_at": "2025-10-15T05:04:44.110765+00:00",
+    "include_citing_papers": true,
+    "max_citing_papers": 10,
+    "download_original": true,
+    "include_full_content": false
+  },
+  "papers": {
+    "original": {
+      "count": 1,
+      "downloaded": 1,
+      "papers": [
+        {
+          "pmid": "40770411",
+          "doi": "10.1038/s41698-025-01051-z",
+          "pmc_id": "PMC12328604",
+          "title": "CREB5 promotes tumorigenicity and upregulates druggable cell surface modalities in basal-like breast cancer.",
+          "authors": [
+            "Makovec A",
+            "Boytim E",
+            "Gustafson A",
+            "Ludwig M",
+            "Wang L",
+            "Ali A",
+            "Ishani K",
+            "Luo C",
+            "Bergom HE",
+            "John E",
+            "Tape S",
+            "Kellen S",
+            "Deacon A",
+            "Dewji FI",
+            "Richter C",
+            "Cookle L",
+            "Moline D",
+            "Rennhack JP",
+            "Drake JM",
+            "Antonarakis ES",
+            "Largaespada DA",
+            "Ostrander JH",
+            "Hwang J"
+          ],
+          "journal": "NPJ precision oncology",
+          "year": null,
+          "paper_type": "original",
+          "pdf_path": "data/pdfs/GSE283312/original/pmid_40770411.pdf",
+          "fulltext_source": "pmc",
+          "fulltext_url": "https://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_pdf/a2/a4/41698_2025_Article_1051.PMC12328604.pdf",
+          "all_urls": [
+            {
+              "url": "https://ftp.ncbi.nlm.nih.gov/pub/pmc/oa_pdf/a2/a4/41698_2025_Article_1051.PMC12328604.pdf",
+              "source": "pmc",
+              "priority": 0,
+              "url_type": "pdf_direct",
+              "confidence": 1.0,
+              "requires_auth": false,
+              "metadata": {
+                "pmc_id": "PMC12328604",
+                "pattern": "oa_api",
+                "url_type": "pdf_direct"
+              }
+            },
+            {
+              "url": "https://www.nature.com/articles/s41698-025-01051-z.pdf",
+              "source": "unpaywall",
+              "priority": 1,
+              "url_type": "pdf_direct",
+              "confidence": 1.0,
+              "requires_auth": false,
+              "metadata": {
+                "version": "publishedVersion",
+                "license": "cc-by-nc-nd",
+                "oa_status": "gold",
+                "location": "best_oa_location",
+                "url_type": "pdf_direct"
+              }
+            },
+            {
+              "url": "https://doi.org/10.1038/s41698-025-01051-z",
+              "source": "institutional",
+              "priority": 4,
+              "url_type": "doi_resolver",
+              "confidence": 1.0,
+              "requires_auth": true,
+              "metadata": {
+                "method": "direct",
+                "institution": "Georgia Tech"
+              }
+            },
+            {
+              "url": "https://www.nature.com/articles/s41698-025-01051-z.pdf",
+              "source": "crossref",
+              "priority": 4,
+              "url_type": "pdf_direct",
+              "confidence": 1.0,
+              "requires_auth": false,
+              "metadata": {
+                "fulltext_urls": [
+                  "https://www.nature.com/articles/s41698-025-01051-z.pdf",
+                  "https://www.nature.com/articles/s41698-025-01051-z",
+                  "https://www.nature.com/articles/s41698-025-01051-z.pdf"
+                ],
+                "publisher": "Springer Science and Business Media LLC"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "citing": {
+      "count": 0,
+      "downloaded": 0,
+      "papers": []
+    }
+  },
+  "statistics": {
+    "total_attempted": 1,
+    "total_successful": 1,
+    "success_rate": 100.0,
+    "citing_papers_in_response": 0,
+    "original_papers_in_response": 0
+  },
+  "status": {
+    "fulltext_status": "failed",
+    "fulltext_count": 0,
+    "needs_retry": false
+  },
+  "citation_discovery": {
+    "original_pmid": "40770411",
+    "strategy_a_count": 0,
+    "strategy_b_count": 0,
+    "total_found": 0
+  }
+}
