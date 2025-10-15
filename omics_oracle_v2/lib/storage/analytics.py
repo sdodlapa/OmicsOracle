@@ -170,17 +170,19 @@ class Analytics:
         publications = self.queries.get_publications_by_quality(min_quality=min_quality)
 
         # Calculate statistics
-        quality_scores = [p["quality_score"] for p in publications if p["quality_score"]]
+        extraction_qualitys = [p["extraction_quality"] for p in publications if p["extraction_quality"]]
 
         report = {
             "generated_at": datetime.now().isoformat(),
             "total_publications": len(publications),
             "statistics": {
                 "average_quality": (
-                    round(sum(quality_scores) / len(quality_scores), 3) if quality_scores else None
+                    round(sum(extraction_qualitys) / len(extraction_qualitys), 3)
+                    if extraction_qualitys
+                    else None
                 ),
-                "min_quality": min(quality_scores) if quality_scores else None,
-                "max_quality": max(quality_scores) if quality_scores else None,
+                "min_quality": min(extraction_qualitys) if extraction_qualitys else None,
+                "max_quality": max(extraction_qualitys) if extraction_qualitys else None,
             },
             "publications": publications,
         }
@@ -188,7 +190,7 @@ class Analytics:
         # Add grade distribution
         grade_dist = {}
         for pub in publications:
-            grade = pub.get("quality_grade")
+            grade = pub.get("extraction_grade")
             if grade:
                 grade_dist[grade] = grade_dist.get(grade, 0) + 1
         report["grade_distribution"] = grade_dist
@@ -270,13 +272,13 @@ class Analytics:
             cursor = conn.execute(
                 """
                 SELECT
-                    quality_score,
-                    quality_grade,
+                    extraction_quality,
+                    extraction_grade,
                     COUNT(*) as count
                 FROM content_extraction
-                WHERE quality_score IS NOT NULL
-                GROUP BY quality_score, quality_grade
-                ORDER BY quality_score DESC
+                WHERE extraction_quality IS NOT NULL
+                GROUP BY extraction_quality, extraction_grade
+                ORDER BY extraction_quality DESC
             """
             )
 
@@ -284,8 +286,8 @@ class Analytics:
             for row in cursor:
                 score_distribution.append(
                     {
-                        "quality_score": row[0],
-                        "quality_grade": row[1],
+                        "extraction_quality": row[0],
+                        "extraction_grade": row[1],
                         "count": row[2],
                     }
                 )
@@ -293,10 +295,10 @@ class Analytics:
         # Calculate percentiles
         cursor = conn.execute(
             """
-            SELECT quality_score
+            SELECT extraction_quality
             FROM content_extraction
-            WHERE quality_score IS NOT NULL
-            ORDER BY quality_score
+            WHERE extraction_quality IS NOT NULL
+            ORDER BY extraction_quality
         """
         )
         scores = [row[0] for row in cursor]
@@ -313,7 +315,7 @@ class Analytics:
 
         return {
             "grade_distribution": stats.get("quality_distribution", {}),
-            "average_score": stats.get("average_quality_score"),
+            "average_score": stats.get("average_extraction_quality"),
             "score_distribution": score_distribution,
             "percentiles": percentiles,
             "total_extracted": len(scores),
@@ -387,16 +389,16 @@ class Analytics:
                 ui.geo_id,
                 ui.pmid,
                 ui.title,
-                ce.quality_score,
-                ce.quality_grade,
+                ce.extraction_quality,
+                ce.extraction_grade,
                 ce.word_count,
                 ce.extraction_method,
                 pa.pdf_path
             FROM universal_identifiers ui
             JOIN content_extraction ce ON ui.pmid = ce.pmid
             LEFT JOIN pdf_acquisition pa ON ui.pmid = pa.pmid
-            WHERE ce.quality_score < ?
-            ORDER BY ce.quality_score ASC
+            WHERE ce.extraction_quality < ?
+            ORDER BY ce.extraction_quality ASC
         """
 
         with self.db.get_connection() as conn:

@@ -26,17 +26,17 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from omics_oracle_v2.lib.storage import (
+from omics_oracle_v2.lib.storage.geo_storage import GEOStorage
+from omics_oracle_v2.lib.storage.models import (
     ContentExtraction,
     EnrichedContent,
     GEODataset,
-    GEOStorage,
     PDFAcquisition,
-    UnifiedDatabase,
     UniversalIdentifier,
     URLDiscovery,
     now_iso,
 )
+from omics_oracle_v2.lib.storage.unified_db import UnifiedDatabase
 
 logger = logging.getLogger(__name__)
 
@@ -352,18 +352,23 @@ class PipelineCoordinator:
         start_time = time.time()
 
         try:
+            # Calculate word_count if not provided
+            word_count = extraction_data.get("word_count")
+            if word_count is None and extraction_data.get("full_text"):
+                word_count = len(extraction_data["full_text"].split())
+
             # Create extraction record
             extraction = ContentExtraction(
                 geo_id=geo_id,
                 pmid=pmid,
                 full_text=extraction_data.get("full_text"),
                 page_count=extraction_data.get("page_count"),
-                word_count=extraction_data.get("word_count"),
+                word_count=word_count,
                 char_count=extraction_data.get("char_count"),
                 extractor_used=extraction_data.get("extractor_used", "pypdf"),
-                extraction_method=extraction_data.get("method", "text"),
-                extraction_quality=extraction_data.get("quality"),
-                extraction_grade=extraction_data.get("grade"),
+                extraction_method=extraction_data.get("extraction_method", "text"),
+                extraction_quality=extraction_data.get("extraction_quality"),
+                extraction_grade=extraction_data.get("extraction_grade"),
                 has_readable_text=extraction_data.get("has_readable_text", False),
                 needs_ocr=extraction_data.get("needs_ocr", False),
             )

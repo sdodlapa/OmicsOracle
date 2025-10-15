@@ -71,7 +71,7 @@ class UnifiedDatabase:
     @contextmanager
     def _get_connection(self):
         """
-        Get database connection with automatic cleanup.
+        Get database connection with automatic cleanup (private).
 
         Yields:
             sqlite3.Connection: Database connection
@@ -83,6 +83,17 @@ class UnifiedDatabase:
             yield conn
         finally:
             conn.close()
+
+    @contextmanager
+    def get_connection(self):
+        """
+        Get database connection with automatic cleanup (public API).
+
+        Yields:
+            sqlite3.Connection: Database connection
+        """
+        with self._get_connection() as conn:
+            yield conn
 
     @contextmanager
     def transaction(self):

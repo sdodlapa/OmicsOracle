@@ -57,22 +57,22 @@ class DatabaseQueries:
         query = """
             SELECT
                 ui.*,
-                ud.urls_found, ud.sources_queried,
-                pa.pdf_path, pa.sha256, pa.file_size,
-                ce.extraction_method, ce.quality_score, ce.quality_grade,
-                ec.has_sections, ec.has_tables, ec.has_references
+                ud.url_count, ud.sources_queried,
+                pa.pdf_path, pa.pdf_hash_sha256, pa.pdf_size_bytes,
+                ce.extraction_method, ce.extraction_quality, ce.extraction_grade,
+                ec.sections_json, ec.tables_json, ec.references_json
             FROM universal_identifiers ui
-            LEFT JOIN url_discovery ud ON ui.pmid = ud.pmid
-            LEFT JOIN pdf_acquisition pa ON ui.pmid = pa.pmid
-            LEFT JOIN content_extraction ce ON ui.pmid = ce.pmid
-            LEFT JOIN enriched_content ec ON ui.pmid = ec.pmid
+            LEFT JOIN url_discovery ud ON ui.geo_id = ud.geo_id AND ui.pmid = ud.pmid
+            LEFT JOIN pdf_acquisition pa ON ui.geo_id = pa.geo_id AND ui.pmid = pa.pmid
+            LEFT JOIN content_extraction ce ON ui.geo_id = ce.geo_id AND ui.pmid = ce.pmid
+            LEFT JOIN enriched_content ec ON ui.geo_id = ec.geo_id AND ui.pmid = ec.pmid
             WHERE ui.geo_id = ?
         """
 
         if not include_incomplete:
             query += " AND pa.pdf_path IS NOT NULL"
 
-        query += " ORDER BY ui.created_at DESC"
+        query += " ORDER BY ui.first_discovered_at DESC"
 
         with self.db.get_connection() as conn:
             cursor = conn.execute(query, (geo_id,))
@@ -99,17 +99,16 @@ class DatabaseQueries:
         query = """
             SELECT
                 ui.*,
-                ud.urls_found, ud.sources_queried, ud.url_count_by_source,
-                pa.pdf_path, pa.sha256, pa.file_size, pa.download_source,
-                ce.extraction_method, ce.quality_score, ce.quality_grade,
+                ud.url_count, ud.sources_queried, ud.has_pdf_url, ud.has_html_url,
+                pa.pdf_path, pa.pdf_hash_sha256, pa.pdf_size_bytes, pa.source_type,
+                ce.extraction_method, ce.extraction_quality, ce.extraction_grade,
                 ce.full_text, ce.word_count,
-                ec.has_sections, ec.has_tables, ec.has_references,
-                ec.section_count, ec.table_count, ec.reference_count
+                ec.sections_json, ec.tables_json, ec.references_json
             FROM universal_identifiers ui
-            LEFT JOIN url_discovery ud ON ui.pmid = ud.pmid
-            LEFT JOIN pdf_acquisition pa ON ui.pmid = pa.pmid
-            LEFT JOIN content_extraction ce ON ui.pmid = ce.pmid
-            LEFT JOIN enriched_content ec ON ui.pmid = ec.pmid
+            LEFT JOIN url_discovery ud ON ui.geo_id = ud.geo_id AND ui.pmid = ud.pmid
+            LEFT JOIN pdf_acquisition pa ON ui.geo_id = pa.geo_id AND ui.pmid = pa.pmid
+            LEFT JOIN content_extraction ce ON ui.geo_id = ce.geo_id AND ui.pmid = ce.pmid
+            LEFT JOIN enriched_content ec ON ui.geo_id = ec.geo_id AND ui.pmid = ec.pmid
             WHERE ui.pmid = ?
         """
 
@@ -125,7 +124,7 @@ class DatabaseQueries:
     def get_publications_by_quality(
         self,
         min_quality: Optional[float] = None,
-        quality_grades: Optional[List[str]] = None,
+        extraction_grades: Optional[List[str]] = None,
         limit: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
@@ -133,7 +132,7 @@ class DatabaseQueries:
 
         Args:
             min_quality: Minimum quality score (0.0 to 1.0)
-            quality_grades: List of quality grades to include (e.g., ["A", "B"])
+            extraction_grades: List of quality grades to include (e.g., ["A", "B"])
             limit: Maximum number of results to return
 
         Returns:
@@ -142,26 +141,26 @@ class DatabaseQueries:
         query = """
             SELECT
                 ui.geo_id, ui.pmid, ui.title, ui.authors,
-                ce.quality_score, ce.quality_grade, ce.word_count,
-                pa.pdf_path, pa.file_size
+                ce.extraction_quality, ce.extraction_grade, ce.word_count,
+                pa.pdf_path, pa.pdf_size_bytes
             FROM universal_identifiers ui
-            INNER JOIN content_extraction ce ON ui.pmid = ce.pmid
-            LEFT JOIN pdf_acquisition pa ON ui.pmid = pa.pmid
+            INNER JOIN content_extraction ce ON ui.geo_id = ce.geo_id AND ui.pmid = ce.pmid
+            LEFT JOIN pdf_acquisition pa ON ui.geo_id = pa.geo_id AND ui.pmid = pa.pmid
             WHERE 1=1
         """
 
         params = []
 
         if min_quality is not None:
-            query += " AND ce.quality_score >= ?"
+            query += " AND ce.extraction_quality >= ?"
             params.append(min_quality)
 
-        if quality_grades:
-            placeholders = ",".join("?" * len(quality_grades))
-            query += f" AND ce.quality_grade IN ({placeholders})"
-            params.extend(quality_grades)
+        if extraction_grades:
+            placeholders = ",".join("?" * len(extraction_grades))
+            query += f" AND ce.extraction_grade IN ({placeholders})"
+            params.extend(extraction_grades)
 
-        query += " ORDER BY ce.quality_score DESC"
+        query += " ORDER BY ce.extraction_quality DESC"
 
         if limit:
             query += " LIMIT ?"
@@ -179,7 +178,7 @@ class DatabaseQueries:
         self,
         start_date: Optional[str] = None,
         end_date: Optional[str] = None,
-        date_field: str = "created_at",
+        date_field: str = "first_discovered_at",
     ) -> List[Dict[str, Any]]:
         """
         Get publications within a date range.
@@ -187,19 +186,21 @@ class DatabaseQueries:
         Args:
             start_date: ISO format date (e.g., "2024-01-01")
             end_date: ISO format date (e.g., "2024-12-31")
-            date_field: Which date to filter on ("created_at" or "updated_at")
+            date_field: Which date to filter on ("first_discovered_at" or "last_updated_at")
 
         Returns:
             List of publication dictionaries
         """
-        if date_field not in ["created_at", "updated_at"]:
-            raise ValueError(f"Invalid date_field: {date_field}. " "Must be 'created_at' or 'updated_at'")
+        if date_field not in ["first_discovered_at", "last_updated_at"]:
+            raise ValueError(
+                f"Invalid date_field: {date_field}. " "Must be 'first_discovered_at' or 'last_updated_at'"
+            )
 
         query = f"""
             SELECT
                 ui.*,
                 pa.pdf_path,
-                ce.quality_score, ce.quality_grade
+                ce.extraction_quality, ce.extraction_grade
             FROM universal_identifiers ui
             LEFT JOIN pdf_acquisition pa ON ui.pmid = pa.pmid
             LEFT JOIN content_extraction ce ON ui.pmid = ce.pmid
@@ -245,8 +246,8 @@ class DatabaseQueries:
                 CASE WHEN pa.pmid IS NOT NULL THEN 1 ELSE 0 END as has_pdf,
                 CASE WHEN ce.pmid IS NOT NULL THEN 1 ELSE 0 END as has_extraction,
                 CASE WHEN ec.pmid IS NOT NULL THEN 1 ELSE 0 END as has_enriched,
-                ui.created_at,
-                ui.updated_at
+                ui.first_discovered_at,
+                ui.last_updated_at
             FROM universal_identifiers ui
             LEFT JOIN url_discovery ud ON ui.pmid = ud.pmid
             LEFT JOIN pdf_acquisition pa ON ui.pmid = pa.pmid
@@ -257,7 +258,7 @@ class DatabaseQueries:
                 pa.pmid IS NULL OR
                 ce.pmid IS NULL OR
                 ec.pmid IS NULL
-            ORDER BY ui.created_at DESC
+            ORDER BY ui.first_discovered_at DESC
         """
 
         with self.db.get_connection() as conn:
@@ -300,13 +301,13 @@ class DatabaseQueries:
         query = f"""
             SELECT DISTINCT
                 ui.geo_id, ui.pmid, ui.title, ui.authors,
-                ce.quality_score, ce.quality_grade,
+                ce.extraction_quality, ce.extraction_grade,
                 pa.pdf_path
             FROM universal_identifiers ui
             LEFT JOIN content_extraction ce ON ui.pmid = ce.pmid
             LEFT JOIN pdf_acquisition pa ON ui.pmid = pa.pmid
             WHERE {where_clause}
-            ORDER BY ui.created_at DESC
+            ORDER BY ui.first_discovered_at DESC
         """
 
         with self.db.get_connection() as conn:
@@ -361,11 +362,11 @@ class DatabaseQueries:
             # Quality distribution
             cursor = conn.execute(
                 """
-                SELECT quality_grade, COUNT(*) as count
+                SELECT extraction_grade, COUNT(*) as count
                 FROM content_extraction
-                WHERE quality_grade IS NOT NULL
-                GROUP BY quality_grade
-                ORDER BY quality_grade
+                WHERE extraction_grade IS NOT NULL
+                GROUP BY extraction_grade
+                ORDER BY extraction_grade
             """
             )
             stats["quality_distribution"] = {row[0]: row[1] for row in cursor}
@@ -373,13 +374,13 @@ class DatabaseQueries:
             # Average quality score
             cursor = conn.execute(
                 """
-                SELECT AVG(quality_score) as avg_quality
+                SELECT AVG(extraction_quality) as avg_quality
                 FROM content_extraction
-                WHERE quality_score IS NOT NULL
+                WHERE extraction_quality IS NOT NULL
             """
             )
             avg_quality = cursor.fetchone()[0]
-            stats["average_quality_score"] = round(avg_quality, 3) if avg_quality else None
+            stats["average_extraction_quality"] = round(avg_quality, 3) if avg_quality else None
 
             # GEO dataset count
             cursor = conn.execute("SELECT COUNT(DISTINCT geo_id) FROM universal_identifiers")
@@ -389,10 +390,10 @@ class DatabaseQueries:
             cursor = conn.execute(
                 """
                 SELECT
-                    SUM(file_size) as total_size,
+                    SUM(pdf_size_bytes) as total_size,
                     COUNT(*) as pdf_count
                 FROM pdf_acquisition
-                WHERE file_size IS NOT NULL
+                WHERE pdf_size_bytes IS NOT NULL
             """
             )
             row = cursor.fetchone()
@@ -460,12 +461,12 @@ class DatabaseQueries:
             # Quality distribution for this GEO
             cursor = conn.execute(
                 """
-                SELECT ce.quality_grade, COUNT(*) as count
+                SELECT ce.extraction_grade, COUNT(*) as count
                 FROM content_extraction ce
                 JOIN universal_identifiers ui ON ce.pmid = ui.pmid
-                WHERE ui.geo_id = ? AND ce.quality_grade IS NOT NULL
-                GROUP BY ce.quality_grade
-                ORDER BY ce.quality_grade
+                WHERE ui.geo_id = ? AND ce.extraction_grade IS NOT NULL
+                GROUP BY ce.extraction_grade
+                ORDER BY ce.extraction_grade
             """,
                 (geo_id,),
             )
@@ -474,10 +475,10 @@ class DatabaseQueries:
             # Average quality
             cursor = conn.execute(
                 """
-                SELECT AVG(ce.quality_score) as avg_quality
+                SELECT AVG(ce.extraction_quality) as avg_quality
                 FROM content_extraction ce
                 JOIN universal_identifiers ui ON ce.pmid = ui.pmid
-                WHERE ui.geo_id = ? AND ce.quality_score IS NOT NULL
+                WHERE ui.geo_id = ? AND ce.extraction_quality IS NOT NULL
             """,
                 (geo_id,),
             )
@@ -552,21 +553,22 @@ class DatabaseQueries:
         """
         query = """
             SELECT
-                pipeline_name,
+                pipeline,
                 geo_id,
                 pmid,
-                error_message,
-                created_at
+                message,
+                error_type,
+                logged_at
             FROM processing_log
-            WHERE success = 0
+            WHERE event_type = 'error'
         """
 
         params = []
         if pipeline_name:
-            query += " AND pipeline_name = ?"
+            query += " AND pipeline = ?"
             params.append(pipeline_name)
 
-        query += " ORDER BY created_at DESC LIMIT ?"
+        query += " ORDER BY logged_at DESC LIMIT ?"
         params.append(limit)
 
         with self.db.get_connection() as conn:
