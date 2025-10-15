@@ -113,7 +113,9 @@ class AsyncLLMClient:
             elif self.provider == "anthropic":
                 import anthropic
 
-                self.client = anthropic.AsyncAnthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+                self.client = anthropic.AsyncAnthropic(
+                    api_key=os.getenv("ANTHROPIC_API_KEY")
+                )
 
             else:
                 raise ValueError(f"Unsupported provider: {self.provider}")
@@ -164,7 +166,9 @@ class AsyncLLMClient:
                             prompt, system_prompt, response_format, max_tokens
                         )
                     elif self.provider == "anthropic":
-                        response = await self._anthropic_generate(prompt, system_prompt, max_tokens)
+                        response = await self._anthropic_generate(
+                            prompt, system_prompt, max_tokens
+                        )
                     else:
                         raise ValueError(f"Unknown provider: {self.provider}")
 
@@ -178,7 +182,9 @@ class AsyncLLMClient:
             except Exception as e:
                 if attempt < self.max_retries - 1:
                     wait_time = 2**attempt  # Exponential backoff
-                    logger.warning(f"Attempt {attempt + 1} failed: {e}. Retrying in {wait_time}s...")
+                    logger.warning(
+                        f"Attempt {attempt + 1} failed: {e}. Retrying in {wait_time}s..."
+                    )
                     await asyncio.sleep(wait_time)
                 else:
                     logger.error(f"All {self.max_retries} attempts failed: {e}")
@@ -205,7 +211,10 @@ class AsyncLLMClient:
         Returns:
             List of response dicts
         """
-        tasks = [self.generate(prompt, system_prompt, response_format, max_tokens) for prompt in prompts]
+        tasks = [
+            self.generate(prompt, system_prompt, response_format, max_tokens)
+            for prompt in prompts
+        ]
 
         # Process in batches to control concurrency
         results = []
@@ -218,7 +227,12 @@ class AsyncLLMClient:
         for i, result in enumerate(results):
             if isinstance(result, Exception):
                 logger.error(f"Batch item {i} failed: {result}")
-                results[i] = {"content": "", "tokens": 0, "cached": False, "error": str(result)}
+                results[i] = {
+                    "content": "",
+                    "tokens": 0,
+                    "cached": False,
+                    "error": str(result),
+                }
 
         return results
 
@@ -236,7 +250,9 @@ class AsyncLLMClient:
         Returns:
             Parsed JSON object
         """
-        response = await self.generate(prompt, system_prompt, response_format="json", max_tokens=max_tokens)
+        response = await self.generate(
+            prompt, system_prompt, response_format="json", max_tokens=max_tokens
+        )
 
         try:
             return json.loads(response["content"])
@@ -318,7 +334,9 @@ class AsyncLLMClient:
                 await asyncio.sleep(wait_time)
                 # Clean up again after waiting
                 current_time = time.time()
-                self.request_times = [t for t in self.request_times if current_time - t < 60]
+                self.request_times = [
+                    t for t in self.request_times if current_time - t < 60
+                ]
 
         # Record this request
         self.request_times.append(current_time)
@@ -414,7 +432,9 @@ async def score_publication_relevance_async(
     """
 
     try:
-        response = await llm_client.generate_json(user_prompt, system_prompt, max_tokens=500)
+        response = await llm_client.generate_json(
+            user_prompt, system_prompt, max_tokens=500
+        )
         return float(response.get("score", 0.5))
     except Exception as e:
         logger.error(f"Failed to score publication: {e}")
@@ -422,7 +442,10 @@ async def score_publication_relevance_async(
 
 
 async def score_publications_batch_async(
-    llm_client: AsyncLLMClient, query: str, publications: List[Any], max_concurrent: int = 10
+    llm_client: AsyncLLMClient,
+    query: str,
+    publications: List[Any],
+    max_concurrent: int = 10,
 ) -> List[float]:
     """
     Score multiple publications concurrently.
@@ -436,7 +459,10 @@ async def score_publications_batch_async(
     Returns:
         List of relevance scores
     """
-    tasks = [score_publication_relevance_async(llm_client, query, pub) for pub in publications]
+    tasks = [
+        score_publication_relevance_async(llm_client, query, pub)
+        for pub in publications
+    ]
 
     scores = []
     for i in range(0, len(tasks), max_concurrent):

@@ -213,7 +213,11 @@ class CacheManager:
 
             try:
                 with open(cache_file, "w") as f:
-                    json.dump({"key": key, "value": value, "timestamp": timestamp}, f, indent=2)
+                    json.dump(
+                        {"key": key, "value": value, "timestamp": timestamp},
+                        f,
+                        indent=2,
+                    )
                 logger.debug(f"Disk cache set: {key[:32]}...")
             except Exception as e:
                 logger.warning(f"Failed to write disk cache: {e}")
@@ -226,7 +230,10 @@ class CacheManager:
     def _set_memory(self, key: str, value: Any, timestamp: float) -> None:
         """Store value in memory cache with LRU eviction."""
         # Remove oldest if at capacity
-        if key not in self._memory_cache and len(self._memory_cache) >= self.config.memory_cache_size:
+        if (
+            key not in self._memory_cache
+            and len(self._memory_cache) >= self.config.memory_cache_size
+        ):
             oldest_key = next(iter(self._memory_cache))
             del self._memory_cache[oldest_key]
             logger.debug(f"LRU evicted: {oldest_key[:32]}...")
@@ -325,14 +332,19 @@ if __name__ == "__main__":
     import sys
 
     # Configure logging
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
 
     print("=" * 80)
     print("Cache Manager Demo")
     print("=" * 80)
 
     # Create cache manager
-    config = CacheConfig(memory_cache_size=100, memory_ttl_seconds=60, disk_ttl_seconds=300)
+    config = CacheConfig(
+        memory_cache_size=100, memory_ttl_seconds=60, disk_ttl_seconds=300
+    )
 
     cache = CacheManager(config)
 

@@ -91,7 +91,9 @@ class SearchOptimizer:
             f"caching: {self.config.enable_caching})"
         )
 
-    def optimize_query(self, query: str, search_fn, force_refresh: bool = False) -> List[Dict[str, Any]]:
+    def optimize_query(
+        self, query: str, search_fn, force_refresh: bool = False
+    ) -> List[Dict[str, Any]]:
         """
         Optimize single query execution.
 
@@ -116,7 +118,9 @@ class SearchOptimizer:
                 self.metrics["cache_hits"] += 1
                 elapsed_ms = (time.time() - start_time) * 1000
                 self.metrics["total_time_ms"] += elapsed_ms
-                logger.debug(f"Cache hit for query: {query[:50]}... ({elapsed_ms:.2f}ms)")
+                logger.debug(
+                    f"Cache hit for query: {query[:50]}... ({elapsed_ms:.2f}ms)"
+                )
                 return cached_results
 
             self.metrics["cache_misses"] += 1
@@ -200,7 +204,9 @@ class SearchOptimizer:
 
         return results
 
-    def _batch_search(self, queries: List[str], search_fn) -> List[List[Dict[str, Any]]]:
+    def _batch_search(
+        self, queries: List[str], search_fn
+    ) -> List[List[Dict[str, Any]]]:
         """
         Execute batch search with optimizations.
 
@@ -222,7 +228,9 @@ class SearchOptimizer:
 
         return results
 
-    async def optimize_async(self, queries: List[str], async_search_fn) -> List[List[Dict[str, Any]]]:
+    async def optimize_async(
+        self, queries: List[str], async_search_fn
+    ) -> List[List[Dict[str, Any]]]:
         """
         Optimize queries with async execution.
 
@@ -265,9 +273,12 @@ class SearchOptimizer:
         metrics = self.metrics.copy()
 
         if self.metrics["total_queries"] > 0:
-            metrics["avg_time_ms"] = self.metrics["total_time_ms"] / self.metrics["total_queries"]
+            metrics["avg_time_ms"] = (
+                self.metrics["total_time_ms"] / self.metrics["total_queries"]
+            )
             metrics["cache_hit_rate"] = (
-                self.metrics["cache_hits"] / (self.metrics["cache_hits"] + self.metrics["cache_misses"])
+                self.metrics["cache_hits"]
+                / (self.metrics["cache_hits"] + self.metrics["cache_misses"])
                 if (self.metrics["cache_hits"] + self.metrics["cache_misses"]) > 0
                 else 0.0
             )
@@ -305,7 +316,10 @@ if __name__ == "__main__":
     import sys
 
     # Configure logging
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
 
     print("=" * 80)
     print("Search Optimizer Demo")
@@ -316,13 +330,20 @@ if __name__ == "__main__":
         """Simulate search with some latency."""
         time.sleep(0.05)  # 50ms simulated latency
         return [
-            {"id": f"GSE{random.randint(1000, 9999)}", "score": random.random(), "query": query}
+            {
+                "id": f"GSE{random.randint(1000, 9999)}",
+                "score": random.random(),
+                "query": query,
+            }
             for _ in range(5)
         ]
 
     # Create optimizer
     config = OptimizationConfig(
-        enable_batching=True, enable_caching=True, batch_size=10, max_concurrent_queries=3
+        enable_batching=True,
+        enable_caching=True,
+        batch_size=10,
+        max_concurrent_queries=3,
     )
 
     optimizer = SearchOptimizer(config)

@@ -101,7 +101,9 @@ class LLMClient:
             elif self.provider == "anthropic":
                 import anthropic
 
-                self.client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+                self.client = anthropic.Anthropic(
+                    api_key=os.getenv("ANTHROPIC_API_KEY")
+                )
 
             elif self.provider == "ollama":
                 # Local model - no API key needed
@@ -150,7 +152,9 @@ class LLMClient:
         # Generate response
         try:
             if self.provider == "openai":
-                response = self._openai_generate(prompt, system_prompt, response_format, max_tokens)
+                response = self._openai_generate(
+                    prompt, system_prompt, response_format, max_tokens
+                )
             elif self.provider == "anthropic":
                 response = self._anthropic_generate(prompt, system_prompt, max_tokens)
             elif self.provider == "ollama":
@@ -183,7 +187,9 @@ class LLMClient:
         Returns:
             Parsed JSON object
         """
-        response = self.generate(prompt, system_prompt, response_format="json", max_tokens=max_tokens)
+        response = self.generate(
+            prompt, system_prompt, response_format="json", max_tokens=max_tokens
+        )
 
         try:
             return json.loads(response["content"])
@@ -247,7 +253,9 @@ class LLMClient:
             "cached": False,
         }
 
-    def _ollama_generate(self, prompt: str, system_prompt: Optional[str], max_tokens: int) -> Dict[str, Any]:
+    def _ollama_generate(
+        self, prompt: str, system_prompt: Optional[str], max_tokens: int
+    ) -> Dict[str, Any]:
         """Generate response using Ollama (local)."""
         import requests
 
@@ -266,7 +274,11 @@ class LLMClient:
 
         result = response.json()
 
-        return {"content": result["response"], "tokens": 0, "cached": False}  # Ollama doesn't return tokens
+        return {
+            "content": result["response"],
+            "tokens": 0,
+            "cached": False,
+        }  # Ollama doesn't return tokens
 
     def _get_cache_key(
         self, prompt: str, system_prompt: Optional[str], response_format: Optional[str]
