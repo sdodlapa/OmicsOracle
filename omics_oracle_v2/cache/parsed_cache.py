@@ -100,7 +100,7 @@ class ParsedCache:
 
         ENHANCED (Phase 4 - Oct 15, 2025):
         - Added Redis hot-tier for frequently accessed papers
-        - 2-tier cache: Redis (hot, 7 days) → Disk (warm, 90 days)
+        - 2-tier cache: Redis (hot, 7 days) -> Disk (warm, 90 days)
         - Expected 5-10x speedup for recent papers
 
         Args:
@@ -201,7 +201,7 @@ class ParsedCache:
 
                 if cached_data:
                     logger.info(
-                        f"[CACHE-HIT] ✓ Redis hot-tier HIT: {publication_id} (<10ms)"
+                        f"[CACHE-HIT] [OK] Redis hot-tier HIT: {publication_id} (<10ms)"
                     )
 
                     # Update access time in database
@@ -254,7 +254,7 @@ class ParsedCache:
                 return None
 
             logger.info(
-                f"[CACHE-HIT] ✓ Disk warm-tier HIT: {publication_id} "
+                f"[CACHE-HIT] [OK] Disk warm-tier HIT: {publication_id} "
                 f"(age: {self._get_age_days(data)} days, ~50ms)"
             )
 

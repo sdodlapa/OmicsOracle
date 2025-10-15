@@ -14,19 +14,19 @@ Key Features:
 
 Storage Structure:
     data/fulltext/
-    ├── xml/
-    │   ├── pmc/           # PMC NXML files
-    │   └── biorxiv/       # bioRxiv XML (if available)
-    ├── pdf/
-    │   ├── arxiv/         # arXiv PDFs
-    │   ├── pmc/           # PMC PDFs (fallback from XML)
-    │   ├── institutional/ # Institutional access PDFs
-    │   ├── publisher/     # Direct publisher PDFs
-    │   ├── scihub/        # Sci-Hub PDFs
-    │   ├── biorxiv/       # bioRxiv/medRxiv PDFs
-    │   └── {hash}.pdf     # Legacy hash-based cache
-    └── parsed/            # Future: parsed JSON cache
-        └── {id}.json
+    +-- xml/
+    |   +-- pmc/           # PMC NXML files
+    |   +-- biorxiv/       # bioRxiv XML (if available)
+    +-- pdf/
+    |   +-- arxiv/         # arXiv PDFs
+    |   +-- pmc/           # PMC PDFs (fallback from XML)
+    |   +-- institutional/ # Institutional access PDFs
+    |   +-- publisher/     # Direct publisher PDFs
+    |   +-- scihub/        # Sci-Hub PDFs
+    |   +-- biorxiv/       # bioRxiv/medRxiv PDFs
+    |   +-- {hash}.pdf     # Legacy hash-based cache
+    +-- parsed/            # Future: parsed JSON cache
+        +-- {id}.json
 
 Example:
     >>> from omics_oracle_v2.lib.pipelines.smart_cache import SmartCache
@@ -135,7 +135,6 @@ class SmartCache:
         doi = getattr(publication, "doi", None)
         pmid = getattr(publication, "pmid", None)
         pmc_id = getattr(publication, "pmc_id", None)
-        title = getattr(publication, "title", None)
 
         # Generate list of identifiers to check
         ids_to_check = []
@@ -156,7 +155,11 @@ class SmartCache:
             # Check if this is an arXiv paper
             if "arxiv" in doi.lower():
                 # Extract arXiv ID (e.g., "10.48550/arxiv.2301.12345" -> "2301.12345")
-                arxiv_id = doi.split("arxiv.")[-1] if "arxiv." in doi.lower() else doi.split("/")[-1]
+                arxiv_id = (
+                    doi.split("arxiv.")[-1]
+                    if "arxiv." in doi.lower()
+                    else doi.split("/")[-1]
+                )
                 ids_to_check.append(("arxiv", arxiv_id))
 
         logger.debug(f"Checking local files for identifiers: {ids_to_check}")
@@ -210,7 +213,7 @@ class SmartCache:
                         xml_path = pmc_xml_dir / pattern
                         if xml_path.exists() and xml_path.stat().st_size > 0:
                             logger.info(
-                                f"✓ Found local PMC XML: {xml_path.name} ({xml_path.stat().st_size // 1024} KB)"
+                                f"[OK] Found local PMC XML: {xml_path.name} ({xml_path.stat().st_size // 1024} KB)"
                             )
                             return LocalFileResult(
                                 found=True,
@@ -224,7 +227,9 @@ class SmartCache:
 
         return LocalFileResult(found=False)
 
-    def _check_pdf_files(self, ids_to_check: List[tuple], publication) -> LocalFileResult:
+    def _check_pdf_files(
+        self, ids_to_check: List[tuple], publication
+    ) -> LocalFileResult:
         """
         Check for PDF files in multiple possible locations.
 
@@ -275,7 +280,7 @@ class SmartCache:
                 pdf_path = location / f"{id_value}.pdf"
                 if pdf_path.exists() and pdf_path.stat().st_size > 0:
                     logger.info(
-                        f"✓ Found local PDF: {source}/{pdf_path.name} ({pdf_path.stat().st_size // 1024} KB)"
+                        f"[OK] Found local PDF: {source}/{pdf_path.name} ({pdf_path.stat().st_size // 1024} KB)"
                     )
                     return LocalFileResult(
                         found=True,
@@ -290,7 +295,7 @@ class SmartCache:
         hash_path = self._get_hash_cache_path(publication)
         if hash_path and hash_path.exists() and hash_path.stat().st_size > 0:
             logger.info(
-                f"✓ Found legacy cached PDF: {hash_path.name} ({hash_path.stat().st_size // 1024} KB)"
+                f"[OK] Found legacy cached PDF: {hash_path.name} ({hash_path.stat().st_size // 1024} KB)"
             )
             return LocalFileResult(
                 found=True,
@@ -330,7 +335,9 @@ class SmartCache:
             logger.debug(f"Could not generate hash cache path: {e}")
             return None
 
-    def save_file(self, content: bytes, publication, source: str, file_type: str = "pdf") -> Path:
+    def save_file(
+        self, content: bytes, publication, source: str, file_type: str = "pdf"
+    ) -> Path:
         """
         Save downloaded file to appropriate source-specific location.
 
@@ -375,7 +382,9 @@ class SmartCache:
         file_path = base_dir / filename
         file_path.write_bytes(content)
 
-        logger.info(f"💾 Saved {file_type.upper()} to: {source}/{filename} ({len(content) // 1024} KB)")
+        logger.info(
+            f"[SAVED] Saved {file_type.upper()} to: {source}/{filename} ({len(content) // 1024} KB)"
+        )
 
         return file_path
 
@@ -414,7 +423,9 @@ class SmartCache:
 
         # General case: use DOI (sanitized) or hash
         if hasattr(publication, "doi") and publication.doi:
-            sanitized = publication.doi.replace("/", "_").replace(".", "_").replace(":", "_")
+            sanitized = (
+                publication.doi.replace("/", "_").replace(".", "_").replace(":", "_")
+            )
             return f"{sanitized}.{file_type}"
 
         # Fallback: use hash of title

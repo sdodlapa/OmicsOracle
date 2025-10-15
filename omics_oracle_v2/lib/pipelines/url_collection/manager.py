@@ -31,24 +31,18 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from omics_oracle_v2.lib.pipelines.url_collection.sources.institutional_access import (
-    InstitutionalAccessManager,
-    InstitutionType,
-)
-from omics_oracle_v2.lib.pipelines.url_collection.sources.libgen_client import LibGenClient, LibGenConfig
+    InstitutionalAccessManager, InstitutionType)
+from omics_oracle_v2.lib.pipelines.url_collection.sources.libgen_client import (
+    LibGenClient, LibGenConfig)
 from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources import (
-    ArXivClient,
-    BioRxivClient,
-    COREClient,
-    CrossrefClient,
-    PMCClient,
-    PMCConfig,
-)
+    ArXivClient, BioRxivClient, COREClient, CrossrefClient, PMCClient,
+    PMCConfig)
 from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.unpaywall_client import (
-    UnpaywallClient,
-    UnpaywallConfig,
-)
-from omics_oracle_v2.lib.pipelines.url_collection.sources.scihub_client import SciHubClient, SciHubConfig
-from omics_oracle_v2.lib.pipelines.url_collection.url_validator import URLType, URLValidator
+    UnpaywallClient, UnpaywallConfig)
+from omics_oracle_v2.lib.pipelines.url_collection.sources.scihub_client import (
+    SciHubClient, SciHubConfig)
+from omics_oracle_v2.lib.pipelines.url_collection.url_validator import (
+    URLType, URLValidator)
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 
 logger = logging.getLogger(__name__)
@@ -108,7 +102,9 @@ class FullTextResult:
     url: Optional[str] = None
     error: Optional[str] = None
     metadata: Optional[Dict] = None
-    all_urls: Optional[List["SourceURL"]] = None  # NEW: All URLs from all sources (for fallback)
+    all_urls: Optional[
+        List["SourceURL"]
+    ] = None  # NEW: All URLs from all sources (for fallback)
 
 
 class FullTextManagerConfig(BaseModel):
@@ -134,26 +130,42 @@ class FullTextManagerConfig(BaseModel):
         timeout_per_source: Timeout for each source (seconds)
     """
 
-    enable_institutional: bool = Field(default=True, description="Try institutional access first")
+    enable_institutional: bool = Field(
+        default=True, description="Try institutional access first"
+    )
     enable_pmc: bool = Field(default=True, description="Try PubMed Central")
     enable_openalex: bool = Field(default=True, description="Use OpenAlex OA URLs")
     enable_unpaywall: bool = Field(default=True, description="Try Unpaywall (Phase 1+)")
     enable_core: bool = Field(default=True, description="Use CORE API")
     enable_biorxiv: bool = Field(default=True, description="Try bioRxiv/medRxiv")
     enable_arxiv: bool = Field(default=True, description="Try arXiv")
-    enable_crossref: bool = Field(default=True, description="Use Crossref full-text links")
+    enable_crossref: bool = Field(
+        default=True, description="Use Crossref full-text links"
+    )
     enable_scihub: bool = Field(
-        default=False, description="Try Sci-Hub (Phase 2, use responsibly, disabled by default)"
+        default=False,
+        description="Try Sci-Hub (Phase 2, use responsibly, disabled by default)",
     )
     enable_libgen: bool = Field(
-        default=False, description="Try LibGen (Phase 3, use responsibly, disabled by default)"
+        default=False,
+        description="Try LibGen (Phase 3, use responsibly, disabled by default)",
     )
     core_api_key: Optional[str] = Field(default=None, description="API key for CORE")
-    unpaywall_email: Optional[str] = Field(default=None, description="Email for Unpaywall API")
-    scihub_use_proxy: bool = Field(default=False, description="Use proxy/Tor for Sci-Hub")
-    libgen_use_proxy: bool = Field(default=False, description="Use proxy/Tor for LibGen")
-    max_concurrent: int = Field(default=3, description="Maximum concurrent source attempts", ge=1)
-    timeout_per_source: int = Field(default=30, description="Timeout for each source (seconds)", ge=1)
+    unpaywall_email: Optional[str] = Field(
+        default=None, description="Email for Unpaywall API"
+    )
+    scihub_use_proxy: bool = Field(
+        default=False, description="Use proxy/Tor for Sci-Hub"
+    )
+    libgen_use_proxy: bool = Field(
+        default=False, description="Use proxy/Tor for LibGen"
+    )
+    max_concurrent: int = Field(
+        default=3, description="Maximum concurrent source attempts", ge=1
+    )
+    timeout_per_source: int = Field(
+        default=30, description="Timeout for each source (seconds)", ge=1
+    )
 
 
 class FullTextManager:
@@ -186,8 +198,12 @@ class FullTextManager:
         self.initialized = False
 
         # OA source clients (will be initialized in initialize())
-        self.institutional_manager: Optional[InstitutionalAccessManager] = None  # NEW - Priority 1
-        self.pmc_client: Optional[PMCClient] = None  # Extracted from manager (Phase 1.3)
+        self.institutional_manager: Optional[
+            InstitutionalAccessManager
+        ] = None  # NEW - Priority 1
+        self.pmc_client: Optional[
+            PMCClient
+        ] = None  # Extracted from manager (Phase 1.3)
         self.core_client: Optional[COREClient] = None
         self.biorxiv_client: Optional[BioRxivClient] = None
         self.arxiv_client: Optional[ArXivClient] = None
@@ -216,7 +232,9 @@ class FullTextManager:
         # Initialize Institutional Access Manager (NEW - Priority 1)
         if self.config.enable_institutional:
             # Use Georgia Tech by default (can be configured)
-            self.institutional_manager = InstitutionalAccessManager(institution=InstitutionType.GEORGIA_TECH)
+            self.institutional_manager = InstitutionalAccessManager(
+                institution=InstitutionType.GEORGIA_TECH
+            )
             logger.info("Institutional Access Manager initialized (Georgia Tech)")
 
         # Initialize PMC client (Extracted from manager - Phase 1.3)
@@ -228,7 +246,8 @@ class FullTextManager:
 
         # Initialize CORE client
         if self.config.enable_core:
-            from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.core_client import COREConfig
+            from omics_oracle_v2.lib.pipelines.url_collection.sources.oa_sources.core_client import \
+                COREConfig
 
             core_config = COREConfig(api_key=self.config.core_api_key)
             self.core_client = COREClient(config=core_config)
@@ -255,7 +274,9 @@ class FullTextManager:
 
         # Initialize Unpaywall client (NEW - Phase 1+)
         if self.config.enable_unpaywall:
-            email = self.config.unpaywall_email or os.getenv("NCBI_EMAIL", "sdodl001@odu.edu")
+            email = self.config.unpaywall_email or os.getenv(
+                "NCBI_EMAIL", "sdodl001@odu.edu"
+            )
             unpaywall_config = UnpaywallConfig(email=email)
             self.unpaywall_client = UnpaywallClient(unpaywall_config)
             await self.unpaywall_client.__aenter__()
@@ -333,7 +354,7 @@ class FullTextManager:
         Returns:
             FullTextResult with local file info if found
         """
-        from omics_oracle_v2.lib.pipelines.pdf_download.smart_cache import SmartCache
+        from omics_oracle_v2.cache.smart_cache import SmartCache
 
         cache = SmartCache()
         result = cache.find_local_file(publication)
@@ -361,7 +382,9 @@ class FullTextManager:
         logger.debug("No local files found, will try remote sources")
         return FullTextResult(success=False, error="Not in cache")
 
-    async def _try_institutional_access(self, publication: Publication) -> FullTextResult:
+    async def _try_institutional_access(
+        self, publication: Publication
+    ) -> FullTextResult:
         """
         Try to get full-text through institutional access (Georgia Tech/ODU).
 
@@ -389,7 +412,9 @@ class FullTextManager:
             FullTextResult with URL (may require VPN/institutional auth to download)
         """
         if not self.config.enable_institutional or not self.institutional_manager:
-            return FullTextResult(success=False, error="Institutional access not enabled")
+            return FullTextResult(
+                success=False, error="Institutional access not enabled"
+            )
 
         try:
             # Get access URL through institutional subscription
@@ -397,7 +422,9 @@ class FullTextManager:
             access_url = self.institutional_manager.get_access_url(publication)
 
             if not access_url:
-                return FullTextResult(success=False, error="No institutional access found")
+                return FullTextResult(
+                    success=False, error="No institutional access found"
+                )
 
             logger.info(f"Found access via institutional: {access_url}")
 
@@ -460,7 +487,9 @@ class FullTextManager:
 
         try:
             # Check if publication has OA URL in metadata
-            oa_url = publication.metadata.get("oa_url") if publication.metadata else None
+            oa_url = (
+                publication.metadata.get("oa_url") if publication.metadata else None
+            )
 
             if not oa_url:
                 return FullTextResult(success=False, error="No OA URL in metadata")
@@ -488,7 +517,9 @@ class FullTextManager:
             FullTextResult
         """
         if not self.config.enable_core or not self.core_client:
-            return FullTextResult(success=False, error="CORE disabled or not initialized")
+            return FullTextResult(
+                success=False, error="CORE disabled or not initialized"
+            )
 
         try:
             # Try DOI first
@@ -505,7 +536,9 @@ class FullTextManager:
 
             # Try title search as fallback
             if publication.title:
-                results = await self.core_client.search_by_title(publication.title, limit=1)
+                results = await self.core_client.search_by_title(
+                    publication.title, limit=1
+                )
                 if results and results[0].get("downloadUrl"):
                     logger.info(f"Found in CORE by title: {publication.title[:50]}...")
                     return FullTextResult(
@@ -537,7 +570,9 @@ class FullTextManager:
             FullTextResult with saved PDF path if successful
         """
         if not self.config.enable_biorxiv or not self.biorxiv_client:
-            return FullTextResult(success=False, error="bioRxiv disabled or not initialized")
+            return FullTextResult(
+                success=False, error="bioRxiv disabled or not initialized"
+            )
 
         try:
             # bioRxiv only works with DOI
@@ -546,7 +581,9 @@ class FullTextManager:
 
             result = await self.biorxiv_client.get_by_doi(publication.doi)
             if not result or not result.get("pdf_url"):
-                return FullTextResult(success=False, error="Not a bioRxiv paper or not found")
+                return FullTextResult(
+                    success=False, error="Not a bioRxiv paper or not found"
+                )
 
             pdf_url = result["pdf_url"]
             logger.info(f"Found in bioRxiv: {publication.doi}")
@@ -582,7 +619,9 @@ class FullTextManager:
             FullTextResult with saved PDF path if successful
         """
         if not self.config.enable_arxiv or not self.arxiv_client:
-            return FullTextResult(success=False, error="arXiv disabled or not initialized")
+            return FullTextResult(
+                success=False, error="arXiv disabled or not initialized"
+            )
 
         try:
             pdf_url = None
@@ -600,7 +639,9 @@ class FullTextManager:
 
             # Try title search (only for papers without DOI or if arXiv ID lookup failed)
             if not pdf_url and publication.title:
-                results = await self.arxiv_client.search_by_title(publication.title, max_results=1)
+                results = await self.arxiv_client.search_by_title(
+                    publication.title, max_results=1
+                )
                 if results and results[0].get("pdf_url"):
                     logger.info(f"Found in arXiv by title: {publication.title[:50]}...")
                     pdf_url = results[0]["pdf_url"]
@@ -636,7 +677,9 @@ class FullTextManager:
             FullTextResult
         """
         if not self.config.enable_crossref or not self.crossref_client:
-            return FullTextResult(success=False, error="Crossref disabled or not initialized")
+            return FullTextResult(
+                success=False, error="Crossref disabled or not initialized"
+            )
 
         try:
             # Crossref requires DOI
@@ -646,12 +689,17 @@ class FullTextManager:
             result = await self.crossref_client.get_by_doi(publication.doi)
             if result and result.get("fulltext_urls"):
                 urls = result["fulltext_urls"]
-                logger.info(f"Found {len(urls)} full-text links in Crossref: {publication.doi}")
+                logger.info(
+                    f"Found {len(urls)} full-text links in Crossref: {publication.doi}"
+                )
                 return FullTextResult(
                     success=True,
                     source=FullTextSource.CROSSREF,
                     url=urls[0] if urls else None,
-                    metadata={"fulltext_urls": urls, "publisher": result.get("publisher")},
+                    metadata={
+                        "fulltext_urls": urls,
+                        "publisher": result.get("publisher"),
+                    },
                 )
 
             return FullTextResult(success=False, error="No full-text links in Crossref")
@@ -680,18 +728,24 @@ class FullTextManager:
             FullTextResult with verified OA URL
         """
         if not self.config.enable_unpaywall or not self.unpaywall_client:
-            return FullTextResult(success=False, error="Unpaywall disabled or not initialized")
+            return FullTextResult(
+                success=False, error="Unpaywall disabled or not initialized"
+            )
 
         try:
             # Unpaywall requires DOI
             if not publication.doi:
-                return FullTextResult(success=False, error="No DOI for Unpaywall lookup")
+                return FullTextResult(
+                    success=False, error="No DOI for Unpaywall lookup"
+                )
 
             result = await self.unpaywall_client.get_oa_location(publication.doi)
 
             # Verify is_oa flag
             if not result or not result.get("is_oa"):
-                return FullTextResult(success=False, error="Not Open Access in Unpaywall")
+                return FullTextResult(
+                    success=False, error="Not Open Access in Unpaywall"
+                )
 
             # Try best_oa_location first (Unpaywall's recommendation)
             best_oa = result.get("best_oa_location")
@@ -699,7 +753,9 @@ class FullTextManager:
                 # Prefer PDF URL
                 pdf_url = best_oa.get("url_for_pdf")
                 if pdf_url:
-                    logger.info(f"[OK] Found OA PDF via Unpaywall (best): {publication.doi}")
+                    logger.info(
+                        f"[OK] Found OA PDF via Unpaywall (best): {publication.doi}"
+                    )
                     return FullTextResult(
                         success=True,
                         source=FullTextSource.UNPAYWALL,
@@ -717,7 +773,9 @@ class FullTextManager:
                 regular_url = best_oa.get("url")
                 if regular_url:
                     is_pdf = regular_url.lower().endswith(".pdf")
-                    logger.info(f"[OK] Found OA URL via Unpaywall (best): {publication.doi}")
+                    logger.info(
+                        f"[OK] Found OA URL via Unpaywall (best): {publication.doi}"
+                    )
                     return FullTextResult(
                         success=True,
                         source=FullTextSource.UNPAYWALL,
@@ -741,7 +799,9 @@ class FullTextManager:
                 # Prefer PDF URLs
                 pdf_url = location.get("url_for_pdf")
                 if pdf_url:
-                    logger.info(f"[OK] Found OA PDF via Unpaywall (location {i+1}): {publication.doi}")
+                    logger.info(
+                        f"[OK] Found OA PDF via Unpaywall (location {i+1}): {publication.doi}"
+                    )
                     return FullTextResult(
                         success=True,
                         source=FullTextSource.UNPAYWALL,
@@ -759,7 +819,9 @@ class FullTextManager:
                 regular_url = location.get("url")
                 if regular_url:
                     is_pdf = regular_url.lower().endswith(".pdf")
-                    logger.info(f"[OK] Found OA URL via Unpaywall (location {i+1}): {publication.doi}")
+                    logger.info(
+                        f"[OK] Found OA URL via Unpaywall (location {i+1}): {publication.doi}"
+                    )
                     return FullTextResult(
                         success=True,
                         source=FullTextSource.UNPAYWALL,
@@ -776,7 +838,8 @@ class FullTextManager:
             # If we get here, is_oa=true but no URLs found (rare)
             oa_status = result.get("oa_status", "unknown")
             return FullTextResult(
-                success=False, error=f"Unpaywall reports OA but no URLs available (oa_status: {oa_status})"
+                success=False,
+                error=f"Unpaywall reports OA but no URLs available (oa_status: {oa_status})",
             )
 
         except Exception as e:
@@ -801,14 +864,18 @@ class FullTextManager:
             FullTextResult with saved PDF path if successful
         """
         if not self.config.enable_scihub or not self.scihub_client:
-            return FullTextResult(success=False, error="Sci-Hub disabled or not initialized")
+            return FullTextResult(
+                success=False, error="Sci-Hub disabled or not initialized"
+            )
 
         try:
             # Try DOI first, then PMID
             identifier = publication.doi or publication.pmid
 
             if not identifier:
-                return FullTextResult(success=False, error="No DOI or PMID for Sci-Hub lookup")
+                return FullTextResult(
+                    success=False, error="No DOI or PMID for Sci-Hub lookup"
+                )
 
             pdf_url = await self.scihub_client.get_pdf_url(identifier)
 
@@ -850,7 +917,9 @@ class FullTextManager:
             FullTextResult with saved PDF path if successful
         """
         if not self.config.enable_libgen or not self.libgen_client:
-            return FullTextResult(success=False, error="LibGen disabled or not initialized")
+            return FullTextResult(
+                success=False, error="LibGen disabled or not initialized"
+            )
 
         try:
             # LibGen requires DOI
@@ -938,7 +1007,7 @@ class FullTextManager:
         )
         import time
 
-        from omics_oracle_v2.lib.pipelines.text_enrichment.parsed_cache import get_parsed_cache
+        from omics_oracle_v2.cache.parsed_cache import get_parsed_cache
 
         cache = get_parsed_cache()
 
@@ -953,7 +1022,9 @@ class FullTextManager:
             )
             return cached.get("content")
 
-        logger.info(f"Parsed cache MISS for {publication.id}, will download and parse...")
+        logger.info(
+            f"Parsed cache MISS for {publication.id}, will download and parse..."
+        )
 
         # STEP 2: Get PDF/XML via waterfall
         start_time = time.time()
@@ -966,7 +1037,8 @@ class FullTextManager:
         # STEP 3: Parse the content
         # Import parser here to avoid circular imports
         try:
-            from omics_oracle_v2.lib.pipelines.text_enrichment.pdf_parser import PDFExtractor
+            from omics_oracle_v2.lib.pipelines.text_enrichment.pdf_parser import \
+                PDFExtractor
 
             parser = PDFExtractor()
 
@@ -990,7 +1062,13 @@ class FullTextManager:
                 # For XML/NXML, we'd use a different parser
                 # For now, just return basic structure
                 content_text = file_path.read_text(encoding="utf-8")
-                parsed = {"text": content_text, "sections": [], "tables": [], "figures": [], "references": []}
+                parsed = {
+                    "text": content_text,
+                    "sections": [],
+                    "tables": [],
+                    "figures": [],
+                    "references": [],
+                }
 
             parse_duration_ms = int((time.time() - start_time) * 1000)
 
@@ -1099,15 +1177,24 @@ class FullTextManager:
 
         sources = [
             ("cache", self._check_cache),  # Always check cache first (instant)
-            ("institutional", self._try_institutional_access),  # Priority 1: GT/ODU access
-            ("pmc", self._try_pmc),  # Priority 2: PubMed Central (6M articles) **CRITICAL FIX**
+            (
+                "institutional",
+                self._try_institutional_access,
+            ),  # Priority 1: GT/ODU access
+            (
+                "pmc",
+                self._try_pmc,
+            ),  # Priority 2: PubMed Central (6M articles) **CRITICAL FIX**
             ("unpaywall", self._try_unpaywall),  # Priority 3: Legal OA (25-30%)
             ("core", self._try_core),  # Priority 4: CORE.ac.uk (10-15%)
             ("openalex_oa", self._try_openalex_oa_url),  # Priority 5: OA metadata
             ("crossref", self._try_crossref),  # Priority 6: Publisher links
             ("biorxiv", self._try_biorxiv),  # Priority 7a: Biomedical preprints
             ("arxiv", self._try_arxiv),  # Priority 7b: Other preprints
-            ("scihub", self._try_scihub),  # Priority 8: Sci-Hub (optimized, 23.9% per mirror)
+            (
+                "scihub",
+                self._try_scihub,
+            ),  # Priority 8: Sci-Hub (optimized, 23.9% per mirror)
             ("libgen", self._try_libgen),  # Priority 9: LibGen (fallback)
         ]
 
@@ -1125,9 +1212,13 @@ class FullTextManager:
                 )
 
                 if result.success:
-                    logger.info(f"  Phase 2: [OK] Verified full-text access via {source_name}")
+                    logger.info(
+                        f"  Phase 2: [OK] Verified full-text access via {source_name}"
+                    )
                     self.stats["successes"] += 1
-                    self.stats["by_source"][source_name] = self.stats["by_source"].get(source_name, 0) + 1
+                    self.stats["by_source"][source_name] = (
+                        self.stats["by_source"].get(source_name, 0) + 1
+                    )
                     return result  # STOP HERE - skip remaining sources
                 else:
                     logger.debug(f"  [X] {source_name} did not find full-text")
@@ -1181,7 +1272,9 @@ class FullTextManager:
 
         self.stats["total_attempts"] += 1
 
-        logger.info(f"Collecting URLs from ALL sources for: {publication.title[:60]}...")
+        logger.info(
+            f"Collecting URLs from ALL sources for: {publication.title[:60]}..."
+        )
 
         # Check cache first (instant)
         cached = await self._check_cache(publication)
@@ -1206,7 +1299,9 @@ class FullTextManager:
         # Execute ALL sources in PARALLEL
         logger.info(f"[FAST] Querying {len(sources)} sources in parallel...")
         tasks = [
-            asyncio.wait_for(source_func(publication), timeout=self.config.timeout_per_source)
+            asyncio.wait_for(
+                source_func(publication), timeout=self.config.timeout_per_source
+            )
             for _, source_func, _ in sources
         ]
 
@@ -1250,9 +1345,13 @@ class FullTextManager:
                 logger.debug(f"  [X] {source_name}: No URL found")
 
         if not all_urls:
-            logger.warning(f"No URLs found from any source for: {publication.title[:60]}...")
+            logger.warning(
+                f"No URLs found from any source for: {publication.title[:60]}..."
+            )
             self.stats["failures"] += 1
-            return FullTextResult(success=False, error="No URLs found from any source", all_urls=[])
+            return FullTextResult(
+                success=False, error="No URLs found from any source", all_urls=[]
+            )
 
         # Sort by priority (lower number = higher priority)
         all_urls.sort(key=lambda x: x.priority)
@@ -1263,7 +1362,9 @@ class FullTextManager:
         logger.info(f"[OK] Found {len(all_urls)} URLs for: {publication.title[:60]}")
         logger.info(f"   Best: {best_url.source.value} (priority {best_url.priority})")
         if len(all_urls) > 1:
-            fallbacks = ", ".join([f"{u.source.value}({u.priority})" for u in all_urls[1:]])
+            fallbacks = ", ".join(
+                [f"{u.source.value}({u.priority})" for u in all_urls[1:]]
+            )
             logger.info(f"   Fallbacks: {fallbacks}")
 
         self.stats["successes"] += 1
@@ -1327,7 +1428,9 @@ class FullTextManager:
                     return await self.get_fulltext(pub)
 
         # Run all requests concurrently with limit
-        results = await asyncio.gather(*[get_with_semaphore(pub) for pub in publications])
+        results = await asyncio.gather(
+            *[get_with_semaphore(pub) for pub in publications]
+        )
 
         success_count = sum(1 for r in results if r.success)
         total_urls = sum(len(r.all_urls) for r in results if r.all_urls)

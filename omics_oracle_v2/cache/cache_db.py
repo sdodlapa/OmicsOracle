@@ -92,7 +92,12 @@ class FullTextCacheDB:
         """
         if db_path is None:
             # Default to data/fulltext/cache_metadata.db in project root
-            db_path = Path(__file__).parent.parent.parent.parent / "data" / "fulltext" / "cache_metadata.db"
+            db_path = (
+                Path(__file__).parent.parent.parent.parent
+                / "data"
+                / "fulltext"
+                / "cache_metadata.db"
+            )
 
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -181,12 +186,24 @@ class FullTextCacheDB:
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_doi ON cached_files(doi)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_pmid ON cached_files(pmid)")
         cursor.execute("CREATE INDEX IF NOT EXISTS idx_pmc_id ON cached_files(pmc_id)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_file_hash ON cached_files(file_hash)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_file_source ON cached_files(file_source)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_downloaded_at ON cached_files(downloaded_at)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_has_tables ON content_metadata(has_tables)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_table_count ON content_metadata(table_count)")
-        cursor.execute("CREATE INDEX IF NOT EXISTS idx_quality_score ON content_metadata(quality_score)")
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_file_hash ON cached_files(file_hash)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_file_source ON cached_files(file_source)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_downloaded_at ON cached_files(downloaded_at)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_has_tables ON content_metadata(has_tables)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_table_count ON content_metadata(table_count)"
+        )
+        cursor.execute(
+            "CREATE INDEX IF NOT EXISTS idx_quality_score ON content_metadata(quality_score)"
+        )
 
         self.connection.commit()
         logger.debug("Database tables created/verified")
@@ -349,7 +366,10 @@ class FullTextCacheDB:
         return None
 
     def find_papers_with_tables(
-        self, min_tables: int = 1, min_quality: Optional[float] = None, limit: Optional[int] = None
+        self,
+        min_tables: int = 1,
+        min_quality: Optional[float] = None,
+        limit: Optional[int] = None,
     ) -> List[Dict]:
         """
         Find papers with a minimum number of tables.
@@ -413,7 +433,9 @@ class FullTextCacheDB:
                 "count": row["count"],
                 "avg_quality": row["avg_quality"],
                 "avg_tables": row["avg_tables"],
-                "total_size_mb": row["total_size"] / (1024 * 1024) if row["total_size"] else 0,
+                "total_size_mb": row["total_size"] / (1024 * 1024)
+                if row["total_size"]
+                else 0,
             }
 
         return results
@@ -455,8 +477,12 @@ class FullTextCacheDB:
 
         return {
             "total_entries": file_stats["total_entries"],
-            "total_size_mb": file_stats["total_size"] / (1024 * 1024) if file_stats["total_size"] else 0,
-            "avg_size_kb": file_stats["avg_size"] / 1024 if file_stats["avg_size"] else 0,
+            "total_size_mb": file_stats["total_size"] / (1024 * 1024)
+            if file_stats["total_size"]
+            else 0,
+            "avg_size_kb": file_stats["avg_size"] / 1024
+            if file_stats["avg_size"]
+            else 0,
             "papers_with_tables": content_stats["papers_with_tables"],
             "papers_with_figures": content_stats["papers_with_figures"],
             "avg_tables_per_paper": content_stats["avg_tables"],
@@ -495,8 +521,12 @@ class FullTextCacheDB:
         cursor = self.connection.cursor()
 
         # Delete from both tables (CASCADE would handle this automatically)
-        cursor.execute("DELETE FROM content_metadata WHERE publication_id = ?", (publication_id,))
-        cursor.execute("DELETE FROM cached_files WHERE publication_id = ?", (publication_id,))
+        cursor.execute(
+            "DELETE FROM content_metadata WHERE publication_id = ?", (publication_id,)
+        )
+        cursor.execute(
+            "DELETE FROM cached_files WHERE publication_id = ?", (publication_id,)
+        )
 
         deleted = cursor.rowcount > 0
         self.connection.commit()

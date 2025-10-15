@@ -55,18 +55,18 @@ Author: OmicsOracle Team
 Created: October 14, 2025 (Pipeline Separation & Enrichment)
 """
 
-from omics_oracle_v2.lib.pipelines.text_enrichment.batch_processor import BatchProcessor, process_pdfs_batch
-from omics_oracle_v2.lib.pipelines.text_enrichment.cache_db import FullTextCacheDB
+from omics_oracle_v2.cache.cache_db import FullTextCacheDB
+from omics_oracle_v2.cache.parsed_cache import ParsedCache, get_parsed_cache
+from omics_oracle_v2.lib.pipelines.text_enrichment.batch_processor import (
+    BatchProcessor, process_pdfs_batch)
 from omics_oracle_v2.lib.pipelines.text_enrichment.enrichers import (
-    ChatGPTFormatter,
-    ReferenceParser,
-    SectionDetector,
-    TableExtractor,
-)
-from omics_oracle_v2.lib.pipelines.text_enrichment.normalizer import ContentNormalizer
-from omics_oracle_v2.lib.pipelines.text_enrichment.parsed_cache import ParsedCache, get_parsed_cache
-from omics_oracle_v2.lib.pipelines.text_enrichment.pdf_parser import PDFExtractor
-from omics_oracle_v2.lib.pipelines.text_enrichment.quality_scorer import QualityScorer
+    ChatGPTFormatter, ReferenceParser, SectionDetector, TableExtractor)
+from omics_oracle_v2.lib.pipelines.text_enrichment.normalizer import \
+    ContentNormalizer
+from omics_oracle_v2.lib.pipelines.text_enrichment.pdf_parser import \
+    PDFExtractor
+from omics_oracle_v2.lib.pipelines.text_enrichment.quality_scorer import \
+    QualityScorer
 
 __all__ = [
     # Main extractor

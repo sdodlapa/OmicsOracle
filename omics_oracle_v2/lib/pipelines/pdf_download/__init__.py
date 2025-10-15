@@ -27,14 +27,13 @@ Author: OmicsOracle Team
 Created: October 14, 2025 (Pipeline Separation)
 """
 
+from omics_oracle_v2.cache.smart_cache import LocalFileResult, SmartCache
 from omics_oracle_v2.lib.pipelines.pdf_download.download_manager import (
-    DownloadReport,
-    DownloadResult,
-    PDFDownloadManager,
-)
-from omics_oracle_v2.lib.pipelines.pdf_download.landing_page_parser import LandingPageParser
-from omics_oracle_v2.lib.pipelines.pdf_download.smart_cache import LocalFileResult, SmartCache
-from omics_oracle_v2.lib.pipelines.pdf_download.utils import validate_pdf_content
+    DownloadReport, DownloadResult, PDFDownloadManager)
+from omics_oracle_v2.lib.pipelines.pdf_download.landing_page_parser import \
+    LandingPageParser
+from omics_oracle_v2.lib.pipelines.pdf_download.utils import \
+    validate_pdf_content
 
 __all__ = [
     "PDFDownloadManager",

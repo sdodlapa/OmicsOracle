@@ -14,12 +14,12 @@ Benefits:
 
 Usage:
     cache = DiscoveryCache(ttl_seconds=604800)  # 1 week
-    
+
     # Check cache first
     result = cache.get(geo_id, strategy_key)
     if result:
         return result
-    
+
     # Cache miss - fetch from API
     result = fetch_from_api()
     cache.set(geo_id, strategy_key, result)
@@ -29,8 +29,7 @@ import json
 import logging
 import sqlite3
 import time
-from dataclasses import asdict, dataclass
-from datetime import datetime, timedelta
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -126,14 +125,14 @@ class DiscoveryCache:
         # Index for faster lookups
         cursor.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_geo_id 
+            CREATE INDEX IF NOT EXISTS idx_geo_id
             ON citation_discovery_cache(geo_id)
         """
         )
 
         cursor.execute(
             """
-            CREATE INDEX IF NOT EXISTS idx_expires_at 
+            CREATE INDEX IF NOT EXISTS idx_expires_at
             ON citation_discovery_cache(expires_at)
         """
         )
@@ -147,7 +146,9 @@ class DiscoveryCache:
         """Generate cache key from geo_id and strategy"""
         return f"{geo_id}:{strategy_key}"
 
-    def get(self, geo_id: str, strategy_key: str = "default") -> Optional[List[Publication]]:
+    def get(
+        self, geo_id: str, strategy_key: str = "default"
+    ) -> Optional[List[Publication]]:
         """
         Get cached result
 
@@ -174,8 +175,8 @@ class DiscoveryCache:
 
         cursor.execute(
             """
-            SELECT result_json, expires_at 
-            FROM citation_discovery_cache 
+            SELECT result_json, expires_at
+            FROM citation_discovery_cache
             WHERE cache_key = ?
         """,
             (cache_key,),
@@ -195,7 +196,9 @@ class DiscoveryCache:
         # Check if expired
         if time.time() > expires_at:
             # Delete expired entry
-            cursor.execute("DELETE FROM citation_discovery_cache WHERE cache_key = ?", (cache_key,))
+            cursor.execute(
+                "DELETE FROM citation_discovery_cache WHERE cache_key = ?", (cache_key,)
+            )
             conn.commit()
             conn.close()
             self._stats.misses += 1
@@ -206,8 +209,8 @@ class DiscoveryCache:
         # Update access stats
         cursor.execute(
             """
-            UPDATE citation_discovery_cache 
-            SET hit_count = hit_count + 1, last_accessed = ? 
+            UPDATE citation_discovery_cache
+            SET hit_count = hit_count + 1, last_accessed = ?
             WHERE cache_key = ?
         """,
             (int(time.time()), cache_key),
@@ -233,7 +236,10 @@ class DiscoveryCache:
             return None
 
     def set(
-        self, geo_id: str, publications: List[Publication], strategy_key: str = "default"
+        self,
+        geo_id: str,
+        publications: List[Publication],
+        strategy_key: str = "default",
     ) -> None:
         """
         Cache a result
@@ -262,11 +268,19 @@ class DiscoveryCache:
 
         cursor.execute(
             """
-            INSERT OR REPLACE INTO citation_discovery_cache 
+            INSERT OR REPLACE INTO citation_discovery_cache
             (cache_key, geo_id, strategy_key, result_json, created_at, expires_at, hit_count, last_accessed)
             VALUES (?, ?, ?, ?, ?, ?, 0, ?)
         """,
-            (cache_key, geo_id, strategy_key, result_json, created_at, expires_at, created_at),
+            (
+                cache_key,
+                geo_id,
+                strategy_key,
+                result_json,
+                created_at,
+                expires_at,
+                created_at,
+            ),
         )
 
         conn.commit()
@@ -300,23 +314,28 @@ class DiscoveryCache:
         for pub in publications:
             pub_dict = pub.dict()
             # Convert datetime objects to ISO format strings
-            if 'publication_date' in pub_dict and pub_dict['publication_date']:
-                if hasattr(pub_dict['publication_date'], 'isoformat'):
-                    pub_dict['publication_date'] = pub_dict['publication_date'].isoformat()
+            if "publication_date" in pub_dict and pub_dict["publication_date"]:
+                if hasattr(pub_dict["publication_date"], "isoformat"):
+                    pub_dict["publication_date"] = pub_dict[
+                        "publication_date"
+                    ].isoformat()
             data.append(pub_dict)
         return json.dumps(data)
 
     def _deserialize_result(self, result_json: str) -> List[Publication]:
         """Deserialize JSON to publications"""
-        from datetime import datetime
+        from datetime import datetime as dt
+
         data = json.loads(result_json)
         publications = []
         for item in data:
             # Convert ISO format string back to datetime if present
-            if 'publication_date' in item and item['publication_date']:
-                if isinstance(item['publication_date'], str):
+            if "publication_date" in item and item["publication_date"]:
+                if isinstance(item["publication_date"], str):
                     try:
-                        item['publication_date'] = datetime.fromisoformat(item['publication_date'])
+                        item["publication_date"] = dt.fromisoformat(
+                            item["publication_date"]
+                        )
                     except (ValueError, AttributeError):
                         pass  # Keep as string if conversion fails
             publications.append(Publication(**item))
@@ -338,7 +357,9 @@ class DiscoveryCache:
 
         if strategy_key:
             cache_key = self._make_cache_key(geo_id, strategy_key)
-            cursor.execute("DELETE FROM citation_discovery_cache WHERE cache_key = ?", (cache_key,))
+            cursor.execute(
+                "DELETE FROM citation_discovery_cache WHERE cache_key = ?", (cache_key,)
+            )
 
             # Remove from memory cache
             if cache_key in self._memory_cache:
@@ -346,10 +367,14 @@ class DiscoveryCache:
                 self._memory_cache_order.remove(cache_key)
 
         else:
-            cursor.execute("DELETE FROM citation_discovery_cache WHERE geo_id = ?", (geo_id,))
+            cursor.execute(
+                "DELETE FROM citation_discovery_cache WHERE geo_id = ?", (geo_id,)
+            )
 
             # Remove all matching entries from memory cache
-            keys_to_remove = [k for k in self._memory_cache.keys() if k.startswith(f"{geo_id}:")]
+            keys_to_remove = [
+                k for k in self._memory_cache.keys() if k.startswith(f"{geo_id}:")
+            ]
             for key in keys_to_remove:
                 del self._memory_cache[key]
                 self._memory_cache_order.remove(key)
@@ -372,7 +397,9 @@ class DiscoveryCache:
         cursor = conn.cursor()
 
         current_time = int(time.time())
-        cursor.execute("DELETE FROM citation_discovery_cache WHERE expires_at < ?", (current_time,))
+        cursor.execute(
+            "DELETE FROM citation_discovery_cache WHERE expires_at < ?", (current_time,)
+        )
 
         count = cursor.rowcount
         conn.commit()
@@ -434,19 +461,25 @@ def get_cache_info(db_path: Optional[str] = None) -> Dict[str, Any]:
 
     # Expired entries
     current_time = int(time.time())
-    cursor.execute("SELECT COUNT(*) FROM citation_discovery_cache WHERE expires_at < ?", (current_time,))
+    cursor.execute(
+        "SELECT COUNT(*) FROM citation_discovery_cache WHERE expires_at < ?",
+        (current_time,),
+    )
     expired = cursor.fetchone()[0]
 
     # Most accessed
     cursor.execute(
         """
-        SELECT geo_id, strategy_key, hit_count 
-        FROM citation_discovery_cache 
-        ORDER BY hit_count DESC 
+        SELECT geo_id, strategy_key, hit_count
+        FROM citation_discovery_cache
+        ORDER BY hit_count DESC
         LIMIT 10
     """
     )
-    top_entries = [{"geo_id": row[0], "strategy": row[1], "hits": row[2]} for row in cursor.fetchall()]
+    top_entries = [
+        {"geo_id": row[0], "strategy": row[1], "hits": row[2]}
+        for row in cursor.fetchall()
+    ]
 
     # Size estimate
     cursor.execute("SELECT SUM(LENGTH(result_json)) FROM citation_discovery_cache")
@@ -466,7 +499,8 @@ def get_cache_info(db_path: Optional[str] = None) -> Dict[str, Any]:
 
 if __name__ == "__main__":
     # Test cache
-    from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+    from omics_oracle_v2.lib.search_engines.citations.models import (
+        Publication, PublicationSource)
 
     cache = DiscoveryCache(db_path="test_cache.db", ttl_seconds=60)
 

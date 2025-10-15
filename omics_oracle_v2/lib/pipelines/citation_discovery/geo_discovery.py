@@ -13,38 +13,31 @@ import os
 from dataclasses import dataclass
 from typing import List, Optional, Set
 
-from omics_oracle_v2.lib.pipelines.citation_discovery.cache import DiscoveryCache
+from omics_oracle_v2.cache.discovery_cache import DiscoveryCache
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import (
-    EuropePMCConfig,
-    OpenCitationsConfig,
-    PubMedConfig,
-)
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.europepmc import EuropePMCClient
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.openalex import OpenAlexClient, OpenAlexConfig
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.opencitations import OpenCitationsClient
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.pubmed import PubMedClient
+    EuropePMCConfig, OpenCitationsConfig, PubMedConfig)
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.europepmc import \
+    EuropePMCClient
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.openalex import (
+    OpenAlexClient, OpenAlexConfig)
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.opencitations import \
+    OpenCitationsClient
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.pubmed import \
+    PubMedClient
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.semantic_scholar import (
-    SemanticScholarClient,
-    SemanticScholarConfig,
-)
+    SemanticScholarClient, SemanticScholarConfig)
 from omics_oracle_v2.lib.pipelines.citation_discovery.deduplication import (
-    DeduplicationConfig,
-    SmartDeduplicator,
-)
-from omics_oracle_v2.lib.pipelines.citation_discovery.error_handling import retry_with_backoff
-from omics_oracle_v2.lib.pipelines.citation_discovery.metrics_logger import MetricsLogger
+    DeduplicationConfig, SmartDeduplicator)
+from omics_oracle_v2.lib.pipelines.citation_discovery.error_handling import \
+    retry_with_backoff
+from omics_oracle_v2.lib.pipelines.citation_discovery.metrics_logger import \
+    MetricsLogger
 from omics_oracle_v2.lib.pipelines.citation_discovery.quality_validation import (
-    QualityAssessment,
-    QualityConfig,
-    QualityLevel,
-    QualityValidator,
-)
-from omics_oracle_v2.lib.pipelines.citation_discovery.relevance_scoring import RelevanceScorer, ScoringWeights
+    QualityAssessment, QualityConfig, QualityLevel, QualityValidator)
+from omics_oracle_v2.lib.pipelines.citation_discovery.relevance_scoring import (
+    RelevanceScorer, ScoringWeights)
 from omics_oracle_v2.lib.pipelines.citation_discovery.source_metrics import (
-    SourceManager,
-    SourceManagerConfig,
-    SourcePriority,
-)
+    SourceManager, SourceManagerConfig, SourcePriority)
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 
@@ -60,7 +53,9 @@ class CitationDiscoveryResult:
     citing_papers: List[Publication]
     strategy_breakdown: dict  # Which papers came from which strategy
     source_metrics: Optional[dict] = None  # Performance metrics per source
-    quality_assessments: Optional[List[QualityAssessment]] = None  # Quality validation results (Phase 8)
+    quality_assessments: Optional[
+        List[QualityAssessment]
+    ] = None  # Quality validation results (Phase 8)
     quality_summary: Optional[dict] = None  # Quality distribution summary
 
 
@@ -89,13 +84,17 @@ class GEOCitationDiscovery:
         enable_cache: bool = True,
         enable_quality_validation: bool = True,  # Enable quality validation (Phase 8)
         quality_config: Optional[QualityConfig] = None,  # Custom quality configuration
-        quality_filter_level: Optional[QualityLevel] = None,  # Minimum quality level (None = no filtering)
+        quality_filter_level: Optional[
+            QualityLevel
+        ] = None,  # Minimum quality level (None = no filtering)
         enable_metrics_logging: bool = True,  # Enable metrics logging (Phase 10)
         metrics_logger: Optional[MetricsLogger] = None,  # Custom metrics logger
     ):
         # Initialize OpenAlex client if not provided
         if openalex_client is None:
-            openalex_config = OpenAlexConfig(email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"), enable=True)
+            openalex_config = OpenAlexConfig(
+                email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"), enable=True
+            )
             self.openalex = OpenAlexClient(config=openalex_config)
             logger.info("Initialized OpenAlex client for citation discovery")
         else:
@@ -103,7 +102,9 @@ class GEOCitationDiscovery:
 
         # Initialize Semantic Scholar client if not provided
         if semantic_scholar_client is None:
-            s2_config = SemanticScholarConfig(api_key=os.getenv("SEMANTIC_SCHOLAR_API_KEY"))  # Optional
+            s2_config = SemanticScholarConfig(
+                api_key=os.getenv("SEMANTIC_SCHOLAR_API_KEY")
+            )  # Optional
             self.semantic_scholar = SemanticScholarClient(config=s2_config)
             logger.info("Initialized Semantic Scholar client for citation discovery")
         else:
@@ -169,7 +170,9 @@ class GEOCitationDiscovery:
             citation_count=0.10,  # 10% - IMPACT: citation count
         )
         self.scorer = RelevanceScorer(scoring_weights)
-        logger.info("Initialized relevance scorer: content=40%, keywords=30%, recency=20%, citations=10%")
+        logger.info(
+            "Initialized relevance scorer: content=40%, keywords=30%, recency=20%, citations=10%"
+        )
 
         # Initialize source manager for metrics and prioritization
         source_config = SourceManagerConfig(
@@ -229,9 +232,13 @@ class GEOCitationDiscovery:
         self.quality_filter_level = quality_filter_level
 
         if enable_quality_validation:
-            self.quality_validator = QualityValidator(config=quality_config or QualityConfig())
+            self.quality_validator = QualityValidator(
+                config=quality_config or QualityConfig()
+            )
             filter_info = (
-                f" (filtering: {quality_filter_level.value}+)" if quality_filter_level else " (no filtering)"
+                f" (filtering: {quality_filter_level.value}+)"
+                if quality_filter_level
+                else " (no filtering)"
             )
             logger.info(f"✓ Initialized quality validator{filter_info}")
         else:
@@ -269,10 +276,14 @@ class GEOCitationDiscovery:
         if self.enable_cache and self.cache:
             cached_result = self.cache.get(geo_metadata.geo_id, strategy_key="all")
             if cached_result:
-                logger.info(f"✓ Cache HIT for {geo_metadata.geo_id} ({len(cached_result)} papers)")
+                logger.info(
+                    f"✓ Cache HIT for {geo_metadata.geo_id} ({len(cached_result)} papers)"
+                )
 
                 # ALWAYS re-score cached papers (scores may have changed with weight updates)
-                scored_papers = self.scorer.score_publications(cached_result, geo_metadata)
+                scored_papers = self.scorer.score_publications(
+                    cached_result, geo_metadata
+                )
                 scored_papers.sort(key=lambda x: x.total, reverse=True)
 
                 # Attach scores to publications
@@ -287,8 +298,12 @@ class GEOCitationDiscovery:
                 final_papers = ranked_papers[:max_results]
 
                 if self.enable_quality_validation and self.quality_validator:
-                    logger.info(f"Validating quality of {len(ranked_papers)} cached papers...")
-                    quality_assessments = self.quality_validator.validate_publications(ranked_papers)
+                    logger.info(
+                        f"Validating quality of {len(ranked_papers)} cached papers..."
+                    )
+                    quality_assessments = self.quality_validator.validate_publications(
+                        ranked_papers
+                    )
 
                     level_counts = {}
                     for level in QualityLevel:
@@ -299,7 +314,9 @@ class GEOCitationDiscovery:
                     quality_summary = {
                         "total_assessed": len(quality_assessments),
                         "distribution": level_counts,
-                        "average_score": sum(a.quality_score for a in quality_assessments)
+                        "average_score": sum(
+                            a.quality_score for a in quality_assessments
+                        )
                         / len(quality_assessments)
                         if quality_assessments
                         else 0,
@@ -318,13 +335,18 @@ class GEOCitationDiscovery:
                         final_papers = [
                             a.publication
                             for a in quality_assessments
-                            if level_order[a.quality_level] >= min_order and a.recommended_action != "exclude"
+                            if level_order[a.quality_level] >= min_order
+                            and a.recommended_action != "exclude"
                         ][:max_results]
 
-                        quality_summary["filter_level"] = self.quality_filter_level.value
+                        quality_summary[
+                            "filter_level"
+                        ] = self.quality_filter_level.value
                         quality_summary["pre_filter_count"] = pre_filter_count
                         quality_summary["post_filter_count"] = len(final_papers)
-                        quality_summary["filtered_count"] = pre_filter_count - len(final_papers)
+                        quality_summary["filtered_count"] = pre_filter_count - len(
+                            final_papers
+                        )
 
                         logger.info(
                             f"Quality filtering (cached, min_level={self.quality_filter_level.value}): "
@@ -334,22 +356,42 @@ class GEOCitationDiscovery:
                 # Log metrics for cached result (Phase 10)
                 if self.enable_metrics_logging and self.metrics_logger:
                     source_metrics_data = {}  # No source metrics for cached results
-                    dedup_data = {"total_raw": 0, "total_unique": len(ranked_papers), "duplicate_rate": 0}
+                    dedup_data = {
+                        "total_raw": 0,
+                        "total_unique": len(ranked_papers),
+                        "duplicate_rate": 0,
+                    }
                     quality_data = None
                     if quality_summary:
                         quality_data = {
                             "enabled": True,
-                            "excellent": quality_summary.get("distribution", {}).get("excellent", 0),
-                            "good": quality_summary.get("distribution", {}).get("good", 0),
-                            "acceptable": quality_summary.get("distribution", {}).get("acceptable", 0),
-                            "poor": quality_summary.get("distribution", {}).get("poor", 0),
-                            "rejected": quality_summary.get("distribution", {}).get("rejected", 0),
+                            "excellent": quality_summary.get("distribution", {}).get(
+                                "excellent", 0
+                            ),
+                            "good": quality_summary.get("distribution", {}).get(
+                                "good", 0
+                            ),
+                            "acceptable": quality_summary.get("distribution", {}).get(
+                                "acceptable", 0
+                            ),
+                            "poor": quality_summary.get("distribution", {}).get(
+                                "poor", 0
+                            ),
+                            "rejected": quality_summary.get("distribution", {}).get(
+                                "rejected", 0
+                            ),
                             "avg_score": quality_summary.get("average_score", 0),
                         }
                         if self.quality_filter_level:
-                            quality_data["filter_applied"] = self.quality_filter_level.value
-                            quality_data["pre_filter_count"] = quality_summary.get("pre_filter_count", 0)
-                            quality_data["post_filter_count"] = quality_summary.get("post_filter_count", 0)
+                            quality_data[
+                                "filter_applied"
+                            ] = self.quality_filter_level.value
+                            quality_data["pre_filter_count"] = quality_summary.get(
+                                "pre_filter_count", 0
+                            )
+                            quality_data["post_filter_count"] = quality_summary.get(
+                                "post_filter_count", 0
+                            )
 
                     cache_data = {"hit": True, "strategy": "cached"}
 
@@ -363,7 +405,9 @@ class GEOCitationDiscovery:
                     )
 
                 # Reconstruct result from cached papers
-                original_pmid = geo_metadata.pubmed_ids[0] if geo_metadata.pubmed_ids else None
+                original_pmid = (
+                    geo_metadata.pubmed_ids[0] if geo_metadata.pubmed_ids else None
+                )
                 return CitationDiscoveryResult(
                     geo_id=geo_metadata.geo_id,
                     original_pmid=original_pmid,
@@ -382,7 +426,9 @@ class GEOCitationDiscovery:
 
         if self.use_strategy_a and original_pmid:
             logger.info(f"Strategy A: Finding papers citing PMID {original_pmid}")
-            citing_via_pmid = self._find_via_citation(pmid=original_pmid, max_results=max_results)
+            citing_via_pmid = self._find_via_citation(
+                pmid=original_pmid, max_results=max_results
+            )
             for paper in citing_via_pmid:
                 all_papers.add(paper)
                 strategy_breakdown["strategy_a"].append(paper.pmid or paper.doi)
@@ -391,7 +437,9 @@ class GEOCitationDiscovery:
         # Strategy B: Papers mentioning GEO ID
         if self.use_strategy_b:
             logger.info(f"Strategy B: Finding papers mentioning {geo_metadata.geo_id}")
-            mentioning_geo = self._find_via_geo_mention(geo_id=geo_metadata.geo_id, max_results=max_results)
+            mentioning_geo = self._find_via_geo_mention(
+                geo_id=geo_metadata.geo_id, max_results=max_results
+            )
             for paper in mentioning_geo:
                 if paper not in all_papers:
                     all_papers.add(paper)
@@ -429,12 +477,17 @@ class GEOCitationDiscovery:
             top_5 = scored_papers[:5]
             logger.info("Top 5 papers by relevance:")
             for i, score in enumerate(top_5, 1):
-                logger.info(f"  {i}. Score={score.total:.3f}: " f"{score.publication.title[:60]}...")
+                logger.info(
+                    f"  {i}. Score={score.total:.3f}: "
+                    f"{score.publication.title[:60]}..."
+                )
 
         # Cache the result (ranked papers)
         if self.enable_cache and self.cache:
             self.cache.set(geo_metadata.geo_id, ranked_papers, strategy_key="all")
-            logger.debug(f"Cached {len(ranked_papers)} ranked papers for {geo_metadata.geo_id}")
+            logger.debug(
+                f"Cached {len(ranked_papers)} ranked papers for {geo_metadata.geo_id}"
+            )
 
         # Get source metrics summary
         metrics_summary = self.source_manager.get_summary()
@@ -451,17 +504,22 @@ class GEOCitationDiscovery:
             logger.info(f"Validating quality of {len(ranked_papers)} papers...")
 
             # Validate all papers
-            quality_assessments = self.quality_validator.validate_publications(ranked_papers)
+            quality_assessments = self.quality_validator.validate_publications(
+                ranked_papers
+            )
 
             # Create quality summary
             level_counts = {}
             for level in QualityLevel:
-                level_counts[level.value] = sum(1 for a in quality_assessments if a.quality_level == level)
+                level_counts[level.value] = sum(
+                    1 for a in quality_assessments if a.quality_level == level
+                )
 
             quality_summary = {
                 "total_assessed": len(quality_assessments),
                 "distribution": level_counts,
-                "average_score": sum(a.quality_score for a in quality_assessments) / len(quality_assessments)
+                "average_score": sum(a.quality_score for a in quality_assessments)
+                / len(quality_assessments)
                 if quality_assessments
                 else 0,
             }
@@ -484,7 +542,8 @@ class GEOCitationDiscovery:
                 final_papers = [
                     a.publication
                     for a in quality_assessments
-                    if level_order[a.quality_level] >= min_order and a.recommended_action != "exclude"
+                    if level_order[a.quality_level] >= min_order
+                    and a.recommended_action != "exclude"
                 ][:max_results]
 
                 quality_summary["filter_level"] = self.quality_filter_level.value
@@ -507,7 +566,9 @@ class GEOCitationDiscovery:
             for source_name, metrics in metrics_summary.get("sources", {}).items():
                 source_metrics_data[source_name] = {
                     "success": metrics.get("success_rate", "0%") != "0.00%",
-                    "response_time": float(metrics.get("avg_response_time", "0s").rstrip("s")),
+                    "response_time": float(
+                        metrics.get("avg_response_time", "0s").rstrip("s")
+                    ),
                     "papers_found": metrics.get("total_papers_found", 0),
                     "unique_papers": metrics.get("unique_papers_contributed", 0),
                 }
@@ -515,7 +576,9 @@ class GEOCitationDiscovery:
             # Build deduplication stats
             dedup_data = {
                 "total_raw": len(all_papers) if "all_papers" in locals() else 0,
-                "total_unique": len(unique_papers) if "unique_papers" in locals() else 0,
+                "total_unique": len(unique_papers)
+                if "unique_papers" in locals()
+                else 0,
                 "duplicate_rate": (
                     (len(all_papers) - len(unique_papers)) / len(all_papers)
                     if "all_papers" in locals() and len(all_papers) > 0
@@ -528,22 +591,36 @@ class GEOCitationDiscovery:
             if quality_summary:
                 quality_data = {
                     "enabled": True,
-                    "excellent": quality_summary.get("distribution", {}).get("excellent", 0),
+                    "excellent": quality_summary.get("distribution", {}).get(
+                        "excellent", 0
+                    ),
                     "good": quality_summary.get("distribution", {}).get("good", 0),
-                    "acceptable": quality_summary.get("distribution", {}).get("acceptable", 0),
+                    "acceptable": quality_summary.get("distribution", {}).get(
+                        "acceptable", 0
+                    ),
                     "poor": quality_summary.get("distribution", {}).get("poor", 0),
-                    "rejected": quality_summary.get("distribution", {}).get("rejected", 0),
+                    "rejected": quality_summary.get("distribution", {}).get(
+                        "rejected", 0
+                    ),
                     "avg_score": quality_summary.get("average_score", 0),
                 }
                 if self.quality_filter_level:
                     quality_data["filter_applied"] = self.quality_filter_level.value
-                    quality_data["pre_filter_count"] = quality_summary.get("pre_filter_count", 0)
-                    quality_data["post_filter_count"] = quality_summary.get("post_filter_count", 0)
+                    quality_data["pre_filter_count"] = quality_summary.get(
+                        "pre_filter_count", 0
+                    )
+                    quality_data["post_filter_count"] = quality_summary.get(
+                        "post_filter_count", 0
+                    )
 
             # Build cache info
             cache_data = {
-                "hit": cached_result is not None if "cached_result" in locals() else False,
-                "strategy": "cached" if "cached_result" in locals() and cached_result else "fresh",
+                "hit": cached_result is not None
+                if "cached_result" in locals()
+                else False,
+                "strategy": "cached"
+                if "cached_result" in locals() and cached_result
+                else "fresh",
             }
 
             # Log the session
@@ -605,7 +682,9 @@ class GEOCitationDiscovery:
                 source_name = "OpenAlex"
                 metrics = self.source_manager.get_source(source_name)
 
-                if not self.source_manager.should_execute_source(source_name, len(all_citing_papers)):
+                if not self.source_manager.should_execute_source(
+                    source_name, len(all_citing_papers)
+                ):
                     return (source_name, [])
 
                 if self.openalex and self.openalex.config.enable and original_pub.doi:
@@ -620,11 +699,17 @@ class GEOCitationDiscovery:
 
                         papers = _fetch()
                         elapsed = time.time() - start_time
-                        metrics.record_request(success=True, response_time=elapsed, papers_found=len(papers))
+                        metrics.record_request(
+                            success=True,
+                            response_time=elapsed,
+                            papers_found=len(papers),
+                        )
                         return (source_name, papers)
                     except Exception as e:
                         elapsed = time.time() - start_time
-                        metrics.record_request(success=False, response_time=elapsed, error=str(e))
+                        metrics.record_request(
+                            success=False, response_time=elapsed, error=str(e)
+                        )
                         logger.warning(f"  ✗ {source_name} failed: {e}")
                         return (source_name, [])
                 return (source_name, [])
@@ -635,7 +720,9 @@ class GEOCitationDiscovery:
                 source_name = "Semantic Scholar"
                 metrics = self.source_manager.get_source(source_name)
 
-                if not self.source_manager.should_execute_source(source_name, len(all_citing_papers)):
+                if not self.source_manager.should_execute_source(
+                    source_name, len(all_citing_papers)
+                ):
                     return (source_name, [])
 
                 if self.semantic_scholar:
@@ -644,15 +731,23 @@ class GEOCitationDiscovery:
 
                         @retry_with_backoff(max_retries=2, base_delay=1.0)
                         def _fetch():
-                            return self.semantic_scholar.get_citing_papers(pmid=pmid, limit=max_results)
+                            return self.semantic_scholar.get_citing_papers(
+                                pmid=pmid, limit=max_results
+                            )
 
                         papers = _fetch()
                         elapsed = time.time() - start_time
-                        metrics.record_request(success=True, response_time=elapsed, papers_found=len(papers))
+                        metrics.record_request(
+                            success=True,
+                            response_time=elapsed,
+                            papers_found=len(papers),
+                        )
                         return (source_name, papers)
                     except Exception as e:
                         elapsed = time.time() - start_time
-                        metrics.record_request(success=False, response_time=elapsed, error=str(e))
+                        metrics.record_request(
+                            success=False, response_time=elapsed, error=str(e)
+                        )
                         logger.warning(f"  ✗ {source_name} failed: {e}")
                         return (source_name, [])
                 return (source_name, [])
@@ -663,7 +758,9 @@ class GEOCitationDiscovery:
                 source_name = "Europe PMC"
                 metrics = self.source_manager.get_source(source_name)
 
-                if not self.source_manager.should_execute_source(source_name, len(all_citing_papers)):
+                if not self.source_manager.should_execute_source(
+                    source_name, len(all_citing_papers)
+                ):
                     return (source_name, [])
 
                 if self.europepmc:
@@ -672,15 +769,23 @@ class GEOCitationDiscovery:
 
                         @retry_with_backoff(max_retries=2, base_delay=1.0)
                         def _fetch():
-                            return self.europepmc.get_citing_papers(pmid=pmid, max_results=max_results)
+                            return self.europepmc.get_citing_papers(
+                                pmid=pmid, max_results=max_results
+                            )
 
                         papers = _fetch()
                         elapsed = time.time() - start_time
-                        metrics.record_request(success=True, response_time=elapsed, papers_found=len(papers))
+                        metrics.record_request(
+                            success=True,
+                            response_time=elapsed,
+                            papers_found=len(papers),
+                        )
                         return (source_name, papers)
                     except Exception as e:
                         elapsed = time.time() - start_time
-                        metrics.record_request(success=False, response_time=elapsed, error=str(e))
+                        metrics.record_request(
+                            success=False, response_time=elapsed, error=str(e)
+                        )
                         logger.warning(f"  ✗ {source_name} failed: {e}")
                         return (source_name, [])
                 return (source_name, [])
@@ -691,7 +796,9 @@ class GEOCitationDiscovery:
                 source_name = "OpenCitations"
                 metrics = self.source_manager.get_source(source_name)
 
-                if not self.source_manager.should_execute_source(source_name, len(all_citing_papers)):
+                if not self.source_manager.should_execute_source(
+                    source_name, len(all_citing_papers)
+                ):
                     return (source_name, [])
 
                 if self.opencitations and original_pub.doi:
@@ -706,11 +813,17 @@ class GEOCitationDiscovery:
 
                         papers = _fetch()
                         elapsed = time.time() - start_time
-                        metrics.record_request(success=True, response_time=elapsed, papers_found=len(papers))
+                        metrics.record_request(
+                            success=True,
+                            response_time=elapsed,
+                            papers_found=len(papers),
+                        )
                         return (source_name, papers)
                     except Exception as e:
                         elapsed = time.time() - start_time
-                        metrics.record_request(success=False, response_time=elapsed, error=str(e))
+                        metrics.record_request(
+                            success=False, response_time=elapsed, error=str(e)
+                        )
                         logger.warning(f"  ✗ {source_name} failed: {e}")
                         return (source_name, [])
                 return (source_name, [])
@@ -721,7 +834,9 @@ class GEOCitationDiscovery:
                 source_name = "PubMed"
                 metrics = self.source_manager.get_source(source_name)
 
-                if not self.source_manager.should_execute_source(source_name, len(all_citing_papers)):
+                if not self.source_manager.should_execute_source(
+                    source_name, len(all_citing_papers)
+                ):
                     return (source_name, [])
 
                 if self.pubmed_client:
@@ -730,15 +845,23 @@ class GEOCitationDiscovery:
 
                         @retry_with_backoff(max_retries=2, base_delay=1.0)
                         def _fetch():
-                            return self.pubmed_client.get_citing_papers(pmid=pmid, max_results=max_results)
+                            return self.pubmed_client.get_citing_papers(
+                                pmid=pmid, max_results=max_results
+                            )
 
                         papers = _fetch()
                         elapsed = time.time() - start_time
-                        metrics.record_request(success=True, response_time=elapsed, papers_found=len(papers))
+                        metrics.record_request(
+                            success=True,
+                            response_time=elapsed,
+                            papers_found=len(papers),
+                        )
                         return (source_name, papers)
                     except Exception as e:
                         elapsed = time.time() - start_time
-                        metrics.record_request(success=False, response_time=elapsed, error=str(e))
+                        metrics.record_request(
+                            success=False, response_time=elapsed, error=str(e)
+                        )
                         logger.warning(f"  ✗ {source_name} failed: {e}")
                         return (source_name, [])
                 return (source_name, [])
@@ -761,7 +884,9 @@ class GEOCitationDiscovery:
                         source_name, papers = future.result()
                         all_citing_papers.extend(papers)
                         # Track paper IDs from this source
-                        source_contributions[source_name] = [p.doi or p.pmid or p.title for p in papers]
+                        source_contributions[source_name] = [
+                            p.doi or p.pmid or p.title for p in papers
+                        ]
                         logger.info(f"  ✓ {source_name}: {len(papers)} citing papers")
                     except Exception as e:
                         logger.warning(f"  ✗ Source failed: {e}")
@@ -790,7 +915,9 @@ class GEOCitationDiscovery:
             unique_source_contributions = {}
             for source_name, paper_ids in source_contributions.items():
                 # Find which of this source's papers survived deduplication
-                unique_from_source = [pid for pid in paper_ids if pid in unique_paper_ids]
+                unique_from_source = [
+                    pid for pid in paper_ids if pid in unique_paper_ids
+                ]
                 unique_source_contributions[source_name] = unique_from_source
 
             # Record deduplication metrics
