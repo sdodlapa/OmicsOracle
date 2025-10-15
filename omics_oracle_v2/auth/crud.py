@@ -231,25 +231,8 @@ async def get_user_api_keys(db: AsyncSession, user_id: UUID) -> list[APIKey]:
         List of API keys
     """
     result = await db.execute(
-        select(APIKey).where(APIKey.user_id == user_id).order_by(APIKey.created_at.desc())
-    )
-    return list(result.scalars().all())
-
-
-async def get_active_user_api_keys(db: AsyncSession, user_id: UUID) -> list[APIKey]:
-    """
-    Get active (non-revoked) API keys for a user.
-
-    Args:
-        db: Database session
-        user_id: User ID
-
-    Returns:
-        List of active API keys
-    """
-    result = await db.execute(
         select(APIKey)
-        .where(APIKey.user_id == user_id, APIKey.revoked_at.is_(None))
+        .where(APIKey.user_id == user_id)
         .order_by(APIKey.created_at.desc())
     )
     return list(result.scalars().all())
@@ -272,7 +255,9 @@ async def create_user_api_key(
     """
     key, key_hash, key_prefix = create_api_key()
 
-    db_api_key = APIKey(user_id=user_id, key_hash=key_hash, key_prefix=key_prefix, name=name)
+    db_api_key = APIKey(
+        user_id=user_id, key_hash=key_hash, key_prefix=key_prefix, name=name
+    )
 
     db.add(db_api_key)
     await db.commit()

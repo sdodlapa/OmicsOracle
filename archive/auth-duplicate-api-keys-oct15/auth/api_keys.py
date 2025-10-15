@@ -29,7 +29,9 @@ class APIKeyAuth:
         """
         self.required = required
 
-    async def __call__(self, api_key: Optional[str] = Security(api_key_header)) -> Optional[str]:
+    async def __call__(
+        self, api_key: Optional[str] = Security(api_key_header)
+    ) -> Optional[str]:
         """
         Validate API key.
 

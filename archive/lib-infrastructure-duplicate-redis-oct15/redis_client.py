@@ -162,7 +162,9 @@ class AsyncRedisCache:
             deleted_count = 0
 
             while True:
-                cursor, keys = await self.redis.scan(cursor=cursor, match=pattern, count=100)
+                cursor, keys = await self.redis.scan(
+                    cursor=cursor, match=pattern, count=100
+                )
 
                 if keys:
                     await self.redis.delete(*keys)
@@ -312,7 +314,9 @@ class CacheDecorator:
         def decorator(func):
             async def wrapper(*args, **kwargs):
                 # Generate cache key
-                cache_key = self.cache.generate_key(f"{key_prefix}:{func.__name__}", *args, **kwargs)
+                cache_key = self.cache.generate_key(
+                    f"{key_prefix}:{func.__name__}", *args, **kwargs
+                )
 
                 # Try cache first
                 cached_value = await self.cache.get(cache_key)

@@ -191,7 +191,9 @@ class RedisCache:
         content = f"{query}:{params_str}"
         return hashlib.md5(content.encode()).hexdigest()
 
-    async def get_search_result(self, query: str, search_type: str, **kwargs) -> Optional[Dict[str, Any]]:
+    async def get_search_result(
+        self, query: str, search_type: str, **kwargs
+    ) -> Optional[Dict[str, Any]]:
         """
         Get cached search result.
 
@@ -225,7 +227,12 @@ class RedisCache:
             return None
 
     async def set_search_result(
-        self, query: str, search_type: str, result: Any, ttl: Optional[int] = None, **kwargs
+        self,
+        query: str,
+        search_type: str,
+        result: Any,
+        ttl: Optional[int] = None,
+        **kwargs,
     ) -> bool:
         """
         Cache search result.
@@ -412,7 +419,9 @@ class RedisCache:
             logger.error(f"Error caching GEO metadata: {e}")
             return False
 
-    async def get_geo_datasets_batch(self, geo_ids: list[str]) -> Dict[str, Optional[Dict[str, Any]]]:
+    async def get_geo_datasets_batch(
+        self, geo_ids: list[str]
+    ) -> Dict[str, Optional[Dict[str, Any]]]:
         """
         Get multiple cached GEO datasets (batch operation for efficiency).
 
@@ -448,7 +457,9 @@ class RedisCache:
                     cached_datasets[geo_id] = None
 
             hit_rate = (hits / len(geo_ids) * 100) if geo_ids else 0
-            logger.debug(f"Batch fetch: {hits}/{len(geo_ids)} GEO datasets cached ({hit_rate:.1f}% hit rate)")
+            logger.debug(
+                f"Batch fetch: {hits}/{len(geo_ids)} GEO datasets cached ({hit_rate:.1f}% hit rate)"
+            )
 
             return cached_datasets
         except Exception as e:

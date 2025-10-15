@@ -22,7 +22,7 @@ import time
 from datetime import datetime
 from typing import List, Optional
 
-from omics_oracle_v2.lib.infrastructure.cache.redis_cache import RedisCache
+from omics_oracle_v2.cache.redis_cache import RedisCache
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.openalex import (
     OpenAlexClient, OpenAlexConfig)
 from omics_oracle_v2.lib.pipelines.citation_discovery.clients.pubmed import \

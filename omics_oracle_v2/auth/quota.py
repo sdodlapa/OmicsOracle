@@ -10,7 +10,8 @@ import time
 from dataclasses import dataclass
 from typing import Literal
 
-from omics_oracle_v2.cache import check_redis_health, memory_incr, memory_ttl, redis_incr, redis_ttl
+from omics_oracle_v2.cache import (check_redis_health, memory_incr, memory_ttl,
+                                   redis_incr, redis_ttl)
 from omics_oracle_v2.core.config import Settings
 
 logger = logging.getLogger(__name__)
@@ -179,54 +180,6 @@ async def check_rate_limit(
     )
 
 
-async def increment_rate_limit(
-    user_id: int | None,
-    ip_address: str | None,
-    tier: str = "free",
-    window: str = "hour",
-) -> int:
-    """
-    Increment rate limit counter for a user or IP.
-
-    This is a convenience function that just increments the counter
-    without checking limits. Use check_rate_limit() for enforcement.
-
-    Args:
-        user_id: User ID (None for anonymous)
-        ip_address: Client IP address
-        tier: User tier
-        window: Time window (hour or day)
-
-    Returns:
-        Current count after increment
-
-    Example:
-        >>> count = await increment_rate_limit(user_id=123, tier="pro")
-        >>> print(f"User has made {count} requests this hour")
-    """
-    window_seconds = 3600 if window == "hour" else 86400
-
-    # Build cache key
-    if user_id:
-        key = f"ratelimit:user:{user_id}:{window}"
-    elif ip_address:
-        key = f"ratelimit:ip:{ip_address}:{window}"
-    else:
-        return 0
-
-    # Try Redis first, fall back to memory
-    redis_available = await check_redis_health()
-
-    if redis_available:
-        count = await redis_incr(key, expire=window_seconds)
-        if count is None:
-            count = await memory_incr(key, expire=window_seconds)
-    else:
-        count = await memory_incr(key, expire=window_seconds)
-
-    return count
-
-
 def get_endpoint_cost(path: str, method: str = "GET") -> int:
     """
     Get cost multiplier for specific endpoints.
@@ -290,6 +243,5 @@ __all__ = [
     "RateLimitInfo",
     "get_tier_quota",
     "check_rate_limit",
-    "increment_rate_limit",
     "get_endpoint_cost",
 ]

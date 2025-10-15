@@ -20,9 +20,13 @@ from omics_oracle_v2.core.exceptions import GEOError
 if TYPE_CHECKING:
     from omics_oracle_v2.core.config import Settings
 
-from omics_oracle_v2.lib.infrastructure.cache.redis_cache import RedisCache
-from omics_oracle_v2.lib.search_engines.geo.models import ClientInfo, GEOSeriesMetadata, SearchResult, SRAInfo
-from omics_oracle_v2.lib.search_engines.geo.utils import RateLimiter, retry_with_backoff
+from omics_oracle_v2.cache.redis_cache import RedisCache
+from omics_oracle_v2.lib.search_engines.geo.models import (ClientInfo,
+                                                           GEOSeriesMetadata,
+                                                           SearchResult,
+                                                           SRAInfo)
+from omics_oracle_v2.lib.search_engines.geo.utils import (RateLimiter,
+                                                          retry_with_backoff)
 
 logger = logging.getLogger(__name__)
 
@@ -122,7 +126,9 @@ class NCBIClient:
         params.update({k: str(v) for k, v in kwargs.items()})
         return params
 
-    async def esearch(self, db: str, term: str, retmax: int = 100, retstart: int = 0, **kwargs) -> List[str]:
+    async def esearch(
+        self, db: str, term: str, retmax: int = 100, retstart: int = 0, **kwargs
+    ) -> List[str]:
         """
         Search NCBI database and return list of IDs.
 
@@ -155,7 +161,9 @@ class NCBIClient:
                 esearch_result = data.get("esearchresult", {})
                 id_list = esearch_result.get("idlist", [])
 
-                logger.debug(f"NCBI esearch returned {len(id_list)} results for: {term}")
+                logger.debug(
+                    f"NCBI esearch returned {len(id_list)} results for: {term}"
+                )
                 return id_list
 
         except aiohttp.ClientError as e:
@@ -164,7 +172,12 @@ class NCBIClient:
             raise GEOError(f"Failed to parse NCBI response: {e}") from e
 
     async def efetch(
-        self, db: str, ids: List[str], rettype: str = "xml", retmode: str = "xml", **kwargs
+        self,
+        db: str,
+        ids: List[str],
+        rettype: str = "xml",
+        retmode: str = "xml",
+        **kwargs,
     ) -> str:
         """
         Fetch records from NCBI database.
@@ -186,7 +199,9 @@ class NCBIClient:
             return ""
 
         url = f"{self.BASE_URL}efetch.fcgi"
-        params = self._build_params(db=db, id=",".join(ids), rettype=rettype, retmode=retmode, **kwargs)
+        params = self._build_params(
+            db=db, id=",".join(ids), rettype=rettype, retmode=retmode, **kwargs
+        )
 
         session = await self._get_session()
 
@@ -195,7 +210,9 @@ class NCBIClient:
                 response.raise_for_status()
                 content = await response.text()
 
-                logger.debug(f"NCBI efetch returned {len(content)} chars for {len(ids)} IDs")
+                logger.debug(
+                    f"NCBI efetch returned {len(content)} chars for {len(ids)} IDs"
+                )
                 return content
 
         except aiohttp.ClientError as e:
@@ -385,7 +402,9 @@ class GEOClient:
 
         # Perform search with retry
         async def _search():
-            return await self.ncbi_client.esearch(db="gds", term=query, retmax=max_results)
+            return await self.ncbi_client.esearch(
+                db="gds", term=query, retmax=max_results
+            )
 
         try:
             ncbi_ids = await retry_with_backoff(_search)
@@ -416,7 +435,9 @@ class GEOClient:
         except Exception as e:
             raise GEOError(f"Failed to search GEO: {e}") from e
 
-    async def get_metadata(self, geo_id: str, include_sra: bool = True) -> GEOSeriesMetadata:
+    async def get_metadata(
+        self, geo_id: str, include_sra: bool = True
+    ) -> GEOSeriesMetadata:
         """
         Retrieve comprehensive metadata for a GEO series.
 
@@ -451,7 +472,9 @@ class GEOClient:
             # Run blocking get_GEO() in thread pool to avoid blocking event loop
             loop = asyncio.get_event_loop()
             # Use functools.partial to properly pass keyword argument
-            get_geo_func = functools.partial(get_GEO, geo_id, destdir=str(self.settings.cache_dir))
+            get_geo_func = functools.partial(
+                get_GEO, geo_id, destdir=str(self.settings.cache_dir)
+            )
             gse = await loop.run_in_executor(None, get_geo_func)
 
             # Extract metadata
@@ -465,7 +488,9 @@ class GEOClient:
             organism_source = "none"
 
             gpls = getattr(gse, "gpls", {})
-            logger.info(f"[ORGANISM-TRACE] {geo_id}: Found {len(gpls)} platforms in GEOparse data")
+            logger.info(
+                f"[ORGANISM-TRACE] {geo_id}: Found {len(gpls)} platforms in GEOparse data"
+            )
 
             if gpls:
                 first_platform = list(gpls.values())[0]
@@ -494,7 +519,9 @@ class GEOClient:
 
             # FALLBACK: If organism is empty, try NCBI E-Summary API
             if not organism and self.ncbi_client:
-                logger.info(f"[ORGANISM-TRACE] {geo_id}: Attempting E-Summary fallback for organism")
+                logger.info(
+                    f"[ORGANISM-TRACE] {geo_id}: Attempting E-Summary fallback for organism"
+                )
 
                 try:
                     # Convert GSE ID to NCBI numeric ID for E-Summary
@@ -510,9 +537,14 @@ class GEOClient:
                         )
 
                         # Get summary with organism (taxon) field
-                        summary_data = await self.ncbi_client.esummary(db="gds", ids=[ncbi_id])
+                        summary_data = await self.ncbi_client.esummary(
+                            db="gds", ids=[ncbi_id]
+                        )
 
-                        if "result" in summary_data and ncbi_id in summary_data["result"]:
+                        if (
+                            "result" in summary_data
+                            and ncbi_id in summary_data["result"]
+                        ):
                             result = summary_data["result"][ncbi_id]
                             esummary_organism = result.get("taxon", "")
 
@@ -540,7 +572,10 @@ class GEOClient:
                         )
 
                 except Exception as e:
-                    logger.error(f"[ORGANISM-TRACE] {geo_id}: E-Summary fallback failed: {e}", exc_info=True)
+                    logger.error(
+                        f"[ORGANISM-TRACE] {geo_id}: E-Summary fallback failed: {e}",
+                        exc_info=True,
+                    )
 
             # Final organism status
             if organism:
@@ -548,7 +583,9 @@ class GEOClient:
                     f"[ORGANISM-TRACE] ✓✓ {geo_id}: FINAL organism = {organism!r} (source: {organism_source})"
                 )
             else:
-                logger.error(f"[ORGANISM-TRACE] ✗✗ {geo_id}: ORGANISM STILL EMPTY after all attempts!")
+                logger.error(
+                    f"[ORGANISM-TRACE] ✗✗ {geo_id}: ORGANISM STILL EMPTY after all attempts!"
+                )
 
             metadata = GEOSeriesMetadata(
                 geo_id=geo_id,
@@ -662,7 +699,9 @@ class GEOClient:
             async with semaphore:
                 try:
                     # Week 3 Day 2: Add 30s timeout to prevent hanging
-                    metadata = await asyncio.wait_for(self.get_metadata(geo_id), timeout=30.0)
+                    metadata = await asyncio.wait_for(
+                        self.get_metadata(geo_id), timeout=30.0
+                    )
                     return geo_id, metadata
                 except asyncio.TimeoutError:
                     logger.warning(f"Timeout fetching {geo_id} after 30s")
@@ -673,7 +712,8 @@ class GEOClient:
 
         # Create tasks for all IDs
         logger.info(
-            f"Starting batch metadata fetch: {len(geo_ids)} datasets, " f"max_concurrent={max_concurrent}"
+            f"Starting batch metadata fetch: {len(geo_ids)} datasets, "
+            f"max_concurrent={max_concurrent}"
         )
         tasks = [_get_single(geo_id) for geo_id in geo_ids]
 
@@ -707,12 +747,16 @@ class GEOClient:
         )
 
         if failed_ids:
-            logger.warning(f"Failed to fetch {len(failed_ids)} datasets: {failed_ids[:10]}...")
+            logger.warning(
+                f"Failed to fetch {len(failed_ids)} datasets: {failed_ids[:10]}..."
+            )
 
         # Return as ordered list or dict
         if return_list:
             # Maintain original order, skip failed
-            ordered_results = [metadata_dict[geo_id] for geo_id in geo_ids if geo_id in metadata_dict]
+            ordered_results = [
+                metadata_dict[geo_id] for geo_id in geo_ids if geo_id in metadata_dict
+            ]
             return ordered_results
         else:
             return metadata_dict
@@ -789,7 +833,9 @@ class GEOClient:
 
         # Step 3: Combine and maintain order
         all_metadata = {**cached_metadata, **uncached_metadata}
-        ordered_results = [all_metadata[geo_id] for geo_id in geo_ids if geo_id in all_metadata]
+        ordered_results = [
+            all_metadata[geo_id] for geo_id in geo_ids if geo_id in all_metadata
+        ]
 
         # Performance summary
         elapsed_time = time.time() - start_time

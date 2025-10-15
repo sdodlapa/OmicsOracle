@@ -10,6 +10,29 @@ from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
 
+
+def validate_password_strength(password: str) -> str:
+    """
+    Validate password strength requirements.
+
+    Args:
+        password: Password to validate
+
+    Returns:
+        The password if valid
+
+    Raises:
+        ValueError: If password doesn't meet strength requirements
+    """
+    if not any(c.isupper() for c in password):
+        raise ValueError("Password must contain at least one uppercase letter")
+    if not any(c.islower() for c in password):
+        raise ValueError("Password must contain at least one lowercase letter")
+    if not any(c.isdigit() for c in password):
+        raise ValueError("Password must contain at least one digit")
+    return password
+
+
 # User Schemas
 
 
@@ -27,15 +50,9 @@ class UserCreate(UserBase):
 
     @field_validator("password")
     @classmethod
-    def validate_password_strength(cls, v: str) -> str:
+    def validate_password(cls, v: str) -> str:
         """Validate password strength."""
-        if not any(c.isupper() for c in v):
-            raise ValueError("Password must contain at least one uppercase letter")
-        if not any(c.islower() for c in v):
-            raise ValueError("Password must contain at least one lowercase letter")
-        if not any(c.isdigit() for c in v):
-            raise ValueError("Password must contain at least one digit")
-        return v
+        return validate_password_strength(v)
 
 
 class UserUpdate(BaseModel):
@@ -101,15 +118,9 @@ class PasswordChange(BaseModel):
 
     @field_validator("new_password")
     @classmethod
-    def validate_password_strength(cls, v: str) -> str:
+    def validate_new_password(cls, v: str) -> str:
         """Validate password strength."""
-        if not any(c.isupper() for c in v):
-            raise ValueError("Password must contain at least one uppercase letter")
-        if not any(c.islower() for c in v):
-            raise ValueError("Password must contain at least one lowercase letter")
-        if not any(c.isdigit() for c in v):
-            raise ValueError("Password must contain at least one digit")
-        return v
+        return validate_password_strength(v)
 
 
 class PasswordResetRequest(BaseModel):
@@ -126,15 +137,9 @@ class PasswordReset(BaseModel):
 
     @field_validator("new_password")
     @classmethod
-    def validate_password_strength(cls, v: str) -> str:
+    def validate_new_password(cls, v: str) -> str:
         """Validate password strength."""
-        if not any(c.isupper() for c in v):
-            raise ValueError("Password must contain at least one uppercase letter")
-        if not any(c.islower() for c in v):
-            raise ValueError("Password must contain at least one lowercase letter")
-        if not any(c.isdigit() for c in v):
-            raise ValueError("Password must contain at least one digit")
-        return v
+        return validate_password_strength(v)
 
 
 # API Key Schemas

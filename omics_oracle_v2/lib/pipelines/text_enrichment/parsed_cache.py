@@ -42,7 +42,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from omics_oracle_v2.lib.infrastructure.cache.redis_cache import RedisCache
+from omics_oracle_v2.cache.redis_cache import RedisCache
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,12 @@ class ParsedCache:
         """
         if cache_dir is None:
             # Default to data/fulltext/parsed in project root
-            cache_dir = Path(__file__).parent.parent.parent.parent / "data" / "fulltext" / "parsed"
+            cache_dir = (
+                Path(__file__).parent.parent.parent.parent
+                / "data"
+                / "fulltext"
+                / "parsed"
+            )
 
         self.cache_dir = Path(cache_dir)
         self.ttl_days = ttl_days
@@ -139,7 +144,9 @@ class ParsedCache:
                     f"disk warm-tier: {ttl_days} days)"
                 )
             except Exception as e:
-                logger.warning(f"Failed to initialize Redis hot-tier, falling back to disk-only: {e}")
+                logger.warning(
+                    f"Failed to initialize Redis hot-tier, falling back to disk-only: {e}"
+                )
                 self.redis_cache = None
                 self.use_redis_hot_tier = False
 
@@ -155,7 +162,8 @@ class ParsedCache:
     def normalizer(self):
         """Lazy-load normalizer to avoid circular imports."""
         if self._normalizer is None:
-            from omics_oracle_v2.lib.pipelines.text_enrichment.normalizer import ContentNormalizer
+            from omics_oracle_v2.lib.pipelines.text_enrichment.normalizer import \
+                ContentNormalizer
 
             self._normalizer = ContentNormalizer()
         return self._normalizer
@@ -192,11 +200,14 @@ class ParsedCache:
                 cached_data = await self.redis_cache.get(redis_key)
 
                 if cached_data:
-                    logger.info(f"[CACHE-HIT] ✓ Redis hot-tier HIT: {publication_id} (<10ms)")
+                    logger.info(
+                        f"[CACHE-HIT] ✓ Redis hot-tier HIT: {publication_id} (<10ms)"
+                    )
 
                     # Update access time in database
                     try:
-                        from omics_oracle_v2.lib.pipelines.text_enrichment.cache_db import get_cache_db
+                        from omics_oracle_v2.lib.pipelines.text_enrichment.cache_db import \
+                            get_cache_db
 
                         db = get_cache_db()
                         db.update_access_time(publication_id)
@@ -205,10 +216,14 @@ class ParsedCache:
 
                     return cached_data
 
-                logger.debug(f"[CACHE-MISS] Redis hot-tier miss: {publication_id}, checking disk...")
+                logger.debug(
+                    f"[CACHE-MISS] Redis hot-tier miss: {publication_id}, checking disk..."
+                )
 
             except Exception as e:
-                logger.warning(f"Redis hot-tier error for {publication_id}: {e}, falling back to disk")
+                logger.warning(
+                    f"Redis hot-tier error for {publication_id}: {e}, falling back to disk"
+                )
 
         # TIER 2: Check disk cache (compressed JSON)
         # Try compressed file first (production)
@@ -247,14 +262,19 @@ class ParsedCache:
             if self.use_redis_hot_tier and self.redis_cache:
                 try:
                     redis_key = f"parsed:{publication_id}"
-                    await self.redis_cache.set(redis_key, data, ttl=self.redis_ttl_days * 24 * 3600)
-                    logger.debug(f"[CACHE-PROMOTE] Promoted {publication_id} to Redis hot-tier")
+                    await self.redis_cache.set(
+                        redis_key, data, ttl=self.redis_ttl_days * 24 * 3600
+                    )
+                    logger.debug(
+                        f"[CACHE-PROMOTE] Promoted {publication_id} to Redis hot-tier"
+                    )
                 except Exception as e:
                     logger.debug(f"Failed to promote to Redis: {e}")
 
             # Update access time in database
             try:
-                from omics_oracle_v2.lib.pipelines.text_enrichment.cache_db import get_cache_db
+                from omics_oracle_v2.lib.pipelines.text_enrichment.cache_db import \
+                    get_cache_db
 
                 db = get_cache_db()
                 db.update_access_time(publication_id)
@@ -316,7 +336,9 @@ class ParsedCache:
             return content
 
         # Normalize on-the-fly
-        logger.info(f"Normalizing {publication_id} from {content.get('source_type', 'unknown')} format")
+        logger.info(
+            f"Normalizing {publication_id} from {content.get('source_type', 'unknown')} format"
+        )
 
         try:
             normalized = self.normalizer.normalize(content)
@@ -330,7 +352,9 @@ class ParsedCache:
                 publication_id=metadata.get("publication_id", publication_id),
                 content=normalized,
                 source_file=content.get("source_file"),
-                source_type=metadata.get("source_format", content.get("source_type", "pdf")),
+                source_type=metadata.get(
+                    "source_format", content.get("source_type", "pdf")
+                ),
                 parse_duration_ms=content.get("parse_duration_ms"),
                 quality_score=content.get("quality_score"),
             )
@@ -399,7 +423,9 @@ class ParsedCache:
         }
 
         # Determine cache file path
-        cache_file = self._get_cache_path(publication_id, compressed=self.use_compression)
+        cache_file = self._get_cache_path(
+            publication_id, compressed=self.use_compression
+        )
 
         try:
             # Save to cache
@@ -407,16 +433,22 @@ class ParsedCache:
                 with gzip.open(cache_file, "wt", encoding="utf-8") as f:
                     json.dump(cache_entry, f, indent=2)
             else:
-                cache_file.write_text(json.dumps(cache_entry, indent=2), encoding="utf-8")
+                cache_file.write_text(
+                    json.dumps(cache_entry, indent=2), encoding="utf-8"
+                )
 
             file_size_kb = cache_file.stat().st_size // 1024
-            logger.info(f"[CACHE-SAVE] Saved to disk: {publication_id} ({file_size_kb} KB)")
+            logger.info(
+                f"[CACHE-SAVE] Saved to disk: {publication_id} ({file_size_kb} KB)"
+            )
 
             # PHASE 4: Also save to Redis hot-tier for fast future access
             if self.use_redis_hot_tier and self.redis_cache:
                 try:
                     redis_key = f"parsed:{publication_id}"
-                    await self.redis_cache.set(redis_key, cache_entry, ttl=self.redis_ttl_days * 24 * 3600)
+                    await self.redis_cache.set(
+                        redis_key, cache_entry, ttl=self.redis_ttl_days * 24 * 3600
+                    )
                     logger.debug(
                         f"[CACHE-SAVE] Also saved to Redis hot-tier: {publication_id} "
                         f"(TTL: {self.redis_ttl_days} days)"
@@ -427,9 +459,7 @@ class ParsedCache:
             # NEW (Phase 4): Save metadata to database for fast search
             try:
                 from omics_oracle_v2.lib.pipelines.text_enrichment.cache_db import (
-                    calculate_file_hash,
-                    get_cache_db,
-                )
+                    calculate_file_hash, get_cache_db)
 
                 db = get_cache_db()
 
@@ -447,7 +477,9 @@ class ParsedCache:
                     # Extract source from path like: data/fulltext/pdf/pmc/...
                     parts = source_path.parts
                     if "pdf" in parts or "xml" in parts:
-                        idx = parts.index("pdf") if "pdf" in parts else parts.index("xml")
+                        idx = (
+                            parts.index("pdf") if "pdf" in parts else parts.index("xml")
+                        )
                         if idx + 1 < len(parts):
                             file_source = parts[idx + 1]
 
@@ -645,7 +677,9 @@ class ParsedCache:
     def _is_stale(self, cache_entry: Dict[str, Any]) -> bool:
         """Check if cache entry is stale (older than TTL)."""
         try:
-            cached_at = datetime.fromisoformat(cache_entry.get("cached_at", "2000-01-01"))
+            cached_at = datetime.fromisoformat(
+                cache_entry.get("cached_at", "2000-01-01")
+            )
             age = datetime.now() - cached_at
             return age > timedelta(days=self.ttl_days)
         except Exception:  # noqa: E722
@@ -654,7 +688,9 @@ class ParsedCache:
     def _get_age_days(self, cache_entry: Dict[str, Any]) -> int:
         """Get age of cache entry in days."""
         try:
-            cached_at = datetime.fromisoformat(cache_entry.get("cached_at", "2000-01-01"))
+            cached_at = datetime.fromisoformat(
+                cache_entry.get("cached_at", "2000-01-01")
+            )
             age = datetime.now() - cached_at
             return age.days
         except Exception:  # noqa: E722
