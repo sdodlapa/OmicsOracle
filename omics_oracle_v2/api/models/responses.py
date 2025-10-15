@@ -115,6 +115,18 @@ class PublicationResponse(BaseModel):
     pdf_path: Optional[str] = Field(None, description="Path to downloaded PDF")
 
 
+class QueryProcessingResponse(BaseModel):
+    """Query processing context from QueryOptimizer."""
+
+    extracted_entities: Dict[str, List[str]] = Field(
+        default_factory=dict, description="Extracted entities by type (GENE, DISEASE, etc.)"
+    )
+    expanded_terms: List[str] = Field(default_factory=list, description="Synonym-expanded search terms")
+    geo_search_terms: List[str] = Field(default_factory=list, description="GEO-specific search terms used")
+    search_intent: Optional[str] = Field(None, description="Detected search intent")
+    query_type: Optional[str] = Field(None, description="Query type classification")
+
+
 class SearchResponse(BaseResponse):
     """Response model for Search Agent."""
 
@@ -125,6 +137,9 @@ class SearchResponse(BaseResponse):
     search_logs: List[str] = Field(default=[], description="Search process logs for debugging")
     publications: List[PublicationResponse] = Field(default_factory=list, description="Related publications")
     publications_count: int = Field(default=0, description="Number of related publications found")
+    query_processing: Optional[QueryProcessingResponse] = Field(
+        None, description="Query processing context for RAG enhancement"
+    )
 
 
 class QualityMetricsResponse(BaseModel):

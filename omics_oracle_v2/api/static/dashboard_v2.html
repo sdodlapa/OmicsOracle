@@ -1171,15 +1171,27 @@
                 // RAG Phase 2: Store full search response for context
                 lastSearchResponse = data;
 
-                // RAG Phase 2: Extract query processing context if available
-                // Note: SearchOrchestrator doesn't expose this yet - simulate for now
-                lastQueryProcessing = {
-                    extracted_entities: {},  // TODO: Extract from QueryOptimizer
-                    expanded_terms: [query], // TODO: Get from QueryOptimizer
-                    geo_search_terms: [query],
-                    search_intent: null,     // TODO: Get from QueryAnalyzer
-                    query_type: null         // TODO: Get from QueryAnalyzer
-                };
+                // RAG Phase 3: Extract real query processing context from backend
+                if (data.query_processing) {
+                    lastQueryProcessing = {
+                        extracted_entities: data.query_processing.extracted_entities || {},
+                        expanded_terms: data.query_processing.expanded_terms || [query],
+                        geo_search_terms: data.query_processing.geo_search_terms || [query],
+                        search_intent: data.query_processing.search_intent || null,
+                        query_type: data.query_processing.query_type || null
+                    };
+                    console.log('[RAG Phase 3] Query processing context received:', lastQueryProcessing);
+                } else {
+                    // Fallback if backend doesn't provide query processing
+                    lastQueryProcessing = {
+                        extracted_entities: {},
+                        expanded_terms: [query],
+                        geo_search_terms: [query],
+                        search_intent: null,
+                        query_type: null
+                    };
+                    console.log('[RAG Phase 3] No query processing context - using fallback');
+                }
 
                 // Display search logs if available
                 if (data.search_logs && data.search_logs.length > 0) {

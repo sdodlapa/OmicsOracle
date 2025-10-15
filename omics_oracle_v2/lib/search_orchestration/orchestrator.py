@@ -208,6 +208,7 @@ class SearchOrchestrator:
 
         # Step 3: Optimize query (if enabled and not GEO ID fast path)
         optimized_query = query
+        optimization_result = None  # For RAG Phase 3
         if self.query_optimizer and analysis.search_type != SearchType.GEO_ID:
             try:
                 logger.info("🔄 Optimizing query with NER + SapBERT")
@@ -218,6 +219,7 @@ class SearchOrchestrator:
             except Exception as e:
                 logger.warning(f"Query optimization failed: {e}. Using original query.")
                 optimized_query = query
+                optimization_result = None
 
         # Step 4: Execute searches based on type
         geo_datasets = []
@@ -248,6 +250,21 @@ class SearchOrchestrator:
         # Step 5: Deduplicate GEO results (GEO IDs are unique)
         geo_datasets = self._deduplicate_geo(geo_datasets)
 
+        # Step 5.5: Build query processing context for RAG (Phase 3)
+        from omics_oracle_v2.lib.search_orchestration.models import QueryProcessingContext
+
+        query_processing_context = None
+        if optimization_result:
+            # Extract data from OptimizedQuery
+            query_processing_context = QueryProcessingContext(
+                extracted_entities=optimization_result.entities,
+                expanded_terms=optimization_result.expanded_terms,
+                geo_search_terms=[optimized_query],  # The actual query used for GEO search
+                search_intent=None,  # From QueryAnalyzer (future enhancement)
+                query_type=analysis.search_type.value,  # From QueryAnalyzer
+            )
+            logger.info(f"📦 Query processing context captured for RAG enhancement")
+
         # Step 6: Build result
         search_time_ms = (time.time() - start_time) * 1000
         result = SearchResult(
@@ -264,6 +281,7 @@ class SearchOrchestrator:
                 "publication_count": len(publications),
                 "query_confidence": analysis.confidence,
             },
+            query_processing=query_processing_context,  # RAG Phase 3
         )
 
         logger.info(f"✅ Search complete: {result.total_results} results in {search_time_ms:.1f}ms")

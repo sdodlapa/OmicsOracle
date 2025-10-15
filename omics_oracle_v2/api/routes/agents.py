@@ -79,7 +79,7 @@ async def execute_search(
             max_geo_results=request.max_results,
             max_publication_results=50,
             enable_cache=True,
-            enable_query_optimization=False,  # Disable - GEOQueryBuilder handles GEO optimization
+            enable_query_optimization=True,  # RAG Phase 3: Enable for entity extraction
         )
 
         pipeline = SearchOrchestrator(config)
@@ -349,6 +349,24 @@ async def execute_search(
         execution_time_ms = (time.time() - start_time) * 1000
         search_logs.append(f"[TIME] Total execution time: {execution_time_ms:.2f}ms")
 
+        # RAG Phase 3: Build query processing context for frontend
+        query_processing_response = None
+        if search_result.query_processing:
+            from omics_oracle_v2.api.models.responses import QueryProcessingResponse
+
+            query_processing_response = QueryProcessingResponse(
+                extracted_entities=search_result.query_processing.extracted_entities,
+                expanded_terms=search_result.query_processing.expanded_terms,
+                geo_search_terms=search_result.query_processing.geo_search_terms,
+                search_intent=search_result.query_processing.search_intent,
+                query_type=search_result.query_processing.query_type,
+            )
+            logger.info(
+                f"[RAG] Query processing context exposed: "
+                f"entities={len(search_result.query_processing.extracted_entities)}, "
+                f"expanded={len(search_result.query_processing.expanded_terms)}"
+            )
+
         return SearchResponse(
             success=True,
             execution_time_ms=execution_time_ms,
@@ -360,6 +378,7 @@ async def execute_search(
             search_logs=search_logs,
             publications=publication_responses,
             publications_count=len(publication_responses),
+            query_processing=query_processing_response,  # RAG Phase 3
         )
 
     except HTTPException:
