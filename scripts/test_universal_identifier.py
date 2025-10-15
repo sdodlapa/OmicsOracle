@@ -27,7 +27,7 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from omics_oracle_v2.lib.enrichment.identifiers import (
+from omics_oracle_v2.lib.shared.identifiers import (
     IdentifierType,
     UniversalIdentifier,
     get_identifier_from_filename,

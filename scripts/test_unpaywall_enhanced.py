@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dotenv import load_dotenv
 
-from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig
+from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig
 from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 # Load environment variables

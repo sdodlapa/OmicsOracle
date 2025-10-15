@@ -3,7 +3,7 @@
     "geo_id": "GSE296967",
     "title": "CD105+ fibroblasts support an immunosuppressive niche in women at high risk of breast cancer initiation",
     "summary": "Background: Aging is the greatest risk factor for breast cancer, and although epithelial cells are the source of carcinomas, epithelial changes alone do not fully explain cancer susceptibility. Fibroblasts and macrophages are key stromal constituents around the cells of origin for cancer in breast tissue. With age, macrophages surrounding terminal ductal lobular units (TDLUs) become increasingly immunosuppressive. CD105+ fibroblasts intercalate within TDLUs, drive luminal differentiation, and give rise to immunosuppressive cancer-associated fibroblasts in other tissues. We propose that differences in fibroblasts are a crucial component of the stroma that shapes cancer susceptibility. Methods: Primary fibroblast cultures were established from prophylactic and reduction mammoplasties from women ranging in age from 16 to 70 years and breast cancer risk (BRCA1 mutation carriers). Growth characteristics, transcriptional profiles, differentiation potential, and secreted proteins were profiled for fibroblast subtypes from diverse donors. Co-cultures with fibroblasts, monocytes, macrophages, and T cells were used to ascertain the functional role played by CD105+ fibroblasts in immune cell modulation. Results: We found that peri-epithelial CD105+ fibroblasts are enriched in older women as well as women who carry BRCA1 mutations. These CD105+ fibroblasts exhibit robust adipogenesis and secrete factors related to macrophage polarization. Macrophages cocultured with fibroblasts better maintain or enhance polarization states than media alone. CD105+ fibroblasts increased expression of immunosuppressive macrophage genes. CD105+ fibroblasts supported anti-inflammatory macrophage-mediated suppression of T cell proliferation, whereas CD105\u2212 fibroblasts significantly reduced the suppressive effect of anti-inflammatory macrophages on T cell proliferation. Conclusions: Establishment of a coculture system to dissect the molecular circuits between CD105+ fibroblasts and macrophages that drive immunosuppressive macrophage polarization has broad utility in understanding mammary gland development and events that precede cancer initiation. CD105+ fibroblasts and macrophages may coordinate to suppress immunosurveillance and increase breast cancer susceptibility.",
-    "organism": "",
+    "organism": "Homo sapiens",
     "platform": "GPL24676",
     "sample_count": 30,
     "submission_date": "May 13 2025",
@@ -18,7 +18,7 @@
     ]
   },
   "processing": {
-    "processed_at": "2025-10-15T06:20:23.560508+00:00",
+    "processed_at": "2025-10-15T10:10:24.032382+00:00",
     "include_citing_papers": true,
     "max_citing_papers": 10,
     "download_original": true,
@@ -179,7 +179,7 @@
   },
   "citation_discovery": {
     "original_pmid": "40375322",
-    "strategy_a_count": 1,
+    "strategy_a_count": 0,
     "strategy_b_count": 0,
     "total_found": 1
   }

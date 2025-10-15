@@ -36,9 +36,9 @@ load_dotenv()
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from omics_oracle_v2.lib.enrichment.fulltext.download_manager import DownloadResult, PDFDownloadManager
-from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager, FullTextManagerConfig, SourceURL
-from omics_oracle_v2.lib.enrichment.fulltext.url_validator import URLType, URLValidator
+from omics_oracle_v2.lib.pipelines.pdf_download.download_manager import DownloadResult, PDFDownloadManager
+from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig, SourceURL
+from omics_oracle_v2.lib.pipelines.url_collection.url_validator import URLType, URLValidator
 from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
 
 # Setup logging
@@ -364,7 +364,7 @@ class URLCollectionDemo:
                         print(f"  ✗ Error reading file: {e}")
 
                 # Check 4: Correct filename (matches UniversalIdentifier)
-                from omics_oracle_v2.lib.enrichment.identifiers import UniversalIdentifier
+                from omics_oracle_v2.lib.shared.identifiers import UniversalIdentifier
 
                 identifier = UniversalIdentifier(pub)
                 expected_filename = identifier.filename

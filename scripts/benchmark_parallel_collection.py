@@ -20,7 +20,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from omics_oracle_v2.lib.config.settings import load_config
-from omics_oracle_v2.lib.enrichment.fulltext.manager import FullTextManager
+from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
 from omics_oracle_v2.lib.models.publication import Publication
 
 # Colors for terminal output
