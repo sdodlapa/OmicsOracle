@@ -26,8 +26,8 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from omics_oracle_v2.lib.storage.geo_storage import GEOStorage
-from omics_oracle_v2.lib.storage.models import (
+from omics_oracle_v2.lib.pipelines.storage.geo_storage import GEOStorage
+from omics_oracle_v2.lib.pipelines.storage.models import (
     ContentExtraction,
     EnrichedContent,
     GEODataset,
@@ -36,7 +36,7 @@ from omics_oracle_v2.lib.storage.models import (
     URLDiscovery,
     now_iso,
 )
-from omics_oracle_v2.lib.storage.unified_db import UnifiedDatabase
+from omics_oracle_v2.lib.pipelines.storage.unified_db import UnifiedDatabase
 
 logger = logging.getLogger(__name__)
 

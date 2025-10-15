@@ -4,12 +4,10 @@ Storage Module - Unified Database System
 GEO-centric storage with SQLite database and filesystem organization.
 
 Quick Start:
-    from omics_oracle_v2.lib.storage import (
+    from omics_oracle_v2.lib.pipelines.storage import (
         UnifiedDatabase,
         UniversalIdentifier,
-        GEOStorage,
-        DatabaseQueries,
-        Analytics
+        GEOStorage
     )
 
     # Initialize database

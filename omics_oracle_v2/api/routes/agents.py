@@ -29,7 +29,7 @@ from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.search_orchestration import (OrchestratorConfig,
                                                       SearchOrchestrator)
 # TODO: DatabaseQueries deleted - use UnifiedDatabase directly if needed
-# from omics_oracle_v2.lib.storage.queries import DatabaseQueries
+# from omics_oracle_v2.lib.pipelines.storage.queries import DatabaseQueries
 
 logger = logging.getLogger(__name__)
 
@@ -504,7 +504,7 @@ async def enrich_fulltext(
     from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
     from omics_oracle_v2.lib.pipelines.url_collection import (
         FullTextManager, FullTextManagerConfig)
-    from omics_oracle_v2.lib.storage import get_registry
+    from omics_oracle_v2.lib.pipelines.storage import get_registry
 
     start_time = time.time()
 
