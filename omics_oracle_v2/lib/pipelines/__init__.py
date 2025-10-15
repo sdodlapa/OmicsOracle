@@ -25,18 +25,29 @@ This package contains all 4 production pipelines:
    - Content normalization
    - Parsed content caching
 
+Unified Integration:
+-------------------
+- PipelineCoordinator: Coordinates all pipelines with unified database + storage
+- Automatic recording to database tables
+- GEO-centric file organization
+- Transaction support and error logging
+
 All pipelines are production-ready and tested.
 """
 
 # Convenience imports
 from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import GEOCitationDiscovery
-from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
+from omics_oracle_v2.lib.pipelines.coordinator import PipelineCoordinator
 from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
 from omics_oracle_v2.lib.pipelines.text_enrichment import PDFExtractor
+from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
 
 __all__ = [
+    # Individual Pipelines
     "GEOCitationDiscovery",
     "FullTextManager",
     "PDFDownloadManager",
     "PDFExtractor",
+    # Unified Coordinator
+    "PipelineCoordinator",
 ]
