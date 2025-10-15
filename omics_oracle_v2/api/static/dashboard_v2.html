@@ -1127,6 +1127,10 @@
         let selectedDataset = null;
         let currentQuery = '';  // Store search query for analysis
 
+        // RAG Phase 2: Store query processing context
+        let lastQueryProcessing = null;  // Query entities, synonyms, intent
+        let lastSearchResponse = null;    // Full search response for analysis
+
         // Use example query
         function useExample(element) {
             document.getElementById('search-query').value = element.textContent;
@@ -1163,6 +1167,19 @@
 
                 const data = await response.json();
                 currentResults = data.datasets || [];
+
+                // RAG Phase 2: Store full search response for context
+                lastSearchResponse = data;
+
+                // RAG Phase 2: Extract query processing context if available
+                // Note: SearchOrchestrator doesn't expose this yet - simulate for now
+                lastQueryProcessing = {
+                    extracted_entities: {},  // TODO: Extract from QueryOptimizer
+                    expanded_terms: [query], // TODO: Get from QueryOptimizer
+                    geo_search_terms: [query],
+                    search_intent: null,     // TODO: Get from QueryAnalyzer
+                    query_type: null         // TODO: Get from QueryAnalyzer
+                };
 
                 // Display search logs if available
                 if (data.search_logs && data.search_logs.length > 0) {
@@ -1596,15 +1613,41 @@ ${error.stack || 'Not available'}`;
             `;
 
             try {
+                // RAG Phase 2: Generate match explanations from dataset
+                const matchExplanations = {};
+                if (dataset.geo_id && dataset.match_reasons) {
+                    matchExplanations[dataset.geo_id] = {
+                        matched_terms: dataset.match_reasons || [],
+                        relevance_score: dataset.relevance_score || 0.5,
+                        match_type: "semantic",  // Default for now
+                        confidence: dataset.relevance_score || 0.5
+                    };
+                }
+
+                // RAG Phase 2: Build enhanced request with query context
+                const analysisRequest = {
+                    datasets: [dataset],
+                    query: currentQuery,
+                    max_datasets: 1
+                };
+
+                // Add query processing context if available
+                if (lastQueryProcessing && Object.keys(lastQueryProcessing.extracted_entities || {}).length > 0) {
+                    analysisRequest.query_processing = lastQueryProcessing;
+                }
+
+                // Add match explanations if available
+                if (Object.keys(matchExplanations).length > 0) {
+                    analysisRequest.match_explanations = matchExplanations;
+                }
+
+                console.log('AI Analysis Request (RAG Phase 2):', analysisRequest);
+
                 // Call AI analysis API
                 const response = await authenticatedFetch('http://localhost:8000/api/agents/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        datasets: [dataset],
-                        query: currentQuery,
-                        max_datasets: 1
-                    })
+                    body: JSON.stringify(analysisRequest)
                 });
 
                 if (!response.ok) {
@@ -1784,15 +1827,41 @@ ${error.stack || 'Not available'}`;
                 const cleanDataset = stripFullTextContent(dataset);
                 console.log('Sending dataset size:', JSON.stringify(cleanDataset).length, 'bytes');
 
+                // RAG Phase 2: Generate match explanations
+                const matchExplanations = {};
+                if (cleanDataset.geo_id && cleanDataset.match_reasons) {
+                    matchExplanations[cleanDataset.geo_id] = {
+                        matched_terms: cleanDataset.match_reasons || [],
+                        relevance_score: cleanDataset.relevance_score || 0.5,
+                        match_type: "semantic",
+                        confidence: cleanDataset.relevance_score || 0.5
+                    };
+                }
+
+                // RAG Phase 2: Build enhanced request
+                const analysisRequest = {
+                    datasets: [cleanDataset],
+                    query: currentQuery,
+                    max_datasets: 1
+                };
+
+                // Add query processing context if available
+                if (lastQueryProcessing && Object.keys(lastQueryProcessing.extracted_entities || {}).length > 0) {
+                    analysisRequest.query_processing = lastQueryProcessing;
+                }
+
+                // Add match explanations if available
+                if (Object.keys(matchExplanations).length > 0) {
+                    analysisRequest.match_explanations = matchExplanations;
+                }
+
+                console.log('AI Analysis Request (Multi-dataset, RAG Phase 2):', analysisRequest);
+
                 // Call AI analysis API
                 const response = await authenticatedFetch('http://localhost:8000/api/agents/analyze', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        datasets: [cleanDataset],  // Send cleaned dataset
-                        query: currentQuery,   // Original search query
-                        max_datasets: 1        // Analyzing single dataset
-                    })
+                    body: JSON.stringify(analysisRequest)
                 });
 
                 if (!response.ok) {
