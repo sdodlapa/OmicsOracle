@@ -9,7 +9,8 @@ import json
 from io import StringIO
 from typing import Any, Dict, List, Literal
 
-from .models import AnalysisResponse, NetworkGraph, Publication, SearchResponse, TrendAnalysis
+from .models import (AnalysisResponse, NetworkGraph, Publication,
+                     SearchResponse, TrendAnalysis)
 
 
 class DataTransformer:
@@ -57,7 +58,9 @@ class DataTransformer:
                     "year": pub.year,
                     "journal": pub.journal,
                     "abstract": pub.abstract,
-                    "citation_count": pub.citation_metrics.count if pub.citation_metrics else 0,
+                    "citation_count": pub.citation_metrics.count
+                    if pub.citation_metrics
+                    else 0,
                     "pubmed_url": str(pub.pubmed_url) if pub.pubmed_url else None,
                     "scholar_url": str(pub.scholar_url) if pub.scholar_url else None,
                     # NEW fields (dashboard should start using these!)
@@ -91,7 +94,9 @@ class DataTransformer:
                         "pdf_url": str(pub.access_info.pdf_url)
                         if pub.access_info and pub.access_info.pdf_url
                         else None,
-                        "open_access": pub.access_info.open_access if pub.access_info else False,
+                        "open_access": pub.access_info.open_access
+                        if pub.access_info
+                        else False,
                     }
                     if pub.access_info
                     else None,
@@ -197,9 +202,15 @@ class DataTransformer:
                     },
                     # Metrics
                     "metrics": {
-                        "citations": pub.citation_metrics.count if pub.citation_metrics else 0,
-                        "recentCitations": pub.citation_metrics.recent_count if pub.citation_metrics else 0,
-                        "citationVelocity": pub.citation_metrics.velocity if pub.citation_metrics else None,
+                        "citations": pub.citation_metrics.count
+                        if pub.citation_metrics
+                        else 0,
+                        "recentCitations": pub.citation_metrics.recent_count
+                        if pub.citation_metrics
+                        else 0,
+                        "citationVelocity": pub.citation_metrics.velocity
+                        if pub.citation_metrics
+                        else None,
                         "predictedCitations": pub.citation_metrics.predicted_5yr
                         if pub.citation_metrics
                         else None,
@@ -228,7 +239,9 @@ class DataTransformer:
                         "pdfUrl": str(pub.access_info.pdf_url)
                         if pub.access_info and pub.access_info.pdf_url
                         else None,
-                        "openAccess": pub.access_info.open_access if pub.access_info else False,
+                        "openAccess": pub.access_info.open_access
+                        if pub.access_info
+                        else False,
                     },
                     # Relevance
                     "relevance": {

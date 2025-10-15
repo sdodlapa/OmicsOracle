@@ -13,8 +13,10 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.pipelines.url_collection import (
+    FullTextManager, FullTextManagerConfig)
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -124,7 +126,10 @@ async def test_full_url_collection():
     if result.all_urls:
         print("\n  All URLs (sorted by priority):")
         for i, source_url in enumerate(result.all_urls, 1):
-            print(f"    {i}. {source_url.source.value:15s} " f"(priority={source_url.priority})")
+            print(
+                f"    {i}. {source_url.source.value:15s} "
+                f"(priority={source_url.priority})"
+            )
             print(f"       URL: {source_url.url[:80]}...")
             if source_url.url_type:
                 print(f"       Type: {source_url.url_type.value}")

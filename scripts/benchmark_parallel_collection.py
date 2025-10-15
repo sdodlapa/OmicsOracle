@@ -20,8 +20,8 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from omics_oracle_v2.lib.config.settings import load_config
-from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
 from omics_oracle_v2.lib.models.publication import Publication
+from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
 
 # Colors for terminal output
 GREEN = "\033[92m"
@@ -68,9 +68,21 @@ TEST_PUBLICATIONS = [
     {"pmid": "31701145", "doi": "10.1093/nar/gkz957", "title": "NCBI paper 4"},
     {"pmid": "30395331", "doi": "10.1093/nar/gky1069", "title": "NCBI paper 5"},
     # Popular bioinformatics papers
-    {"pmid": "32053187", "doi": "10.1093/bioinformatics/btaa102", "title": "Bioinfo paper 1"},
-    {"pmid": "31510660", "doi": "10.1093/bioinformatics/btz682", "title": "Bioinfo paper 2"},
-    {"pmid": "30395289", "doi": "10.1093/bioinformatics/bty847", "title": "Bioinfo paper 3"},
+    {
+        "pmid": "32053187",
+        "doi": "10.1093/bioinformatics/btaa102",
+        "title": "Bioinfo paper 1",
+    },
+    {
+        "pmid": "31510660",
+        "doi": "10.1093/bioinformatics/btz682",
+        "title": "Bioinfo paper 2",
+    },
+    {
+        "pmid": "30395289",
+        "doi": "10.1093/bioinformatics/bty847",
+        "title": "Bioinfo paper 3",
+    },
     # Nature/Science papers (may require institutional access)
     {"pmid": "32015508", "doi": "10.1038/s41586-020-1969-6", "title": "Nature paper 1"},
     {"pmid": "31776509", "doi": "10.1038/s41586-019-1823-5", "title": "Nature paper 2"},
@@ -125,7 +137,9 @@ async def benchmark_parallel_collection(
         "method": "Parallel Collection",
         "total_papers": len(publications),
         "success_count": success_count,
-        "success_rate": (success_count / len(publications) * 100) if publications else 0,
+        "success_rate": (success_count / len(publications) * 100)
+        if publications
+        else 0,
         "total_time": elapsed,
         "avg_time_per_paper": elapsed / len(publications) if publications else 0,
         "total_urls_collected": total_urls,
@@ -170,7 +184,9 @@ async def benchmark_sequential_waterfall(
         "method": "Sequential Waterfall",
         "total_papers": len(publications),
         "success_count": success_count,
-        "success_rate": (success_count / len(publications) * 100) if publications else 0,
+        "success_rate": (success_count / len(publications) * 100)
+        if publications
+        else 0,
         "total_time": elapsed,
         "avg_time_per_paper": elapsed / len(publications) if publications else 0,
         "total_urls_collected": total_urls,
@@ -186,7 +202,11 @@ def print_comparison(parallel: Dict[str, Any], sequential: Dict[str, Any]):
     print_header("BENCHMARK RESULTS COMPARISON")
 
     # Calculate improvements
-    time_improvement = (sequential["total_time"] - parallel["total_time"]) / sequential["total_time"] * 100
+    time_improvement = (
+        (sequential["total_time"] - parallel["total_time"])
+        / sequential["total_time"]
+        * 100
+    )
     url_improvement = (
         (
             (parallel["total_urls_collected"] - sequential["total_urls_collected"])
@@ -199,13 +219,21 @@ def print_comparison(parallel: Dict[str, Any], sequential: Dict[str, Any]):
     success_improvement = parallel["success_rate"] - sequential["success_rate"]
 
     # Overall summary
-    print("┌─────────────────────────────────────────────────────────────────────────────┐")
-    print("│                           OVERALL PERFORMANCE                               │")
-    print("├─────────────────────────────────────────────────────────────────────────────┤")
+    print(
+        "┌─────────────────────────────────────────────────────────────────────────────┐"
+    )
+    print(
+        "│                           OVERALL PERFORMANCE                               │"
+    )
+    print(
+        "├─────────────────────────────────────────────────────────────────────────────┤"
+    )
     print(
         f"│  Test Papers: {parallel['total_papers']:>4}                                                           │"
     )
-    print("└─────────────────────────────────────────────────────────────────────────────┘")
+    print(
+        "└─────────────────────────────────────────────────────────────────────────────┘"
+    )
     print()
 
     # Time comparison
@@ -262,7 +290,9 @@ def print_comparison(parallel: Dict[str, Any], sequential: Dict[str, Any]):
 
     print()
     print(f"  {BLUE}Sequential Waterfall:{RESET}")
-    for source, count in sorted(sequential["sources_used"].items(), key=lambda x: -x[1]):
+    for source, count in sorted(
+        sequential["sources_used"].items(), key=lambda x: -x[1]
+    ):
         print(f"    • {source:<20} : {count:>3} papers")
 
     print()
@@ -276,14 +306,18 @@ def print_comparison(parallel: Dict[str, Any], sequential: Dict[str, Any]):
         print_warning(f"Parallel collection is {abs(time_improvement):.1f}% slower")
 
     if url_improvement > 0:
-        print_success(f"Parallel collects {url_improvement:.1f}% MORE URLs (better fallback)")
+        print_success(
+            f"Parallel collects {url_improvement:.1f}% MORE URLs (better fallback)"
+        )
     else:
         print_info("Sequential only gets first success (no fallback options)")
 
     if success_improvement > 0:
         print_success(f"Parallel has {success_improvement:.1f}% HIGHER success rate")
     elif success_improvement < 0:
-        print_warning(f"Parallel has {abs(success_improvement):.1f}% lower success rate")
+        print_warning(
+            f"Parallel has {abs(success_improvement):.1f}% lower success rate"
+        )
     else:
         print_info("Both methods have equal success rates")
 
@@ -354,7 +388,9 @@ async def main():
     print_comparison(parallel_results, sequential_results)
 
     # Save results
-    results_file = project_root / "data/test_results/parallel_vs_sequential_benchmark.json"
+    results_file = (
+        project_root / "data/test_results/parallel_vs_sequential_benchmark.json"
+    )
     results_file.parent.mkdir(parents=True, exist_ok=True)
 
     with open(results_file, "w") as f:
@@ -366,11 +402,16 @@ async def main():
                 "sequential_waterfall": sequential_results,
                 "improvements": {
                     "time_savings_percent": (
-                        (sequential_results["total_time"] - parallel_results["total_time"])
+                        (
+                            sequential_results["total_time"]
+                            - parallel_results["total_time"]
+                        )
                         / sequential_results["total_time"]
                         * 100
                     ),
-                    "additional_urls_collected": parallel_results["total_urls_collected"]
+                    "additional_urls_collected": parallel_results[
+                        "total_urls_collected"
+                    ]
                     - sequential_results["total_urls_collected"],
                     "success_rate_improvement": parallel_results["success_rate"]
                     - sequential_results["success_rate"],

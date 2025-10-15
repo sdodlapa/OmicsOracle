@@ -19,11 +19,13 @@ sys.path.insert(0, str(project_root))
 import logging
 
 from omics_oracle_v2.lib.config.settings import load_config
-from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
 from omics_oracle_v2.lib.models.publication import Publication
+from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager
 
 # Set up detailed logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -176,7 +178,9 @@ async def investigate_pmid(pmid: str):
 
         if not pub.doi:
             print("   ⚠️  Missing DOI - many sources require a DOI")
-            print("   Recommendation: This paper may be too new or not indexed properly")
+            print(
+                "   Recommendation: This paper may be too new or not indexed properly"
+            )
 
         if not pub.pmcid:
             print("   ⚠️  Missing PMCID - paper not in PubMed Central")

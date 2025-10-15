@@ -72,7 +72,9 @@ class MLClient(APIClient):
             count=count,
         )
 
-        logger.info(f"Getting {count} recommendations based on {len(seed_papers)} papers...")
+        logger.info(
+            f"Getting {count} recommendations based on {len(seed_papers)} papers..."
+        )
 
         # Call API
         response_data = await self.post(
@@ -83,7 +85,10 @@ class MLClient(APIClient):
         # Parse response
         response = RecommendationResponse(**response_data)
 
-        logger.info(f"Got {len(response.recommendations)} recommendations " f"(model: {response.model_used})")
+        logger.info(
+            f"Got {len(response.recommendations)} recommendations "
+            f"(model: {response.model_used})"
+        )
 
         return response
 

@@ -15,7 +15,8 @@ from typing import List, Optional, Set
 
 from omics_oracle_v2.lib.search_engines.citations.config import PubMedConfig
 from omics_oracle_v2.lib.search_engines.citations.models import Publication
-from omics_oracle_v2.lib.search_engines.citations.openalex import OpenAlexClient, OpenAlexConfig
+from omics_oracle_v2.lib.search_engines.citations.openalex import (
+    OpenAlexClient, OpenAlexConfig)
 from omics_oracle_v2.lib.search_engines.citations.pubmed import PubMedClient
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 
@@ -50,7 +51,9 @@ class GEOCitationDiscovery:
     ):
         # Initialize OpenAlex client if not provided
         if openalex_client is None:
-            openalex_config = OpenAlexConfig(email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"), enable=True)
+            openalex_config = OpenAlexConfig(
+                email=os.getenv("NCBI_EMAIL", "sdodl001@odu.edu"), enable=True
+            )
             self.openalex = OpenAlexClient(config=openalex_config)
             logger.info("Initialized OpenAlex client for citation discovery")
         else:
@@ -94,7 +97,9 @@ class GEOCitationDiscovery:
 
         if self.use_strategy_a and original_pmid:
             logger.info(f"Strategy A: Finding papers citing PMID {original_pmid}")
-            citing_via_pmid = self._find_via_citation(pmid=original_pmid, max_results=max_results)
+            citing_via_pmid = self._find_via_citation(
+                pmid=original_pmid, max_results=max_results
+            )
             for paper in citing_via_pmid:
                 all_papers.add(paper)
                 strategy_breakdown["strategy_a"].append(paper.pmid or paper.doi)
@@ -103,7 +108,9 @@ class GEOCitationDiscovery:
         # Strategy B: Papers mentioning GEO ID
         if self.use_strategy_b:
             logger.info(f"Strategy B: Finding papers mentioning {geo_metadata.geo_id}")
-            mentioning_geo = self._find_via_geo_mention(geo_id=geo_metadata.geo_id, max_results=max_results)
+            mentioning_geo = self._find_via_geo_mention(
+                geo_id=geo_metadata.geo_id, max_results=max_results
+            )
             for paper in mentioning_geo:
                 if paper not in all_papers:
                     all_papers.add(paper)
@@ -140,10 +147,14 @@ class GEOCitationDiscovery:
                 logger.warning(f"No DOI found for PMID {pmid} - cannot find citations")
                 return []
 
-            logger.info(f"Found original paper: {original_pub.title[:50]}... DOI: {original_pub.doi}")
+            logger.info(
+                f"Found original paper: {original_pub.title[:50]}... DOI: {original_pub.doi}"
+            )
 
             # Find citing papers using OpenAlex directly
-            citing_papers = self.openalex.get_citing_papers(doi=original_pub.doi, max_results=max_results)
+            citing_papers = self.openalex.get_citing_papers(
+                doi=original_pub.doi, max_results=max_results
+            )
 
             if citing_papers:
                 logger.info(f"✓ Found {len(citing_papers)} citing papers from OpenAlex")
@@ -164,7 +175,9 @@ class GEOCitationDiscovery:
         try:
             query = f"{geo_id}[All Fields]"
             # PubMed client search is synchronous
-            pubmed_results = self.pubmed_client.search(query=query, max_results=max_results)
+            pubmed_results = self.pubmed_client.search(
+                query=query, max_results=max_results
+            )
             papers.extend(pubmed_results)
             logger.info(f"  PubMed: {len(pubmed_results)} papers mentioning {geo_id}")
         except Exception as e:

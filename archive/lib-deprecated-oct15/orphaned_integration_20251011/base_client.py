@@ -134,7 +134,9 @@ class APIClient:
         self._rate_window = [t for t in self._rate_window if t > cutoff]
 
         if len(self._rate_window) >= self._rate_limit:
-            raise Exception("Rate limit exceeded. Please wait before making more requests.")
+            raise Exception(
+                "Rate limit exceeded. Please wait before making more requests."
+            )
 
         self._rate_window.append(now)
 
@@ -203,7 +205,9 @@ class APIClient:
         last_exception = None
         for attempt in range(self.max_retries):
             try:
-                logger.debug(f"{method} {url} (attempt {attempt + 1}/{self.max_retries})")
+                logger.debug(
+                    f"{method} {url} (attempt {attempt + 1}/{self.max_retries})"
+                )
 
                 response = await self._client.request(method, url, **kwargs)
 
@@ -243,9 +247,13 @@ class APIClient:
                     await asyncio.sleep(2**attempt)  # Exponential backoff
 
         # All retries failed
-        raise Exception(f"Request failed after {self.max_retries} attempts: {last_exception}")
+        raise Exception(
+            f"Request failed after {self.max_retries} attempts: {last_exception}"
+        )
 
-    async def get(self, endpoint: str, use_cache: bool = True, **kwargs) -> Dict[str, Any]:
+    async def get(
+        self, endpoint: str, use_cache: bool = True, **kwargs
+    ) -> Dict[str, Any]:
         """Make GET request."""
         return await self._request("GET", endpoint, use_cache=use_cache, **kwargs)
 

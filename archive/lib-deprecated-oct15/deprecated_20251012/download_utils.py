@@ -91,13 +91,17 @@ async def download_file(url: str, timeout: int = 30) -> Optional[bytes]:
 
         connector = aiohttp.TCPConnector(ssl=ssl_context) if ssl_context else None
         async with aiohttp.ClientSession(connector=connector) as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=timeout)) as response:
+            async with session.get(
+                url, timeout=aiohttp.ClientTimeout(total=timeout)
+            ) as response:
                 if response.status == 200:
                     content = await response.read()
                     logger.debug(f"Downloaded {len(content)} bytes from {url}")
                     return content
                 else:
-                    logger.warning(f"Download failed: HTTP {response.status} from {url}")
+                    logger.warning(
+                        f"Download failed: HTTP {response.status} from {url}"
+                    )
                     return None
     except aiohttp.ClientError as e:
         logger.warning(f"Download error from {url}: {e}")
@@ -108,7 +112,11 @@ async def download_file(url: str, timeout: int = 30) -> Optional[bytes]:
 
 
 async def download_and_save_pdf(
-    url: str, publication, source: str, cache: Optional[SmartCache] = None, timeout: int = 30
+    url: str,
+    publication,
+    source: str,
+    cache: Optional[SmartCache] = None,
+    timeout: int = 30,
 ) -> Optional[Path]:
     """
     Download PDF from URL and save to source-specific directory.
@@ -153,9 +161,13 @@ async def download_and_save_pdf(
         cache = SmartCache()
 
     try:
-        saved_path = cache.save_file(content=content, publication=publication, source=source, file_type="pdf")
+        saved_path = cache.save_file(
+            content=content, publication=publication, source=source, file_type="pdf"
+        )
 
-        logger.info(f"✓ Downloaded and saved PDF: {source}/{saved_path.name} ({len(content) // 1024} KB)")
+        logger.info(
+            f"✓ Downloaded and saved PDF: {source}/{saved_path.name} ({len(content) // 1024} KB)"
+        )
         return saved_path
 
     except Exception as e:
@@ -164,7 +176,11 @@ async def download_and_save_pdf(
 
 
 async def download_and_save_xml(
-    url: str, publication, source: str, cache: Optional[SmartCache] = None, timeout: int = 30
+    url: str,
+    publication,
+    source: str,
+    cache: Optional[SmartCache] = None,
+    timeout: int = 30,
 ) -> Optional[Path]:
     """
     Download XML from URL and save to source-specific directory.
@@ -212,7 +228,9 @@ async def download_and_save_xml(
             content=content, publication=publication, source=source, file_type=file_type
         )
 
-        logger.info(f"✓ Downloaded and saved XML: {source}/{saved_path.name} ({len(content) // 1024} KB)")
+        logger.info(
+            f"✓ Downloaded and saved XML: {source}/{saved_path.name} ({len(content) // 1024} KB)"
+        )
         return saved_path
 
     except Exception as e:

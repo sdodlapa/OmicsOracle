@@ -24,7 +24,8 @@ import argparse
 import sys
 from pathlib import Path
 
-from omics_oracle_v2.lib.embeddings.service import EmbeddingConfig, EmbeddingService
+from omics_oracle_v2.lib.embeddings.service import (EmbeddingConfig,
+                                                    EmbeddingService)
 from omics_oracle_v2.lib.vector_db.faiss_db import FAISSVectorDB
 
 
@@ -127,7 +128,9 @@ def display_results(query: str, results: list):
         print()
 
 
-def interactive_mode(vector_db: FAISSVectorDB, embedding_service: EmbeddingService, top_k: int):
+def interactive_mode(
+    vector_db: FAISSVectorDB, embedding_service: EmbeddingService, top_k: int
+):
     """Interactive search mode."""
     print("=" * 80)
     print("Semantic Search - Interactive Mode")
@@ -174,7 +177,9 @@ def main():
     print(f"Loading index from {args.index}...")
     vector_db = FAISSVectorDB()
     vector_db.load(args.index)
-    print(f"[OK] Loaded {vector_db.count()} embeddings (dimension: {vector_db.dimension})")
+    print(
+        f"[OK] Loaded {vector_db.count()} embeddings (dimension: {vector_db.dimension})"
+    )
 
     # Create embedding service
     print("\nConfiguring embedding service...")
@@ -189,7 +194,9 @@ def main():
 
         mock_service = MagicMock()
         mock_service.get_dimension.return_value = vector_db.dimension
-        mock_service.embed_text.side_effect = lambda text: np.random.rand(vector_db.dimension).tolist()
+        mock_service.embed_text.side_effect = lambda text: np.random.rand(
+            vector_db.dimension
+        ).tolist()
         embedding_service = mock_service
     else:
         embedding_config = EmbeddingConfig(api_key=args.api_key, model=args.model)

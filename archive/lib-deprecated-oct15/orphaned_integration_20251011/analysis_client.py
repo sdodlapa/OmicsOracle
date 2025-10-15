@@ -8,16 +8,9 @@ import logging
 from typing import Any, Dict, List
 
 from .base_client import APIClient
-from .models import (
-    AnalysisRequest,
-    AnalysisResponse,
-    CitationMetrics,
-    NetworkGraph,
-    Publication,
-    QARequest,
-    QAResponse,
-    TrendAnalysis,
-)
+from .models import (AnalysisRequest, AnalysisResponse, CitationMetrics,
+                     NetworkGraph, Publication, QARequest, QAResponse,
+                     TrendAnalysis)
 
 logger = logging.getLogger(__name__)
 
@@ -193,7 +186,10 @@ class AnalysisClient(APIClient):
         # Parse response
         trends = TrendAnalysis(**response_data)
 
-        logger.info(f"Trends: {len(trends.trends)} data points, " f"growth={trends.growth_rate:.1f}%")
+        logger.info(
+            f"Trends: {len(trends.trends)} data points, "
+            f"growth={trends.growth_rate:.1f}%"
+        )
 
         return trends
 

@@ -27,13 +27,11 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 from omics_oracle_v2.lib.shared.identifiers import (
-    IdentifierType,
-    UniversalIdentifier,
-    get_identifier_from_filename,
-    resolve_doi_from_filename,
-)
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+    IdentifierType, UniversalIdentifier, get_identifier_from_filename,
+    resolve_doi_from_filename)
 
 
 def test_pmid_publication():
@@ -91,10 +89,14 @@ def test_doi_only_publication():
     assert identifier.id_type == IdentifierType.DOI, "Should use DOI"
     assert identifier.filename.startswith("doi_"), "Should start with doi_"
     assert identifier.filename.endswith(".pdf"), "Should end with .pdf"
-    assert identifier.key == "doi:10.1371/journal.pone.0123456", "Key should have original DOI"
+    assert (
+        identifier.key == "doi:10.1371/journal.pone.0123456"
+    ), "Key should have original DOI"
     # Verify DOI slashes and dots are sanitized (both become _)
     assert "/" not in identifier.filename, "No slashes in filename"
-    assert "." not in identifier.filename.replace(".pdf", ""), "No dots in filename (except .pdf)"
+    assert "." not in identifier.filename.replace(
+        ".pdf", ""
+    ), "No dots in filename (except .pdf)"
 
     print("✅ Test 2 PASSED")
     return True
@@ -202,7 +204,9 @@ def test_hash_fallback():
     )
     identifier2 = UniversalIdentifier(pub2)
 
-    assert identifier.filename == identifier2.filename, "Same title should give same hash"
+    assert (
+        identifier.filename == identifier2.filename
+    ), "Same title should give same hash"
 
     print("✅ Test 5 PASSED")
     return True
@@ -277,35 +281,59 @@ def test_all_source_compatibility():
     print("=" * 80)
 
     sources_tested = {
-        "PubMed": Publication(pmid="12345", title="PubMed paper", source=PublicationSource.PUBMED),
-        "PMC": Publication(pmcid="PMC12345", title="PMC paper", source=PublicationSource.PMC),
-        "Unpaywall": Publication(
-            doi="10.1234/unpaywall", title="Unpaywall paper", source=PublicationSource.PUBMED
+        "PubMed": Publication(
+            pmid="12345", title="PubMed paper", source=PublicationSource.PUBMED
         ),
-        "CORE": Publication(doi="10.5678/core", title="CORE paper", source=PublicationSource.PUBMED),
+        "PMC": Publication(
+            pmcid="PMC12345", title="PMC paper", source=PublicationSource.PMC
+        ),
+        "Unpaywall": Publication(
+            doi="10.1234/unpaywall",
+            title="Unpaywall paper",
+            source=PublicationSource.PUBMED,
+        ),
+        "CORE": Publication(
+            doi="10.5678/core", title="CORE paper", source=PublicationSource.PUBMED
+        ),
         "arXiv": Publication(
-            metadata={"arxiv_id": "2401.12345"}, title="arXiv preprint", source=PublicationSource.PUBMED
+            metadata={"arxiv_id": "2401.12345"},
+            title="arXiv preprint",
+            source=PublicationSource.PUBMED,
         ),
         "bioRxiv": Publication(
-            doi="10.1101/2024.01.01.123456", title="bioRxiv preprint", source=PublicationSource.PUBMED
+            doi="10.1101/2024.01.01.123456",
+            title="bioRxiv preprint",
+            source=PublicationSource.PUBMED,
         ),
         "Crossref": Publication(
-            doi="10.1111/crossref", title="Crossref paper", source=PublicationSource.PUBMED
+            doi="10.1111/crossref",
+            title="Crossref paper",
+            source=PublicationSource.PUBMED,
         ),
-        "SciHub": Publication(doi="10.9999/scihub", title="SciHub paper", source=PublicationSource.PUBMED),
-        "LibGen": Publication(doi="10.8888/libgen", title="LibGen paper", source=PublicationSource.PUBMED),
+        "SciHub": Publication(
+            doi="10.9999/scihub", title="SciHub paper", source=PublicationSource.PUBMED
+        ),
+        "LibGen": Publication(
+            doi="10.8888/libgen", title="LibGen paper", source=PublicationSource.PUBMED
+        ),
         "Institutional": Publication(
-            doi="10.7777/inst", title="Institutional paper", source=PublicationSource.PUBMED
+            doi="10.7777/inst",
+            title="Institutional paper",
+            source=PublicationSource.PUBMED,
         ),
         "OpenAlex": Publication(
-            metadata={"openalex_id": "W1234567890"}, title="OpenAlex paper", source=PublicationSource.PUBMED
+            metadata={"openalex_id": "W1234567890"},
+            title="OpenAlex paper",
+            source=PublicationSource.PUBMED,
         ),
     }
 
     print(f"\nTesting {len(sources_tested)} sources:")
     for source_name, pub in sources_tested.items():
         identifier = UniversalIdentifier(pub)
-        print(f"  ✓ {source_name:15} → {identifier.filename:35} [{identifier.id_type.value}]")
+        print(
+            f"  ✓ {source_name:15} → {identifier.filename:35} [{identifier.id_type.value}]"
+        )
 
     print(f"\n✅ All {len(sources_tested)} sources can generate valid filenames!")
     print("✅ Test 8 PASSED")

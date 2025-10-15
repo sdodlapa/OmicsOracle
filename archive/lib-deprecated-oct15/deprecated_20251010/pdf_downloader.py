@@ -32,10 +32,14 @@ class PDFDownloader:
         self.institutional_manager = institutional_manager
         self.session = requests.Session()
         self.session.headers.update(
-            {"User-Agent": "OmicsOracle/2.0 (https://github.com/sdodlapati3/OmicsOracle)"}
+            {
+                "User-Agent": "OmicsOracle/2.0 (https://github.com/sdodlapati3/OmicsOracle)"
+            }
         )
 
-    def download(self, pdf_url: str, identifier: str, source: str = "unknown") -> Optional[Path]:
+    def download(
+        self, pdf_url: str, identifier: str, source: str = "unknown"
+    ) -> Optional[Path]:
         """Download a single PDF.
 
         Args:
@@ -70,7 +74,9 @@ class PDFDownloader:
             logger.info(f"Downloading PDF from {pdf_url[:100]}...")
 
             # Special handling for PMC
-            headers = {"User-Agent": "OmicsOracle/2.0 (https://github.com/sdodlapati3/OmicsOracle)"}
+            headers = {
+                "User-Agent": "OmicsOracle/2.0 (https://github.com/sdodlapati3/OmicsOracle)"
+            }
             if "ncbi.nlm.nih.gov/pmc" in pdf_url:
                 # PMC requires specific headers
                 headers["Accept"] = "application/pdf,*/*"
@@ -78,15 +84,25 @@ class PDFDownloader:
             for attempt in range(3):  # 3 retries
                 try:
                     response = self.session.get(
-                        pdf_url, timeout=30, stream=True, allow_redirects=True, headers=headers
+                        pdf_url,
+                        timeout=30,
+                        stream=True,
+                        allow_redirects=True,
+                        headers=headers,
                     )
                     response.raise_for_status()
 
                     # Verify it's actually a PDF
                     content_type = response.headers.get("Content-Type", "").lower()
-                    if "pdf" not in content_type and not pdf_url.lower().endswith(".pdf"):
+                    if "pdf" not in content_type and not pdf_url.lower().endswith(
+                        ".pdf"
+                    ):
                         # Check first few bytes for PDF magic number
-                        first_bytes = response.content[:4] if hasattr(response, "content") else b""
+                        first_bytes = (
+                            response.content[:4]
+                            if hasattr(response, "content")
+                            else b""
+                        )
                         if first_bytes != b"%PDF":
                             logger.warning(f"Not a PDF (Content-Type: {content_type})")
                             return None
@@ -103,7 +119,9 @@ class PDFDownloader:
 
                 except requests.exceptions.RequestException as e:
                     if attempt < 2:
-                        logger.warning(f"Download attempt {attempt + 1} failed: {e}, retrying...")
+                        logger.warning(
+                            f"Download attempt {attempt + 1} failed: {e}, retrying..."
+                        )
                         continue
                     else:
                         raise
@@ -115,7 +133,9 @@ class PDFDownloader:
                 pdf_path.unlink()
             return None
 
-    def download_batch(self, publications: List, max_workers: int = 5) -> Dict[str, Path]:
+    def download_batch(
+        self, publications: List, max_workers: int = 5
+    ) -> Dict[str, Path]:
         """Download multiple PDFs in parallel.
 
         Args:
@@ -128,7 +148,9 @@ class PDFDownloader:
         results = {}
         total = len(publications)
 
-        logger.info(f"Starting batch download of {total} PDFs with {max_workers} workers...")
+        logger.info(
+            f"Starting batch download of {total} PDFs with {max_workers} workers..."
+        )
 
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             future_to_pub = {}
@@ -148,7 +170,11 @@ class PDFDownloader:
                     # Determine source
                     source = "unknown"
                     if hasattr(pub, "source"):
-                        source = pub.source.value if hasattr(pub.source, "value") else str(pub.source)
+                        source = (
+                            pub.source.value
+                            if hasattr(pub.source, "value")
+                            else str(pub.source)
+                        )
                     elif pub.pmid:
                         source = "pubmed"
                     elif pub.pmcid:
@@ -173,14 +199,22 @@ class PDFDownloader:
                             pub.metadata = {}
                         pub.metadata["pdf_downloaded"] = True
                         pub.metadata["pdf_path"] = str(pdf_path)
-                        logger.info(f"[{completed}/{total}] Successfully downloaded: {pub.title[:50]}...")
+                        logger.info(
+                            f"[{completed}/{total}] Successfully downloaded: {pub.title[:50]}..."
+                        )
                     else:
-                        logger.warning(f"[{completed}/{total}] No PDF available: {pub.title[:50]}...")
+                        logger.warning(
+                            f"[{completed}/{total}] No PDF available: {pub.title[:50]}..."
+                        )
                 except Exception as e:
-                    logger.error(f"[{completed}/{total}] Download failed for {identifier}: {e}")
+                    logger.error(
+                        f"[{completed}/{total}] Download failed for {identifier}: {e}"
+                    )
 
         success_count = len(results)
-        logger.info(f"Batch download complete: {success_count}/{total} PDFs downloaded successfully")
+        logger.info(
+            f"Batch download complete: {success_count}/{total} PDFs downloaded successfully"
+        )
         return results
 
     def get_download_stats(self) -> Dict[str, int]:

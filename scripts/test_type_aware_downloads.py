@@ -18,10 +18,13 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dotenv import load_dotenv
 
-from omics_oracle_v2.lib.pipelines.pdf_download.download_manager import PDFDownloadManager
-from omics_oracle_v2.lib.pipelines.url_collection import FullTextSource, SourceURL
+from omics_oracle_v2.lib.pipelines.pdf_download.download_manager import \
+    PDFDownloadManager
+from omics_oracle_v2.lib.pipelines.url_collection import (FullTextSource,
+                                                          SourceURL)
 from omics_oracle_v2.lib.pipelines.url_collection.url_validator import URLType
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 # Load environment variables
 load_dotenv()
@@ -70,7 +73,9 @@ def test_url_sorting():
 
     print("\nOriginal URLs (unsorted):")
     for i, url in enumerate(urls, 1):
-        print(f"  {i}. {url.source.value:15s} | Type: {url.url_type.value:15s} | Priority: {url.priority}")
+        print(
+            f"  {i}. {url.source.value:15s} | Type: {url.url_type.value:15s} | Priority: {url.priority}"
+        )
 
     # Sort using download manager
     manager = PDFDownloadManager()
@@ -78,7 +83,9 @@ def test_url_sorting():
 
     print("\nSorted URLs (type-aware):")
     for i, url in enumerate(sorted_urls, 1):
-        print(f"  {i}. {url.source.value:15s} | Type: {url.url_type.value:15s} | Priority: {url.priority}")
+        print(
+            f"  {i}. {url.source.value:15s} | Type: {url.url_type.value:15s} | Priority: {url.priority}"
+        )
 
     # Verify sorting
     print("\nValidation:")

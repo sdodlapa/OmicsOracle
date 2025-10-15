@@ -3,7 +3,8 @@ Response adapter - maps backend responses to integration layer models
 """
 from typing import Any, Dict
 
-from omics_oracle_v2.integration.models import Publication, SearchMetadata, SearchResponse
+from omics_oracle_v2.integration.models import (Publication, SearchMetadata,
+                                                SearchResponse)
 
 
 def adapt_search_response(backend_response: Dict[str, Any]) -> SearchResponse:

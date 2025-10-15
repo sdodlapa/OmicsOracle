@@ -17,10 +17,12 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from dotenv import load_dotenv
 
-from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig
+from omics_oracle_v2.lib.pipelines.url_collection import (
+    FullTextManager, FullTextManagerConfig)
 from omics_oracle_v2.lib.pipelines.url_collection.url_validator import URLType
 from omics_oracle_v2.lib.registry.geo_registry import GEORegistry
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 # Load environment variables
 load_dotenv()
@@ -103,7 +105,9 @@ async def test_url_type_storage():
         # Retrieve and verify
         print("\nRetrieving from registry...")
         conn = registry.conn
-        cursor = conn.execute("SELECT urls FROM publications WHERE pmid = ?", (publication.pmid,))
+        cursor = conn.execute(
+            "SELECT urls FROM publications WHERE pmid = ?", (publication.pmid,)
+        )
         row = cursor.fetchone()
 
         if not row:

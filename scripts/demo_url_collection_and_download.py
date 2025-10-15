@@ -36,13 +36,19 @@ load_dotenv()
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from omics_oracle_v2.lib.pipelines.pdf_download.download_manager import DownloadResult, PDFDownloadManager
-from omics_oracle_v2.lib.pipelines.url_collection import FullTextManager, FullTextManagerConfig, SourceURL
-from omics_oracle_v2.lib.pipelines.url_collection.url_validator import URLType, URLValidator
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.pipelines.pdf_download.download_manager import (
+    DownloadResult, PDFDownloadManager)
+from omics_oracle_v2.lib.pipelines.url_collection import (
+    FullTextManager, FullTextManagerConfig, SourceURL)
+from omics_oracle_v2.lib.pipelines.url_collection.url_validator import (
+    URLType, URLValidator)
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 # Setup logging
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
 logger = logging.getLogger(__name__)
 
 
@@ -126,7 +132,9 @@ class URLCollectionDemo:
 
         try:
             print(f"\n✓ Initialized FullTextManager")
-            print(f"  Enabled sources: 8/11 (institutional + scihub/libgen + openalex disabled)")
+            print(
+                f"  Enabled sources: 8/11 (institutional + scihub/libgen + openalex disabled)"
+            )
             print(
                 f"  CORE API Key: {config.core_api_key[:20]}... ({'SET' if config.core_api_key else 'NOT SET'})"
             )
@@ -135,7 +143,9 @@ class URLCollectionDemo:
             all_results = []
 
             for i, pub in enumerate(self.test_publications, 1):
-                print(f"\n[{i}/{len(self.test_publications)}] Testing: {pub.title[:60]}...")
+                print(
+                    f"\n[{i}/{len(self.test_publications)}] Testing: {pub.title[:60]}..."
+                )
                 print(f"  DOI: {pub.doi or 'None'}")
                 print(f"  PMID: {pub.pmid or 'None'}")
 
@@ -148,7 +158,9 @@ class URLCollectionDemo:
                     # Show URL type distribution
                     type_counts = {}
                     for url in result.all_urls:
-                        type_counts[url.url_type.value] = type_counts.get(url.url_type.value, 0) + 1
+                        type_counts[url.url_type.value] = (
+                            type_counts.get(url.url_type.value, 0) + 1
+                        )
 
                     print(f"  📊 URL Types:")
                     for url_type, count in sorted(type_counts.items()):
@@ -176,7 +188,9 @@ class URLCollectionDemo:
             total_urls = sum(len(r.all_urls) for _, r in all_results)
 
             print(f"Publications tested: {total_pubs}")
-            print(f"Publications with URLs: {successful_pubs} ({successful_pubs/total_pubs*100:.1f}%)")
+            print(
+                f"Publications with URLs: {successful_pubs} ({successful_pubs/total_pubs*100:.1f}%)"
+            )
             print(f"Total URLs collected: {total_urls}")
             print(f"Avg URLs per publication: {total_urls/successful_pubs:.1f}")
 
@@ -185,8 +199,12 @@ class URLCollectionDemo:
             all_source_counts = {}
             for _, result in all_results:
                 for url in result.all_urls:
-                    all_type_counts[url.url_type.value] = all_type_counts.get(url.url_type.value, 0) + 1
-                    all_source_counts[url.source.value] = all_source_counts.get(url.source.value, 0) + 1
+                    all_type_counts[url.url_type.value] = (
+                        all_type_counts.get(url.url_type.value, 0) + 1
+                    )
+                    all_source_counts[url.source.value] = (
+                        all_source_counts.get(url.source.value, 0) + 1
+                    )
 
             print(f"\n📊 Overall URL Type Distribution:")
             for url_type, count in sorted(all_type_counts.items(), key=lambda x: -x[1]):
@@ -238,7 +256,9 @@ class URLCollectionDemo:
             print(f"  Available URLs: {len(url_result.all_urls)}")
 
             # Try downloading with fallback
-            result = await pdf_downloader.download_with_fallback(pub, url_result.all_urls, self.output_dir)
+            result = await pdf_downloader.download_with_fallback(
+                pub, url_result.all_urls, self.output_dir
+            )
 
             if result.success and result.pdf_path:
                 file_size_mb = result.file_size / (1024 * 1024)
@@ -272,8 +292,12 @@ class URLCollectionDemo:
         failed_downloads = total_downloads - successful_downloads
 
         print(f"Total downloads attempted: {total_downloads}")
-        print(f"Successful: {successful_downloads} ({successful_downloads/total_downloads*100:.1f}%)")
-        print(f"Failed: {failed_downloads} ({failed_downloads/total_downloads*100:.1f}%)")
+        print(
+            f"Successful: {successful_downloads} ({successful_downloads/total_downloads*100:.1f}%)"
+        )
+        print(
+            f"Failed: {failed_downloads} ({failed_downloads/total_downloads*100:.1f}%)"
+        )
 
         # Success rate by source
         source_stats = {}
@@ -291,10 +315,14 @@ class URLCollectionDemo:
             for source, stats in sorted(source_stats.items()):
                 total = stats["success"] + stats["fail"]
                 success_rate = stats["success"] / total * 100 if total > 0 else 0
-                print(f"  {source:15} : {stats['success']}/{total} ({success_rate:.0f}%)")
+                print(
+                    f"  {source:15} : {stats['success']}/{total} ({success_rate:.0f}%)"
+                )
 
         # File size statistics
-        sizes = [r.file_size / (1024 * 1024) for _, _, r in download_results if r.success]
+        sizes = [
+            r.file_size / (1024 * 1024) for _, _, r in download_results if r.success
+        ]
         if sizes:
             print(f"\n📊 File Size Statistics:")
             print(f"  Average: {sum(sizes)/len(sizes):.2f} MB")
@@ -364,7 +392,8 @@ class URLCollectionDemo:
                         print(f"  ✗ Error reading file: {e}")
 
                 # Check 4: Correct filename (matches UniversalIdentifier)
-                from omics_oracle_v2.lib.shared.identifiers import UniversalIdentifier
+                from omics_oracle_v2.lib.shared.identifiers import \
+                    UniversalIdentifier
 
                 identifier = UniversalIdentifier(pub)
                 expected_filename = identifier.filename
@@ -453,7 +482,9 @@ async def main():
         successful_validations = sum(1 for _, _, passed in validation_results if passed)
         total_validations = len(validation_results)
 
-        print(f"\n✅ Successfully validated: {successful_validations}/{total_validations}")
+        print(
+            f"\n✅ Successfully validated: {successful_validations}/{total_validations}"
+        )
 
         if successful_validations == total_validations:
             print("\n🎉 ALL TESTS PASSED!")
