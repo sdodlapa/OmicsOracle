@@ -226,6 +226,124 @@
             display: none;
         }
 
+        /* RAG Phase 4: Query Context Display */
+        .query-context-panel {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            border: 1px solid #667eea30;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .context-section {
+            margin-bottom: 12px;
+        }
+
+        .context-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .context-label {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #667eea;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .entity-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .entity-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s;
+            cursor: help;
+        }
+
+        .entity-chip:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .entity-chip.gene {
+            background: #e6f9f0;
+            color: #22543d;
+            border: 1px solid #38a169;
+        }
+
+        .entity-chip.disease {
+            background: #fffbeb;
+            color: #744210;
+            border: 1px solid #ecc94b;
+        }
+
+        .entity-chip.organism {
+            background: #e6f2ff;
+            color: #2c5282;
+            border: 1px solid #4299e1;
+        }
+
+        .entity-chip.protein {
+            background: #fed7e2;
+            color: #97266d;
+            border: 1px solid #d53f8c;
+        }
+
+        .entity-chip.general {
+            background: #e2e8f0;
+            color: #4a5568;
+            border: 1px solid #a0aec0;
+        }
+
+        .entity-icon {
+            font-size: 14px;
+        }
+
+        .expanded-terms {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            font-size: 12px;
+        }
+
+        .expanded-term {
+            padding: 4px 10px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        .query-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 12px;
+            color: #718096;
+        }
+
+        .query-meta-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .query-meta-item strong {
+            color: #4a5568;
+        }
+
         /* Search Logs Panel */
         .search-logs-panel {
             background: #f8f9fa;
@@ -320,6 +438,147 @@
             margin-bottom: 12px;
             gap: 8px;
             flex-wrap: wrap;
+            position: relative;
+        }
+
+        /* RAG Phase 4: Match Explanation Badge */
+        .match-explanation-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #718096;
+            cursor: help;
+            transition: all 0.2s;
+        }
+
+        .match-explanation-badge:hover {
+            background: #edf2f7;
+            border-color: #cbd5e0;
+        }
+
+        .match-explanation-badge .score {
+            color: #667eea;
+            font-weight: 700;
+        }
+
+        /* Tooltip for match explanations */
+        .match-tooltip {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 8px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            z-index: 1000;
+            min-width: 280px;
+            max-width: 400px;
+            display: none;
+        }
+
+        .match-tooltip.show {
+            display: block;
+            animation: tooltipFadeIn 0.2s ease-out;
+        }
+
+        @keyframes tooltipFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-5px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .match-tooltip-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .match-tooltip-section {
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #f7fafc;
+        }
+
+        .match-tooltip-section:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .match-tooltip-label {
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #a0aec0;
+            margin-bottom: 4px;
+        }
+
+        .matched-term {
+            display: inline-block;
+            padding: 3px 8px;
+            background: #e6f9f0;
+            border: 1px solid #38a169;
+            color: #22543d;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 500;
+            margin-right: 4px;
+            margin-bottom: 4px;
+        }
+
+        .match-type-badge {
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .match-type-exact {
+            background: #e6f9f0;
+            color: #22543d;
+        }
+
+        .match-type-semantic {
+            background: #e6f2ff;
+            color: #2c5282;
+        }
+
+        .match-type-synonym {
+            background: #fffbeb;
+            color: #744210;
+        }
+
+        .relevance-bar {
+            height: 6px;
+            background: #f7fafc;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 4px;
+        }
+
+        .relevance-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
         }
 
         .dataset-id {
@@ -1404,6 +1663,101 @@ ${error.stack || 'Not available'}`;
             toggle.classList.toggle('collapsed');
         }
 
+        // RAG Phase 4: Build and display query context panel
+        function displayQueryContext() {
+            if (!lastQueryProcessing || Object.keys(lastQueryProcessing.extracted_entities || {}).length === 0) {
+                // No query processing context to display
+                return '';
+            }
+
+            const entities = lastQueryProcessing.extracted_entities || {};
+            const expandedTerms = lastQueryProcessing.expanded_terms || [];
+            const queryType = lastQueryProcessing.query_type || 'unknown';
+            const searchIntent = lastQueryProcessing.search_intent;
+
+            // Entity type to icon and color mapping
+            const entityConfig = {
+                gene: { icon: '🧬', label: 'Gene' },
+                disease: { icon: '🦠', label: 'Disease' },
+                organism: { icon: '🔬', label: 'Organism' },
+                protein: { icon: '⚗️', label: 'Protein' },
+                general: { icon: '🏷️', label: 'Term' },
+                cell_line: { icon: '🧪', label: 'Cell Line' },
+                cell_type: { icon: '🔬', label: 'Cell Type' },
+                chemical: { icon: '⚗️', label: 'Chemical' }
+            };
+
+            // Build entity chips HTML
+            let entityChipsHTML = '';
+            if (Object.keys(entities).length > 0) {
+                const chips = [];
+                for (const [entityType, entityList] of Object.entries(entities)) {
+                    const config = entityConfig[entityType] || { icon: '🏷️', label: entityType };
+                    entityList.forEach(entity => {
+                        chips.push(`
+                            <div class="entity-chip ${entityType}" title="${config.label}: ${entity}">
+                                <span class="entity-icon">${config.icon}</span>
+                                <span>${entity}</span>
+                            </div>
+                        `);
+                    });
+                }
+                entityChipsHTML = `
+                    <div class="context-section">
+                        <span class="context-label">Extracted Entities</span>
+                        <div class="entity-chips">${chips.join('')}</div>
+                    </div>
+                `;
+            }
+
+            // Build expanded terms HTML
+            let expandedTermsHTML = '';
+            if (expandedTerms.length > 0) {
+                const terms = expandedTerms.slice(0, 8).map(term =>
+                    `<span class="expanded-term" title="Synonym expansion via SapBERT">${term}</span>`
+                ).join('');
+                expandedTermsHTML = `
+                    <div class="context-section">
+                        <span class="context-label">Expanded Synonyms (SapBERT)</span>
+                        <div class="expanded-terms">${terms}</div>
+                    </div>
+                `;
+            }
+
+            // Build query meta HTML
+            let metaItems = [];
+            if (queryType && queryType !== 'unknown') {
+                metaItems.push(`
+                    <span class="query-meta-item">
+                        <span>Query Type:</span>
+                        <strong>${queryType}</strong>
+                    </span>
+                `);
+            }
+            if (searchIntent) {
+                metaItems.push(`
+                    <span class="query-meta-item">
+                        <span>Intent:</span>
+                        <strong>${searchIntent}</strong>
+                    </span>
+                `);
+            }
+            const queryMetaHTML = metaItems.length > 0 ? `
+                <div class="context-section">
+                    <div class="query-meta">${metaItems.join('')}</div>
+                </div>
+            ` : '';
+
+            // Return complete panel HTML
+            return `
+                <div class="query-context-panel">
+                    ${entityChipsHTML}
+                    ${expandedTermsHTML}
+                    ${queryMetaHTML}
+                </div>
+            `;
+        }
+
         // Display search results
         function displayResults(results) {
             const container = document.getElementById('results-container');
@@ -1423,7 +1777,10 @@ ${error.stack || 'Not available'}`;
 
             countElement.textContent = `${results.length} dataset${results.length !== 1 ? 's' : ''} found`;
 
-            container.innerHTML = results.map((dataset, index) => {
+            // RAG Phase 4: Prepend query context panel
+            const queryContextHTML = displayQueryContext();
+
+            container.innerHTML = queryContextHTML + results.map((dataset, index) => {
                 // Build full-text status indicator
                 let fulltextStatus = '';
                 if (dataset.fulltext_count > 0) {
@@ -1529,18 +1886,60 @@ ${error.stack || 'Not available'}`;
                     `;
                 }
 
+                // RAG Phase 4: Build match explanation badge
+                const relevanceScore = dataset.relevance_score || 0;
+                const matchReasons = dataset.match_reasons || [];
+                const matchExplanationBadge = matchReasons.length > 0 ? `
+                    <div class="match-explanation-badge"
+                         onmouseenter="showMatchTooltip(event, ${index})"
+                         onmouseleave="hideMatchTooltip(${index})">
+                        <span>Match:</span>
+                        <span class="score">${(relevanceScore * 100).toFixed(0)}%</span>
+                        <span>ⓘ</span>
+                    </div>
+                ` : '';
+
                 return `
                     <div class="dataset-card" id="card-${index}">
                         <div class="dataset-header">
-                            <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=${dataset.geo_id}"
-                               target="_blank"
-                               class="dataset-id-link"
-                               title="View on NCBI GEO (opens in new window)"
-                               onclick="event.stopPropagation()">
-                                ${dataset.geo_id || 'Unknown'}
-                                <span class="external-link-icon">🔗</span>
-                            </a>
-                            ${actionButtons}
+                            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                <a href="https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=${dataset.geo_id}"
+                                   target="_blank"
+                                   class="dataset-id-link"
+                                   title="View on NCBI GEO (opens in new window)"
+                                   onclick="event.stopPropagation()">
+                                    ${dataset.geo_id || 'Unknown'}
+                                    <span class="external-link-icon">🔗</span>
+                                </a>
+                                ${matchExplanationBadge}
+                            </div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                ${actionButtons}
+                            </div>
+                            <!-- Match Tooltip (hidden by default) -->
+                            <div class="match-tooltip" id="match-tooltip-${index}">
+                                <div class="match-tooltip-title">
+                                    <span>🎯</span>
+                                    <span>Why this dataset matched</span>
+                                </div>
+                                <div class="match-tooltip-section">
+                                    <div class="match-tooltip-label">Matched Terms</div>
+                                    ${matchReasons.map(term => `<span class="matched-term">${term}</span>`).join('')}
+                                </div>
+                                <div class="match-tooltip-section">
+                                    <div class="match-tooltip-label">Match Type</div>
+                                    <span class="match-type-badge match-type-semantic">Semantic</span>
+                                </div>
+                                <div class="match-tooltip-section">
+                                    <div class="match-tooltip-label">Relevance Score</div>
+                                    <div class="relevance-bar">
+                                        <div class="relevance-fill" style="width: ${relevanceScore * 100}%"></div>
+                                    </div>
+                                    <div style="margin-top: 4px; font-size: 12px; color: #718096;">
+                                        ${(relevanceScore * 100).toFixed(0)}% match confidence
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="dataset-title">${dataset.title || 'No description available'}</div>
                         <div class="dataset-summary">${dataset.summary || dataset.description || 'No summary available'}</div>
@@ -1571,6 +1970,22 @@ ${error.stack || 'Not available'}`;
             if (score >= 0.8) return 'high';
             if (score >= 0.6) return 'medium';
             return 'low';
+        }
+
+        // RAG Phase 4: Show match explanation tooltip
+        function showMatchTooltip(event, index) {
+            const tooltip = document.getElementById(`match-tooltip-${index}`);
+            if (tooltip) {
+                tooltip.classList.add('show');
+            }
+        }
+
+        // RAG Phase 4: Hide match explanation tooltip
+        function hideMatchTooltip(index) {
+            const tooltip = document.getElementById(`match-tooltip-${index}`);
+            if (tooltip) {
+                tooltip.classList.remove('show');
+            }
         }
 
         // Select dataset for analysis
