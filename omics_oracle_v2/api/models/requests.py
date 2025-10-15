@@ -8,7 +8,7 @@ from typing import Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from omics_oracle_v2.agents.models.report import ReportFormat, ReportType
+from omics_oracle_v2.api.models.agent_schemas import ReportFormat, ReportType
 
 
 class QueryRequest(BaseModel):

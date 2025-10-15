@@ -18,7 +18,7 @@ from typing import Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from omics_oracle_v2.agents.models.search import RankedDataset
+from omics_oracle_v2.api.models.agent_schemas import RankedDataset
 from omics_oracle_v2.api.models.requests import SearchRequest
 from omics_oracle_v2.api.models.responses import (DatasetResponse,
                                                   PublicationResponse,
@@ -28,6 +28,7 @@ from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import \
 from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.search_orchestration import (OrchestratorConfig,
                                                       SearchOrchestrator)
+
 # TODO: DatabaseQueries deleted - use UnifiedDatabase directly if needed
 # from omics_oracle_v2.lib.pipelines.storage.queries import DatabaseQueries
 
@@ -263,7 +264,9 @@ async def execute_search(
         try:
             # # Initialize DatabaseQueries with production database
             # db_queries = DatabaseQueries(db_path="data/database/search_data.db")
-            search_logs.append("[DATABASE] Skipping database metrics (DatabaseQueries removed)...")
+            search_logs.append(
+                "[DATABASE] Skipping database metrics (DatabaseQueries removed)..."
+            )
 
             # Collect database metrics for all datasets
             db_metrics_map = {}
@@ -502,9 +505,9 @@ async def enrich_fulltext(
     from omics_oracle_v2.lib.pipelines.citation_discovery.clients.pubmed import \
         PubMedClient
     from omics_oracle_v2.lib.pipelines.pdf_download import PDFDownloadManager
+    from omics_oracle_v2.lib.pipelines.storage import get_registry
     from omics_oracle_v2.lib.pipelines.url_collection import (
         FullTextManager, FullTextManagerConfig)
-    from omics_oracle_v2.lib.pipelines.storage import get_registry
 
     start_time = time.time()
 

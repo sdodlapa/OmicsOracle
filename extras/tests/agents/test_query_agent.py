@@ -22,7 +22,9 @@ class TestQueryInput:
 
     def test_input_with_custom_params(self):
         """Test query input with custom parameters."""
-        query_input = QueryInput(query="Test query", max_entities=50, include_synonyms=False)
+        query_input = QueryInput(
+            query="Test query", max_entities=50, include_synonyms=False
+        )
 
         assert query_input.query == "Test query"
         assert query_input.max_entities == 50
@@ -103,7 +105,9 @@ class TestQueryAgent:
 
     def test_query_with_biomedical_entities(self, agent):
         """Test query with clear biomedical entities."""
-        query_input = QueryInput(query="Find datasets about TP53 mutations in breast cancer")
+        query_input = QueryInput(
+            query="Find datasets about TP53 mutations in breast cancer"
+        )
 
         result = agent.execute(query_input)
 

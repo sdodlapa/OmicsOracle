@@ -4,8 +4,10 @@ import pytest
 from pydantic import BaseModel
 
 from omics_oracle_v2.agents.base import Agent, AgentResult, AgentState
-from omics_oracle_v2.agents.context import AgentContext, ExecutionContext, MessageType
-from omics_oracle_v2.agents.exceptions import AgentStateError, AgentValidationError
+from omics_oracle_v2.agents.context import (AgentContext, ExecutionContext,
+                                            MessageType)
+from omics_oracle_v2.agents.exceptions import (AgentStateError,
+                                               AgentValidationError)
 from omics_oracle_v2.core.config import Settings
 
 
@@ -270,7 +272,9 @@ class TestAgentExecution:
         settings = Settings()
         agent = SuccessfulAgent(settings)
 
-        execution_context = ExecutionContext(execution_id="test-123", workflow_name="test-workflow")
+        execution_context = ExecutionContext(
+            execution_id="test-123", workflow_name="test-workflow"
+        )
 
         input_data = TestInput(value="hello", count=2)
         result = agent.execute(input_data, execution_context=execution_context)
@@ -361,7 +365,9 @@ class TestExecutionContext:
 
     def test_execution_context_creation(self):
         """Test creating execution context."""
-        context = ExecutionContext(execution_id="exec-123", workflow_name="test-workflow")
+        context = ExecutionContext(
+            execution_id="exec-123", workflow_name="test-workflow"
+        )
 
         assert context.execution_id == "exec-123"
         assert context.workflow_name == "test-workflow"
@@ -374,7 +380,9 @@ class TestExecutionContext:
 
     def test_get_or_create_agent_context(self):
         """Test getting or creating agent context."""
-        context = ExecutionContext(execution_id="exec-123", workflow_name="test-workflow")
+        context = ExecutionContext(
+            execution_id="exec-123", workflow_name="test-workflow"
+        )
 
         # Create new context
         agent_ctx1 = context.get_or_create_agent_context("Agent1")
@@ -387,7 +395,9 @@ class TestExecutionContext:
 
     def test_global_state(self):
         """Test global state management."""
-        context = ExecutionContext(execution_id="exec-123", workflow_name="test-workflow")
+        context = ExecutionContext(
+            execution_id="exec-123", workflow_name="test-workflow"
+        )
 
         context.set_global_state("query", "test query")
         context.set_global_state("max_results", 100)
@@ -401,7 +411,9 @@ class TestExecutionContext:
         """Test finishing workflow execution."""
         import time
 
-        context = ExecutionContext(execution_id="exec-123", workflow_name="test-workflow")
+        context = ExecutionContext(
+            execution_id="exec-123", workflow_name="test-workflow"
+        )
 
         # Create some agent contexts
         context.get_or_create_agent_context("Agent1")
@@ -421,7 +433,9 @@ class TestExecutionContext:
 
     def test_finish_workflow_with_error(self):
         """Test finishing workflow with error."""
-        context = ExecutionContext(execution_id="exec-123", workflow_name="test-workflow")
+        context = ExecutionContext(
+            execution_id="exec-123", workflow_name="test-workflow"
+        )
 
         context.finish(success=False, error="Workflow failed")
 

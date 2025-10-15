@@ -4,7 +4,9 @@ import pytest
 
 from omics_oracle_v2.agents import Orchestrator
 from omics_oracle_v2.agents.base import AgentState
-from omics_oracle_v2.agents.models.orchestrator import OrchestratorInput, WorkflowStage, WorkflowType
+from omics_oracle_v2.agents.models.orchestrator import (OrchestratorInput,
+                                                        WorkflowStage,
+                                                        WorkflowType)
 from omics_oracle_v2.core.config import Settings
 
 

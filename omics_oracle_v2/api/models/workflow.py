@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
-from omics_oracle_v2.agents.models.orchestrator import WorkflowType
+from omics_oracle_v2.api.models.agent_schemas import WorkflowType
 
 
 class WorkflowRequest(BaseModel):
@@ -98,11 +98,17 @@ class WorkflowResponse(BaseModel):
 
     # Summary statistics
     total_datasets_found: int = Field(default=0, description="Total datasets found")
-    total_datasets_analyzed: int = Field(default=0, description="Total datasets analyzed")
-    high_quality_datasets: int = Field(default=0, description="Number of high-quality datasets")
+    total_datasets_analyzed: int = Field(
+        default=0, description="Total datasets analyzed"
+    )
+    high_quality_datasets: int = Field(
+        default=0, description="Number of high-quality datasets"
+    )
 
     # Error information
-    error_message: Optional[str] = Field(None, description="Error message if workflow failed")
+    error_message: Optional[str] = Field(
+        None, description="Error message if workflow failed"
+    )
 
 
 class WorkflowStatusResponse(BaseModel):
@@ -114,4 +120,6 @@ class WorkflowStatusResponse(BaseModel):
     progress_percentage: float = Field(..., description="Progress percentage (0-100)")
     started_at: str = Field(..., description="Workflow start timestamp")
     updated_at: str = Field(..., description="Last update timestamp")
-    estimated_completion: Optional[str] = Field(None, description="Estimated completion time")
+    estimated_completion: Optional[str] = Field(
+        None, description="Estimated completion time"
+    )

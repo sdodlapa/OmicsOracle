@@ -6,15 +6,11 @@ import pytest
 
 from omics_oracle_v2.agents import ReportAgent
 from omics_oracle_v2.agents.base import AgentState
-from omics_oracle_v2.agents.models.data import DataQualityLevel, ProcessedDataset
-from omics_oracle_v2.agents.models.report import (
-    KeyInsight,
-    ReportFormat,
-    ReportInput,
-    ReportOutput,
-    ReportSection,
-    ReportType,
-)
+from omics_oracle_v2.agents.models.data import (DataQualityLevel,
+                                                ProcessedDataset)
+from omics_oracle_v2.agents.models.report import (KeyInsight, ReportFormat,
+                                                  ReportInput, ReportOutput,
+                                                  ReportSection, ReportType)
 from omics_oracle_v2.core.config import Settings
 
 
@@ -129,7 +125,11 @@ class TestReportAgent:
                 sra_run_count=150,
                 quality_score=0.95,
                 quality_level=DataQualityLevel.EXCELLENT,
-                quality_strengths=["Large sample size", "Published", "SRA data available"],
+                quality_strengths=[
+                    "Large sample size",
+                    "Published",
+                    "SRA data available",
+                ],
                 relevance_score=0.9,
                 metadata_completeness=0.95,
             )
@@ -197,7 +197,9 @@ class TestReportAgent:
 
     def test_brief_report_type(self, agent, sample_datasets):
         """Test brief report generation."""
-        report_input = ReportInput(datasets=sample_datasets, report_type=ReportType.BRIEF)
+        report_input = ReportInput(
+            datasets=sample_datasets, report_type=ReportType.BRIEF
+        )
         result = agent.execute(report_input)
 
         assert result.success is True
@@ -207,7 +209,9 @@ class TestReportAgent:
 
     def test_comprehensive_report_type(self, agent, sample_datasets):
         """Test comprehensive report generation."""
-        report_input = ReportInput(datasets=sample_datasets, report_type=ReportType.COMPREHENSIVE)
+        report_input = ReportInput(
+            datasets=sample_datasets, report_type=ReportType.COMPREHENSIVE
+        )
         result = agent.execute(report_input)
 
         assert result.success is True
@@ -217,7 +221,9 @@ class TestReportAgent:
 
     def test_technical_report_type(self, agent, sample_datasets):
         """Test technical report generation."""
-        report_input = ReportInput(datasets=sample_datasets, report_type=ReportType.TECHNICAL)
+        report_input = ReportInput(
+            datasets=sample_datasets, report_type=ReportType.TECHNICAL
+        )
         result = agent.execute(report_input)
 
         assert result.success is True
@@ -228,7 +234,9 @@ class TestReportAgent:
 
     def test_markdown_format(self, agent, sample_datasets):
         """Test markdown report format."""
-        report_input = ReportInput(datasets=sample_datasets, report_format=ReportFormat.MARKDOWN)
+        report_input = ReportInput(
+            datasets=sample_datasets, report_format=ReportFormat.MARKDOWN
+        )
         result = agent.execute(report_input)
 
         assert result.success is True
@@ -238,7 +246,9 @@ class TestReportAgent:
 
     def test_json_format(self, agent, sample_datasets):
         """Test JSON report format."""
-        report_input = ReportInput(datasets=sample_datasets, report_format=ReportFormat.JSON)
+        report_input = ReportInput(
+            datasets=sample_datasets, report_format=ReportFormat.JSON
+        )
         result = agent.execute(report_input)
 
         assert result.success is True
@@ -248,7 +258,9 @@ class TestReportAgent:
 
     def test_text_format(self, agent, sample_datasets):
         """Test plain text report format."""
-        report_input = ReportInput(datasets=sample_datasets, report_format=ReportFormat.TEXT)
+        report_input = ReportInput(
+            datasets=sample_datasets, report_format=ReportFormat.TEXT
+        )
         result = agent.execute(report_input)
 
         assert result.success is True
@@ -257,17 +269,23 @@ class TestReportAgent:
 
     def test_html_format(self, agent, sample_datasets):
         """Test HTML report format."""
-        report_input = ReportInput(datasets=sample_datasets, report_format=ReportFormat.HTML)
+        report_input = ReportInput(
+            datasets=sample_datasets, report_format=ReportFormat.HTML
+        )
         result = agent.execute(report_input)
 
         assert result.success is True
         assert result.output.report_format == ReportFormat.HTML
         # HTML should contain tags
-        assert "<html>" in result.output.full_report or "<h1>" in result.output.full_report
+        assert (
+            "<html>" in result.output.full_report or "<h1>" in result.output.full_report
+        )
 
     def test_query_context_in_title(self, agent, sample_datasets):
         """Test that query context appears in title."""
-        report_input = ReportInput(datasets=sample_datasets, query_context="breast cancer TP53")
+        report_input = ReportInput(
+            datasets=sample_datasets, query_context="breast cancer TP53"
+        )
         result = agent.execute(report_input)
 
         assert result.success is True
@@ -287,7 +305,9 @@ class TestReportAgent:
 
     def test_quality_analysis_section(self, agent, sample_datasets):
         """Test quality analysis section generation."""
-        report_input = ReportInput(datasets=sample_datasets, include_quality_analysis=True)
+        report_input = ReportInput(
+            datasets=sample_datasets, include_quality_analysis=True
+        )
         result = agent.execute(report_input)
 
         assert result.success is True
@@ -297,7 +317,9 @@ class TestReportAgent:
 
     def test_recommendations_generation(self, agent, sample_datasets):
         """Test recommendations are generated."""
-        report_input = ReportInput(datasets=sample_datasets, include_recommendations=True)
+        report_input = ReportInput(
+            datasets=sample_datasets, include_recommendations=True
+        )
         result = agent.execute(report_input)
 
         assert result.success is True
@@ -361,7 +383,9 @@ class TestReportAgent:
 
     def test_no_recommendations_when_disabled(self, agent, sample_datasets):
         """Test recommendations can be disabled."""
-        report_input = ReportInput(datasets=sample_datasets, include_recommendations=False)
+        report_input = ReportInput(
+            datasets=sample_datasets, include_recommendations=False
+        )
         result = agent.execute(report_input)
 
         assert result.success is True
@@ -393,7 +417,9 @@ class TestReportSection:
 
     def test_create_section(self):
         """Test creating a report section."""
-        section = ReportSection(title="Overview", content="This is an overview section", order=0)
+        section = ReportSection(
+            title="Overview", content="This is an overview section", order=0
+        )
         assert section.title == "Overview"
         assert section.order == 0
 

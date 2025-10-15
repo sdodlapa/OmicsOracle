@@ -4,7 +4,9 @@ import pytest
 
 from omics_oracle_v2.agents import DataAgent
 from omics_oracle_v2.agents.base import AgentState
-from omics_oracle_v2.agents.models.data import DataInput, DataOutput, DataQualityLevel, ProcessedDataset
+from omics_oracle_v2.agents.models.data import (DataInput, DataOutput,
+                                                DataQualityLevel,
+                                                ProcessedDataset)
 from omics_oracle_v2.agents.models.search import RankedDataset
 from omics_oracle_v2.core.config import Settings
 from omics_oracle_v2.lib.geo.models import GEOSeriesMetadata, SRAInfo
@@ -16,7 +18,9 @@ class TestDataInput:
     def test_valid_input(self):
         """Test valid data input."""
         dataset = GEOSeriesMetadata(geo_id="GSE123", title="Test", sample_count=10)
-        ranked = RankedDataset(dataset=dataset, relevance_score=0.8, match_reasons=["test"])
+        ranked = RankedDataset(
+            dataset=dataset, relevance_score=0.8, match_reasons=["test"]
+        )
 
         data_input = DataInput(datasets=[ranked])
         assert len(data_input.datasets) == 1
@@ -32,7 +36,9 @@ class TestDataInput:
     def test_quality_score_validation(self):
         """Test quality score bounds."""
         dataset = GEOSeriesMetadata(geo_id="GSE123", title="Test", sample_count=10)
-        ranked = RankedDataset(dataset=dataset, relevance_score=0.8, match_reasons=["test"])
+        ranked = RankedDataset(
+            dataset=dataset, relevance_score=0.8, match_reasons=["test"]
+        )
 
         # Valid scores
         DataInput(datasets=[ranked], min_quality_score=0.5)
@@ -48,7 +54,9 @@ class TestDataInput:
     def test_optional_filters(self):
         """Test optional filter parameters."""
         dataset = GEOSeriesMetadata(geo_id="GSE123", title="Test", sample_count=10)
-        ranked = RankedDataset(dataset=dataset, relevance_score=0.8, match_reasons=["test"])
+        ranked = RankedDataset(
+            dataset=dataset, relevance_score=0.8, match_reasons=["test"]
+        )
 
         data_input = DataInput(
             datasets=[ranked],
@@ -81,7 +89,8 @@ class TestDataAgent:
         ds1 = GEOSeriesMetadata(
             geo_id="GSE1",
             title="Comprehensive analysis of breast cancer gene expression",
-            summary="This study examines gene expression patterns in breast cancer samples " * 3,
+            summary="This study examines gene expression patterns in breast cancer samples "
+            * 3,
             organism="Homo sapiens",
             sample_count=150,
             platform_count=1,
@@ -114,9 +123,15 @@ class TestDataAgent:
         )
 
         return [
-            RankedDataset(dataset=ds1, relevance_score=0.9, match_reasons=["High match"]),
-            RankedDataset(dataset=ds2, relevance_score=0.7, match_reasons=["Medium match"]),
-            RankedDataset(dataset=ds3, relevance_score=0.3, match_reasons=["Low match"]),
+            RankedDataset(
+                dataset=ds1, relevance_score=0.9, match_reasons=["High match"]
+            ),
+            RankedDataset(
+                dataset=ds2, relevance_score=0.7, match_reasons=["Medium match"]
+            ),
+            RankedDataset(
+                dataset=ds3, relevance_score=0.3, match_reasons=["Low match"]
+            ),
         ]
 
     def test_agent_initialization(self, agent):
