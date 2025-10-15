@@ -87,7 +87,18 @@ class PDFExtractor:
             title = metadata.get("title") if metadata else None
             section_result = self.section_detector.detect_sections(full_text, title=title)
 
-            result["sections"] = {name: sec for name, sec in section_result.sections.items()}
+            # Convert Section objects to dicts for JSON serialization
+            result["sections"] = {
+                name: {
+                    "name": sec.name,
+                    "title": sec.title,
+                    "content": sec.content,
+                    "start_pos": sec.start_pos,
+                    "end_pos": sec.end_pos,
+                    "confidence": sec.confidence,
+                }
+                for name, sec in section_result.sections.items()
+            }
             result["section_order"] = section_result.section_order
             result["abstract"] = section_result.abstract
 
@@ -121,6 +132,13 @@ class PDFExtractor:
 
             # Quality scoring
             result["quality_score"] = self._calculate_quality_score(result)
+
+            # Add convenient top-level accessors for common sections
+            sections_dict = result.get("sections", {})
+            result["methods"] = sections_dict.get("methods", {}).get("content", "")
+            result["results"] = sections_dict.get("results", {}).get("content", "")
+            result["discussion"] = sections_dict.get("discussion", {}).get("content", "")
+            result["conclusion"] = sections_dict.get("conclusion", {}).get("content", "")
 
             return result
 

@@ -807,40 +807,36 @@ async def enrich_fulltext(
                     else "unknown",  # "original" or "citing"
                 }
 
-                # Add parsed sections if available AND requested
-                # FIX: Make full content optional to avoid HTTP/2 errors with large responses
+                # Add parsed sections if available
+                # FIXED (Oct 15, 2025): Always include full content when we have it!
+                # If we took the time to download and parse the PDF, the content should be used.
+                # The "include_full_content" param is now only for backwards compatibility.
                 if parsed_content:
-                    if include_full_content:
-                        # Include full parsed text (WARNING: Large response size!)
-                        fulltext_info.update(
-                            {
-                                "abstract": parsed_content.get("abstract", ""),
-                                "methods": parsed_content.get("methods", ""),
-                                "results": parsed_content.get("results", ""),
-                                "discussion": parsed_content.get("discussion", ""),
-                                "introduction": parsed_content.get("introduction", ""),
-                                "conclusion": parsed_content.get("conclusion", ""),
-                            }
-                        )
-                        logger.warning(
-                            f"   [OK] Added PMID {pub.pmid} with FULL CONTENT "
-                            f"({len(parsed_content.get('abstract', ''))} char abstract)"
-                        )
-                    else:
-                        # Just include metadata to keep response size small
-                        fulltext_info.update(
-                            {
-                                "has_abstract": bool(parsed_content.get("abstract")),
-                                "has_methods": bool(parsed_content.get("methods")),
-                                "has_results": bool(parsed_content.get("results")),
-                                "has_discussion": bool(parsed_content.get("discussion")),
-                                "content_length": sum(len(str(v)) for v in parsed_content.values() if v),
-                            }
-                        )
-                        logger.warning(
-                            f"   [OK] Added PMID {pub.pmid} with METADATA ONLY "
-                            f"(set include_full_content=true for full text)"
-                        )
+                    # Always include full parsed text when available
+                    fulltext_info.update(
+                        {
+                            "abstract": parsed_content.get("abstract", ""),
+                            "methods": parsed_content.get("methods", ""),
+                            "results": parsed_content.get("results", ""),
+                            "discussion": parsed_content.get("discussion", ""),
+                            "introduction": parsed_content.get("introduction", ""),
+                            "conclusion": parsed_content.get("conclusion", ""),
+                            # Also include metadata for backwards compatibility
+                            "has_abstract": bool(parsed_content.get("abstract")),
+                            "has_methods": bool(parsed_content.get("methods")),
+                            "has_results": bool(parsed_content.get("results")),
+                            "has_discussion": bool(parsed_content.get("discussion")),
+                            "content_length": len(parsed_content.get("methods", ""))
+                            + len(parsed_content.get("results", ""))
+                            + len(parsed_content.get("discussion", "")),
+                        }
+                    )
+                    logger.info(
+                        f"   [OK] Added PMID {pub.pmid} with FULL CONTENT "
+                        f"(abstract={len(parsed_content.get('abstract', ''))} chars, "
+                        f"methods={len(parsed_content.get('methods', ''))} chars, "
+                        f"results={len(parsed_content.get('results', ''))} chars)"
+                    )
 
                     dataset.fulltext.append(fulltext_info)
                     added_count += 1
@@ -1074,6 +1070,36 @@ async def enrich_fulltext(
                 logger.error(f"  [ERROR] Failed to update registry: {reg_error}", exc_info=True)
                 # Don't fail the whole enrichment if registry fails
 
+            # STEP 6: Update dataset metrics for frontend display (Oct 15, 2025)
+            # After enrichment, update citation_count, pdf_count, completion_rate
+            # so the frontend card displays accurate "X/Y PDFs downloaded, Z% processed"
+            logger.info("[METRICS] STEP 6: Updating dataset metrics for frontend...")
+            try:
+                # Count PMIDs in database for this dataset
+                total_pmids = len(dataset.pubmed_ids) if dataset.pubmed_ids else 0
+
+                # Count how many have PDFs (from fulltext array)
+                pdfs_downloaded = (
+                    len([ft for ft in dataset.fulltext if ft.get("pdf_path")]) if dataset.fulltext else 0
+                )
+
+                # Calculate completion rate (if we have full content, it's processed)
+                completion = (pdfs_downloaded / total_pmids * 100) if total_pmids > 0 else 0.0
+
+                # Update dataset metrics
+                dataset.citation_count = total_pmids
+                dataset.pdf_count = pdfs_downloaded
+                dataset.completion_rate = completion
+                dataset.fulltext_count = pdfs_downloaded  # Ensure this is also set
+
+                logger.info(
+                    f"  [OK] Metrics updated: {pdfs_downloaded}/{total_pmids} PDFs, "
+                    f"{completion:.0f}% complete"
+                )
+
+            except Exception as metrics_error:
+                logger.warning(f"  [WARNING] Could not update metrics: {metrics_error}")
+
             enriched_datasets.append(dataset)
 
             # Log statistics (same as pipeline)
@@ -1208,14 +1234,39 @@ async def analyze_datasets(
         # Limit datasets
         datasets_to_analyze = request.datasets[: request.max_datasets]
 
-        # Check if we have any full-text content
-        total_fulltext_count = sum(len(ds.fulltext) if ds.fulltext else 0 for ds in datasets_to_analyze)
+        # ENHANCED CHECK (Oct 15, 2025): Verify we have ACTUAL parsed content, not just metadata
+        # Check if datasets have fulltext AND the fulltext has actual content (methods, results, etc.)
+        total_fulltext_count = 0
+        total_with_content = 0
 
-        if total_fulltext_count == 0:
-            # No full-text available - don't waste GPT-4 API call on tiny metadata
+        for ds in datasets_to_analyze:
+            if ds.fulltext and len(ds.fulltext) > 0:
+                total_fulltext_count += len(ds.fulltext)
+                # Check if at least one paper has actual content (not just metadata)
+                for ft in ds.fulltext:
+                    # Check for actual text content (not just has_methods=true)
+                    has_content = any(
+                        [
+                            ft.get("methods") and len(ft.get("methods", "")) > 100,
+                            ft.get("results") and len(ft.get("results", "")) > 100,
+                            ft.get("abstract") and len(ft.get("abstract", "")) > 50,
+                        ]
+                    )
+                    if has_content:
+                        total_with_content += 1
+                        break  # At least one paper has content for this dataset
+
+        if total_fulltext_count == 0 or total_with_content == 0:
+            # No full-text available OR only metadata - don't waste GPT-4 API call
+            reason = (
+                "No full-text papers downloaded"
+                if total_fulltext_count == 0
+                else "Papers downloaded but not parsed yet (only metadata available)"
+            )
+
             logger.warning(
-                f"[WARNING] AI Analysis SKIPPED: No full-text content available. "
-                f"User can read GEO summaries directly (no value in AI analysis)."
+                f"[WARNING] AI Analysis BLOCKED: {reason}. "
+                f"Fulltext count: {total_fulltext_count}, With content: {total_with_content}"
             )
 
             return AIAnalysisResponse(
@@ -1224,28 +1275,35 @@ async def analyze_datasets(
                 timestamp=datetime.now(timezone.utc),
                 query=request.query,
                 analysis=(
-                    "[FAIL] **AI Analysis Not Available**\n\n"
-                    "No full-text papers were downloaded for these datasets. "
-                    "AI analysis requires detailed Methods, Results, and Discussion sections "
-                    "to provide meaningful insights.\n\n"
-                    "**Why skip analysis?**\n"
-                    "- GEO summaries are brief and easily readable\n"
-                    "- AI analysis without full-text adds minimal value\n"
-                    "- Saves API costs and processing time\n\n"
-                    "**What you can do:**\n"
-                    "1. Download papers first (click 'Download Papers' button)\n"
-                    "2. Read the GEO summaries directly (available in dataset cards)\n"
-                    "3. Try a different dataset with linked publications\n\n"
-                    "**Current datasets:** You can review the GEO metadata manually - "
-                    "it contains basic information about sample count, organism, and study design."
+                    "# [!] AI Analysis Not Available\n\n"
+                    f"**Reason:** {reason}\n\n"
+                    "AI analysis requires detailed **Methods**, **Results**, and **Discussion** sections "
+                    "to provide meaningful insights. Without full-text content, AI would only summarize "
+                    "the brief GEO metadata - which you can read directly on the dataset cards.\n\n"
+                    "## Why We Skip Analysis\n\n"
+                    "- **No value added**: GEO summaries are brief (1-2 paragraphs) and easily readable\n"
+                    "- **Cost savings**: Each GPT-4 call costs $0.03-0.10 - not worth it for metadata\n"
+                    "- **Better alternative**: Read the GEO summary directly - it's faster!\n\n"
+                    "## What You Can Do\n\n"
+                    "1. **Download Papers First**: Click the 'Download Papers' button on any dataset card\n"
+                    "2. **Wait for Parsing**: The system will download, parse, and cache the full-text\n"
+                    "3. **Try AI Analysis Again**: Once papers are downloaded, AI can analyze Methods/Results\n\n"
+                    "## Manual Review Option\n\n"
+                    "You can review the GEO summaries manually - they contain:\n"
+                    "- Basic study description\n"
+                    "- Sample count and organism\n"
+                    "- Brief methods overview\n"
+                    "- Link to full paper (if available)\n\n"
+                    "For detailed experimental protocols and findings, full-text papers are required."
                 ),
                 insights=[],
                 recommendations=[
-                    "Download papers first for meaningful AI analysis",
-                    "Review GEO summaries manually (quick to read)",
-                    "Look for datasets with linked publications",
+                    "Click 'Download Papers' button on dataset cards",
+                    "Wait for download and parsing to complete",
+                    "Then click 'AI Analysis' for in-depth insights",
+                    "Or manually read GEO summaries (faster for basic info)",
                 ],
-                model_used="none (analysis skipped)",
+                model_used="none (analysis blocked - no content)",
             )
 
         # DEBUG: Log what we received
