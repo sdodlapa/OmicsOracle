@@ -187,12 +187,13 @@ class SearchOrchestrator:
         if use_cache and self.cache:
             try:
                 cache_search_type = search_type or "auto"
-                cache_key = f"{query}:{cache_search_type}"
+                # Include max_results in cache key to avoid returning limited results
+                cache_key = f"{query}:{cache_search_type}:{max_geo_results}:{max_publication_results}"
                 cached = await self.cache.get_search_result(
                     cache_key, search_type=cache_search_type
                 )
                 if cached:
-                    logger.info("✅ Cache hit - returning cached results")
+                    logger.info(f"✅ Cache hit - returning cached results (max_geo={max_geo_results})")
                     cached_result = SearchResult(**cached)
                     cached_result.cache_hit = True
                     return cached_result
@@ -323,12 +324,13 @@ class SearchOrchestrator:
         if use_cache and self.cache and not cache_hit:
             try:
                 cache_search_type = search_type or "auto"
-                cache_key = f"{query}:{cache_search_type}"
+                # Include max_results in cache key to avoid returning limited results
+                cache_key = f"{query}:{cache_search_type}:{max_geo_results}:{max_publication_results}"
                 # Fixed: search_type should be 2nd positional arg, not keyword arg
                 await self.cache.set_search_result(
                     cache_key, cache_search_type, result.to_dict()
                 )
-                logger.info("💾 Results cached")
+                logger.info(f"💾 Results cached (max_geo={max_geo_results}, max_pub={max_publication_results})")
             except Exception as e:
                 logger.warning(f"Cache set failed: {e}")
 
@@ -470,13 +472,14 @@ class SearchOrchestrator:
             # Step 6: Fetch missing datasets from GEO
             if missing_ids:
                 logger.info(
-                    f"[GEO] Fetching {len(missing_ids)} uncached datasets from GEO..."
+                    f"[GEO] Fetching {len(missing_ids)} uncached datasets from GEO (FAST mode)..."
                 )
                 logger.warning(f"[DEBUG] Missing IDs: {missing_ids}")
                 for geo_id in missing_ids:
                     try:
-                        logger.warning(f"[DEBUG] Calling get_metadata for {geo_id}")
-                        metadata = await self.geo_client.get_metadata(geo_id)
+                        logger.warning(f"[DEBUG] Calling get_metadata_fast for {geo_id}")
+                        # Use fast E-Summary method (100x faster than SOFT files)
+                        metadata = await self.geo_client.get_metadata_fast(geo_id)
                         if metadata:
                             logger.warning(
                                 f"[DEBUG] Got metadata for {geo_id}, organism={repr(metadata.organism)}"

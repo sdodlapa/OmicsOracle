@@ -41,7 +41,7 @@ class SearchRequest(BaseModel):
         default=20,
         description="Maximum number of results to return",
         ge=1,
-        le=100,
+        le=1000,  # Increased from 100 to support pagination
     )
     enable_semantic: bool = Field(
         default=False,

@@ -39,7 +39,9 @@ class APISettings(BaseSettings):
 
     # API Limits
     max_query_length: int = Field(default=500, description="Maximum query length")
-    max_results_per_request: int = Field(default=100, description="Maximum results per request")
+    max_results_per_request: int = Field(
+        default=1000, description="Maximum results per request"
+    )
     max_batch_size: int = Field(default=50, description="Maximum batch size")
 
     # Rate Limiting
@@ -47,8 +49,12 @@ class APISettings(BaseSettings):
     rate_limit_requests_per_minute: int = 60
 
     # Middleware Features
-    enable_prometheus_metrics: bool = Field(default=True, description="Enable Prometheus metrics collection")
-    enable_request_logging: bool = Field(default=True, description="Enable request/response logging")
+    enable_prometheus_metrics: bool = Field(
+        default=True, description="Enable Prometheus metrics collection"
+    )
+    enable_request_logging: bool = Field(
+        default=True, description="Enable request/response logging"
+    )
 
     # Timeouts
     request_timeout_seconds: int = 300  # 5 minutes
