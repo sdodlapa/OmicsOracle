@@ -2342,8 +2342,8 @@ ${error.stack || 'Not available'}`;
             // Check if dataset has PMIDs and calculate analyzed papers
             const hasFullText = dataset.pubmed_ids && dataset.pubmed_ids.length > 0;
             const totalPapers = dataset.fulltext ? dataset.fulltext.length : (dataset.pubmed_ids ? dataset.pubmed_ids.length : 0);
-            const analyzedPapers = Math.min(totalPapers, 10); // Backend analyzes max 10 papers (default)
-            const hasTokenLimit = totalPapers > 10;
+            const analyzedPapers = Math.min(totalPapers, 15); // Backend analyzes max 15 papers with GPT-4 Turbo
+            const hasTokenLimit = totalPapers > 15;
 
             contentElement.innerHTML = `
                 <!-- Paper Analysis Info Banner -->
@@ -2379,7 +2379,7 @@ ${error.stack || 'Not available'}`;
                             <span style="color: #047857; font-size: 13px;">
                                 Analyzed ${analyzedPapers} of ${totalPapers} paper${totalPapers > 1 ? 's' : ''}
                                 ${dataset.fulltext_count > 0 ? `(${dataset.fulltext_count} full-text available)` : ''}
-                                ${hasTokenLimit ? '<br><em>⚡ Limited to 10 papers due to token constraints. Prioritized: original dataset papers & most relevant.</em>' : ''}
+                                ${hasTokenLimit ? '<br><em>⚡ Limited to 15 papers with GPT-4 Turbo (128K context). Prioritized: original dataset papers & most relevant.</em>' : ''}
                             </span>
                         </div>
                     </div>

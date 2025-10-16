@@ -199,10 +199,10 @@ class AIAnalysisRequest(BaseModel):
         default=5, ge=1, le=10, description="Max datasets to analyze"
     )
     max_papers_per_dataset: int = Field(
-        default=10,
+        default=15,
         ge=1,
-        le=10,
-        description="Max papers to analyze per dataset (default=10 for comprehensive analysis)",
+        le=20,
+        description="Max papers to analyze per dataset (default=15 for comprehensive analysis with GPT-4 Turbo)",
     )
     # RAG Phase 1: Enhanced context
     query_processing: Optional[QueryProcessingContext] = Field(

@@ -130,10 +130,12 @@ class AISettings(BaseSettings):
         env="OPENAI_API_KEY",
     )
     model: str = Field(
-        default="gpt-4", description="OpenAI model to use", env="OMICS_AI_MODEL"
+        default="gpt-4-turbo-preview",  # Changed from gpt-4 for 128K context window
+        description="OpenAI model to use",
+        env="OMICS_AI_MODEL"
     )
     max_tokens: int = Field(
-        default=4000,  # Increased from 1000 for comprehensive AI analysis
+        default=4000,  # Comprehensive analysis with GPT-4 Turbo's large context
         ge=1,
         le=32000,
         description="Maximum tokens in response",
