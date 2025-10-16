@@ -11,8 +11,11 @@ from omics_oracle_v2.api.models.requests import (
     SearchRequest,
 )
 from omics_oracle_v2.api.models.responses import (
+    DatasetResponse,
     DataValidationResponse,
     ErrorResponse,
+    PublicationResponse,
+    QueryProcessingResponse,
     QueryResponse,
     ReportResponse,
     SearchResponse,
@@ -32,6 +35,9 @@ __all__ = [
     "ReportRequest",
     "WorkflowRequest",
     # Responses
+    "DatasetResponse",
+    "PublicationResponse",
+    "QueryProcessingResponse",
     "QueryResponse",
     "SearchResponse",
     "DataValidationResponse",

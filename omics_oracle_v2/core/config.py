@@ -32,8 +32,9 @@ Environment Variables:
     OMICS_AI_TEMPERATURE=0.7
 """
 
+import os
 from pathlib import Path
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 try:
     from pydantic import BaseModel, Field
@@ -43,6 +44,9 @@ except ImportError:
     from pydantic import BaseModel, BaseSettings, Field  # type: ignore
 
     SettingsConfigDict = None  # type: ignore
+
+if TYPE_CHECKING:
+    from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import PubMedConfig
 
 
 class NLPSettings(BaseSettings):
@@ -613,6 +617,10 @@ class SearchSettings(BaseSettings):
 
     # Caching
     enable_cache: bool = Field(default=True, description="Enable result caching")
+    cache_host: str = Field(default="localhost", description="Redis cache host")
+    cache_port: int = Field(default=6379, description="Redis cache port")
+    cache_db: int = Field(default=0, description="Redis database number")
+    cache_ttl: int = Field(default=3600, description="Cache TTL in seconds")
 
     # Result limits
     max_geo_results: int = Field(
@@ -622,9 +630,34 @@ class SearchSettings(BaseSettings):
         default=100, ge=1, le=1000, description="Maximum publication results"
     )
 
+    # PubMed configuration
+    pubmed_email: str = Field(
+        default_factory=lambda: os.getenv("NCBI_EMAIL", "research@omicsoracle.ai"),
+        description="Email for PubMed API"
+    )
+    
+    @property
+    def pubmed_config(self):
+        """Lazy-load PubMedConfig to avoid circular imports."""
+        from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import PubMedConfig
+        return PubMedConfig(email=self.pubmed_email)
+
     # OpenAlex config
     openalex_email: str | None = Field(
         default=None, description="Email for OpenAlex polite pool"
+    )
+
+    # Database persistence
+    enable_database: bool = Field(
+        default=True, description="Enable database persistence"
+    )
+    db_path: str = Field(
+        default="data/database/omics_oracle.db",
+        description="Path to UnifiedDatabase file"
+    )
+    storage_path: str = Field(
+        default="data",
+        description="Base path for file storage"
     )
 
     # Feature flags
@@ -633,11 +666,6 @@ class SearchSettings(BaseSettings):
     )
     enable_fulltext: bool = Field(
         default=False, description="Enable fulltext extraction"
-    )
-
-    # Database persistence
-    enable_database: bool = Field(
-        default=True, description="Enable database persistence"
     )
 
     class Config:
