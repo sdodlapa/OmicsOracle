@@ -257,7 +257,7 @@ class RedisCache:
             # Convert result to JSON
             # Priority: model_dump() (Pydantic v2) > to_dict() > dict() (Pydantic v1) > __dict__
             if hasattr(result, "model_dump"):
-                result_dict = result.model_dump()
+                result_dict = result.model_dump(mode='json')
             elif hasattr(result, "to_dict"):
                 result_dict = result.to_dict()
             elif hasattr(result, "dict"):
@@ -267,7 +267,7 @@ class RedisCache:
             else:
                 result_dict = result
 
-            result_json = json.dumps(result_dict)
+            result_json = json.dumps(result_dict, default=str)  # Use default=str for datetime objects
 
             # Set with TTL
             ttl = ttl or self.TTL_SEARCH_RESULTS
@@ -399,15 +399,21 @@ class RedisCache:
         try:
             key = self._make_key("geo", geo_id.upper())
 
-            # Convert to JSON
-            if hasattr(metadata, "to_dict"):
+            # Convert to JSON-serializable dict
+            if hasattr(metadata, "model_dump"):
+                # Pydantic v2
+                meta_dict = metadata.model_dump(mode='json')
+            elif hasattr(metadata, "dict"):
+                # Pydantic v1
+                meta_dict = metadata.dict()
+            elif hasattr(metadata, "to_dict"):
                 meta_dict = metadata.to_dict()
             elif hasattr(metadata, "__dict__"):
                 meta_dict = metadata.__dict__
             else:
                 meta_dict = metadata
 
-            meta_json = json.dumps(meta_dict)
+            meta_json = json.dumps(meta_dict, default=str)  # Use default=str for datetime objects
 
             # Set with TTL
             ttl = ttl or self.TTL_GEO_METADATA
