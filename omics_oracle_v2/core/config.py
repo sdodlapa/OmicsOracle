@@ -133,7 +133,7 @@ class AISettings(BaseSettings):
         default="gpt-4", description="OpenAI model to use", env="OMICS_AI_MODEL"
     )
     max_tokens: int = Field(
-        default=1000,
+        default=4000,  # Increased from 1000 for comprehensive AI analysis
         ge=1,
         le=32000,
         description="Maximum tokens in response",

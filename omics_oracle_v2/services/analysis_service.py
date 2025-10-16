@@ -606,7 +606,7 @@ Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_paper
             system_message=system_message,
             api_key=settings.ai.openai_api_key,
             model=settings.ai.model,
-            max_tokens=800,
+            max_tokens=4000,  # Increased from 800 to 4000 for comprehensive analysis
             temperature=settings.ai.temperature,
             timeout=settings.ai.timeout,
         )
