@@ -640,61 +640,98 @@ class SearchOrchestrator:
         """
         Persist search results to the unified database (Phase B integration).
 
-        Saves GEO-PMID citation links discovered during search.
+        ENHANCED (Oct 16, 2025): Now persists GEO dataset metadata, not just citations.
+
+        Saves:
+        1. GEO dataset metadata (title, summary, organism, etc.)
+        2. GEO→PMID citation links
 
         Args:
             result: SearchResult containing datasets and publications
         """
         logger.info(
-            f"💾 _persist_results called: coordinator={self.coordinator is not None}, datasets={len(result.geo_datasets)}"
+            f"[PERSIST] Starting persistence: coordinator={self.coordinator is not None}, "
+            f"datasets={len(result.geo_datasets)}"
         )
 
         if not self.coordinator:
-            logger.warning("Database persistence disabled - coordinator is None")
+            logger.warning("[PERSIST] Database persistence disabled - coordinator is None")
             return  # Database integration disabled
 
         try:
-            persisted_count = 0
+            from omics_oracle_v2.lib.pipelines.storage.models import GEODataset, UniversalIdentifier
 
-            # Save GEO→PMID citations for each dataset that has PubMed IDs
+            datasets_persisted = 0
+            citations_persisted = 0
+
+            # Persist each GEO dataset
             for dataset in result.geo_datasets:
-                if hasattr(dataset, "pubmed_ids") and dataset.pubmed_ids:
-                    pmids = (
-                        dataset.pubmed_ids
-                        if isinstance(dataset.pubmed_ids, list)
-                        else [dataset.pubmed_ids]
+                try:
+                    # Step 1: Persist GEO dataset metadata to geo_datasets table
+                    geo_dataset = GEODataset(
+                        geo_id=dataset.geo_id,
+                        title=dataset.title,
+                        summary=dataset.summary,
+                        organism=dataset.organism,
+                        platform=dataset.platforms[0] if dataset.platforms else None,
+                        publication_count=len(dataset.pubmed_ids) if dataset.pubmed_ids else 0,
+                        pdfs_downloaded=0,
+                        pdfs_extracted=0,
+                        avg_extraction_quality=0.0,
+                        status="discovered",
+                    )
+                    
+                    # Use coordinator's database to persist
+                    self.coordinator.unified_db.insert_geo_dataset(geo_dataset)
+                    datasets_persisted += 1
+                    
+                    logger.debug(f"[PERSIST] Saved GEO dataset: {dataset.geo_id}")
+
+                    # Step 2: Persist GEO→PMID citations to universal_identifiers table
+                    if hasattr(dataset, "pubmed_ids") and dataset.pubmed_ids:
+                        pmids = (
+                            dataset.pubmed_ids
+                            if isinstance(dataset.pubmed_ids, list)
+                            else [dataset.pubmed_ids]
+                        )
+
+                        for pmid in pmids:
+                            if pmid:  # Skip empty PMIDs
+                                try:
+                                    # Create citation link
+                                    identifier = UniversalIdentifier(
+                                        geo_id=dataset.geo_id,
+                                        pmid=str(pmid),
+                                        title=None,  # Will be enriched later via auto-discovery
+                                        authors=None,
+                                        journal=None,
+                                        publication_year=None,
+                                        publication_date=None,
+                                        source_name="geo_search",
+                                    )
+                                    
+                                    self.coordinator.unified_db.insert_universal_identifier(identifier)
+                                    citations_persisted += 1
+                                    
+                                except Exception as e:
+                                    logger.warning(
+                                        f"[PERSIST] Failed to persist citation {dataset.geo_id}→{pmid}: {e}"
+                                    )
+
+                except Exception as e:
+                    logger.error(
+                        f"[PERSIST] Failed to persist dataset {dataset.geo_id}: {e}",
+                        exc_info=True
                     )
 
-                    for pmid in pmids:
-                        if pmid:  # Skip empty PMIDs
-                            citation_data = {
-                                "title": dataset.title or "",
-                                "authors": [],  # GEO datasets don't have author info
-                                "journal": "",
-                                "year": None,
-                                "doi": "",
-                                "pmc_id": "",
-                                "publication_date": "",
-                                # Additional metadata
-                                "source": "geo_search",
-                                "search_query": result.query,
-                                "search_date": datetime.now().isoformat(),
-                            }
-
-                            self.coordinator.save_citation_discovery(
-                                geo_id=dataset.geo_id,
-                                pmid=str(pmid),
-                                citation_data=citation_data,
-                            )
-                            persisted_count += 1
-
-            if persisted_count > 0:
+            if datasets_persisted > 0 or citations_persisted > 0:
                 logger.info(
-                    f"💾 Persisted {persisted_count} GEO→PMID citations to database"
+                    f"[PERSIST] SUCCESS: {datasets_persisted} datasets, "
+                    f"{citations_persisted} citations saved to database"
                 )
 
         except Exception as e:
-            logger.error(f"Failed to persist results to database: {e}", exc_info=True)
+            logger.error(f"[PERSIST] Failed to persist results to database: {e}", exc_info=True)
 
     async def close(self):
         """Clean up resources.
