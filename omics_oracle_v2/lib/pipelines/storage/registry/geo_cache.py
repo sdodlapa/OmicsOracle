@@ -709,7 +709,7 @@ class GEOCache:
                                 fulltext_url=fulltext_url,
                                 oa_status=oa_status,
                                 url_source=url_source,
-                                url_discovered_at=identifier_utils.now_iso()
+                                url_discovered_at=datetime.now().isoformat()
                                 if pdf_url or fulltext_url
                                 else None,
                             )

@@ -1653,11 +1653,14 @@
 
                 const result = await response.json();
                 
-                // Show success message
-                alert(`✅ Discovery complete!\n\nFound ${result.citations_found} citation(s) for ${dataset.geo_id}\n\nRefresh the search to see updated results.`);
+                // Show success in button temporarily
+                discoverBtn.innerHTML = `✅ Found ${result.citations_found}!`;
+                discoverBtn.classList.add('btn-success');
                 
-                // Refresh the search to show updated citation counts
-                await performSearch();
+                // Refresh the search to show updated citation counts immediately
+                setTimeout(async () => {
+                    await performSearch();
+                }, 500);
 
             } catch (error) {
                 console.error('Error discovering citations:', error);
