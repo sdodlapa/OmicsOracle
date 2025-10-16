@@ -119,19 +119,40 @@ class UnifiedDatabase:
                 raise
 
     def _initialize_schema(self):
-        """Initialize database schema from schema.sql."""
+        """
+        Initialize database schema from schema.sql.
+        
+        Raises:
+            FileNotFoundError: If schema.sql not found
+            sqlite3.Error: If schema execution fails
+        """
         schema_path = Path(__file__).parent / "schema.sql"
+        
         if not schema_path.exists():
-            raise FileNotFoundError(f"Schema file not found: {schema_path}")
+            error_msg = f"CRITICAL: Schema file not found at {schema_path}"
+            logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
 
-        with open(schema_path) as f:
-            schema_sql = f.read()
+        try:
+            with open(schema_path) as f:
+                schema_sql = f.read()
+            
+            logger.info(f"Initializing database schema from {schema_path}")
+            
+            with self._get_connection() as conn:
+                conn.executescript(schema_sql)
+                conn.commit()
 
-        with self._get_connection() as conn:
-            conn.executescript(schema_sql)
-            conn.commit()
-
-        logger.info("Database schema initialized")
+            logger.info("✅ Database schema initialized successfully")
+            
+        except sqlite3.Error as e:
+            error_msg = f"CRITICAL: Failed to initialize database schema: {e}"
+            logger.error(error_msg, exc_info=True)
+            raise RuntimeError(error_msg) from e
+        except Exception as e:
+            error_msg = f"CRITICAL: Unexpected error during schema initialization: {e}"
+            logger.error(error_msg, exc_info=True)
+            raise
 
     # =========================================================================
     # UNIVERSAL IDENTIFIERS - Central Hub
