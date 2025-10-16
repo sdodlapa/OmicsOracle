@@ -36,6 +36,8 @@ CREATE INDEX IF NOT EXISTS idx_ui_geo_id ON universal_identifiers(geo_id);
 CREATE INDEX IF NOT EXISTS idx_ui_pmid ON universal_identifiers(pmid);
 CREATE INDEX IF NOT EXISTS idx_ui_doi ON universal_identifiers(doi);
 CREATE INDEX IF NOT EXISTS idx_ui_year ON universal_identifiers(publication_year);
+-- Composite index for common JOIN pattern in get_complete_geo_data()
+CREATE INDEX IF NOT EXISTS idx_ui_geo_pmid_composite ON universal_identifiers(geo_id, pmid);
 
 
 -- =============================================================================

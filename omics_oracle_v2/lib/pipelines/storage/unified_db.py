@@ -735,3 +735,126 @@ class UnifiedDatabase:
             }
 
         return stats
+
+    def get_complete_geo_data(self, geo_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get complete GEO dataset metadata in single query (warm-tier for GEOCache).
+        
+        This method aggregates all GEO-centric data from UnifiedDatabase:
+        - GEO dataset metadata (geo_datasets table)
+        - All publications linked to this GEO (universal_identifiers)
+        - PDF acquisition history for each publication
+        - Content extraction results
+        - Statistics and quality metrics
+        
+        Args:
+            geo_id: GEO accession ID (e.g., "GSE123456")
+        
+        Returns:
+            Complete GEO data dict with structure:
+            {
+                "geo": {...},  # GEO dataset metadata
+                "papers": {
+                    "original": [...],  # Publications with URLs
+                    "citing": []  # Future: citing papers
+                },
+                "statistics": {...}  # Counts and quality metrics
+            }
+            Or None if GEO not found
+        
+        Example:
+            >>> data = db.get_complete_geo_data("GSE123456")
+            >>> print(data["geo"]["title"])
+            >>> print(len(data["papers"]["original"]))
+        """
+        with self._get_connection() as conn:
+            # Get GEO dataset metadata
+            geo_row = conn.execute(
+                "SELECT * FROM geo_datasets WHERE geo_id = ?",
+                (geo_id,)
+            ).fetchone()
+            
+            if not geo_row:
+                logger.debug(f"GEO dataset not found: {geo_id}")
+                return None
+            
+            geo_data = dict(geo_row)
+            
+            # Get all publications for this GEO
+            pub_rows = conn.execute(
+                """
+                SELECT *
+                FROM universal_identifiers
+                WHERE geo_id = ?
+                ORDER BY pmid
+                """,
+                (geo_id,)
+            ).fetchall()
+            
+            papers = []
+            for pub_row in pub_rows:
+                pub_dict = dict(pub_row)
+                
+                # Get PDF acquisition history
+                pdf_rows = conn.execute(
+                    """
+                    SELECT status, pdf_path, pdf_size_bytes, downloaded_at, error_message
+                    FROM pdf_acquisition
+                    WHERE geo_id = ? AND pmid = ?
+                    ORDER BY downloaded_at DESC
+                    """,
+                    (geo_id, pub_dict.get("pmid"))
+                ).fetchall()
+                
+                pub_dict["download_history"] = [dict(row) for row in pdf_rows]
+                
+                # Get content extraction if exists
+                extraction_row = conn.execute(
+                    """
+                    SELECT extraction_grade, extraction_quality, extraction_method, extracted_at
+                    FROM content_extraction
+                    WHERE geo_id = ? AND pmid = ?
+                    ORDER BY extracted_at DESC
+                    LIMIT 1
+                    """,
+                    (geo_id, pub_dict.get("pmid"))
+                ).fetchone()
+                
+                if extraction_row:
+                    pub_dict["extraction"] = dict(extraction_row)
+                
+                papers.append(pub_dict)
+            
+            # Calculate statistics
+            total_papers = len(papers)
+            successful_downloads = sum(
+                1 for p in papers
+                if any(h["status"] == "downloaded" for h in p.get("download_history", []))
+            )
+            extracted_papers = sum(
+                1 for p in papers
+                if p.get("extraction") is not None
+            )
+            
+            success_rate = (
+                round(successful_downloads / total_papers * 100, 1)
+                if total_papers > 0
+                else 0
+            )
+            
+            return {
+                "geo": geo_data,
+                "papers": {
+                    "original": papers,  # All papers from universal_identifiers are "original"
+                    "citing": []  # Future: implement citation discovery
+                },
+                "statistics": {
+                    "original_papers": total_papers,
+                    "citing_papers": 0,
+                    "total_papers": total_papers,
+                    "successful_downloads": successful_downloads,
+                    "failed_downloads": total_papers - successful_downloads,
+                    "extracted_papers": extracted_papers,
+                    "success_rate": success_rate,
+                }
+            }
