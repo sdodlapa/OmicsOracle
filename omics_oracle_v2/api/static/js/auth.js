@@ -260,21 +260,31 @@ async function refreshToken() {
  * Make authenticated API request
  */
 async function authenticatedFetch(url, options = {}) {
+    console.log('[AUTH] Starting authenticatedFetch to:', url);
     const token = getToken();
 
     if (!token) {
+        console.error('[AUTH] No token found!');
         throw new Error('Not authenticated');
     }
+
+    console.log('[AUTH] Token found, length:', token.length);
 
     const headers = {
         ...options.headers,
         'Authorization': `Bearer ${token}`
     };
 
+    console.log('[AUTH] Request headers:', headers);
+    console.log('[AUTH] Request options:', options);
+
     const response = await fetch(url, { ...options, headers });
+
+    console.log('[AUTH] Response received, status:', response.status);
 
     // Handle 401 Unauthorized
     if (response.status === 401) {
+        console.error('[AUTH] 401 Unauthorized - clearing token and redirecting');
         clearToken();
         window.location.href = '/login';
         throw new Error('Session expired. Please login again.');

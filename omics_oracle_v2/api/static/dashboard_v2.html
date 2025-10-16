@@ -135,6 +135,24 @@
             cursor: not-allowed;
         }
 
+        .btn-cancel {
+            padding: 14px 24px;
+            background: linear-gradient(135deg, #f56565 0%, #c53030 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 10px;
+        }
+
+        .btn-cancel:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(245, 101, 101, 0.4);
+        }
+
         .search-examples {
             display: flex;
             gap: 10px;
@@ -783,6 +801,29 @@
             cursor: not-allowed;
         }
 
+        /* Load More Button */
+        .btn-load-more {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            color: white;
+            border: none;
+            padding: 12px 32px;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(79, 70, 229, 0.3);
+            transition: all 0.3s ease;
+        }
+
+        .btn-load-more:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-load-more:active {
+            transform: translateY(0);
+        }
+
         /* Disabled AI Analysis Button (no PMIDs or no download) */
         .btn-ai-disabled {
             background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
@@ -1303,7 +1344,10 @@
                     autocomplete="off"
                 >
                 <button id="search-btn" class="btn-search" onclick="performSearch()">
-                    Search
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <button id="cancel-search-btn" class="btn-cancel" onclick="cancelSearch()" style="display: none;">
+                    <i class="fas fa-times"></i> Cancel
                 </button>
             </div>
 
@@ -1335,6 +1379,12 @@
             </div>
             <div id="results-container">
                 <!-- Populated by JavaScript -->
+            </div>
+            <div id="load-more-container" style="text-align: center; margin: 20px 0; display: none;">
+                <button id="load-more-btn" class="btn-load-more" onclick="loadMoreResults()">
+                    📊 Load More Datasets
+                </button>
+                <div id="load-more-info" style="margin-top: 10px; color: #666; font-size: 0.9em;"></div>
             </div>
         </div>
 
@@ -1406,9 +1456,32 @@
         let lastSearchResponse = null;    // Full search response for analysis
 
         // Use example query
+        // Global variables for pagination
+        let currentDisplayCount = 50;  // Show 50 initially (was 20)
+        let totalAvailableResults = 0;
+        let allSearchResults = [];     // Store all results from server
+        let currentSearchController = null;  // For cancelling searches
+
         function useExample(element) {
             document.getElementById('search-query').value = element.textContent;
             performSearch();
+        }
+
+        // Cancel current search
+        function cancelSearch() {
+            if (currentSearchController) {
+                currentSearchController.abort();
+                currentSearchController = null;
+                
+                const searchBtn = document.getElementById('search-btn');
+                const cancelBtn = document.getElementById('cancel-search-btn');
+                
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = '<i class="fas fa-search"></i> Search';
+                if (cancelBtn) cancelBtn.style.display = 'none';
+                
+                console.log('[CANCEL] Search cancelled by user');
+            }
         }
 
         // Perform search
@@ -1416,31 +1489,62 @@
             const query = document.getElementById('search-query').value.trim();
             if (!query) return;
 
+            // Cancel any existing search
+            if (currentSearchController) {
+                currentSearchController.abort();
+            }
+
+            // Create new abort controller
+            currentSearchController = new AbortController();
+
+            // Reset pagination state
+            currentDisplayCount = 50;
+
             // Store query for analysis
             currentQuery = query;
 
             const searchBtn = document.getElementById('search-btn');
+            const cancelBtn = document.getElementById('cancel-search-btn');
+            
             searchBtn.disabled = true;
             searchBtn.innerHTML = '<span class="loading"></span> Searching...';
+            if (cancelBtn) cancelBtn.style.display = 'inline-block';
 
             try {
-                // Call search API with correct format
+                console.log('[DEBUG] Starting search for:', query);
+                
+                // Fetch ALL results (no limit)
+                const requestBody = {
+                    search_terms: [query],
+                    max_results: 1000,  // Fetch up to 1000, display 50 initially
+                    enable_semantic: false
+                };
+                
+                console.log('[DEBUG] Request body:', requestBody);
+                console.log('[DEBUG] Making request to: http://localhost:8000/api/agents/search');
+                
                 const response = await authenticatedFetch('http://localhost:8000/api/agents/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        search_terms: [query],
-                        max_results: 20,
-                        enable_semantic: false
-                    })
+                    body: JSON.stringify(requestBody),
+                    signal: currentSearchController.signal  // Enable cancellation
                 });
 
+                console.log('[DEBUG] Response status:', response.status);
+                console.log('[DEBUG] Response headers:', response.headers);
+
                 if (!response.ok) {
-                    throw new Error('Search failed');
+                    const errorText = await response.text();
+                    console.error('[DEBUG] Error response body:', errorText);
+                    throw new Error(`Search failed with status ${response.status}: ${errorText}`);
                 }
 
                 const data = await response.json();
-                currentResults = data.datasets || [];
+                allSearchResults = data.datasets || [];
+                totalAvailableResults = allSearchResults.length;
+
+                // Display first 50 results
+                currentResults = allSearchResults.slice(0, currentDisplayCount);
 
                 // RAG Phase 2: Store full search response for context
                 lastSearchResponse = data;
@@ -1478,14 +1582,92 @@
                 // Show results section
                 document.getElementById('results-section').style.display = 'block';
 
-                // Note: Full-text enrichment is now manual (user clicks "Download Papers" button)
+                // Note: Citation counts are pre-populated from UnifiedDB via SearchService enrichment.
+                // PDF downloads are triggered manually when user clicks "Download Papers" button.
 
             } catch (error) {
+                // Handle cancellation gracefully
+                if (error.name === 'AbortError') {
+                    console.log('[CANCEL] Search was cancelled');
+                    document.getElementById('results-section').innerHTML = 
+                        '<p style="text-align: center; color: #666; padding: 2rem;">Search cancelled</p>';
+                    return;
+                }
+                
                 console.error('Search error:', error);
-                alert('Search failed. Please try again.');
+                console.error('Error details:', error.message, error.stack);
+                alert('Search failed: ' + error.message);
             } finally {
+                const cancelBtn = document.getElementById('cancel-search-btn');
+                
                 searchBtn.disabled = false;
-                searchBtn.textContent = 'Search';
+                searchBtn.innerHTML = '<i class="fas fa-search"></i> Search';
+                if (cancelBtn) cancelBtn.style.display = 'none';
+                
+                currentSearchController = null;
+            }
+        }
+
+        // Load more results (pagination)
+        function loadMoreResults() {
+            // Increase display count by 20
+            currentDisplayCount = Math.min(currentDisplayCount + 20, totalAvailableResults);
+            
+            // Update current results to show more
+            currentResults = allSearchResults.slice(0, currentDisplayCount);
+            
+            // Re-display with updated results
+            displayResults(currentResults);
+            
+            // Scroll to the first newly loaded dataset
+            const newResultIndex = currentDisplayCount - 20;
+            const newResultElement = document.getElementById(`card-${newResultIndex}`);
+            if (newResultElement) {
+                newResultElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        // Discover citations for a dataset with no citations in database
+        async function discoverCitationsForDataset(index) {
+            const dataset = currentResults[index];
+            const cardElement = document.getElementById(`card-${index}`);
+            const discoverBtn = cardElement.querySelector('.btn-download-papers');
+            
+            try {
+                // Update button to show loading
+                const originalText = discoverBtn.innerHTML;
+                discoverBtn.disabled = true;
+                discoverBtn.innerHTML = '⏳ Discovering...';
+
+                // Call discovery endpoint
+                const response = await fetch(`/api/agents/datasets/${dataset.geo_id}/discover-citations`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Discovery failed: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                // Show success message
+                alert(`✅ Discovery complete!\n\nFound ${result.citations_found} citation(s) for ${dataset.geo_id}\n\nRefresh the search to see updated results.`);
+                
+                // Refresh the search to show updated citation counts
+                await performSearch();
+
+            } catch (error) {
+                console.error('Error discovering citations:', error);
+                const errorMessage = `Failed to discover citations. Please try again.
+Error: ${error.message}`;
+                alert(errorMessage);
+                
+                // Restore original button state
+                discoverBtn.disabled = false;
+                discoverBtn.innerHTML = '🔍 Discover Citations';
             }
         }
 
@@ -1617,37 +1799,6 @@ ${error.stack || 'Not available'}`;
         }
 
         // Display search logs in collapsible panel
-        function displaySearchLogs(logs) {
-            const panel = document.getElementById('search-logs-panel');
-            const content = document.getElementById('search-logs-content');
-
-            if (!logs || logs.length === 0) {
-                panel.style.display = 'none';
-                return;
-            }
-
-            // Show panel
-            panel.style.display = 'block';
-
-            // Populate logs
-            content.innerHTML = logs.map(log =>
-                `<div class="log-line">${log}</div>`
-            ).join('');
-
-            // Expand by default
-            content.classList.remove('collapsed');
-            document.getElementById('logs-toggle').classList.remove('collapsed');
-        }
-
-        // Toggle search logs visibility
-        function toggleSearchLogs() {
-            const content = document.getElementById('search-logs-content');
-            const toggle = document.getElementById('logs-toggle');
-
-            content.classList.toggle('collapsed');
-            toggle.classList.toggle('collapsed');
-        }
-
         // Display search logs
         function displaySearchLogs(logs) {
             const panel = document.getElementById('search-logs-panel');
@@ -1777,6 +1928,8 @@ ${error.stack || 'Not available'}`;
         function displayResults(results) {
             const container = document.getElementById('results-container');
             const countElement = document.getElementById('result-count');
+            const loadMoreContainer = document.getElementById('load-more-container');
+            const loadMoreInfo = document.getElementById('load-more-info');
 
             if (!results || results.length === 0) {
                 container.innerHTML = `
@@ -1787,10 +1940,30 @@ ${error.stack || 'Not available'}`;
                     </div>
                 `;
                 countElement.textContent = '0 datasets';
+                loadMoreContainer.style.display = 'none';
                 return;
             }
 
-            countElement.textContent = `${results.length} dataset${results.length !== 1 ? 's' : ''} found`;
+            // Update count with pagination info
+            const displayedCount = results.length;
+            const totalCount = totalAvailableResults || displayedCount;
+            
+            // Always show "X of Y datasets" format
+            if (totalCount > 0) {
+                countElement.textContent = `${displayedCount} of ${totalCount} datasets`;
+            } else {
+                countElement.textContent = '0 datasets';
+            }
+
+            // Show/hide load more button
+            if (currentDisplayCount < totalAvailableResults) {
+                loadMoreContainer.style.display = 'block';
+                const remaining = totalAvailableResults - currentDisplayCount;
+                const nextBatch = Math.min(20, remaining);
+                loadMoreInfo.textContent = `${remaining} more available`;
+            } else {
+                loadMoreContainer.style.display = 'none';
+            }
 
             // RAG Phase 4: Prepend query context panel
             const queryContextHTML = displayQueryContext();
@@ -1892,8 +2065,11 @@ ${error.stack || 'Not available'}`;
                         `;
                     }
                 } else {
-                    // No citations in database - disable everything
+                    // No citations in database - show discovery button
                     actionButtons = `
+                        <button class="btn-download-papers" onclick="event.stopPropagation(); discoverCitationsForDataset(${index})" title="Discover and download citations for ${dataset.geo_id}">
+                            🔍 Discover Citations
+                        </button>
                         <button class="btn-ai-analyze btn-ai-disabled" disabled title="No citations in database for this GEO dataset yet">
                             🤖 AI Analysis
                             <span class="analysis-badge analysis-badge-disabled">No Citations in DB</span>
