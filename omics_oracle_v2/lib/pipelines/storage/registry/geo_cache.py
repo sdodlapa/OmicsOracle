@@ -551,13 +551,25 @@ class GEOCache:
                 if result and hasattr(result, 'citing_papers'):
                     for paper in result.citing_papers:
                         try:
+                            # Skip papers without title (title is the fallback identifier)
+                            if not paper.title or not paper.title.strip():
+                                logger.debug(f"[AUTO-DISCOVERY] Skipping paper without title")
+                                continue
+                            
+                            # Skip papers without ANY identifier AND no title
+                            # (Actually, title check above ensures we have at least title)
+                            if not any([paper.pmid, paper.doi, paper.pmcid, paper.title]):
+                                logger.debug(f"[AUTO-DISCOVERY] Skipping paper without any identifier or title")
+                                continue
+                            
                             # Create UniversalIdentifier for each citation
+                            # PMID, DOI, PMC ID are all optional - title is the fallback
                             identifier = UniversalIdentifier(
                                 geo_id=geo_id,
-                                pmid=paper.pmid,
-                                doi=paper.doi,
-                                pmc_id=paper.pmcid,  # Use pmcid (not pmc_id)
-                                title=paper.title,
+                                pmid=paper.pmid if paper.pmid and paper.pmid.strip() else None,
+                                doi=paper.doi if paper.doi and paper.doi.strip() else None,
+                                pmc_id=paper.pmcid if paper.pmcid and paper.pmcid.strip() else None,  # Use pmcid (not pmc_id)
+                                title=paper.title.strip(),  # Required - always present
                                 authors=json.dumps(paper.authors) if paper.authors else None,
                                 journal=paper.journal,
                                 publication_year=paper.publication_date.year if paper.publication_date else None,
@@ -565,10 +577,10 @@ class GEOCache:
                             )
                             
                             self.unified_db.insert_universal_identifier(identifier)
-                            logger.debug(f"[AUTO-DISCOVERY] Stored citation {paper.pmid}")
+                            logger.debug(f"[AUTO-DISCOVERY] Stored citation: {paper.title[:50]}... (PMID: {paper.pmid or 'N/A'})")
                             
                         except Exception as e:
-                            logger.warning(f"[AUTO-DISCOVERY] Failed to store citation {paper.pmid}: {e}")
+                            logger.warning(f"[AUTO-DISCOVERY] Failed to store citation '{paper.title[:50] if paper.title else 'Unknown'}': {e}")
                             continue
                 
                 logger.info(f"[AUTO-DISCOVERY] Stored {citations_found} citations in UnifiedDB for {geo_id}")

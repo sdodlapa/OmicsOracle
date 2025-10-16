@@ -7,19 +7,23 @@
 -- TABLE 1: Universal Identifiers (Central Hub)
 -- =============================================================================
 -- Links GEO datasets to publications with all possible identifiers
--- PRIMARY KEY: (geo_id, pmid) ensures one-to-one GEO-publication relationship
+-- Uses auto-incrementing ID as PRIMARY KEY to support papers without PMID
+-- At least one identifier (pmid, doi, pmc_id, arxiv_id) must be present
 CREATE TABLE IF NOT EXISTS universal_identifiers (
-    -- Primary identifiers
+    -- Auto-incrementing primary key
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    
+    -- GEO dataset reference
     geo_id TEXT NOT NULL,
-    pmid TEXT NOT NULL,
-
-    -- Alternative identifiers
+    
+    -- Publication identifiers (at least one should be present)
+    pmid TEXT,  -- Optional - not all papers have PMIDs (preprints, DOI-only, etc.)
     doi TEXT,
     pmc_id TEXT,
     arxiv_id TEXT,
 
     -- Publication metadata
-    title TEXT,
+    title TEXT NOT NULL,  -- Every paper MUST have a title (fallback identifier)
     authors TEXT,  -- JSON array of author objects
     journal TEXT,
     publication_year INTEGER,
@@ -29,7 +33,11 @@ CREATE TABLE IF NOT EXISTS universal_identifiers (
     first_discovered_at TEXT NOT NULL,  -- ISO 8601 format
     last_updated_at TEXT NOT NULL,      -- ISO 8601 format
 
-    PRIMARY KEY (geo_id, pmid)
+    -- Ensure at least one identifier OR title exists (title is always present, so this is always satisfied)
+    CHECK (pmid IS NOT NULL OR doi IS NOT NULL OR pmc_id IS NOT NULL OR arxiv_id IS NOT NULL OR title IS NOT NULL),
+    
+    -- Prevent duplicate entries for same paper
+    UNIQUE(geo_id, pmid, doi)
 );
 
 CREATE INDEX IF NOT EXISTS idx_ui_geo_id ON universal_identifiers(geo_id);
@@ -81,7 +89,7 @@ CREATE TABLE IF NOT EXISTS url_discovery (
 
     -- Foreign keys
     geo_id TEXT NOT NULL,
-    pmid TEXT NOT NULL,
+    pmid TEXT,  -- Optional - paper might only have DOI
 
     -- Discovery results
     urls_json TEXT NOT NULL,  -- JSON array of URL objects with metadata
@@ -118,7 +126,7 @@ CREATE TABLE IF NOT EXISTS pdf_acquisition (
 
     -- Foreign keys
     geo_id TEXT NOT NULL,
-    pmid TEXT NOT NULL,
+    pmid TEXT,  -- Optional - paper might only have DOI
 
     -- File metadata
     pdf_path TEXT NOT NULL,  -- Relative path: by_geo/{geo_id}/pmid_{pmid}.pdf
@@ -155,7 +163,7 @@ CREATE TABLE IF NOT EXISTS content_extraction (
 
     -- Foreign keys
     geo_id TEXT NOT NULL,
-    pmid TEXT NOT NULL,
+    pmid TEXT,  -- Optional - paper might only have DOI
 
     -- Extracted content
     full_text TEXT,
@@ -193,7 +201,7 @@ CREATE TABLE IF NOT EXISTS enriched_content (
 
     -- Foreign keys
     geo_id TEXT NOT NULL,
-    pmid TEXT NOT NULL,
+    pmid TEXT,  -- Optional - paper might only have DOI
 
     -- Enriched data (all JSON)
     sections_json TEXT,      -- Detected sections (abstract, methods, results, etc.)
