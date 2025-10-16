@@ -26,11 +26,12 @@ from typing import Dict, List, Optional
 
 import requests
 
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import \
+    EuropePMCConfig
+from omics_oracle_v2.lib.pipelines.citation_discovery.metadata_enrichment import \
+    MetadataEnrichmentService
 from omics_oracle_v2.lib.search_engines.citations.models import (
-    Publication,
-    PublicationSource,
-)
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import EuropePMCConfig
+    Publication, PublicationSource)
 
 logger = logging.getLogger(__name__)
 
@@ -70,16 +71,22 @@ class EuropePMCClient:
         # CRITICAL: Disable SSL verification at session level
         # This is required for institutional VPN/proxies that use self-signed certificates
         self.session.verify = False
-        
+
         # Suppress SSL warnings (optional but cleaner logs)
         import urllib3
+
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         # Rate limiting state
         self._last_request_time = 0.0
         self._min_interval = 1.0 / self.config.requests_per_second
 
-        logger.info(f"✓ Europe PMC client initialized (rate: {self.config.requests_per_second} req/s)")
+        # Metadata enrichment service
+        self.enrichment_service = MetadataEnrichmentService()
+
+        logger.info(
+            f"✓ Europe PMC client initialized (rate: {self.config.requests_per_second} req/s)"
+        )
 
     def _rate_limit(self):
         """Enforce rate limiting"""
@@ -102,16 +109,21 @@ class EuropePMCClient:
             Response data or None if failed
         """
         url = f"{self.BASE_URL}/{endpoint}"
-        
-        # Always request JSON format
+
+        # Always request JSON format with core result type for full metadata
         if params is None:
             params = {}
         params["format"] = "json"
+        # Request core results to get fullTextUrlList field
+        if "resulttype" not in params:
+            params["resulttype"] = "core"
 
         for attempt in range(self.config.retries):
             try:
                 self._rate_limit()
-                response = self.session.get(url, params=params, timeout=self.config.timeout)
+                response = self.session.get(
+                    url, params=params, timeout=self.config.timeout
+                )
 
                 # Handle rate limiting (429)
                 if response.status_code == 429:
@@ -122,13 +134,17 @@ class EuropePMCClient:
 
                 # Handle errors
                 if response.status_code != 200:
-                    logger.error(f"API error {response.status_code}: {response.text[:200]}")
+                    logger.error(
+                        f"API error {response.status_code}: {response.text[:200]}"
+                    )
                     return None
 
                 return response.json()
 
             except requests.exceptions.Timeout:
-                logger.warning(f"Request timeout (attempt {attempt + 1}/{self.config.retries})")
+                logger.warning(
+                    f"Request timeout (attempt {attempt + 1}/{self.config.retries})"
+                )
                 if attempt < self.config.retries - 1:
                     time.sleep(1.0 * (attempt + 1))
             except Exception as e:
@@ -261,8 +277,52 @@ class EuropePMCClient:
             title = result.get("title", "").strip()
             abstract = result.get("abstractText", "").strip()
 
+            # ROBUSTNESS FIX: Handle missing titles via enrichment
+            enrichment_metadata = {}
             if not title:
-                return None
+                logger.warning(
+                    f"Europe PMC result missing title "
+                    f"(DOI: {doi}, PMID: {pmid}, PMC: {pmc_id})"
+                )
+
+                # Attempt enrichment via Crossref if DOI available
+                if doi:
+                    logger.info(f"Attempting Crossref enrichment for DOI: {doi}")
+                    enriched_data = self.enrichment_service.enrich_from_doi(doi)
+
+                    if enriched_data and enriched_data.get("title"):
+                        title = enriched_data["title"]
+                        logger.info(f"✅ Enriched title from Crossref: {title[:60]}...")
+                        enrichment_metadata = {
+                            "enrichment_source": "crossref",
+                            "enrichment_fields": ["title"],
+                        }
+                    else:
+                        logger.warning(f"❌ Crossref enrichment failed for DOI: {doi}")
+                        # Try PMID enrichment
+                        if pmid:
+                            logger.info(f"Attempting PMID enrichment: {pmid}")
+                            enriched_data = self.enrichment_service.enrich_from_pmid(
+                                pmid
+                            )
+                            if enriched_data and enriched_data.get("title"):
+                                title = enriched_data["title"]
+                                logger.info(
+                                    f"✅ Enriched title from PubMed: {title[:60]}..."
+                                )
+                                enrichment_metadata = {
+                                    "enrichment_source": "pubmed",
+                                    "enrichment_fields": ["title"],
+                                }
+
+                # If still no title, skip (can't store without ANY identifier)
+                if not title:
+                    logger.error(
+                        f"Cannot recover title for Europe PMC result "
+                        f"(DOI: {doi}, PMID: {pmid}, PMC: {pmc_id}) - "
+                        f"skipping (potential loss of {result.get('citedByCount', 0)} citation paper)"
+                    )
+                    return None
 
             # Authors
             author_list = result.get("authorList", {}).get("author", [])
@@ -291,12 +351,14 @@ class EuropePMCClient:
                     pass
 
             # Journal
-            journal = result.get("journalTitle") or result.get("journalInfo", {}).get("journal", {}).get("title")
+            journal = result.get("journalTitle") or result.get("journalInfo", {}).get(
+                "journal", {}
+            ).get("title")
 
             # Citation count
             citation_count = result.get("citedByCount", 0)
 
-            # URL
+            # URL - landing page
             url = None
             if doi:
                 url = f"https://doi.org/{doi}"
@@ -305,7 +367,82 @@ class EuropePMCClient:
             elif pmc_id:
                 url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmc_id}"
 
-            return Publication(
+            # URL OPTIMIZATION: Extract PDF/fulltext URLs from fullTextUrlList
+            pdf_url = None
+            fulltext_url = None
+            oa_status = None
+
+            fulltext_url_list = result.get("fullTextUrlList", {})
+            if fulltext_url_list and isinstance(fulltext_url_list, dict):
+                fulltext_urls = fulltext_url_list.get("fullTextUrl", [])
+
+                # Priority order for PDF extraction:
+                # 1. Europe PMC PDF (OA)
+                # 2. PMC PDF (OA)
+                # 3. Any other OA PDF
+                # 4. Subscription PDFs (low priority)
+
+                europepmc_pdf = None
+                pmc_pdf = None
+                other_oa_pdf = None
+                subscription_pdf = None
+                europepmc_html = None
+
+                for ft_url in fulltext_urls:
+                    if not isinstance(ft_url, dict):
+                        continue
+
+                    url_str = ft_url.get("url", "").strip()
+                    availability_code = ft_url.get("availabilityCode", "")
+                    doc_style = ft_url.get("documentStyle", "")
+                    site = ft_url.get("site", "")
+
+                    if not url_str:
+                        continue
+
+                    # Categorize URLs
+                    is_oa = availability_code == "OA"
+                    is_pdf = doc_style == "pdf"
+                    is_html = doc_style == "html"
+
+                    if is_pdf:
+                        if site == "Europe_PMC" and is_oa:
+                            europepmc_pdf = url_str
+                        elif site in ["PubMed Central", "PMC"] and is_oa:
+                            pmc_pdf = url_str
+                        elif is_oa:
+                            other_oa_pdf = url_str
+                        else:
+                            subscription_pdf = url_str
+                    elif is_html and site == "Europe_PMC" and is_oa:
+                        europepmc_html = url_str
+
+                # Select best PDF URL
+                if europepmc_pdf:
+                    pdf_url = europepmc_pdf
+                    oa_status = "gold"  # Europe PMC OA
+                elif pmc_pdf:
+                    pdf_url = pmc_pdf
+                    oa_status = "gold"
+                elif other_oa_pdf:
+                    pdf_url = other_oa_pdf
+                    oa_status = "gold"
+                elif subscription_pdf:
+                    # Still store it - might be accessible via institutional access
+                    pdf_url = subscription_pdf
+                    oa_status = "subscription"
+
+                # Fulltext HTML as alternative
+                if europepmc_html:
+                    fulltext_url = europepmc_html
+
+            # Fallback: Construct PMC PDF URL if we have PMC ID but no PDF from API
+            if not pdf_url and pmc_id and result.get("isOpenAccess") == "Y":
+                pdf_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/{pmc_id}/pdf/"
+                oa_status = "gold"
+                logger.debug(f"Constructed PMC PDF URL: {pdf_url}")
+
+            pub = Publication(
                 pmid=pmid,
                 doi=doi,
                 title=title,
@@ -314,9 +451,33 @@ class EuropePMCClient:
                 publication_date=pub_date,
                 journal=journal,
                 url=url,
+                pdf_url=pdf_url,  # NEW: PDF URL for optimization
                 citations=citation_count,
                 source=PublicationSource.EUROPEPMC,
             )
+
+            # Add enrichment metadata if present
+            if enrichment_metadata:
+                pub.metadata.update(enrichment_metadata)
+
+            # Always add Europe PMC ID
+            pub.metadata["europepmc_id"] = result.get("id")
+
+            # Store URL metadata for optimization
+            if pdf_url:
+                pub.metadata["epmc_pdf_url"] = pdf_url
+                pub.metadata["epmc_oa_status"] = oa_status
+                pub.metadata["epmc_url_source"] = "fullTextUrlList"
+
+            if fulltext_url:
+                pub.metadata["epmc_fulltext_url"] = fulltext_url
+
+            # Store OA flags
+            pub.metadata["epmc_is_open_access"] = result.get("isOpenAccess") == "Y"
+            pub.metadata["epmc_in_pmc"] = result.get("inPMC") == "Y"
+            pub.metadata["epmc_has_pdf"] = result.get("hasPDF") == "Y"
+
+            return pub
 
         except Exception as e:
             logger.debug(f"Failed to parse Europe PMC result: {e}")

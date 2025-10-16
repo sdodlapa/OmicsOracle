@@ -29,8 +29,12 @@ from typing import Any, Dict, List, Optional
 
 import requests
 
-from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import OpenCitationsConfig
-from omics_oracle_v2.lib.search_engines.citations.models import Publication, PublicationSource
+from omics_oracle_v2.lib.pipelines.citation_discovery.clients.config import \
+    OpenCitationsConfig
+from omics_oracle_v2.lib.pipelines.citation_discovery.metadata_enrichment import \
+    MetadataEnrichmentService
+from omics_oracle_v2.lib.search_engines.citations.models import (
+    Publication, PublicationSource)
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +76,9 @@ class OpenCitationsClient:
         # Setup session
         self.session = requests.Session()
         self.session.headers.update(
-            {"User-Agent": "OmicsOracle/1.0 (https://github.com/sdodlapati3/OmicsOracle)"}
+            {
+                "User-Agent": "OmicsOracle/1.0 (https://github.com/sdodlapati3/OmicsOracle)"
+            }
         )
 
         # CRITICAL: Disable SSL verification for institutional VPN
@@ -87,7 +93,13 @@ class OpenCitationsClient:
         self._last_request_time = 0
         self._min_interval = 1.0 / self.config.requests_per_second
 
-        logger.info(f"✓ OpenCitations client initialized " f"(rate: {self.config.requests_per_second} req/s)")
+        # Metadata enrichment service
+        self.enrichment_service = MetadataEnrichmentService()
+
+        logger.info(
+            f"✓ OpenCitations client initialized "
+            f"(rate: {self.config.requests_per_second} req/s)"
+        )
 
     def get_citing_papers(
         self, doi: Optional[str] = None, pmid: Optional[str] = None, limit: int = 100
@@ -120,7 +132,9 @@ class OpenCitationsClient:
             return []
 
         # Clean DOI (remove prefix if present)
-        clean_doi = target_doi.replace("https://doi.org/", "").replace("http://dx.doi.org/", "")
+        clean_doi = target_doi.replace("https://doi.org/", "").replace(
+            "http://dx.doi.org/", ""
+        )
 
         try:
             # Query OpenCitations for papers citing this DOI
@@ -154,7 +168,9 @@ class OpenCitationsClient:
                 if pub:
                     papers.append(pub)
 
-            logger.info(f"✓ OpenCitations: found {len(papers)} citing papers for {clean_doi}")
+            logger.info(
+                f"✓ OpenCitations: found {len(papers)} citing papers for {clean_doi}"
+            )
             return papers
 
         except Exception as e:
@@ -181,7 +197,9 @@ class OpenCitationsClient:
             # Clean DOIs and add 'doi:' prefix for Meta API
             clean_dois = []
             for doi in dois:
-                clean = doi.replace("https://doi.org/", "").replace("http://dx.doi.org/", "")
+                clean = doi.replace("https://doi.org/", "").replace(
+                    "http://dx.doi.org/", ""
+                )
                 clean_dois.append(f"doi:{clean}")
 
             # OpenCitations Meta API batch format: doi:DOI1__doi:DOI2__doi:DOI3
@@ -203,11 +221,15 @@ class OpenCitationsClient:
                         # Meta API returns 'id' field with format: "doi:10.xxx/xxx ..."
                         item_id = item.get("id", "")
                         # Extract just the DOI part
-                        doi_part = item_id.split()[0].replace("doi:", "") if item_id else ""
+                        doi_part = (
+                            item_id.split()[0].replace("doi:", "") if item_id else ""
+                        )
                         if doi_part:
                             all_metadata[doi_part] = item
 
-            logger.info(f"✓ Fetched metadata for {len(all_metadata)}/{len(dois)} DOIs in batch")
+            logger.info(
+                f"✓ Fetched metadata for {len(all_metadata)}/{len(dois)} DOIs in batch"
+            )
             return all_metadata
 
         except Exception as e:
@@ -225,7 +247,9 @@ class OpenCitationsClient:
             Metadata dictionary or None if not found
         """
         try:
-            clean_doi = doi.replace("https://doi.org/", "").replace("http://dx.doi.org/", "")
+            clean_doi = doi.replace("https://doi.org/", "").replace(
+                "http://dx.doi.org/", ""
+            )
             # Use Meta API with doi: prefix
             url = f"{self.META_BASE_URL}/metadata/doi:{clean_doi}"
             data = self._make_request(url)
@@ -239,7 +263,9 @@ class OpenCitationsClient:
             return None
 
     def _parse_citation(
-        self, citation: Dict[str, Any], metadata_map: Optional[Dict[str, Dict[str, Any]]] = None
+        self,
+        citation: Dict[str, Any],
+        metadata_map: Optional[Dict[str, Dict[str, Any]]] = None,
     ) -> Optional[Publication]:
         """
         Parse OpenCitations citation data into Publication object.
@@ -273,16 +299,43 @@ class OpenCitationsClient:
             else:
                 metadata = self.get_metadata(citing_doi)
 
+            # ROBUSTNESS FIX: If no metadata, always enrich from Crossref (all OpenCitations citations have DOIs!)
             if not metadata:
-                # Create minimal publication from citation data
-                return Publication(
-                    title=f"Publication {citing_doi}",  # Minimal info
-                    authors=[],
-                    doi=citing_doi,
-                    url=f"https://doi.org/{citing_doi}",
-                    source=PublicationSource.CROSSREF,  # Data from Crossref via OpenCitations
-                    metadata={"citation_created": citation.get("creation"), "from_opencitations": True},
-                )
+                logger.warning(f"OpenCitations missing metadata for DOI: {citing_doi}")
+                logger.info(f"Attempting Crossref enrichment for DOI: {citing_doi}")
+
+                enriched_data = self.enrichment_service.enrich_from_doi(citing_doi)
+                if enriched_data and enriched_data.get("title"):
+                    title = enriched_data["title"]
+                    logger.info(f"✅ Enriched title from Crossref: {title[:60]}...")
+
+                    # Create publication from enriched data
+                    return Publication(
+                        title=title,
+                        authors=enriched_data.get("authors", []),
+                        doi=citing_doi,
+                        journal=enriched_data.get("journal"),
+                        publication_date=enriched_data.get("publication_date"),
+                        url=f"https://doi.org/{citing_doi}",
+                        source=PublicationSource.CROSSREF,
+                        metadata={
+                            "enrichment_source": "crossref",
+                            "enrichment_fields": [
+                                "title",
+                                "authors",
+                                "journal",
+                                "publication_date",
+                            ],
+                            "citation_created": citation.get("creation"),
+                            "from_opencitations": True,
+                        },
+                    )
+                else:
+                    logger.error(
+                        f"Cannot enrich OpenCitations citation (DOI: {citing_doi}) - "
+                        f"skipping (OpenCitations citation without metadata)"
+                    )
+                    return None
 
             # Parse full metadata
             # OpenCitations Meta API format:
@@ -300,9 +353,30 @@ class OpenCitationsClient:
             #   "editor": ""
             # }
 
-            title = metadata.get("title", "")
+            title = metadata.get("title", "").strip()
+            enrichment_metadata = {}
+
+            # ROBUSTNESS FIX: If title missing, enrich from Crossref
             if not title:
-                return None
+                logger.warning(
+                    f"OpenCitations metadata missing title for DOI: {citing_doi}"
+                )
+                logger.info(f"Attempting Crossref enrichment for DOI: {citing_doi}")
+
+                enriched_data = self.enrichment_service.enrich_from_doi(citing_doi)
+                if enriched_data and enriched_data.get("title"):
+                    title = enriched_data["title"]
+                    logger.info(f"✅ Enriched title from Crossref: {title[:60]}...")
+                    enrichment_metadata = {
+                        "enrichment_source": "crossref",
+                        "enrichment_fields": ["title"],
+                    }
+                else:
+                    logger.error(
+                        f"Cannot recover title for OpenCitations citation (DOI: {citing_doi}) - "
+                        f"skipping (potential data loss)"
+                    )
+                    return None
 
             # Parse authors (format: "Last1, First1 [orcid:...]; Last2, First2")
             authors = []
@@ -346,7 +420,9 @@ class OpenCitationsClient:
             issue = metadata.get("issue")
             pages = metadata.get("page")
             publisher = (
-                metadata.get("publisher", "").split("[")[0].strip() if metadata.get("publisher") else None
+                metadata.get("publisher", "").split("[")[0].strip()
+                if metadata.get("publisher")
+                else None
             )
 
             # Meta API doesn't have citation_count, use 0
@@ -355,7 +431,7 @@ class OpenCitationsClient:
             # Build URL
             url = f"https://doi.org/{citing_doi}"
 
-            return Publication(
+            pub = Publication(
                 title=title,
                 authors=authors,
                 journal=journal,
@@ -374,6 +450,12 @@ class OpenCitationsClient:
                     "pub_type": metadata.get("type"),
                 },
             )
+
+            # Add enrichment metadata if present
+            if enrichment_metadata:
+                pub.metadata.update(enrichment_metadata)
+
+            return pub
 
         except Exception as e:
             logger.warning(f"Error parsing OpenCitations citation: {e}")
@@ -404,7 +486,9 @@ class OpenCitationsClient:
                 self._last_request_time = time.time()
 
                 # Make request (allow redirects)
-                response = self.session.get(url, params=params, timeout=30, allow_redirects=True)
+                response = self.session.get(
+                    url, params=params, timeout=30, allow_redirects=True
+                )
 
                 # Handle rate limiting
                 if response.status_code == 429:
@@ -426,7 +510,9 @@ class OpenCitationsClient:
                     )
                     time.sleep(wait_time)
                 else:
-                    logger.error(f"OpenCitations request failed after {max_retries} attempts: {e}")
+                    logger.error(
+                        f"OpenCitations request failed after {max_retries} attempts: {e}"
+                    )
                     return None
 
         return None

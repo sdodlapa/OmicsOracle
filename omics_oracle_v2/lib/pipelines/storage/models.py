@@ -12,18 +12,52 @@ from typing import Optional
 
 @dataclass
 class UniversalIdentifier:
-    """Central identifier linking GEO datasets to publications."""
+    """
+    Central identifier linking GEO datasets to publications.
+
+    Uses multi-tier identifier strategy:
+    - Tier 1: Primary identifiers (DOI, PMID, PMC, arXiv) - at least one should exist
+    - Tier 2: Content hash (computed from title+authors+year) - fallback if no primary ID
+    - Tier 3: Source-specific IDs (OpenAlex ID, S2 ID, etc.) - for tracking and enrichment
+
+    At least one identifier (primary or content_hash) must be present.
+    Title is now optional to handle malformed API data gracefully.
+    """
 
     geo_id: str
-    pmid: str
+
+    # Tier 1: Primary identifiers (all optional, but at least one should exist)
     doi: Optional[str] = None
+    pmid: Optional[str] = None
     pmc_id: Optional[str] = None
     arxiv_id: Optional[str] = None
-    title: Optional[str] = None
+
+    # Tier 2: Computed identifier (fallback when no primary ID available)
+    content_hash: Optional[
+        str
+    ] = None  # 16-char hex from normalized(title+authors+year)
+
+    # Tier 3: Source-specific identifiers (for tracking and future enrichment)
+    source_id: Optional[str] = None  # OpenAlex ID (W12345), Semantic Scholar ID, etc.
+    source_name: Optional[str] = None  # 'openalex', 'pubmed', 'semantic_scholar', etc.
+
+    # Metadata (all optional - handle malformed API data)
+    title: Optional[
+        str
+    ] = None  # Can be NULL if malformed data (e.g., OpenAlex title: null)
     authors: Optional[str] = None  # JSON string
     journal: Optional[str] = None
     publication_year: Optional[int] = None
     publication_date: Optional[str] = None
+
+    # URL collection optimization fields (NEW!)
+    pdf_url: Optional[str] = None  # Direct PDF URL from discovery source
+    fulltext_url: Optional[str] = None  # Landing page or fulltext URL
+    oa_status: Optional[str] = None  # 'gold', 'green', 'bronze', 'hybrid', 'closed'
+    url_source: Optional[str] = None  # 'openalex', 'pmc', 'europepmc', 'waterfall'
+    url_discovered_at: Optional[str] = None  # ISO 8601 timestamp
+
+    # Timestamps
     first_discovered_at: Optional[str] = None
     last_updated_at: Optional[str] = None
 

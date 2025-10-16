@@ -11,18 +11,10 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from .models import (
-    CacheMetadata,
-    ContentExtraction,
-    EnrichedContent,
-    GEODataset,
-    PDFAcquisition,
-    ProcessingLog,
-    UniversalIdentifier,
-    URLDiscovery,
-    expires_at_iso,
-    now_iso,
-)
+from .models import (CacheMetadata, ContentExtraction, EnrichedContent,
+                     GEODataset, PDFAcquisition, ProcessingLog,
+                     UniversalIdentifier, URLDiscovery, expires_at_iso,
+                     now_iso)
 
 logger = logging.getLogger(__name__)
 
@@ -121,13 +113,13 @@ class UnifiedDatabase:
     def _initialize_schema(self):
         """
         Initialize database schema from schema.sql.
-        
+
         Raises:
             FileNotFoundError: If schema.sql not found
             sqlite3.Error: If schema execution fails
         """
         schema_path = Path(__file__).parent / "schema.sql"
-        
+
         if not schema_path.exists():
             error_msg = f"CRITICAL: Schema file not found at {schema_path}"
             logger.error(error_msg)
@@ -136,15 +128,15 @@ class UnifiedDatabase:
         try:
             with open(schema_path) as f:
                 schema_sql = f.read()
-            
+
             logger.info(f"Initializing database schema from {schema_path}")
-            
+
             with self._get_connection() as conn:
                 conn.executescript(schema_sql)
                 conn.commit()
 
             logger.info("✅ Database schema initialized successfully")
-            
+
         except sqlite3.Error as e:
             error_msg = f"CRITICAL: Failed to initialize database schema: {e}"
             logger.error(error_msg, exc_info=True)
@@ -175,33 +167,34 @@ class UnifiedDatabase:
 
         sql = """
             INSERT INTO universal_identifiers (
-                geo_id, pmid, doi, pmc_id, arxiv_id,
+                geo_id, doi, pmid, pmc_id, arxiv_id, content_hash,
+                source_id, source_name,
                 title, authors, journal, publication_year, publication_date,
+                pdf_url, fulltext_url, oa_status, url_source, url_discovered_at,
                 first_discovered_at, last_updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            ON CONFLICT(geo_id, pmid) DO UPDATE SET
-                doi = COALESCE(excluded.doi, doi),
-                pmc_id = COALESCE(excluded.pmc_id, pmc_id),
-                arxiv_id = COALESCE(excluded.arxiv_id, arxiv_id),
-                title = COALESCE(excluded.title, title),
-                authors = COALESCE(excluded.authors, authors),
-                journal = COALESCE(excluded.journal, journal),
-                publication_year = COALESCE(excluded.publication_year, publication_year),
-                publication_date = COALESCE(excluded.publication_date, publication_date),
-                last_updated_at = excluded.last_updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT DO NOTHING
         """
 
         values = (
             identifier.geo_id,
-            identifier.pmid,
             identifier.doi,
+            identifier.pmid,
             identifier.pmc_id,
             identifier.arxiv_id,
+            identifier.content_hash,
+            identifier.source_id,
+            identifier.source_name,
             identifier.title,
             identifier.authors,
             identifier.journal,
             identifier.publication_year,
             identifier.publication_date,
+            identifier.pdf_url,
+            identifier.fulltext_url,
+            identifier.oa_status,
+            identifier.url_source,
+            identifier.url_discovered_at,
             identifier.first_discovered_at,
             identifier.last_updated_at,
         )
@@ -213,7 +206,9 @@ class UnifiedDatabase:
                 conn.execute(sql, values)
                 conn.commit()
 
-    def get_universal_identifier(self, geo_id: str, pmid: str) -> Optional[UniversalIdentifier]:
+    def get_universal_identifier(
+        self, geo_id: str, pmid: str
+    ) -> Optional[UniversalIdentifier]:
         """
         Get universal identifier by GEO ID and PMID.
 
@@ -254,7 +249,9 @@ class UnifiedDatabase:
     # GEO DATASETS
     # =========================================================================
 
-    def insert_geo_dataset(self, dataset: GEODataset, conn: Optional[sqlite3.Connection] = None) -> None:
+    def insert_geo_dataset(
+        self, dataset: GEODataset, conn: Optional[sqlite3.Connection] = None
+    ) -> None:
         """Insert or update GEO dataset."""
         now = now_iso()
         if not dataset.created_at:
@@ -319,7 +316,9 @@ class UnifiedDatabase:
     # URL DISCOVERY (Pipeline 2)
     # =========================================================================
 
-    def insert_url_discovery(self, discovery: URLDiscovery, conn: Optional[sqlite3.Connection] = None) -> int:
+    def insert_url_discovery(
+        self, discovery: URLDiscovery, conn: Optional[sqlite3.Connection] = None
+    ) -> int:
         """Insert URL discovery results. Returns row ID."""
         if not discovery.discovered_at:
             discovery.discovered_at = now_iso()
@@ -474,7 +473,9 @@ class UnifiedDatabase:
                 conn.commit()
                 return cursor.lastrowid
 
-    def get_content_extraction(self, geo_id: str, pmid: str) -> Optional[ContentExtraction]:
+    def get_content_extraction(
+        self, geo_id: str, pmid: str
+    ) -> Optional[ContentExtraction]:
         """Get content extraction record for a publication."""
         sql = """
             SELECT * FROM content_extraction
@@ -658,7 +659,9 @@ class UnifiedDatabase:
     # CACHE METADATA
     # =========================================================================
 
-    def insert_cache_metadata(self, cache: CacheMetadata, conn: Optional[sqlite3.Connection] = None) -> int:
+    def insert_cache_metadata(
+        self, cache: CacheMetadata, conn: Optional[sqlite3.Connection] = None
+    ) -> int:
         """Insert cache metadata record. Returns row ID."""
         now = now_iso()
         if not cache.created_at:
@@ -741,15 +744,21 @@ class UnifiedDatabase:
         """Get overall database statistics."""
         with self._get_connection() as conn:
             stats = {
-                "total_publications": conn.execute("SELECT COUNT(*) FROM universal_identifiers").fetchone()[
-                    0
-                ],
-                "total_geo_datasets": conn.execute("SELECT COUNT(*) FROM geo_datasets").fetchone()[0],
+                "total_publications": conn.execute(
+                    "SELECT COUNT(*) FROM universal_identifiers"
+                ).fetchone()[0],
+                "total_geo_datasets": conn.execute(
+                    "SELECT COUNT(*) FROM geo_datasets"
+                ).fetchone()[0],
                 "pdfs_downloaded": conn.execute(
                     "SELECT COUNT(*) FROM pdf_acquisition WHERE status = 'downloaded'"
                 ).fetchone()[0],
-                "content_extracted": conn.execute("SELECT COUNT(*) FROM content_extraction").fetchone()[0],
-                "enriched_papers": conn.execute("SELECT COUNT(*) FROM enriched_content").fetchone()[0],
+                "content_extracted": conn.execute(
+                    "SELECT COUNT(*) FROM content_extraction"
+                ).fetchone()[0],
+                "enriched_papers": conn.execute(
+                    "SELECT COUNT(*) FROM enriched_content"
+                ).fetchone()[0],
                 "high_quality_papers": conn.execute(
                     "SELECT COUNT(*) FROM content_extraction WHERE extraction_grade IN ('A', 'B')"
                 ).fetchone()[0],
@@ -760,17 +769,17 @@ class UnifiedDatabase:
     def get_complete_geo_data(self, geo_id: str) -> Optional[Dict[str, Any]]:
         """
         Get complete GEO dataset metadata in single query (warm-tier for GEOCache).
-        
+
         This method aggregates all GEO-centric data from UnifiedDatabase:
         - GEO dataset metadata (geo_datasets table)
         - All publications linked to this GEO (universal_identifiers)
         - PDF acquisition history for each publication
         - Content extraction results
         - Statistics and quality metrics
-        
+
         Args:
             geo_id: GEO accession ID (e.g., "GSE123456")
-        
+
         Returns:
             Complete GEO data dict with structure:
             {
@@ -782,7 +791,7 @@ class UnifiedDatabase:
                 "statistics": {...}  # Counts and quality metrics
             }
             Or None if GEO not found
-        
+
         Example:
             >>> data = db.get_complete_geo_data("GSE123456")
             >>> print(data["geo"]["title"])
@@ -791,16 +800,15 @@ class UnifiedDatabase:
         with self._get_connection() as conn:
             # Get GEO dataset metadata
             geo_row = conn.execute(
-                "SELECT * FROM geo_datasets WHERE geo_id = ?",
-                (geo_id,)
+                "SELECT * FROM geo_datasets WHERE geo_id = ?", (geo_id,)
             ).fetchone()
-            
+
             if not geo_row:
                 logger.debug(f"GEO dataset not found: {geo_id}")
                 return None
-            
+
             geo_data = dict(geo_row)
-            
+
             # Get all publications for this GEO
             pub_rows = conn.execute(
                 """
@@ -809,13 +817,13 @@ class UnifiedDatabase:
                 WHERE geo_id = ?
                 ORDER BY pmid
                 """,
-                (geo_id,)
+                (geo_id,),
             ).fetchall()
-            
+
             papers = []
             for pub_row in pub_rows:
                 pub_dict = dict(pub_row)
-                
+
                 # Get PDF acquisition history
                 pdf_rows = conn.execute(
                     """
@@ -824,11 +832,11 @@ class UnifiedDatabase:
                     WHERE geo_id = ? AND pmid = ?
                     ORDER BY downloaded_at DESC
                     """,
-                    (geo_id, pub_dict.get("pmid"))
+                    (geo_id, pub_dict.get("pmid")),
                 ).fetchall()
-                
+
                 pub_dict["download_history"] = [dict(row) for row in pdf_rows]
-                
+
                 # Get content extraction if exists
                 extraction_row = conn.execute(
                     """
@@ -838,36 +846,36 @@ class UnifiedDatabase:
                     ORDER BY extracted_at DESC
                     LIMIT 1
                     """,
-                    (geo_id, pub_dict.get("pmid"))
+                    (geo_id, pub_dict.get("pmid")),
                 ).fetchone()
-                
+
                 if extraction_row:
                     pub_dict["extraction"] = dict(extraction_row)
-                
+
                 papers.append(pub_dict)
-            
+
             # Calculate statistics
             total_papers = len(papers)
             successful_downloads = sum(
-                1 for p in papers
-                if any(h["status"] == "downloaded" for h in p.get("download_history", []))
+                1
+                for p in papers
+                if any(
+                    h["status"] == "downloaded" for h in p.get("download_history", [])
+                )
             )
-            extracted_papers = sum(
-                1 for p in papers
-                if p.get("extraction") is not None
-            )
-            
+            extracted_papers = sum(1 for p in papers if p.get("extraction") is not None)
+
             success_rate = (
                 round(successful_downloads / total_papers * 100, 1)
                 if total_papers > 0
                 else 0
             )
-            
+
             return {
                 "geo": geo_data,
                 "papers": {
                     "original": papers,  # All papers from universal_identifiers are "original"
-                    "citing": []  # Future: implement citation discovery
+                    "citing": [],  # Future: implement citation discovery
                 },
                 "statistics": {
                     "original_papers": total_papers,
@@ -877,5 +885,5 @@ class UnifiedDatabase:
                     "failed_downloads": total_papers - successful_downloads,
                     "extracted_papers": extracted_papers,
                     "success_rate": success_rate,
-                }
+                },
             }

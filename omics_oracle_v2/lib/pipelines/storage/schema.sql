@@ -6,46 +6,83 @@
 -- =============================================================================
 -- TABLE 1: Universal Identifiers (Central Hub)
 -- =============================================================================
--- Links GEO datasets to publications with all possible identifiers
--- Uses auto-incrementing ID as PRIMARY KEY to support papers without PMID
--- At least one identifier (pmid, doi, pmc_id, arxiv_id) must be present
+-- Links GEO datasets to publications using multi-tier identifier strategy:
+-- Tier 1: Primary identifiers (DOI, PMID, PMC ID, arXiv ID)
+-- Tier 2: Computed content hash (title + authors + year) for papers without primary IDs
+-- Tier 3: Source-specific IDs (OpenAlex ID, Semantic Scholar ID, etc.)
 CREATE TABLE IF NOT EXISTS universal_identifiers (
     -- Auto-incrementing primary key
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    
+
     -- GEO dataset reference
     geo_id TEXT NOT NULL,
-    
-    -- Publication identifiers (at least one should be present)
-    pmid TEXT,  -- Optional - not all papers have PMIDs (preprints, DOI-only, etc.)
-    doi TEXT,
-    pmc_id TEXT,
-    arxiv_id TEXT,
 
-    -- Publication metadata
-    title TEXT NOT NULL,  -- Every paper MUST have a title (fallback identifier)
-    authors TEXT,  -- JSON array of author objects
+    -- Tier 1: Primary identifiers (at least one should be present)
+    doi TEXT,           -- Digital Object Identifier (85% coverage, preferred)
+    pmid TEXT,          -- PubMed ID (70% coverage)
+    pmc_id TEXT,        -- PubMed Central ID (40% coverage, open access)
+    arxiv_id TEXT,      -- arXiv ID (10% coverage, preprints)
+
+    -- Tier 2: Computed identifier (fallback for papers without primary IDs)
+    content_hash TEXT,  -- SHA256 hash of normalized(title + authors + year), 16-char hex
+
+    -- Tier 3: Source-specific identifiers
+    source_id TEXT,     -- OpenAlex ID (W12345), Semantic Scholar ID, etc.
+    source_name TEXT,   -- 'openalex', 'pubmed', 'semantic_scholar', 'europepmc'
+
+    -- Publication metadata (all optional - handle malformed API data gracefully)
+    title TEXT,         -- Can be NULL if malformed data (e.g., OpenAlex returns title: null)
+    authors TEXT,       -- JSON array of author objects
     journal TEXT,
     publication_year INTEGER,
     publication_date TEXT,  -- ISO 8601 format
+
+    -- URL collection optimization fields (NEW!)
+    pdf_url TEXT,       -- Direct PDF URL from discovery source (OpenAlex oa_url, PMC PDF, etc.)
+    fulltext_url TEXT,  -- Landing page or fulltext URL
+    oa_status TEXT,     -- Open Access status: 'gold', 'green', 'bronze', 'hybrid', 'closed'
+    url_source TEXT,    -- Where URL was found: 'openalex', 'pmc', 'europepmc', 'semantic_scholar', 'waterfall'
+    url_discovered_at TEXT,  -- When URL was first discovered (ISO 8601)
 
     -- Timestamps
     first_discovered_at TEXT NOT NULL,  -- ISO 8601 format
     last_updated_at TEXT NOT NULL,      -- ISO 8601 format
 
-    -- Ensure at least one identifier OR title exists (title is always present, so this is always satisfied)
-    CHECK (pmid IS NOT NULL OR doi IS NOT NULL OR pmc_id IS NOT NULL OR arxiv_id IS NOT NULL OR title IS NOT NULL),
-    
-    -- Prevent duplicate entries for same paper
-    UNIQUE(geo_id, pmid, doi)
+    -- Ensure at least one identifier exists (primary ID or content hash)
+    CHECK (
+        doi IS NOT NULL OR
+        pmid IS NOT NULL OR
+        pmc_id IS NOT NULL OR
+        arxiv_id IS NOT NULL OR
+        content_hash IS NOT NULL
+    )
 );
 
+-- Deduplication indexes: Use partial indexes to handle NULLs properly
+-- Papers with same DOI for same GEO dataset = duplicate
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_geo_doi
+    ON universal_identifiers(geo_id, doi)
+    WHERE doi IS NOT NULL;
+
+-- Papers with same PMID for same GEO dataset = duplicate
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_geo_pmid
+    ON universal_identifiers(geo_id, pmid)
+    WHERE pmid IS NOT NULL;
+
+-- Papers with same content hash for same GEO dataset = duplicate
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_geo_hash
+    ON universal_identifiers(geo_id, content_hash)
+    WHERE content_hash IS NOT NULL;
+
+-- Query performance indexes
 CREATE INDEX IF NOT EXISTS idx_ui_geo_id ON universal_identifiers(geo_id);
-CREATE INDEX IF NOT EXISTS idx_ui_pmid ON universal_identifiers(pmid);
-CREATE INDEX IF NOT EXISTS idx_ui_doi ON universal_identifiers(doi);
+CREATE INDEX IF NOT EXISTS idx_ui_pmid ON universal_identifiers(pmid) WHERE pmid IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ui_doi ON universal_identifiers(doi) WHERE doi IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_ui_content_hash ON universal_identifiers(content_hash) WHERE content_hash IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_ui_year ON universal_identifiers(publication_year);
+CREATE INDEX IF NOT EXISTS idx_ui_source ON universal_identifiers(source_name);
 -- Composite index for common JOIN pattern in get_complete_geo_data()
-CREATE INDEX IF NOT EXISTS idx_ui_geo_pmid_composite ON universal_identifiers(geo_id, pmid);
+CREATE INDEX IF NOT EXISTS idx_ui_geo_pmid_composite ON universal_identifiers(geo_id, pmid) WHERE pmid IS NOT NULL;
 
 
 -- =============================================================================

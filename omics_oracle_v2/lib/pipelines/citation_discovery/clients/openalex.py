@@ -346,28 +346,14 @@ class OpenAlexClient(BasePublicationClient):
 
         Returns:
             Publication object
+
+        Raises:
+            ValueError: If work has no title AND no DOI/PMID (cannot be enriched)
         """
         # Extract basic metadata
-        title = work.get("title", "")
+        title = work.get("title")
 
-        # Extract authors
-        authors = []
-        for authorship in work.get("authorships", []):
-            author = authorship.get("author", {})
-            name = author.get("display_name", "")
-            if name:
-                authors.append(name)
-
-        # Extract publication date
-        pub_date = None
-        pub_date_str = work.get("publication_date")
-        if pub_date_str:
-            try:
-                pub_date = datetime.strptime(pub_date_str, "%Y-%m-%d")
-            except (ValueError, TypeError):
-                pass
-
-        # Extract DOI
+        # Extract DOI first (needed for enrichment if title is missing)
         doi = work.get("doi")
         if doi and doi.startswith("https://doi.org/"):
             doi = doi.replace("https://doi.org/", "")
@@ -391,6 +377,36 @@ class OpenAlexClient(BasePublicationClient):
                     if pmcid:
                         pmcid = f"PMC{pmcid}"
 
+        # Check if we can enrich missing title
+        # Skip ONLY if no title AND no way to enrich (no DOI, no PMID)
+        if not title or not isinstance(title, str) or not title.strip():
+            if not doi and not pmid:
+                # Cannot enrich - skip this work
+                raise ValueError(
+                    f"Work missing title and identifiers for enrichment: {work.get('id', 'unknown')}"
+                )
+            # Title missing but we have DOI/PMID - will attempt enrichment later
+            logger.debug(
+                f"Work {work.get('id')} has no title but has DOI/PMID - will attempt enrichment"
+            )
+
+        # Extract authors
+        authors = []
+        for authorship in work.get("authorships", []):
+            author = authorship.get("author", {})
+            name = author.get("display_name", "")
+            if name:
+                authors.append(name)
+
+        # Extract publication date
+        pub_date = None
+        pub_date_str = work.get("publication_date")
+        if pub_date_str:
+            try:
+                pub_date = datetime.strptime(pub_date_str, "%Y-%m-%d")
+            except (ValueError, TypeError):
+                pass
+
         # Extract abstract (from abstract_inverted_index)
         abstract = self._extract_abstract(work.get("abstract_inverted_index"))
 
@@ -401,16 +417,17 @@ class OpenAlexClient(BasePublicationClient):
             if source:
                 journal = source.get("display_name")
 
-        # Create publication
+        # Create publication (title may be None - will be enriched later if needed)
         pub = Publication(
-            title=title,
+            title=title
+            or "Unknown Title",  # Temporary placeholder for Pydantic validation
             authors=authors,
             abstract=abstract,
             publication_date=pub_date,
             journal=journal,
             doi=doi,
-            pmid=pmid,  # Extract from OpenAlex ids
-            pmcid=pmcid,  # Extract from OpenAlex ids
+            pmid=pmid,
+            pmcid=pmcid,
             citations=work.get("cited_by_count", 0),
             source=PublicationSource.OPENALEX,
             metadata={
@@ -425,8 +442,33 @@ class OpenAlexClient(BasePublicationClient):
                 "concepts": [
                     c.get("display_name") for c in work.get("concepts", [])[:5]
                 ],
+                "needs_enrichment": not bool(
+                    title and title.strip()
+                ),  # Flag for enrichment
             },
         )
+
+        # Attempt enrichment if title was missing
+        if not title or not title.strip():
+            from omics_oracle_v2.lib.pipelines.citation_discovery.metadata_enrichment import \
+                get_enrichment_service
+
+            enrichment_service = get_enrichment_service()
+            enriched_pub = enrichment_service.enrich_publication(pub)
+
+            # If enrichment succeeded, use enriched publication
+            if (
+                enriched_pub.title
+                and enriched_pub.title != "Unknown Title"
+                and enriched_pub.title.strip()
+            ):
+                return enriched_pub
+
+            # If enrichment failed, raise error
+            raise ValueError(
+                f"Failed to enrich title for work {work.get('id')} "
+                f"(DOI: {doi}, PMID: {pmid})"
+            )
 
         return pub
 

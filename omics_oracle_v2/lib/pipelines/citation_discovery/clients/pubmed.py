@@ -205,8 +205,18 @@ class PubMedClient(BasePublicationClient):
         """
         # Extract basic fields
         pmid = record.get("PMID", "")
-        title = record.get("TI", "")
+        title = record.get("TI", "").strip()
         abstract = record.get("AB", "")
+
+        # DEFENSIVE CHECK: Log if title is missing (very rare in PubMed <0.01%)
+        if not title:
+            doi_info = record.get("AID", [])
+            logger.warning(
+                f"PubMed record missing title (PMID: {pmid}, AID: {doi_info}) - "
+                f"This is extremely rare in PubMed and may indicate data quality issue"
+            )
+            # PubMed is very reliable, so we keep the warning but still process
+            # Title will be handled by downstream enrichment if needed
 
         # Authors
         authors = record.get("AU", [])
