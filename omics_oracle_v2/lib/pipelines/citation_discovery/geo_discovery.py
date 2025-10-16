@@ -867,7 +867,9 @@ class GEOCitationDiscovery:
                 return (source_name, [])
 
             # Execute all sources in parallel using ThreadPoolExecutor
+            # OPTIMIZATION: Add 10s timeout to prevent waiting indefinitely for slow sources
             source_contributions = {}  # Track which papers came from which source
+            discovery_timeout = 10  # seconds
 
             with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 futures = [
@@ -878,18 +880,27 @@ class GEOCitationDiscovery:
                     executor.submit(fetch_pubmed_citations),
                 ]
 
-                # Collect results as they complete
-                for future in concurrent.futures.as_completed(futures):
-                    try:
-                        source_name, papers = future.result()
-                        all_citing_papers.extend(papers)
-                        # Track paper IDs from this source
-                        source_contributions[source_name] = [
-                            p.doi or p.pmid or p.title for p in papers
-                        ]
-                        logger.info(f"  ✓ {source_name}: {len(papers)} citing papers")
-                    except Exception as e:
-                        logger.warning(f"  ✗ Source failed: {e}")
+                # Collect results as they complete (with timeout)
+                try:
+                    for future in concurrent.futures.as_completed(futures, timeout=discovery_timeout):
+                        try:
+                            source_name, papers = future.result(timeout=1.0)
+                            all_citing_papers.extend(papers)
+                            # Track paper IDs from this source
+                            source_contributions[source_name] = [
+                                p.doi or p.pmid or p.title for p in papers
+                            ]
+                            logger.info(f"  ✓ {source_name}: {len(papers)} citing papers")
+                        except concurrent.futures.TimeoutError:
+                            logger.warning(f"  ⏱ Source timed out (1s result timeout)")
+                        except Exception as e:
+                            logger.warning(f"  ✗ Source failed: {e}")
+                except concurrent.futures.TimeoutError:
+                    # Overall timeout reached - return partial results
+                    logger.warning(
+                        f"  ⏱ Citation discovery timeout after {discovery_timeout}s - "
+                        f"returning {len(all_citing_papers)} papers from completed sources"
+                    )
 
             # If all sources failed, return empty (graceful degradation)
             if not all_citing_papers:
