@@ -2415,7 +2415,7 @@ ${error.stack || 'Not available'}`;
                     <div style="margin-bottom: 20px;">
                         <h4>🔍 Key Findings</h4>
                         <ul>
-                            ${findings.map(f => `<li>${f}</li>`).join('')}
+                            ${findings.map(f => `<li>${parseMarkdown(f)}</li>`).join('')}
                         </ul>
                     </div>
                 ` : ''}
@@ -2425,7 +2425,7 @@ ${error.stack || 'Not available'}`;
                     <div>
                         <h4>💡 Recommendations</h4>
                         <ul>
-                            ${recommendations.map(r => `<li>${r}</li>`).join('')}
+                            ${recommendations.map(r => `<li>${parseMarkdown(r)}</li>`).join('')}
                         </ul>
                     </div>
                 ` : ''}
@@ -2600,7 +2600,7 @@ ${error.stack || 'Not available'}`;
                     <div class="analysis-card">
                         <h4>🔍 Key Findings</h4>
                         <ul class="findings-list">
-                            ${findings.map(finding => `<li>${finding}</li>`).join('')}
+                            ${findings.map(finding => `<li>${parseMarkdown(finding)}</li>`).join('')}
                         </ul>
                     </div>
                 ` : ''}
@@ -2610,7 +2610,7 @@ ${error.stack || 'Not available'}`;
                     <div class="analysis-card">
                         <h4>💡 Recommendations</h4>
                         <ul class="findings-list">
-                            ${recommendations.map(rec => `<li>${rec}</li>`).join('')}
+                            ${recommendations.map(rec => `<li>${parseMarkdown(rec)}</li>`).join('')}
                         </ul>
                     </div>
                 ` : ''}
