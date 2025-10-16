@@ -11,11 +11,7 @@ from typing import Dict, Optional
 from pypdf import PdfReader
 
 from omics_oracle_v2.lib.pipelines.text_enrichment.enrichers import (
-    ChatGPTFormatter,
-    ReferenceParser,
-    SectionDetector,
-    TableExtractor,
-)
+    ChatGPTFormatter, ReferenceParser, SectionDetector, TableExtractor)
 
 logger = logging.getLogger(__name__)
 
@@ -48,13 +44,16 @@ class PDFExtractor:
             self.chatgpt_formatter = ChatGPTFormatter()
 
     def extract_text(
-        self, pdf_path: Path, metadata: Optional[Dict] = None, context: Optional[str] = None
+        self,
+        pdf_path: Path,
+        metadata: Optional[Dict] = None,
+        context: Optional[str] = None,
     ) -> Optional[Dict[str, any]]:
         """
-        Extract and enrich text from PDF.
+        Extract and enrich text from PDF or HTML fulltext.
 
         Args:
-            pdf_path: Path to PDF file
+            pdf_path: Path to PDF file (or HTML file with .pdf extension)
             metadata: Optional metadata (title, authors, doi, pmid, etc.)
             context: Optional context about paper usage
 
@@ -62,7 +61,20 @@ class PDFExtractor:
             Dict with extracted text, sections, tables, and ChatGPT-formatted content
         """
         try:
-            # Step 1: Extract raw text
+            # FALLBACK: Check if file is actually HTML (common error from publishers)
+            with open(pdf_path, "rb") as f:
+                header = f.read(100)
+                if (
+                    header.startswith(b"<!DOCTYPE")
+                    or header.startswith(b"<html")
+                    or header.startswith(b"\n<!DO")
+                ):
+                    logger.warning(
+                        f"File {pdf_path.name} is HTML, not PDF. Attempting HTML extraction..."
+                    )
+                    return self._extract_html(pdf_path, metadata)
+
+            # Step 1: Extract raw text from PDF
             reader = PdfReader(pdf_path)
 
             text_parts = []
@@ -85,7 +97,9 @@ class PDFExtractor:
 
             # Step 2: Detect sections
             title = metadata.get("title") if metadata else None
-            section_result = self.section_detector.detect_sections(full_text, title=title)
+            section_result = self.section_detector.detect_sections(
+                full_text, title=title
+            )
 
             # Convert Section objects to dicts for JSON serialization
             result["sections"] = {
@@ -128,7 +142,9 @@ class PDFExtractor:
             )
 
             result["chatgpt_formatted"] = formatted.to_dict()
-            result["chatgpt_prompt"] = self.chatgpt_formatter.format_for_prompt(formatted)
+            result["chatgpt_prompt"] = self.chatgpt_formatter.format_for_prompt(
+                formatted
+            )
 
             # Quality scoring
             result["quality_score"] = self._calculate_quality_score(result)
@@ -137,13 +153,64 @@ class PDFExtractor:
             sections_dict = result.get("sections", {})
             result["methods"] = sections_dict.get("methods", {}).get("content", "")
             result["results"] = sections_dict.get("results", {}).get("content", "")
-            result["discussion"] = sections_dict.get("discussion", {}).get("content", "")
-            result["conclusion"] = sections_dict.get("conclusion", {}).get("content", "")
+            result["discussion"] = sections_dict.get("discussion", {}).get(
+                "content", ""
+            )
+            result["conclusion"] = sections_dict.get("conclusion", {}).get(
+                "content", ""
+            )
 
             return result
 
         except Exception as e:
             logger.error(f"Failed to extract PDF text from {pdf_path}: {e}")
+            return None
+
+    def _extract_html(
+        self, html_path: Path, metadata: Optional[Dict] = None
+    ) -> Optional[Dict[str, any]]:
+        """
+        Extract text from HTML fulltext (fallback for when PDFs are actually HTML).
+
+        Args:
+            html_path: Path to HTML file (saved with .pdf extension)
+            metadata: Optional metadata
+
+        Returns:
+            Dict with extracted text from HTML
+        """
+        try:
+            from bs4 import BeautifulSoup
+
+            with open(html_path, "r", encoding="utf-8", errors="ignore") as f:
+                html_content = f.read()
+
+            soup = BeautifulSoup(html_content, "html.parser")
+
+            # Remove script and style elements
+            for script in soup(["script", "style", "nav", "header", "footer"]):
+                script.decompose()
+
+            # Get text
+            text = soup.get_text(separator="\n\n", strip=True)
+
+            # Clean up whitespace
+            lines = (line.strip() for line in text.splitlines())
+            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+            text = "\n".join(chunk for chunk in chunks if chunk)
+
+            result = {
+                "full_text": text,
+                "page_count": 1,  # HTML is single "page"
+                "text_length": len(text),
+                "extraction_method": "html_fallback",
+            }
+
+            logger.info(f"Extracted {len(text)} chars from HTML fulltext")
+            return result
+
+        except Exception as e:
+            logger.error(f"Failed to extract HTML text from {html_path}: {e}")
             return None
 
     def _calculate_quality_score(self, result: Dict) -> float:

@@ -206,7 +206,7 @@ class UnifiedDatabase:
                 conn.execute(sql, values)
                 conn.commit()
 
-    def get_universal_identifier(
+    def get_universal_identifier_by_pmid(
         self, geo_id: str, pmid: str
     ) -> Optional[UniversalIdentifier]:
         """
@@ -219,7 +219,12 @@ class UnifiedDatabase:
         Returns:
             UniversalIdentifier object or None
         """
-        sql = "SELECT * FROM universal_identifiers WHERE geo_id = ? AND pmid = ?"
+        # Exclude 'id' column to match UniversalIdentifier dataclass fields
+        sql = """SELECT geo_id, doi, pmid, pmc_id, arxiv_id, content_hash,
+                 source_id, source_name, title, authors, journal, publication_year,
+                 publication_date, pdf_url, fulltext_url, oa_status, url_source,
+                 url_discovered_at, first_discovered_at, last_updated_at
+                 FROM universal_identifiers WHERE geo_id = ? AND pmid = ?"""
 
         with self._get_connection() as conn:
             row = conn.execute(sql, (geo_id, pmid)).fetchone()
@@ -238,7 +243,40 @@ class UnifiedDatabase:
         Returns:
             List of UniversalIdentifier objects
         """
-        sql = "SELECT * FROM universal_identifiers WHERE geo_id = ? ORDER BY pmid"
+        # Exclude 'id' column to match UniversalIdentifier dataclass fields
+        sql = """SELECT geo_id, doi, pmid, pmc_id, arxiv_id, content_hash,
+                 source_id, source_name, title, authors, journal, publication_year,
+                 publication_date, pdf_url, fulltext_url, oa_status, url_source,
+                 url_discovered_at, first_discovered_at, last_updated_at
+                 FROM universal_identifiers WHERE geo_id = ? ORDER BY pmid"""
+
+        with self._get_connection() as conn:
+            rows = conn.execute(sql, (geo_id,)).fetchall()
+
+        # DEBUG: Print what columns we got
+        if rows:
+            row_dict = dict(rows[0])
+            logger.debug(f"[DB DEBUG] Row keys: {list(row_dict.keys())}")
+            logger.debug(f"[DB DEBUG] Has 'id' key: {'id' in row_dict}")
+
+        return [UniversalIdentifier(**dict(row)) for row in rows]
+
+    def get_publications_by_geo(self, geo_id: str) -> List[UniversalIdentifier]:
+        """
+        Get all publications for a GEO dataset.
+
+        Args:
+            geo_id: GEO dataset ID
+
+        Returns:
+            List of UniversalIdentifier objects
+        """
+        # Exclude 'id' column to match UniversalIdentifier dataclass fields
+        sql = """SELECT geo_id, doi, pmid, pmc_id, arxiv_id, content_hash,
+                 source_id, source_name, title, authors, journal, publication_year,
+                 publication_date, pdf_url, fulltext_url, oa_status, url_source,
+                 url_discovered_at, first_discovered_at, last_updated_at
+                 FROM universal_identifiers WHERE geo_id = ? ORDER BY pmid"""
 
         with self._get_connection() as conn:
             rows = conn.execute(sql, (geo_id,)).fetchall()

@@ -69,6 +69,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_geo_pmid
     ON universal_identifiers(geo_id, pmid)
     WHERE pmid IS NOT NULL;
 
+-- Foreign key compatibility: Same as above but without WHERE clause
+-- This allows content_extraction foreign key to work properly
+-- Note: Will only contain non-NULL pmids, same as partial index above
+CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_geo_pmid_fk
+    ON universal_identifiers(geo_id, pmid);
+
 -- Papers with same content hash for same GEO dataset = duplicate
 CREATE UNIQUE INDEX IF NOT EXISTS idx_unique_geo_hash
     ON universal_identifiers(geo_id, content_hash)

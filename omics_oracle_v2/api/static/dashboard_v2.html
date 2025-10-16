@@ -1472,14 +1472,14 @@
             if (currentSearchController) {
                 currentSearchController.abort();
                 currentSearchController = null;
-                
+
                 const searchBtn = document.getElementById('search-btn');
                 const cancelBtn = document.getElementById('cancel-search-btn');
-                
+
                 searchBtn.disabled = false;
                 searchBtn.innerHTML = '<i class="fas fa-search"></i> Search';
                 if (cancelBtn) cancelBtn.style.display = 'none';
-                
+
                 console.log('[CANCEL] Search cancelled by user');
             }
         }
@@ -1505,24 +1505,24 @@
 
             const searchBtn = document.getElementById('search-btn');
             const cancelBtn = document.getElementById('cancel-search-btn');
-            
+
             searchBtn.disabled = true;
             searchBtn.innerHTML = '<span class="loading"></span> Searching...';
             if (cancelBtn) cancelBtn.style.display = 'inline-block';
 
             try {
                 console.log('[DEBUG] Starting search for:', query);
-                
+
                 // Fetch ALL results (no limit)
                 const requestBody = {
                     search_terms: [query],
                     max_results: 1000,  // Fetch up to 1000, display 50 initially
                     enable_semantic: false
                 };
-                
+
                 console.log('[DEBUG] Request body:', requestBody);
                 console.log('[DEBUG] Making request to: http://localhost:8000/api/agents/search');
-                
+
                 const response = await authenticatedFetch('http://localhost:8000/api/agents/search', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1589,21 +1589,21 @@
                 // Handle cancellation gracefully
                 if (error.name === 'AbortError') {
                     console.log('[CANCEL] Search was cancelled');
-                    document.getElementById('results-section').innerHTML = 
+                    document.getElementById('results-section').innerHTML =
                         '<p style="text-align: center; color: #666; padding: 2rem;">Search cancelled</p>';
                     return;
                 }
-                
+
                 console.error('Search error:', error);
                 console.error('Error details:', error.message, error.stack);
                 alert('Search failed: ' + error.message);
             } finally {
                 const cancelBtn = document.getElementById('cancel-search-btn');
-                
+
                 searchBtn.disabled = false;
                 searchBtn.innerHTML = '<i class="fas fa-search"></i> Search';
                 if (cancelBtn) cancelBtn.style.display = 'none';
-                
+
                 currentSearchController = null;
             }
         }
@@ -1612,13 +1612,13 @@
         function loadMoreResults() {
             // Increase display count by 20
             currentDisplayCount = Math.min(currentDisplayCount + 20, totalAvailableResults);
-            
+
             // Update current results to show more
             currentResults = allSearchResults.slice(0, currentDisplayCount);
-            
+
             // Re-display with updated results
             displayResults(currentResults);
-            
+
             // Scroll to the first newly loaded dataset
             const newResultIndex = currentDisplayCount - 20;
             const newResultElement = document.getElementById(`card-${newResultIndex}`);
@@ -1632,7 +1632,7 @@
             const dataset = currentResults[index];
             const cardElement = document.getElementById(`card-${index}`);
             const discoverBtn = cardElement.querySelector('.btn-download-papers');
-            
+
             try {
                 // Update button to show loading
                 const originalText = discoverBtn.innerHTML;
@@ -1652,11 +1652,11 @@
                 }
 
                 const result = await response.json();
-                
+
                 // Show success in button temporarily
                 discoverBtn.innerHTML = `✅ Found ${result.citations_found}!`;
                 discoverBtn.classList.add('btn-success');
-                
+
                 // Refresh the search to show updated citation counts immediately
                 setTimeout(async () => {
                     await performSearch();
@@ -1667,7 +1667,7 @@
                 const errorMessage = `Failed to discover citations. Please try again.
 Error: ${error.message}`;
                 alert(errorMessage);
-                
+
                 // Restore original button state
                 discoverBtn.disabled = false;
                 discoverBtn.innerHTML = '🔍 Discover Citations';
@@ -1723,7 +1723,9 @@ Error: ${error.message}`;
 
                 // Show detailed status message with copyable modal
                 if (enriched.fulltext_count > 0) {
-                    const message = `✅ Success! Downloaded ${enriched.fulltext_count} of ${dataset.pubmed_ids.length} paper(s).
+                    // Use fulltext_total if available (includes citing papers), otherwise fallback to pubmed_ids.length
+                    const totalPapers = enriched.fulltext_total || dataset.pubmed_ids.length;
+                    const message = `✅ Success! Downloaded ${enriched.fulltext_count} of ${totalPapers} paper(s).
 
 Status: ${enriched.fulltext_status}
 
@@ -1950,7 +1952,7 @@ ${error.stack || 'Not available'}`;
             // Update count with pagination info
             const displayedCount = results.length;
             const totalCount = totalAvailableResults || displayedCount;
-            
+
             // Always show "X of Y datasets" format
             if (totalCount > 0) {
                 countElement.textContent = `${displayedCount} of ${totalCount} datasets`;
@@ -2313,11 +2315,35 @@ ${error.stack || 'Not available'}`;
                 confidence: 0.90
             };
 
+            // Simple markdown to HTML converter for AI analysis
+            function parseMarkdown(text) {
+                if (!text) return '';
+
+                return text
+                    // Numbered section headers (e.g., "1. Overview:", "2. Comparison:")
+                    .replace(/^(\d+)\.\s+(Overview|Comparison|Key Insights|Recommendations|Key Findings|Discussion|Methods|Results|Conclusion)(:|$)/gim,
+                             '<h3 style="margin-top: 20px; margin-bottom: 12px; color: #111827; font-weight: 700; font-size: 1.2em; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">$2</h3>')
+                    // Markdown headers
+                    .replace(/^### (.*$)/gim, '<h5 style="margin-top: 16px; margin-bottom: 8px; color: #1f2937; font-weight: 600;">$1</h5>')
+                    .replace(/^## (.*$)/gim, '<h4 style="margin-top: 20px; margin-bottom: 10px; color: #111827; font-weight: 700;">$1</h4>')
+                    .replace(/^# (.*$)/gim, '<h3 style="margin-top: 24px; margin-bottom: 12px; color: #111827; font-weight: 700; font-size: 1.25em;">$1</h3>')
+                    // Bold
+                    .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1f2937; font-weight: 600;">$1</strong>')
+                    // Italic
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    // Bullet points
+                    .replace(/^[\-\*]\s+(.+)$/gim, '<li style="margin-left: 20px; margin-bottom: 8px;">$1</li>')
+                    // Line breaks (convert double newlines to paragraphs)
+                    .split('\n\n')
+                    .map(para => para.trim() ? `<p style="margin-bottom: 12px; line-height: 1.6;">${para.replace(/\n/g, '<br>')}</p>` : '')
+                    .join('');
+            }
+
             // Check if dataset has PMIDs and calculate analyzed papers
             const hasFullText = dataset.pubmed_ids && dataset.pubmed_ids.length > 0;
             const totalPapers = dataset.fulltext ? dataset.fulltext.length : (dataset.pubmed_ids ? dataset.pubmed_ids.length : 0);
-            const analyzedPapers = Math.min(totalPapers, 2); // Backend analyzes max 2 papers
-            const hasTokenLimit = totalPapers > 2;
+            const analyzedPapers = Math.min(totalPapers, 10); // Backend analyzes max 10 papers (default)
+            const hasTokenLimit = totalPapers > 10;
 
             contentElement.innerHTML = `
                 <!-- Paper Analysis Info Banner -->
@@ -2353,7 +2379,7 @@ ${error.stack || 'Not available'}`;
                             <span style="color: #047857; font-size: 13px;">
                                 Analyzed ${analyzedPapers} of ${totalPapers} paper${totalPapers > 1 ? 's' : ''}
                                 ${dataset.fulltext_count > 0 ? `(${dataset.fulltext_count} full-text available)` : ''}
-                                ${hasTokenLimit ? '<br><em>⚡ Limited to 2 papers due to token constraints. Prioritized: original dataset papers & most relevant.</em>' : ''}
+                                ${hasTokenLimit ? '<br><em>⚡ Limited to 10 papers due to token constraints. Prioritized: original dataset papers & most relevant.</em>' : ''}
                             </span>
                         </div>
                     </div>
@@ -2381,7 +2407,7 @@ ${error.stack || 'Not available'}`;
                 <!-- AI Summary -->
                 <div style="margin-bottom: 20px;">
                     <h4>🤖 AI Summary</h4>
-                    <p>${summary}</p>
+                    <div style="color: #374151; line-height: 1.6;">${parseMarkdown(summary)}</div>
                 </div>
 
                 <!-- Key Findings -->
@@ -2519,6 +2545,30 @@ ${error.stack || 'Not available'}`;
                 confidence: 0.90
             };
 
+            // Simple markdown to HTML converter for AI analysis
+            function parseMarkdown(text) {
+                if (!text) return '';
+
+                return text
+                    // Numbered section headers (e.g., "1. Overview:", "2. Comparison:")
+                    .replace(/^(\d+)\.\s+(Overview|Comparison|Key Insights|Recommendations|Key Findings|Discussion|Methods|Results|Conclusion)(:|$)/gim,
+                             '<h3 style="margin-top: 20px; margin-bottom: 12px; color: #111827; font-weight: 700; font-size: 1.2em; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">$2</h3>')
+                    // Markdown headers
+                    .replace(/^### (.*$)/gim, '<h5 style="margin-top: 16px; margin-bottom: 8px; color: #1f2937; font-weight: 600;">$1</h5>')
+                    .replace(/^## (.*$)/gim, '<h4 style="margin-top: 20px; margin-bottom: 10px; color: #111827; font-weight: 700;">$1</h4>')
+                    .replace(/^# (.*$)/gim, '<h3 style="margin-top: 24px; margin-bottom: 12px; color: #111827; font-weight: 700; font-size: 1.25em;">$1</h3>')
+                    // Bold
+                    .replace(/\*\*(.*?)\*\*/g, '<strong style="color: #1f2937; font-weight: 600;">$1</strong>')
+                    // Italic
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                    // Bullet points
+                    .replace(/^[\-\*]\s+(.+)$/gim, '<li style="margin-left: 20px; margin-bottom: 8px;">$1</li>')
+                    // Line breaks (convert double newlines to paragraphs)
+                    .split('\n\n')
+                    .map(para => para.trim() ? `<p style="margin-bottom: 12px; line-height: 1.6;">${para.replace(/\n/g, '<br>')}</p>` : '')
+                    .join('');
+            }
+
             content.innerHTML = `
                 <!-- Quality Scores -->
                 <div class="analysis-card">
@@ -2542,7 +2592,7 @@ ${error.stack || 'Not available'}`;
                 <!-- AI Summary -->
                 <div class="analysis-card">
                     <h4>🤖 AI Summary</h4>
-                    <p class="analysis-text">${summary}</p>
+                    <div class="analysis-text" style="line-height: 1.6;">${parseMarkdown(summary)}</div>
                 </div>
 
                 <!-- Key Findings -->

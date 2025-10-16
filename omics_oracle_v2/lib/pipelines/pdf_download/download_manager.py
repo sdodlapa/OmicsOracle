@@ -7,6 +7,7 @@ Supports parallel downloads with rate limiting.
 
 import asyncio
 import logging
+import random
 import ssl
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -21,6 +22,15 @@ from omics_oracle_v2.lib.search_engines.citations.models import Publication
 from omics_oracle_v2.lib.utils.identifiers import UniversalIdentifier
 
 logger = logging.getLogger(__name__)
+
+# Pool of realistic browser User-Agents to rotate through (anti-bot detection)
+USER_AGENTS = [
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+]
 
 
 @dataclass
@@ -209,10 +219,23 @@ class PDFDownloadManager:
                 ssl_context.check_hostname = False
                 ssl_context.verify_mode = ssl.CERT_NONE
 
-                # User-Agent headers to avoid bot detection
+                # User-Agent headers to avoid bot detection - RANDOMIZED REAL BROWSER
+                # Rotate through different browsers to avoid fingerprinting
+                user_agent = random.choice(USER_AGENTS)
                 headers = {
-                    "User-Agent": "Mozilla/5.0 (compatible; OmicsOracle/2.0; Academic Research Tool; +https://github.com/omicsoracle/omicsoracle)",
-                    "Accept": "application/pdf,*/*",
+                    "User-Agent": user_agent,
+                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Accept-Encoding": "gzip, deflate, br",
+                    "Connection": "keep-alive",
+                    "Upgrade-Insecure-Requests": "1",
+                    "Sec-Fetch-Dest": "document",
+                    "Sec-Fetch-Mode": "navigate",
+                    "Sec-Fetch-Site": "none",
+                    "Sec-Fetch-User": "?1",
+                    "Cache-Control": "max-age=0",
+                    "DNT": "1",  # Do Not Track
+                    "Sec-GPC": "1",  # Global Privacy Control
                 }
 
                 # Chrome cookies disabled - causing HTTP 400 errors when sent to wrong domains
@@ -505,6 +528,9 @@ class PDFDownloadManager:
         # NEW: Retry configuration
         max_retries_per_url = 2  # Retry each URL up to 2 times
         retry_delay = 1.5  # Seconds to wait between retries
+        source_switch_delay = (
+            0.5  # Small delay between switching sources to avoid rate limits
+        )
 
         # Try each URL in type-aware priority order
         for i, source_url in enumerate(sorted_urls):
@@ -567,6 +593,9 @@ class PDFDownloadManager:
                     continue
 
             # All retries exhausted for this URL, try next URL
+            # Add small delay before switching to next source to avoid rate limiting
+            if i < len(sorted_urls) - 1:  # Don't delay after last URL
+                await asyncio.sleep(source_switch_delay)
 
         # All URLs failed
         logger.warning(

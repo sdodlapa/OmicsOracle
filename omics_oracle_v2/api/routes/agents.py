@@ -21,9 +21,9 @@ from pydantic import BaseModel, Field
 from omics_oracle_v2.api.models.requests import SearchRequest
 from omics_oracle_v2.api.models.responses import (DatasetResponse,
                                                   SearchResponse)
-from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.lib.pipelines.citation_discovery.geo_discovery import \
     GEOCitationDiscovery
+from omics_oracle_v2.lib.search_engines.geo.models import GEOSeriesMetadata
 from omics_oracle_v2.services.search_service import SearchService
 
 # TODO: DatabaseQueries deleted - use UnifiedDatabase directly if needed
@@ -108,9 +108,9 @@ async def enrich_with_fulltext(
 ):
     """
     Enrich datasets with full-text content from linked publications.
-    
+
     Refactored Oct 15, 2025 to use FulltextService.
-    
+
     This endpoint:
     1. Takes datasets with PubMed IDs
     2. Fetches full publication metadata from PubMed
@@ -118,7 +118,7 @@ async def enrich_with_fulltext(
     4. Parses PDFs and extracts sections
     5. Stores data in UnifiedDB automatically
     6. Returns datasets with fulltext URLs
-    
+
     Args:
         datasets: List of datasets to enrich (must have pubmed_ids)
         max_papers: Maximum papers to download per dataset
@@ -126,7 +126,7 @@ async def enrich_with_fulltext(
         max_citing_papers: Max citing papers per dataset (default: 10)
         download_original: Download original papers (default: True)
         include_full_content: Include parsed text sections (default: True)
-    
+
     Returns:
         List of datasets with full-text URLs attached
     """
@@ -134,7 +134,7 @@ async def enrich_with_fulltext(
         from omics_oracle_v2.services.fulltext_service import FulltextService
 
         service = FulltextService()
-        
+
         return await service.enrich_datasets(
             datasets=datasets,
             max_papers=max_papers,
@@ -197,6 +197,12 @@ class AIAnalysisRequest(BaseModel):
     query: str = Field(..., description="Original search query for context")
     max_datasets: int = Field(
         default=5, ge=1, le=10, description="Max datasets to analyze"
+    )
+    max_papers_per_dataset: int = Field(
+        default=10,
+        ge=1,
+        le=10,
+        description="Max papers to analyze per dataset (default=10 for comprehensive analysis)",
     )
     # RAG Phase 1: Enhanced context
     query_processing: Optional[QueryProcessingContext] = Field(
@@ -325,29 +331,29 @@ async def get_complete_geo_data(geo_id: str):
 
 @router.post(
     "/datasets/{geo_id}/discover-citations",
-    summary="Discover Citations for a GEO Dataset"
+    summary="Discover Citations for a GEO Dataset",
 )
 async def discover_citations(geo_id: str):
     """
     Discover and populate citations for a GEO dataset.
-    
+
     This endpoint:
     1. Searches PubMed for papers citing this GEO dataset
     2. Retrieves metadata for found papers
     3. Stores citations in the UnifiedDatabase
-    
+
     Args:
         geo_id: GEO accession ID (e.g., GSE189158)
-        
+
     Returns:
         Discovery results with citation count
     """
     try:
         logger.info(f"Starting citation discovery for {geo_id}")
-        
+
         # Initialize discovery service
         discovery = GEOCitationDiscovery()
-        
+
         # Create minimal metadata (will be enriched during discovery)
         metadata = GEOSeriesMetadata(
             geo_id=geo_id,
@@ -358,27 +364,24 @@ async def discover_citations(geo_id: str):
             pubmed_ids=[],
             samples=[],
             platforms=[],
-            sample_count=0
+            sample_count=0,
         )
-        
+
         # Run discovery (async)
         result = await discovery.find_citing_papers(metadata, max_results=100)
-        
+
         # Get count from result
-        citations_found = len(result.citing_papers) if hasattr(result, 'citing_papers') else 0
-        
+        citations_found = (
+            len(result.citing_papers) if hasattr(result, "citing_papers") else 0
+        )
+
         logger.info(f"Discovery complete for {geo_id}: {citations_found} citations")
-        
-        return {
-            "geo_id": geo_id,
-            "citations_found": citations_found,
-            "success": True
-        }
-        
+
+        return {"geo_id": geo_id, "citations_found": citations_found, "success": True}
+
     except Exception as e:
         logger.error(f"Citation discovery failed for {geo_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Discovery error: {str(e)}",
         )
-

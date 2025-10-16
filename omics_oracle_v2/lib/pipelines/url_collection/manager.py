@@ -1342,17 +1342,18 @@ class FullTextManager:
             return cached
 
         # Define all sources with their priority order
+        # NOTE: PMC moved to END (priority 11) because it returns 403 for programmatic access
         sources = [
             ("institutional", self._try_institutional_access, 1),
-            ("pmc", self._try_pmc, 2),
-            ("unpaywall", self._try_unpaywall, 3),
+            ("unpaywall", self._try_unpaywall, 2),
+            ("openalex_oa", self._try_openalex_oa_url, 3),
             ("core", self._try_core, 4),
-            ("openalex_oa", self._try_openalex_oa_url, 5),
-            ("crossref", self._try_crossref, 6),
-            ("biorxiv", self._try_biorxiv, 7),
-            ("arxiv", self._try_arxiv, 8),
-            ("scihub", self._try_scihub, 9),
-            ("libgen", self._try_libgen, 10),
+            ("crossref", self._try_crossref, 5),
+            ("biorxiv", self._try_biorxiv, 6),
+            ("arxiv", self._try_arxiv, 7),
+            ("scihub", self._try_scihub, 8),
+            ("libgen", self._try_libgen, 9),
+            ("pmc", self._try_pmc, 11),  # MOVED TO END - PMC blocks programmatic access
         ]
 
         # Execute ALL sources in PARALLEL

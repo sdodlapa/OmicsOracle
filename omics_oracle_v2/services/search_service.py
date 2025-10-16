@@ -34,26 +34,30 @@ class SearchService:
         # GEO cache will be initialized lazily to avoid circular imports
         self._geo_cache = None
         self._geo_cache_initialized = False
-    
+
     @property
     def geo_cache(self):
         """Lazy-load GEO cache to avoid circular imports."""
         if not self._geo_cache_initialized:
             try:
-                from omics_oracle_v2.lib.pipelines.storage.registry import create_geo_cache
-                from omics_oracle_v2.lib.pipelines.storage.unified_db import UnifiedDatabase
                 from omics_oracle_v2.core.config import get_settings
-                
+                from omics_oracle_v2.lib.pipelines.storage.registry import \
+                    create_geo_cache
+                from omics_oracle_v2.lib.pipelines.storage.unified_db import \
+                    UnifiedDatabase
+
                 # Get database path from config
                 settings = get_settings()
                 db_path = settings.search.db_path
-                
+
                 # Create UnifiedDatabase instance
                 unified_db = UnifiedDatabase(db_path)
                 self._geo_cache = create_geo_cache(unified_db)
                 logger.info(f"GEO cache initialized for search service (db: {db_path})")
             except Exception as e:
-                logger.warning(f"Failed to initialize GEO cache: {e}. Database metrics will be unavailable.")
+                logger.warning(
+                    f"Failed to initialize GEO cache: {e}. Database metrics will be unavailable."
+                )
                 self._geo_cache = None
             finally:
                 self._geo_cache_initialized = True
@@ -270,7 +274,7 @@ class SearchService:
         """Calculate relevance scores for datasets."""
         # Import here to avoid circular dependency
         from omics_oracle_v2.api.models.agent_schemas import RankedDataset
-        
+
         ranked_datasets = []
         search_terms_lower = {term.lower() for term in request.search_terms}
 
@@ -329,11 +333,11 @@ class SearchService:
     ) -> List[DatasetResponse]:
         """
         Convert ranked datasets to response format with database metrics enrichment.
-        
+
         OPTIMIZED: Uses parallel enrichment with asyncio.gather() for 50x speedup.
         """
         import asyncio
-        
+
         async def enrich_single_dataset(ranked) -> DatasetResponse:
             """Enrich a single dataset with database metrics (parallel execution)."""
             # Enrich with database metrics from UnifiedDB via GEOCache
@@ -341,7 +345,8 @@ class SearchService:
             pdf_count = 0
             processed_count = 0
             completion_rate = 0.0
-            
+            all_pmids = []  # Will be populated from database
+
             if self.geo_cache:
                 try:
                     # Get complete GEO data from cache/DB
@@ -349,32 +354,49 @@ class SearchService:
                     if geo_data:
                         # Extract publications from the correct structure
                         # UnifiedDB returns: {"geo": {...}, "papers": {"original": [...], "citing": []}}
-                        papers = geo_data.get("papers", {}).get("original", [])
+                        papers_data = geo_data.get("papers", {})
+                        original_papers = papers_data.get("original", [])
+                        citing_papers = papers_data.get("citing", [])
+
+                        # Combine both original and citing papers
+                        papers = original_papers + citing_papers
                         citation_count = len(papers)
-                        
+
+                        # CRITICAL FIX: Extract PMIDs from database papers
+                        # This ensures ALL papers (original + citing) are available for download
+                        all_pmids = [p.get("pmid") for p in papers if p.get("pmid")]
+
                         # Count PDFs (check download_history for 'downloaded' status)
                         pdf_count = sum(
-                            1 for pub in papers
-                            if any(h.get("status") == "downloaded" for h in pub.get("download_history", []))
+                            1
+                            for pub in papers
+                            if any(
+                                h.get("status") == "downloaded"
+                                for h in pub.get("download_history", [])
+                            )
                         )
-                        
+
                         # Count processed (extracted) papers
                         processed_count = sum(
-                            1 for pub in papers
-                            if pub.get("extraction") is not None
+                            1 for pub in papers if pub.get("extraction") is not None
                         )
-                        
+
                         # Calculate completion rate
                         if citation_count > 0:
                             completion_rate = (pdf_count / citation_count) * 100
-                        
+
                         logger.debug(
                             f"Enriched {ranked.dataset.geo_id}: citations={citation_count}, "
-                            f"pdfs={pdf_count}, processed={processed_count}"
+                            f"pdfs={pdf_count}, processed={processed_count}, pmids={len(all_pmids)}"
                         )
                 except Exception as e:
-                    logger.warning(f"Failed to enrich {ranked.dataset.geo_id} with database metrics: {e}")
-            
+                    logger.warning(
+                        f"Failed to enrich {ranked.dataset.geo_id} with database metrics: {e}"
+                    )
+
+            # Use enriched PMIDs if available, otherwise fall back to GEO metadata
+            final_pmids = all_pmids if all_pmids else ranked.dataset.pubmed_ids
+
             return DatasetResponse(
                 geo_id=ranked.dataset.geo_id,
                 title=ranked.dataset.title,
@@ -388,19 +410,19 @@ class SearchService:
                 match_reasons=ranked.match_reasons,
                 publication_date=ranked.dataset.publication_date,
                 submission_date=ranked.dataset.submission_date,
-                pubmed_ids=ranked.dataset.pubmed_ids,
+                pubmed_ids=final_pmids,  # NOW INCLUDES ALL PAPERS FROM DATABASE!
                 # Database metrics (enriched from UnifiedDB)
                 citation_count=citation_count,
                 pdf_count=pdf_count,
                 processed_count=processed_count,
                 completion_rate=completion_rate,
             )
-        
+
         # OPTIMIZATION: Execute all enrichments in parallel
         if ranked_datasets:
-            datasets = await asyncio.gather(*[
-                enrich_single_dataset(ranked) for ranked in ranked_datasets
-            ])
+            datasets = await asyncio.gather(
+                *[enrich_single_dataset(ranked) for ranked in ranked_datasets]
+            )
             return list(datasets)
         else:
             return []
@@ -489,7 +511,7 @@ class SearchService:
 
         # Handle both QueryProcessingContext object and dict (from cache/serialization)
         qp = search_result.query_processing
-        
+
         if isinstance(qp, dict):
             # Already converted to dict (from cache or serialization)
             extracted_entities = qp.get("extracted_entities", {})

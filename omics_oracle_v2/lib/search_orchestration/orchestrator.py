@@ -193,7 +193,9 @@ class SearchOrchestrator:
                     cache_key, search_type=cache_search_type
                 )
                 if cached:
-                    logger.info(f"✅ Cache hit - returning cached results (max_geo={max_geo_results})")
+                    logger.info(
+                        f"✅ Cache hit - returning cached results (max_geo={max_geo_results})"
+                    )
                     cached_result = SearchResult(**cached)
                     cached_result.cache_hit = True
                     return cached_result
@@ -330,7 +332,9 @@ class SearchOrchestrator:
                 await self.cache.set_search_result(
                     cache_key, cache_search_type, result.to_dict()
                 )
-                logger.info(f"💾 Results cached (max_geo={max_geo_results}, max_pub={max_publication_results})")
+                logger.info(
+                    f"💾 Results cached (max_geo={max_geo_results}, max_pub={max_publication_results})"
+                )
             except Exception as e:
                 logger.warning(f"Cache set failed: {e}")
 
@@ -477,7 +481,9 @@ class SearchOrchestrator:
                 logger.warning(f"[DEBUG] Missing IDs: {missing_ids}")
                 for geo_id in missing_ids:
                     try:
-                        logger.warning(f"[DEBUG] Calling get_metadata_fast for {geo_id}")
+                        logger.warning(
+                            f"[DEBUG] Calling get_metadata_fast for {geo_id}"
+                        )
                         # Use fast E-Summary method (100x faster than SOFT files)
                         metadata = await self.geo_client.get_metadata_fast(geo_id)
                         if metadata:
@@ -655,11 +661,14 @@ class SearchOrchestrator:
         )
 
         if not self.coordinator:
-            logger.warning("[PERSIST] Database persistence disabled - coordinator is None")
+            logger.warning(
+                "[PERSIST] Database persistence disabled - coordinator is None"
+            )
             return  # Database integration disabled
 
         try:
-            from omics_oracle_v2.lib.pipelines.storage.models import GEODataset, UniversalIdentifier
+            from omics_oracle_v2.lib.pipelines.storage.models import (
+                GEODataset, UniversalIdentifier)
 
             datasets_persisted = 0
             citations_persisted = 0
@@ -674,17 +683,19 @@ class SearchOrchestrator:
                         summary=dataset.summary,
                         organism=dataset.organism,
                         platform=dataset.platforms[0] if dataset.platforms else None,
-                        publication_count=len(dataset.pubmed_ids) if dataset.pubmed_ids else 0,
+                        publication_count=len(dataset.pubmed_ids)
+                        if dataset.pubmed_ids
+                        else 0,
                         pdfs_downloaded=0,
                         pdfs_extracted=0,
                         avg_extraction_quality=0.0,
                         status="discovered",
                     )
-                    
+
                     # Use coordinator's database to persist
-                    self.coordinator.unified_db.insert_geo_dataset(geo_dataset)
+                    self.coordinator.db.insert_geo_dataset(geo_dataset)
                     datasets_persisted += 1
-                    
+
                     logger.debug(f"[PERSIST] Saved GEO dataset: {dataset.geo_id}")
 
                     # Step 2: Persist GEO→PMID citations to universal_identifiers table
@@ -709,10 +720,12 @@ class SearchOrchestrator:
                                         publication_date=None,
                                         source_name="geo_search",
                                     )
-                                    
-                                    self.coordinator.unified_db.insert_universal_identifier(identifier)
+
+                                    self.coordinator.db.insert_universal_identifier(
+                                        identifier
+                                    )
                                     citations_persisted += 1
-                                    
+
                                 except Exception as e:
                                     logger.warning(
                                         f"[PERSIST] Failed to persist citation {dataset.geo_id}→{pmid}: {e}"
@@ -721,7 +734,7 @@ class SearchOrchestrator:
                 except Exception as e:
                     logger.error(
                         f"[PERSIST] Failed to persist dataset {dataset.geo_id}: {e}",
-                        exc_info=True
+                        exc_info=True,
                     )
 
             if datasets_persisted > 0 or citations_persisted > 0:
@@ -731,7 +744,9 @@ class SearchOrchestrator:
                 )
 
         except Exception as e:
-            logger.error(f"[PERSIST] Failed to persist results to database: {e}", exc_info=True)
+            logger.error(
+                f"[PERSIST] Failed to persist results to database: {e}", exc_info=True
+            )
 
     async def close(self):
         """Clean up resources.
