@@ -69,5 +69,16 @@ def call_openai(
         return content.strip() if content and content.strip() else None
 
     except Exception as e:
-        logger.error(f"OpenAI API call failed: {e}")
+        error_msg = str(e)
+        
+        # Special handling for context length exceeded
+        if "context_length_exceeded" in error_msg or "maximum context length" in error_msg:
+            logger.error(
+                f"OpenAI context length exceeded: {e}\n"
+                f"Model: {model}, Max tokens requested: {max_tokens}\n"
+                f"Suggestion: Reduce max_papers_per_dataset or use gpt-4-turbo model"
+            )
+        else:
+            logger.error(f"OpenAI API call failed: {e}")
+        
         return None

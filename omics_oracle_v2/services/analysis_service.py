@@ -601,20 +601,56 @@ Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_paper
             "and dataset content. Be specific about WHY datasets are relevant and HOW they differ."
         )
 
+        # Smart token allocation based on model and prompt length
+        # GPT-4 base: 8,192 total tokens
+        # GPT-4-turbo: 128,000 total tokens
+        # GPT-4o: 128,000 total tokens
+        model_name = settings.ai.model.lower()
+        if "turbo" in model_name or "gpt-4o" in model_name or "gpt-4-1106" in model_name:
+            # GPT-4 Turbo or GPT-4o: Use large context window
+            max_output_tokens = 4000
+        else:
+            # GPT-4 base: Conservative allocation to avoid context overflow
+            # Estimate: prompt is ~4-5K tokens, leave 3K for output
+            estimated_prompt_tokens = len(prompt) // 4  # Rough estimate: 1 token ≈ 4 chars
+            max_output_tokens = max(2000, 8000 - estimated_prompt_tokens - 200)  # 200 buffer
+            if max_output_tokens > 3500:
+                max_output_tokens = 3500  # Cap at 3500 for safety
+
+        self.logger.info(
+            f"[ANALYZE] Using model={settings.ai.model}, "
+            f"max_output_tokens={max_output_tokens} "
+            f"(prompt_chars={len(prompt)}, est_tokens={len(prompt)//4})"
+        )
+
         analysis = call_openai(
             prompt=prompt,
             system_message=system_message,
             api_key=settings.ai.openai_api_key,
             model=settings.ai.model,
-            max_tokens=4000,  # Increased from 800 to 4000 for comprehensive analysis
+            max_tokens=max_output_tokens,
             temperature=settings.ai.temperature,
             timeout=settings.ai.timeout,
         )
 
         if not analysis:
+            # Build helpful error message
+            error_detail = (
+                "AI analysis failed to generate response. "
+                f"Model: {settings.ai.model}, Max tokens: {max_output_tokens}. "
+            )
+            
+            # Check if it's likely a context length issue
+            if estimated_prompt_tokens > 6000:
+                error_detail += (
+                    "The prompt is very large. "
+                    "Try: (1) Reduce max_papers_per_dataset to 5, or "
+                    "(2) Set OMICS_AI_MODEL=gpt-4-turbo-preview for 128K context"
+                )
+            
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="AI analysis failed to generate response",
+                detail=error_detail,
             )
 
         return analysis
