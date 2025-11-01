@@ -95,7 +95,7 @@ class FulltextService:
             logger.info("[FULLTEXT] Initializing components (fast sources only)...")
             fulltext_config = FullTextManagerConfig(
                 enable_institutional=True,
-                enable_pmc=False,  # DISABLED: PMC returns 403 errors for programmatic access
+                enable_pmc=True,  # RE-ENABLED: Fixed with proper HTTP headers
                 enable_unpaywall=True,
                 enable_openalex=False,  # DISABLED: Can be slow for large batches
                 enable_core=False,  # DISABLED: Often slow and rate-limited
@@ -354,7 +354,7 @@ class FulltextService:
         dataset.fulltext_count = successful
 
         # Update pdf_count to match (for dashboard display consistency)
-        # This shows the correct count in "📄 X/Y PDF downloaded"
+        # This shows the correct count in "X/Y PDF downloaded"
         dataset.pdf_count = successful
 
         # Add fulltext_total so frontend knows how many papers were attempted (including citing papers)
@@ -429,17 +429,6 @@ class FulltextService:
         async def collect_for_pub(pub):
             """Collect URLs for a single publication, returns (pmid, urls)"""
             try:
-                # WORKAROUND: PMC is returning 403 for all programmatic access
-                if pub.pdf_url and (
-                    "/pmc/" in pub.pdf_url.lower() or "pmc.ncbi" in pub.pdf_url.lower()
-                ):
-                    logger.warning(
-                        f"[{geo_id}] PMID:{pub.pmid} - Skipping PMC URL (403 errors): {pub.pdf_url}"
-                    )
-                    pub.pdf_url = (
-                        None  # Force waterfall instead of using cached PMC URL
-                    )
-
                 # Use FullTextManager to collect all URLs
                 result = await fulltext_manager.get_all_fulltext_urls(pub)
 

@@ -28,8 +28,10 @@ def _ensure_imports():
     """Lazy import to avoid circular dependency."""
     global FullTextResult, FullTextSource
     if FullTextResult is None:
-        from omics_oracle_v2.lib.pipelines.url_collection.manager import FullTextResult as FTR
-        from omics_oracle_v2.lib.pipelines.url_collection.manager import FullTextSource as FTS
+        from omics_oracle_v2.lib.pipelines.url_collection.manager import \
+            FullTextResult as FTR
+        from omics_oracle_v2.lib.pipelines.url_collection.manager import \
+            FullTextSource as FTS
 
         FullTextResult = FTR
         FullTextSource = FTS
@@ -87,7 +89,17 @@ class PMCClient:
     async def __aenter__(self):
         """Async context manager entry."""
         connector = aiohttp.TCPConnector(ssl=self.ssl_context)
-        self.session = aiohttp.ClientSession(connector=connector)
+
+        # Add browser-like headers to avoid 403 errors
+        headers = {
+            "User-Agent": "Mozilla/5.0 (compatible; OmicsOracle/1.0; +http://omicsoracle.ai)",
+            "Accept": "application/pdf,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            "Accept-Encoding": "gzip, deflate",
+            "Connection": "keep-alive",
+        }
+
+        self.session = aiohttp.ClientSession(connector=connector, headers=headers)
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -174,7 +186,9 @@ class PMCClient:
         if hasattr(publication, "pmid") and publication.pmid:
             pmc_id = await self._convert_pmid_to_pmcid(publication.pmid)
             if pmc_id:
-                logger.info(f"Converted PMID {publication.pmid} -> PMC{pmc_id} via E-utilities")
+                logger.info(
+                    f"Converted PMID {publication.pmid} -> PMC{pmc_id} via E-utilities"
+                )
                 return pmc_id
 
         return None
@@ -192,7 +206,9 @@ class PMCClient:
         try:
             url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/idconv/v1.0/?ids={pmid}&format=json"
 
-            async with self.session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+            async with self.session.get(
+                url, timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
                 if response.status == 200:
                     data = await response.json()
                     records = data.get("records", [])
@@ -242,7 +258,9 @@ class PMCClient:
             return result
 
         # All patterns failed
-        return FullTextResult(success=False, error=f"All PMC URL patterns failed for PMC{pmc_id}")
+        return FullTextResult(
+            success=False, error=f"All PMC URL patterns failed for PMC{pmc_id}"
+        )
 
     async def _try_oa_api(self, pmc_id: str) -> "FullTextResult":
         """
@@ -257,9 +275,13 @@ class PMCClient:
             FullTextResult with PDF URL from OA API
         """
         try:
-            oa_api_url = f"https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC{pmc_id}"
+            oa_api_url = (
+                f"https://www.ncbi.nlm.nih.gov/pmc/utils/oa/oa.fcgi?id=PMC{pmc_id}"
+            )
 
-            async with self.session.get(oa_api_url, timeout=aiohttp.ClientTimeout(total=10)) as response:
+            async with self.session.get(
+                oa_api_url, timeout=aiohttp.ClientTimeout(total=10)
+            ) as response:
                 if response.status == 200:
                     xml_content = await response.text()
                     root = ET.fromstring(xml_content)
@@ -270,9 +292,12 @@ class PMCClient:
                         if href:
                             # Convert ftp:// to https://
                             pdf_link = href.replace(
-                                "ftp://ftp.ncbi.nlm.nih.gov/", "https://ftp.ncbi.nlm.nih.gov/"
+                                "ftp://ftp.ncbi.nlm.nih.gov/",
+                                "https://ftp.ncbi.nlm.nih.gov/",
                             )
-                            logger.info(f"[PMC] Found PMC{pmc_id} via OA API: {pdf_link}")
+                            logger.info(
+                                f"[PMC] Found PMC{pmc_id} via OA API: {pdf_link}"
+                            )
                             return FullTextResult(
                                 success=True,
                                 source=FullTextSource.PMC,
@@ -300,13 +325,19 @@ class PMCClient:
             FullTextResult with direct PDF URL
         """
         try:
-            direct_pdf_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/pdf/"
+            direct_pdf_url = (
+                f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/pdf/"
+            )
 
             async with self.session.head(
-                direct_pdf_url, timeout=aiohttp.ClientTimeout(total=5), allow_redirects=True
+                direct_pdf_url,
+                timeout=aiohttp.ClientTimeout(total=5),
+                allow_redirects=True,
             ) as response:
                 if response.status == 200:
-                    logger.info(f"[PMC] Found PMC{pmc_id} via direct PDF: {direct_pdf_url}")
+                    logger.info(
+                        f"[PMC] Found PMC{pmc_id} via direct PDF: {direct_pdf_url}"
+                    )
                     return FullTextResult(
                         success=True,
                         source=FullTextSource.PMC,
@@ -337,10 +368,14 @@ class PMCClient:
             europepmc_url = f"https://europepmc.org/articles/PMC{pmc_id}?pdf=render"
 
             async with self.session.head(
-                europepmc_url, timeout=aiohttp.ClientTimeout(total=5), allow_redirects=True
+                europepmc_url,
+                timeout=aiohttp.ClientTimeout(total=5),
+                allow_redirects=True,
             ) as response:
                 if response.status == 200:
-                    logger.info(f"[PMC] Found PMC{pmc_id} via EuropePMC: {europepmc_url}")
+                    logger.info(
+                        f"[PMC] Found PMC{pmc_id} via EuropePMC: {europepmc_url}"
+                    )
                     return FullTextResult(
                         success=True,
                         source=FullTextSource.PMC,
@@ -368,13 +403,17 @@ class PMCClient:
             FullTextResult with reader view URL
         """
         try:
-            reader_url = f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/?report=reader"
+            reader_url = (
+                f"https://www.ncbi.nlm.nih.gov/pmc/articles/PMC{pmc_id}/?report=reader"
+            )
 
             async with self.session.head(
                 reader_url, timeout=aiohttp.ClientTimeout(total=5), allow_redirects=True
             ) as response:
                 if response.status == 200:
-                    logger.warning(f"[PMC] Found PMC{pmc_id} reader view (landing page): {reader_url}")
+                    logger.warning(
+                        f"[PMC] Found PMC{pmc_id} reader view (landing page): {reader_url}"
+                    )
                     return FullTextResult(
                         success=True,
                         source=FullTextSource.PMC,
