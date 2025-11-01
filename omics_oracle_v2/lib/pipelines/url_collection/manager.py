@@ -1159,7 +1159,7 @@ class FullTextManager:
         if publication.pdf_url:
             url_source = getattr(publication, "url_source", "discovery")
             logger.info(
-                f"✅ PDF URL already exists from {url_source} - skipping waterfall"
+                f"[OK] PDF URL already exists from {url_source} - skipping waterfall"
             )
             self.stats["skipped_already_have_url"] = (
                 self.stats.get("skipped_already_have_url", 0) + 1
@@ -1292,41 +1292,34 @@ class FullTextManager:
         if not self.initialized:
             await self.initialize()
 
-        # URL OPTIMIZATION: Skip waterfall if URL exists from discovery
+        # URL OPTIMIZATION: Use discovery URL as priority 0, but still collect fallbacks
+        # FIXED (Oct 31, 2025): Always collect additional URLs for waterfall fallback
+        # even when pdf_url exists from discovery, to handle cases where the primary
+        # URL fails (e.g., PMC direct PDF 403 errors)
+        discovery_url = None
         if publication.pdf_url:
             url_source = getattr(publication, "url_source", "discovery")
             logger.info(
-                f"✅ PDF URL already exists from {url_source} "
-                f"({publication.pdf_url[:60]}...) - skipping waterfall"
-            )
-            self.stats["skipped_already_have_url"] = (
-                self.stats.get("skipped_already_have_url", 0) + 1
+                f"[OK] PDF URL from {url_source}: {publication.pdf_url[:70]}... "
+                f"(will use as priority 0, collecting fallbacks)"
             )
 
             # Classify URL type
             url_type = URLValidator.classify_url(publication.pdf_url)
 
-            # Return existing URL as highest-priority result
-            return FullTextResult(
-                success=True,
-                source=FullTextSource.CACHE,  # Mark as pre-existing
+            # Store for later - will be added as priority 0 URL
+            discovery_url = SourceURL(
                 url=publication.pdf_url,
-                all_urls=[
-                    SourceURL(
-                        url=publication.pdf_url,
-                        source=FullTextSource.CACHE,
-                        priority=0,  # Highest priority
-                        url_type=url_type,
-                        confidence=1.0,
-                        requires_auth=False,
-                        metadata={
-                            "source": "discovery",
-                            "original_source": url_source,
-                            "oa_status": getattr(publication, "oa_status", "unknown"),
-                        },
-                    )
-                ],
-                metadata={"skipped_waterfall": True, "discovery_source": url_source},
+                source=FullTextSource.CACHE,
+                priority=0,  # Highest priority
+                url_type=url_type,
+                confidence=1.0,
+                requires_auth=False,
+                metadata={
+                    "source": "discovery",
+                    "original_source": url_source,
+                    "oa_status": getattr(publication, "oa_status", "unknown"),
+                },
             )
 
         self.stats["total_attempts"] += 1
@@ -1369,6 +1362,15 @@ class FullTextManager:
 
         # Collect all successful URLs
         all_urls = []
+
+        # FIXED (Oct 31, 2025): Add discovery URL as priority 0 if it exists
+        if discovery_url:
+            all_urls.append(discovery_url)
+            logger.info(
+                f"  [OK] discovery: Using URL from metadata "
+                f"(type={discovery_url.url_type.value}, priority=0)"
+            )
+
         for i, result in enumerate(results):
             source_name, _, priority = sources[i]
 
