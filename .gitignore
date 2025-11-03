@@ -199,3 +199,7 @@ data/llm_cache/*.json
 test_week2_cache_integration.py
 data/test_pdfs/
 data_backup_oct15/
+
+# Downloaded PDFs (generated content, not source code)
+data/pdfs/
+*.pdf

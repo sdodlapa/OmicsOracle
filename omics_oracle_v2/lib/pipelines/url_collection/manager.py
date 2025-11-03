@@ -1073,20 +1073,27 @@ class FullTextManager:
             parse_duration_ms = int((time.time() - start_time) * 1000)
 
             # STEP 4: Cache the parsed content
-            await cache.save(
-                publication_id=publication.id,
-                content=parsed,
-                source_file=str(file_path),
-                source_type=file_type,
-                parse_duration_ms=parse_duration_ms,
-                quality_score=None,  # TODO: Calculate quality score
-            )
+            try:
+                await cache.save(
+                    publication_id=publication.id,
+                    content=parsed,
+                    source_file=str(file_path),
+                    source_type=file_type,
+                    parse_duration_ms=parse_duration_ms,
+                    quality_score=None,  # TODO: Calculate quality score
+                )
 
-            logger.info(
-                f"[OK] Parsed and cached {publication.id} "
-                f"({parse_duration_ms}ms, {len(parsed.get('tables', []))} tables, "
-                f"{len(parsed.get('figures', []))} figures)"
-            )
+                logger.info(
+                    f"[OK] Parsed and cached {publication.id} "
+                    f"({parse_duration_ms}ms, {len(parsed.get('tables', []))} tables, "
+                    f"{len(parsed.get('figures', []))} figures)"
+                )
+            except Exception as cache_error:
+                logger.error(
+                    f"[ERROR] Failed to cache parsed content for {publication.id}: {cache_error}",
+                    exc_info=True,
+                )
+                # Continue anyway - parsing succeeded even if caching failed
 
             return parsed
 

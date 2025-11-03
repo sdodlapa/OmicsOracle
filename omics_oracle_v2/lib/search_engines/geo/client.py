@@ -9,7 +9,6 @@ import asyncio
 import functools
 import logging
 import ssl
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Union
 
 import aiohttp
@@ -397,7 +396,7 @@ class GEOClient:
                 query=query, search_type="geo", max_results=max_results
             )
             if cached:
-                logger.info(f"✓ Redis cache hit for search: {query[:50]}")
+                logger.info(f"[OK] Redis cache hit for search: {query[:50]}")
                 return SearchResult(**cached)
 
         # Perform search with retry
@@ -420,14 +419,23 @@ class GEOClient:
                 search_time=search_time,
             )
 
-            # Cache results in Redis
+            # Cache results in Redis (FIXED: convert Pydantic model to dict for JSON serialization)
             if self.settings.use_cache:
-                await self.redis_cache.set_search_result(
-                    query=query,
-                    search_type="geo",
-                    result=result,
-                    max_results=max_results,
-                )
+                try:
+                    result_dict = (
+                        result.model_dump()
+                        if hasattr(result, "model_dump")
+                        else result.dict()
+                    )
+                    await self.redis_cache.set_search_result(
+                        query=query,
+                        search_type="geo",
+                        result=result_dict,
+                        max_results=max_results,
+                    )
+                    logger.info(f"[OK] Cached search result for: {query[:50]}")
+                except Exception as e:
+                    logger.warning(f"Failed to cache search result: {e}")
 
             logger.info(f"Found {len(gse_ids)} GEO series for: {query}")
             return result
@@ -435,69 +443,69 @@ class GEOClient:
         except Exception as e:
             raise GEOError(f"Failed to search GEO: {e}") from e
 
-    async def get_metadata_fast(
-        self, geo_id: str
-    ) -> Optional[GEOSeriesMetadata]:
+    async def get_metadata_fast(self, geo_id: str) -> Optional[GEOSeriesMetadata]:
         """
         Retrieve basic metadata using NCBI E-Summary (FAST - no SOFT file download).
-        
+
         This method is 100x faster than get_metadata() because it only fetches
         a small JSON summary instead of downloading multi-MB SOFT files.
-        
+
         Use this when you only need basic metadata (title, organism, dates, counts).
         Use get_metadata() when you need full sample details and supplementary files.
-        
+
         Args:
             geo_id: GEO series ID (e.g., 'GSE123456')
-            
+
         Returns:
             GEOSeriesMetadata with basic information, or None if not found
-            
+
         Performance:
             - get_metadata_fast(): ~100ms (JSON summary only)
             - get_metadata(): ~10s (downloads 100+ MB SOFT files)
         """
         if not self.validate_geo_id(geo_id):
             raise GEOError(f"Invalid GEO ID format: {geo_id}")
-            
+
         # Check Redis cache first
         if self.settings.use_cache:
             cached = await self.redis_cache.get_geo_metadata(geo_id)
             if cached:
-                logger.debug(f"✓ Redis cache hit for metadata: {geo_id}")
+                logger.debug(f"[OK] Redis cache hit for metadata: {geo_id}")
                 return GEOSeriesMetadata(**cached)
-        
+
         try:
             # Step 1: Convert GSE ID to NCBI numeric ID
             search_results = await self.ncbi_client.esearch(
                 db="gds", term=f"{geo_id}[Accession]", retmax=1
             )
-            
+
             if not search_results:
                 logger.warning(f"No results found for {geo_id} in NCBI GDS")
                 return None
-                
+
             ncbi_id = search_results[0]
-            logger.debug(f"[FAST] {geo_id} → NCBI ID {ncbi_id}")
-            
+            logger.debug(f"[FAST] {geo_id} -> NCBI ID {ncbi_id}")
+
             # Step 2: Get summary data (lightweight JSON)
             summary_data = await self.ncbi_client.esummary(db="gds", ids=[ncbi_id])
-            
+
             if "result" not in summary_data or ncbi_id not in summary_data["result"]:
-                logger.warning(f"E-Summary returned no data for {geo_id} (ID: {ncbi_id})")
+                logger.warning(
+                    f"E-Summary returned no data for {geo_id} (ID: {ncbi_id})"
+                )
                 return None
-                
+
             result = summary_data["result"][ncbi_id]
-            
+
             # Log what E-Summary actually provides (for debugging)
             logger.debug(f"[FAST] E-Summary fields for {geo_id}: {list(result.keys())}")
-            
+
             # Step 3: Extract metadata from E-Summary
             # E-Summary provides limited fields compared to SOFT files:
             # - Available: title, summary, organism (taxon), sample count, dates
             # - Limited: platform info (may be string ID or missing)
             # - Missing: individual sample IDs, supplementary files, contact info
-            
+
             # Extract platform information (E-Summary may have GPL as string or list)
             platforms = []
             gpl_data = result.get("gpl", "")
@@ -505,7 +513,7 @@ class GEOClient:
                 platforms = [gpl_data]
             elif isinstance(gpl_data, list):
                 platforms = [str(p) for p in gpl_data if p]
-            
+
             # Extract PubMed IDs (can be single ID or list)
             pubmed_ids = []
             pmid_data = result.get("pubmedids", [])
@@ -513,7 +521,7 @@ class GEOClient:
                 pubmed_ids = [str(p) for p in pmid_data if p]
             elif pmid_data:
                 pubmed_ids = [str(pmid_data)]
-            
+
             metadata = GEOSeriesMetadata(
                 geo_id=geo_id,
                 title=result.get("title", ""),
@@ -533,16 +541,16 @@ class GEOClient:
                 contact_email=[],  # Not available in E-Summary
                 contact_institute=[],  # Not available in E-Summary
             )
-            
+
             # Cache for 30 days
             if self.settings.use_cache:
                 await self.redis_cache.set_geo_metadata(
                     geo_id=geo_id, metadata=metadata, ttl=2592000
                 )
-                
+
             logger.info(f"[FAST] Retrieved metadata for {geo_id} (no SOFT download)")
             return metadata
-            
+
         except Exception as e:
             logger.error(f"Fast metadata retrieval failed for {geo_id}: {e}")
             return None
@@ -574,7 +582,7 @@ class GEOClient:
         if self.settings.use_cache:
             cached = await self.redis_cache.get_geo_metadata(geo_id)
             if cached:
-                logger.info(f"✓ Redis cache hit for metadata: {geo_id}")
+                logger.info(f"[OK] Redis cache hit for metadata: {geo_id}")
                 return GEOSeriesMetadata(**cached)
 
         try:
@@ -618,7 +626,7 @@ class GEOClient:
                     organism = organism_list[0]
                     organism_source = "geoparse_platform"
                     logger.info(
-                        f"[ORGANISM-TRACE] ✓ {geo_id}: Got organism from GEOparse platform: {organism!r}"
+                        f"[ORGANISM-TRACE] [OK] {geo_id}: Got organism from GEOparse platform: {organism!r}"
                     )
                 else:
                     logger.warning(
@@ -637,7 +645,7 @@ class GEOClient:
 
                 try:
                     # Convert GSE ID to NCBI numeric ID for E-Summary
-                    # GSE189158 → search to get NCBI ID
+                    # GSE189158 -> search to get NCBI ID
                     search_results = await self.ncbi_client.esearch(
                         db="gds", term=f"{geo_id}[Accession]", retmax=1
                     )
@@ -668,7 +676,7 @@ class GEOClient:
                                 organism = esummary_organism
                                 organism_source = "ncbi_esummary"
                                 logger.info(
-                                    f"[ORGANISM-TRACE] ✓ {geo_id}: Got organism from E-Summary: {organism!r}"
+                                    f"[ORGANISM-TRACE] [OK] {geo_id}: Got organism from E-Summary: {organism!r}"
                                 )
                             else:
                                 logger.warning(
@@ -692,11 +700,11 @@ class GEOClient:
             # Final organism status
             if organism:
                 logger.info(
-                    f"[ORGANISM-TRACE] ✓✓ {geo_id}: FINAL organism = {organism!r} (source: {organism_source})"
+                    f"[ORGANISM-TRACE] [OK][OK] {geo_id}: FINAL organism = {organism!r} (source: {organism_source})"
                 )
             else:
                 logger.error(
-                    f"[ORGANISM-TRACE] ✗✗ {geo_id}: ORGANISM STILL EMPTY after all attempts!"
+                    f"[ORGANISM-TRACE] [FAIL][FAIL] {geo_id}: ORGANISM STILL EMPTY after all attempts!"
                 )
 
             metadata = GEOSeriesMetadata(
@@ -771,11 +779,11 @@ class GEOClient:
             return None
 
     async def batch_get_metadata(
-        self, 
-        geo_ids: List[str], 
-        max_concurrent: int = 20, 
+        self,
+        geo_ids: List[str],
+        max_concurrent: int = 20,
         return_list: bool = False,
-        use_fast: bool = True
+        use_fast: bool = True,
     ) -> Union[Dict[str, GEOSeriesMetadata], List[GEOSeriesMetadata]]:
         """
         Retrieve metadata for multiple GEO series concurrently with optimized performance.
@@ -805,7 +813,7 @@ class GEOClient:
         Example:
             >>> # FAST: Fetch 100 datasets in 5s (recommended for search results)
             >>> results = await client.batch_get_metadata(ids, use_fast=True)
-            >>> 
+            >>>
             >>> # FULL: Fetch with complete metadata (for detailed analysis)
             >>> results = await client.batch_get_metadata(ids, use_fast=False)
         """
@@ -816,7 +824,7 @@ class GEOClient:
 
         start_time = time.time()
         semaphore = asyncio.Semaphore(max_concurrent)
-        
+
         # Choose the appropriate metadata method
         metadata_method = self.get_metadata_fast if use_fast else self.get_metadata
         method_name = "FAST" if use_fast else "FULL"
@@ -832,7 +840,9 @@ class GEOClient:
                     )
                     return geo_id, metadata
                 except asyncio.TimeoutError:
-                    logger.warning(f"Timeout fetching {geo_id} after {timeout}s ({method_name} mode)")
+                    logger.warning(
+                        f"Timeout fetching {geo_id} after {timeout}s ({method_name} mode)"
+                    )
                     return geo_id, None
                 except GEOError as e:
                     logger.error(f"Failed to get metadata for {geo_id}: {e}")

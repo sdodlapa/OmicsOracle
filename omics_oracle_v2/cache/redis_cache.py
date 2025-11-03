@@ -215,11 +215,11 @@ class RedisCache:
             result = self.client.get(key)
             if result:
                 self.metrics.record_hit()  # Track cache hit
-                logger.debug(f"Cache HIT for query: {query[:50]}")
+                logger.info(f"[HIT] Redis cache HIT for query: {query[:50]}")
                 return json.loads(result)
             else:
                 self.metrics.record_miss()  # Track cache miss
-                logger.debug(f"Cache MISS for query: {query[:50]}")
+                logger.info(f"[MISS] Redis cache MISS for query: {query[:50]}")
                 return None
         except Exception as e:
             self.metrics.record_error()  # Track error
@@ -257,7 +257,7 @@ class RedisCache:
             # Convert result to JSON
             # Priority: model_dump() (Pydantic v2) > to_dict() > dict() (Pydantic v1) > __dict__
             if hasattr(result, "model_dump"):
-                result_dict = result.model_dump(mode='json')
+                result_dict = result.model_dump(mode="json")
             elif hasattr(result, "to_dict"):
                 result_dict = result.to_dict()
             elif hasattr(result, "dict"):
@@ -267,7 +267,9 @@ class RedisCache:
             else:
                 result_dict = result
 
-            result_json = json.dumps(result_dict, default=str)  # Use default=str for datetime objects
+            result_json = json.dumps(
+                result_dict, default=str
+            )  # Use default=str for datetime objects
 
             # Set with TTL
             ttl = ttl or self.TTL_SEARCH_RESULTS
@@ -402,7 +404,7 @@ class RedisCache:
             # Convert to JSON-serializable dict
             if hasattr(metadata, "model_dump"):
                 # Pydantic v2
-                meta_dict = metadata.model_dump(mode='json')
+                meta_dict = metadata.model_dump(mode="json")
             elif hasattr(metadata, "dict"):
                 # Pydantic v1
                 meta_dict = metadata.dict()
@@ -413,7 +415,9 @@ class RedisCache:
             else:
                 meta_dict = metadata
 
-            meta_json = json.dumps(meta_dict, default=str)  # Use default=str for datetime objects
+            meta_json = json.dumps(
+                meta_dict, default=str
+            )  # Use default=str for datetime objects
 
             # Set with TTL
             ttl = ttl or self.TTL_GEO_METADATA
@@ -671,6 +675,63 @@ class RedisCache:
         if total == 0:
             return 0.0
         return (hits / total) * 100
+
+    async def get(self, key: str) -> Optional[Any]:
+        """
+        Generic get method for any cached data.
+
+        Args:
+            key: Cache key (will be prefixed automatically)
+
+        Returns:
+            Cached value (parsed from JSON) or None
+        """
+        if not self.enabled or not self.client:
+            return None
+
+        try:
+            result = self.client.get(key)
+            if result:
+                self.metrics.record_hit()
+                return json.loads(result)
+            else:
+                self.metrics.record_miss()
+                return None
+        except Exception as e:
+            self.metrics.record_error()
+            logger.error(f"Error getting cached value for key {key}: {e}")
+            return None
+
+    async def set(self, key: str, value: Any, ttl: Optional[int] = None) -> bool:
+        """
+        Generic set method for caching any data.
+
+        Args:
+            key: Cache key (will be prefixed automatically)
+            value: Value to cache (will be JSON serialized)
+            ttl: Time to live in seconds (default: self.default_ttl)
+
+        Returns:
+            True if successful, False otherwise
+        """
+        if not self.enabled or not self.client:
+            return False
+
+        try:
+            # Serialize value to JSON
+            value_json = json.dumps(value, default=str)
+
+            # Set with TTL
+            ttl = ttl or self.default_ttl
+            self.client.setex(key, ttl, value_json)
+
+            self.metrics.record_set()
+            logger.debug(f"Cached value for key: {key} (TTL={ttl}s)")
+            return True
+        except Exception as e:
+            self.metrics.record_error()
+            logger.error(f"Error caching value for key {key}: {e}")
+            return False
 
     def close(self):
         """Close Redis connection."""

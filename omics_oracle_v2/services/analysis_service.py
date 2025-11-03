@@ -95,7 +95,7 @@ class AnalysisService:
         )
 
         # Call LLM
-        analysis = self._call_llm(analysis_prompt, settings)
+        analysis = await self._call_llm(analysis_prompt, settings)
 
         # Parse insights and recommendations
         insights, recommendations = self._parse_analysis_results(analysis)
@@ -419,6 +419,8 @@ class AnalysisService:
                         if isinstance(ft, dict)
                         else getattr(ft, "title", "Unknown")
                     )
+                    # Ensure title is never None
+                    title = title or "Unknown"
 
                     dataset_info.extend(
                         [
@@ -584,7 +586,7 @@ Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_paper
 {"Reference the entities and terms from the query context when explaining relevance." if request.query_processing else ""}
 """
 
-    def _call_llm(self, prompt: str, settings) -> str:
+    async def _call_llm(self, prompt: str, settings) -> str:
         """Call LLM with analysis prompt."""
         from fastapi import HTTPException, status
 
@@ -606,14 +608,22 @@ Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_paper
         # GPT-4-turbo: 128,000 total tokens
         # GPT-4o: 128,000 total tokens
         model_name = settings.ai.model.lower()
-        if "turbo" in model_name or "gpt-4o" in model_name or "gpt-4-1106" in model_name:
+        if (
+            "turbo" in model_name
+            or "gpt-4o" in model_name
+            or "gpt-4-1106" in model_name
+        ):
             # GPT-4 Turbo or GPT-4o: Use large context window
             max_output_tokens = 4000
         else:
             # GPT-4 base: Conservative allocation to avoid context overflow
             # Estimate: prompt is ~4-5K tokens, leave 3K for output
-            estimated_prompt_tokens = len(prompt) // 4  # Rough estimate: 1 token ≈ 4 chars
-            max_output_tokens = max(2000, 8000 - estimated_prompt_tokens - 200)  # 200 buffer
+            estimated_prompt_tokens = (
+                len(prompt) // 4
+            )  # Rough estimate: 1 token ~= 4 chars
+            max_output_tokens = max(
+                2000, 8000 - estimated_prompt_tokens - 200
+            )  # 200 buffer
             if max_output_tokens > 3500:
                 max_output_tokens = 3500  # Cap at 3500 for safety
 
@@ -623,7 +633,7 @@ Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_paper
             f"(prompt_chars={len(prompt)}, est_tokens={len(prompt)//4})"
         )
 
-        analysis = call_openai(
+        analysis = await call_openai(
             prompt=prompt,
             system_message=system_message,
             api_key=settings.ai.openai_api_key,
@@ -639,7 +649,7 @@ Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_paper
                 "AI analysis failed to generate response. "
                 f"Model: {settings.ai.model}, Max tokens: {max_output_tokens}. "
             )
-            
+
             # Check if it's likely a context length issue
             if estimated_prompt_tokens > 6000:
                 error_detail += (
@@ -647,7 +657,7 @@ Be specific. Cite dataset IDs (GSE numbers){" and PMIDs" if total_fulltext_paper
                     "Try: (1) Reduce max_papers_per_dataset to 5, or "
                     "(2) Set OMICS_AI_MODEL=gpt-4-turbo-preview for 128K context"
                 )
-            
+
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail=error_detail,

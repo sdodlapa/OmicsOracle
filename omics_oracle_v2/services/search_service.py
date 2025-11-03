@@ -345,6 +345,8 @@ class SearchService:
             pdf_count = 0
             processed_count = 0
             completion_rate = 0.0
+            fulltext_count = 0  # NEW: Track actual full-text content availability
+            fulltext_status = "not_downloaded"  # NEW: Track download status
             all_pmids = []  # Will be populated from database
 
             if self.geo_cache:
@@ -366,20 +368,82 @@ class SearchService:
                         # This ensures ALL papers (original + citing) are available for download
                         all_pmids = [p.get("pmid") for p in papers if p.get("pmid")]
 
-                        # Count PDFs (check download_history for 'downloaded' status)
-                        pdf_count = sum(
-                            1
-                            for pub in papers
-                            if any(
-                                h.get("status") == "downloaded"
-                                for h in pub.get("download_history", [])
-                            )
-                        )
+                        # Initialize database connection for all queries
+                        from omics_oracle_v2.lib.pipelines.storage.unified_db import \
+                            UnifiedDatabase
 
-                        # Count processed (extracted) papers
-                        processed_count = sum(
-                            1 for pub in papers if pub.get("extraction") is not None
-                        )
+                        db = UnifiedDatabase(db_path="data/database/omics_oracle.db")
+
+                        # Count PDFs - check pdf_acquisition table directly
+                        # The download_history in papers may not be populated correctly
+                        try:
+                            query_pdfs = """
+                                SELECT COUNT(DISTINCT pmid)
+                                FROM pdf_acquisition
+                                WHERE geo_id = ? AND (status = 'success' OR status = 'downloaded')
+                            """
+                            with db.get_connection() as conn:
+                                pdf_row = conn.execute(
+                                    query_pdfs, (ranked.dataset.geo_id,)
+                                ).fetchone()
+                                pdf_count = pdf_row[0] if pdf_row else 0
+                        except Exception as pdf_error:
+                            logger.warning(
+                                f"Failed to query pdf_acquisition for {ranked.dataset.geo_id}: {pdf_error}"
+                            )
+                            # Fallback to old method if query fails
+                            pdf_count = sum(
+                                1
+                                for pub in papers
+                                if any(
+                                    h.get("status") == "downloaded"
+                                    for h in pub.get("download_history", [])
+                                )
+                            )
+
+                        # Count processed papers by checking content_extraction table
+                        try:
+                            # Query content_extraction table for this GEO dataset
+                            # Count DISTINCT pmids to avoid counting duplicate extractions
+                            query = """
+                                SELECT COUNT(DISTINCT pmid) as processed_count,
+                                       COUNT(DISTINCT CASE WHEN full_text IS NOT NULL AND full_text != '' THEN pmid END) as fulltext_count
+                                FROM content_extraction
+                                WHERE geo_id = ?
+                            """
+                            with db.get_connection() as conn:
+                                row = conn.execute(
+                                    query, (ranked.dataset.geo_id,)
+                                ).fetchone()
+                                if row:
+                                    processed_count = row[0] or 0
+                                    fulltext_count = row[1] or 0
+                                else:
+                                    processed_count = 0
+                                    fulltext_count = 0
+                        except Exception as db_error:
+                            logger.warning(
+                                f"Failed to query content_extraction for {ranked.dataset.geo_id}: {db_error}"
+                            )
+                            processed_count = 0
+                            fulltext_count = 0
+
+                        # Determine fulltext status based on actual database content
+                        if fulltext_count > 0:
+                            if fulltext_count >= len(all_pmids):
+                                fulltext_status = (
+                                    "available"  # All papers have full-text
+                                )
+                            else:
+                                fulltext_status = (
+                                    "partial"  # Some papers have full-text
+                                )
+                        elif pdf_count > 0:
+                            fulltext_status = (
+                                "downloaded"  # PDFs exist but not extracted
+                            )
+                        else:
+                            fulltext_status = "not_downloaded"  # No PDFs yet
 
                         # Calculate completion rate
                         if citation_count > 0:
@@ -387,7 +451,8 @@ class SearchService:
 
                         logger.debug(
                             f"Enriched {ranked.dataset.geo_id}: citations={citation_count}, "
-                            f"pdfs={pdf_count}, processed={processed_count}, pmids={len(all_pmids)}"
+                            f"pdfs={pdf_count}, processed={processed_count}, "
+                            f"fulltext={fulltext_count}, status={fulltext_status}, pmids={len(all_pmids)}"
                         )
                 except Exception as e:
                     logger.warning(
@@ -416,6 +481,10 @@ class SearchService:
                 pdf_count=pdf_count,
                 processed_count=processed_count,
                 completion_rate=completion_rate,
+                # NEW: Full-text content metrics
+                fulltext_count=fulltext_count,
+                fulltext_status=fulltext_status,
+                fulltext_total=citation_count,  # Total papers attempted
             )
 
         # OPTIMIZATION: Execute all enrichments in parallel
